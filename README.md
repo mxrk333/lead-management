@@ -1,1 +1,4 @@
 # lead-management
+
+
+PAG TO NINAKAW NYO PAPAKULONG KO KAYO MGA GAGO!

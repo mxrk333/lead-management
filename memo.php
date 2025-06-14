@@ -868,6 +868,17 @@ sort($team_names);
                 grid-template-columns: 1fr;
             }
         }
+
+        .btn-acknowledge:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: var(--gray-400);
+}
+
+.btn-acknowledge:disabled:hover {
+    background: var(--gray-400);
+    transform: none;
+}
     </style>
 </head>
 <body>
@@ -1059,8 +1070,18 @@ sort($team_names);
                                             </button>
                                         <?php else: ?>
                                             <form method="POST" style="display: inline;" onclick="event.stopPropagation();">
+                                                <div style="margin-bottom: 0.5rem; font-size: 0.75rem;">
+                                                    <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer;">
+                                                        <input type="checkbox" id="acknowledge-checkbox-<?php echo $memo['id']; ?>" 
+                                                               onchange="toggleAcknowledgeButton(<?php echo $memo['id']; ?>)" 
+                                                               style="margin-top: 0.125rem;">
+                                                        <span style="line-height: 1.3;">I hereby acknowledge receipt of this memo, understand the information provided, and will keep it for future reference.</span>
+                                                    </label>
+                                                </div>
                                                 <input type="hidden" name="memo_id" value="<?php echo $memo['id']; ?>">
-                                                <button type="submit" name="acknowledge_memo" class="btn-acknowledge">
+                                                <button type="submit" name="acknowledge_memo" 
+                                                        id="acknowledge-btn-<?php echo $memo['id']; ?>"
+                                                        class="btn-acknowledge" disabled>
                                                     <i class="fas fa-check"></i> Acknowledge
                                                 </button>
                                             </form>
@@ -1117,6 +1138,21 @@ sort($team_names);
 
     function openMemoModal(memoId) {
         window.location.href = 'memo-details.php?id=' + memoId;
+    }
+
+    function toggleAcknowledgeButton(memoId) {
+        const checkbox = document.getElementById('acknowledge-checkbox-' + memoId);
+        const button = document.getElementById('acknowledge-btn-' + memoId);
+        
+        if (checkbox.checked) {
+            button.disabled = false;
+            button.style.opacity = '1';
+            button.style.cursor = 'pointer';
+        } else {
+            button.disabled = true;
+            button.style.opacity = '0.5';
+            button.style.cursor = 'not-allowed';
+        }
     }
     </script>
     

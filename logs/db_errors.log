@@ -140,3 +140,254 @@ Stack trace:
 [14-Jun-2025 13:47:59 Europe/Berlin] Attempting database connection. DreamHost environment: false
 [14-Jun-2025 13:47:59 Europe/Berlin] Database connection successful to localhost/real_estate_leads
 [14-Jun-2025 13:47:59 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:30:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:27 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:30:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:37 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:30:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:37 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:30:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:37 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-09 08:38:30
+[14-Jun-2025 14:30:37 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:30:37 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:30:37 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:30:37 Europe/Berlin] Header loaded - Total notifications: 3, Unread count: 3
+[14-Jun-2025 14:30:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:41 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:30:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:41 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-09 08:38:30
+[14-Jun-2025 14:30:41 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:30:41 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:30:41 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:30:41 Europe/Berlin] Header loaded - Total notifications: 3, Unread count: 3
+[14-Jun-2025 14:30:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:44 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:30:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:44 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-09 08:38:30
+[14-Jun-2025 14:30:44 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:30:44 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:30:44 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:30:44 Europe/Berlin] Header loaded - Total notifications: 3, Unread count: 3
+[14-Jun-2025 14:30:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:30:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:30:52 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:31:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:01 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:31:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:01 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:31:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:01 Europe/Berlin] getRecentNotifications - User ID: 8, Last Read: NULL
+[14-Jun-2025 14:31:01 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:01 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:01 Europe/Berlin] Header loaded - Total notifications: 2, Unread count: 2
+[14-Jun-2025 14:31:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:03 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:31:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:03 Europe/Berlin] getRecentNotifications - User ID: 8, Last Read: NULL
+[14-Jun-2025 14:31:03 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:03 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:03 Europe/Berlin] Header loaded - Total notifications: 2, Unread count: 2
+[14-Jun-2025 14:31:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:05 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:31:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:05 Europe/Berlin] getRecentNotifications - User ID: 8, Last Read: NULL
+[14-Jun-2025 14:31:05 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:05 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:05 Europe/Berlin] Header loaded - Total notifications: 2, Unread count: 2
+[14-Jun-2025 14:31:17 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:18 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:18 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:31:18 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:18 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:18 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:18 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:18 Europe/Berlin] getRecentNotifications - User ID: 8, Last Read: NULL
+[14-Jun-2025 14:31:18 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:18 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:18 Europe/Berlin] Header loaded - Total notifications: 2, Unread count: 2
+[14-Jun-2025 14:31:19 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:19 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:19 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:31:19 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:19 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:19 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:20 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:20 Europe/Berlin] getRecentNotifications - User ID: 8, Last Read: NULL
+[14-Jun-2025 14:31:20 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:20 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:20 Europe/Berlin] Header loaded - Total notifications: 2, Unread count: 2
+[14-Jun-2025 14:31:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:23 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:31:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:23 Europe/Berlin] getRecentNotifications - User ID: 8, Last Read: NULL
+[14-Jun-2025 14:31:23 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:23 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:23 Europe/Berlin] Header loaded - Total notifications: 2, Unread count: 2
+[14-Jun-2025 14:31:24 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:24 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:24 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:31:24 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:24 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:24 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:24 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:24 Europe/Berlin] getRecentNotifications - User ID: 8, Last Read: NULL
+[14-Jun-2025 14:31:25 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:25 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:25 Europe/Berlin] Header loaded - Total notifications: 2, Unread count: 2
+[14-Jun-2025 14:31:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:28 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:28 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:31:28 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:28 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:28 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:31:28 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:31:28 Europe/Berlin] getRecentNotifications - User ID: 8, Last Read: NULL
+[14-Jun-2025 14:31:28 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:28 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:31:28 Europe/Berlin] Header loaded - Total notifications: 2, Unread count: 2
+[14-Jun-2025 14:32:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:05 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:32:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:05 Europe/Berlin] getRecentNotifications - User ID: 8, Last Read: NULL
+[14-Jun-2025 14:32:05 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:32:05 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:32:05 Europe/Berlin] Header loaded - Total notifications: 2, Unread count: 2
+[14-Jun-2025 14:32:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:13 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:32:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:13 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:32:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:13 Europe/Berlin] getRecentNotifications - User ID: 8, Last Read: NULL
+[14-Jun-2025 14:32:13 Europe/Berlin] No last_read timestamp, marking as unread: Memo
+[14-Jun-2025 14:32:13 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:32:13 Europe/Berlin] No last_read timestamp, marking as unread: Lead Update
+[14-Jun-2025 14:32:13 Europe/Berlin] Header loaded - Total notifications: 3, Unread count: 3
+[14-Jun-2025 14:32:19 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:19 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:19 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:32:26 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:26 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:26 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:32:26 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:26 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:26 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:26 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:26 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:32:26 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:26 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:26 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:26 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:26 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:26 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:26 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-09 08:38:30
+[14-Jun-2025 14:32:26 Europe/Berlin] Notification: Memo, Created: 2025-06-14 20:32:13 (1749925933), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:26 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:26 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:26 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:26 Europe/Berlin] Header loaded - Total notifications: 4, Unread count: 4
+[14-Jun-2025 14:32:28 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:28 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:28 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:32:28 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:28 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:28 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:28 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:28 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-09 08:38:30
+[14-Jun-2025 14:32:28 Europe/Berlin] Notification: Memo, Created: 2025-06-14 20:32:13 (1749925933), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:28 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:28 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:28 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:28 Europe/Berlin] Header loaded - Total notifications: 4, Unread count: 4
+[14-Jun-2025 14:32:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:33 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:32:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:33 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-09 08:38:30
+[14-Jun-2025 14:32:33 Europe/Berlin] Notification: Memo, Created: 2025-06-14 20:32:13 (1749925933), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:33 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:33 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:33 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:33 Europe/Berlin] Header loaded - Total notifications: 4, Unread count: 4
+[14-Jun-2025 14:32:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:40 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:32:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:40 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-09 08:38:30
+[14-Jun-2025 14:32:41 Europe/Berlin] Notification: Memo, Created: 2025-06-14 20:32:13 (1749925933), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:41 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:41 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:41 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:41 Europe/Berlin] Header loaded - Total notifications: 4, Unread count: 4
+[14-Jun-2025 14:32:43 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:43 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:43 Europe/Berlin] Database initialization error: Can't create table `real_estate_leads`.`projects` (errno: 150 "Foreign key constraint is incorrectly formed")
+[14-Jun-2025 14:32:43 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:43 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Jun-2025 14:32:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Jun-2025 14:32:44 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-09 08:38:30
+[14-Jun-2025 14:32:44 Europe/Berlin] Notification: Memo, Created: 2025-06-14 20:32:13 (1749925933), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:44 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:44 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:44 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-09 08:38:30 (1749451110), Is Read: false
+[14-Jun-2025 14:32:44 Europe/Berlin] Header loaded - Total notifications: 4, Unread count: 4
