@@ -34,13 +34,29 @@ $create_settings_table = "CREATE TABLE IF NOT EXISTS settings (
     setting_key VARCHAR(100) NOT NULL UNIQUE,
     setting_value TEXT NOT NULL,
     setting_description TEXT,
-    setting_group VARCHAR(50) NOT NULL,
+    setting_group VARCHAR(50) NOT NULL DEFAULT 'general',
     is_public TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )";
 
 $conn->query($create_settings_table);
+
+// Check and add missing columns if they don't exist
+$required_columns = [
+    'setting_description' => 'TEXT',
+    'setting_group' => 'VARCHAR(50) NOT NULL DEFAULT \'general\'',
+    'is_public' => 'TINYINT(1) DEFAULT 0'
+];
+
+foreach ($required_columns as $column_name => $column_definition) {
+    $check_column = "SHOW COLUMNS FROM settings LIKE '$column_name'";
+    $column_result = $conn->query($check_column);
+    if ($column_result->num_rows == 0) {
+        $add_column = "ALTER TABLE settings ADD COLUMN $column_name $column_definition";
+        $conn->query($add_column);
+    }
+}
 
 // Initialize default settings if they don't exist
 $default_settings = [
@@ -263,35 +279,50 @@ if (isset($_POST['add_model'])) {
     if (empty($model_names) || $developer_id <= 0) {
         $error_message = "Project and model name are required.";
     } else {
-        // Check if model names already exist for this developer
-        $check_stmt = $conn->prepare("SELECT id FROM project_models WHERE developer_id = ? AND name IN (?)");
-        $in_values = implode(',', array_fill(0, count($model_names), '?'));
-        $stmt = $conn->prepare("SELECT id FROM project_models WHERE developer_id = ? AND name = ?");
-        $stmt->bind_param("is", $developer_id, $model_names[0]);
-        $stmt->execute();
-        $check_result = $stmt->get_result();
+        // Check if any model names already exist for this developer
+        $existing_models = [];
+        $check_stmt = $conn->prepare("SELECT name FROM project_models WHERE developer_id = ? AND name = ?");
         
-        if ($check_result->num_rows > 0) {
-            $existing_models = [];
-            while ($row = $check_result->fetch_assoc()) {
-                $existing_models[] = $row['name'];
+        foreach ($model_names as $model_name) {
+            $model_name = trim($model_name);
+            if (empty($model_name)) continue;
+            
+            $check_stmt->bind_param("is", $developer_id, $model_name);
+            $check_stmt->execute();
+            $check_result = $check_stmt->get_result();
+            
+            if ($check_result->num_rows > 0) {
+                $existing_models[] = $model_name;
             }
+        }
+        
+        if (!empty($existing_models)) {
             $error_message = "The following models already exist for this project: " . implode(', ', $existing_models);
         } else {
             // Insert new models
             $insert_stmt = $conn->prepare("INSERT INTO project_models (developer_id, name) VALUES (?, ?)");
-            $stmt = $conn->prepare("INSERT INTO project_models (developer_id, name) VALUES (?, ?)");
+            $success_count = 0;
             
             foreach ($model_names as $model_name) {
-                $stmt->bind_param("is", $developer_id, $model_name);
-                if ($stmt->execute()) {
-                    $success_message = "Project models added successfully.";
+                $model_name = trim($model_name);
+                if (empty($model_name)) continue;
+                
+                $insert_stmt->bind_param("is", $developer_id, $model_name);
+                if ($insert_stmt->execute()) {
+                    $success_count++;
                 } else {
                     $error_message = "Error adding project models: " . $conn->error;
                     break;
                 }
             }
-            $stmt->close();
+            
+            if ($success_count > 0 && empty($error_message)) {
+                $success_message = "Project model(s) added successfully.";
+                // Refresh the page to show the new models
+                header("Location: settings.php?tab=project_models");
+                exit();
+            }
+            
             $insert_stmt->close();
         }
         $check_stmt->close();
