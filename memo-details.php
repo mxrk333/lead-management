@@ -134,13 +134,6 @@ if ($canCreateMemos) {
     }
 }
 
-// Mark as read if not already read
-if ($memo['read_status'] != 1) {
-    $read_stmt = $conn->prepare("INSERT INTO memo_read_status (memo_id, employee_id, read_status, read_at) VALUES (?, ?, 1, NOW()) ON DUPLICATE KEY UPDATE read_status = 1, read_at = NOW()");
-    $read_stmt->bind_param("ii", $memo_id, $user_id);
-    $read_stmt->execute();
-}
-
 // Handle acknowledgment
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acknowledge_memo'])) {
     try {
@@ -337,6 +330,7 @@ function isPDF($file_path) {
 
         .page-header h2 i {
             color: var(--primary);
+            width: 1rem;
         }
 
         .btn-back {
@@ -536,12 +530,13 @@ function isPDF($file_path) {
         }
 
         .memo-actions {
-            padding: 1.5rem 2rem;
+            padding: 2rem;
             background: var(--gray-50);
             border-top: 1px solid var(--gray-200);
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            gap: 2rem;
         }
 
         .status-badge {
@@ -592,6 +587,58 @@ function isPDF($file_path) {
         .btn-acknowledged:hover {
             background: var(--gray-100);
             transform: none;
+        }
+
+        .btn-acknowledge:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: var(--gray-400);
+        }
+
+        .btn-acknowledge:disabled:hover {
+            background: var(--gray-400);
+            transform: none;
+        }
+
+        .acknowledgment-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-end;
+            min-width: 350px;
+        }
+
+        .acknowledgment-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            max-width: 350px;
+            padding: 0.75rem;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .acknowledgment-checkbox:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .acknowledgment-checkbox input[type="checkbox"] {
+            margin-top: 0.25rem;
+            flex-shrink: 0;
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+        }
+
+        .acknowledgment-checkbox span {
+            flex: 1;
+            color: var(--gray-700);
         }
 
         .alert {
@@ -741,8 +788,16 @@ function isPDF($file_path) {
                 align-items: stretch;
             }
 
+            .acknowledgment-form {
+                align-items: stretch;
+            }
+
             .btn-acknowledge {
                 justify-content: center;
+            }
+
+            .acknowledgment-checkbox {
+                max-width: none;
             }
         }
     </style>
@@ -889,8 +944,15 @@ function isPDF($file_path) {
                                     <i class="fas fa-check"></i> Already Acknowledged
                                 </button>
                             <?php else: ?>
-                                <form method="POST" style="display: inline;">
-                                    <button type="submit" name="acknowledge_memo" class="btn-acknowledge">
+                                <form method="POST" class="acknowledgment-form">
+                                    <label class="acknowledgment-checkbox">
+                                        <input type="checkbox" id="acknowledge-checkbox-details" 
+                                               onchange="toggleAcknowledgeButton()">
+                                        <span>I hereby acknowledge receipt of this memo, understand the information provided, and will keep it for future reference.</span>
+                                    </label>
+                                    <button type="submit" name="acknowledge_memo" 
+                                            id="acknowledge-btn-details"
+                                            class="btn-acknowledge" disabled>
                                         <i class="fas fa-check"></i> Acknowledge Memo
                                     </button>
                                 </form>
@@ -947,6 +1009,23 @@ function isPDF($file_path) {
             </div>
         </div>
     </div>
+
+    <script>
+        function toggleAcknowledgeButton() {
+            const checkbox = document.getElementById('acknowledge-checkbox-details');
+            const button = document.getElementById('acknowledge-btn-details');
+            
+            if (checkbox.checked) {
+                button.disabled = false;
+                button.style.opacity = '1';
+                button.style.cursor = 'pointer';
+            } else {
+                button.disabled = true;
+                button.style.opacity = '0.5';
+                button.style.cursor = 'not-allowed';
+            }
+        }
+    </script>
 
     <script src="assets/js/script.js"></script>
 </body>

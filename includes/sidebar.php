@@ -157,7 +157,7 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
                                 <li class="submenu-item">
                                     <a href="links.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'links.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
                                         <i class="fas fa-link submenu-icon"></i>
-                                        <span class="submenu-text">Links</span>
+                                        <span class="submenu-text">Quick Links</span>
                                     </a>
                                 </li>
                             </ul>   
