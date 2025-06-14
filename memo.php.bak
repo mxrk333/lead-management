@@ -1,0 +1,261 @@
+<?php
+session_start();
+require_once 'config/database.php';
+require_once 'includes/functions.php';
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Establish database connection
+$conn = getDbConnection();
+
+// Get user information
+$user_id = $_SESSION['user_id'];
+$user = getUserById($user_id);
+
+$upload_dir = 'uploads/memo_images/';
+if (!file_exists($upload_dir)) {
+    mkdir($upload_dir, 0777, true);
+}
+
+function sanitizeInput($input) {
+    if (is_array($input)) {
+        return array_map('sanitizeInput', $input);
+    }
+    
+    if (is_string($input)) {
+        $input = trim($input);
+        $input = htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return $input;
+    }
+    
+    return $input;
+}
+
+// Handle memo creation (admin only)
+if (isset($_POST['create_memo']) && $user['role'] == 'admin') {
+    try {
+        if (!isset($_POST['visible_to']) || empty($_POST['visible_to'])) {
+            throw new Exception("Please select at least one role that can view this memo.");
+        }
+
+        $title = sanitizeInput($_POST['title']);
+        $content = sanitizeInput($_POST['content']);
+        $created_by = $user_id;
+        
+        // Start transaction
+        $conn->begin_transaction();
+        
+        // Insert memo
+        $sql = "INSERT INTO memos (title, content, created_by) VALUES (?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssi", $title, $content, $created_by);
+        
+        if ($stmt->execute()) {
+            $memo_id = $conn->insert_id;
+            
+            // Handle visibility settings
+            foreach ($_POST['visible_to'] as $role) {
+                $role = sanitizeInput($role);
+                $sql = "INSERT INTO memo_visibility (memo_id, visible_to_role) VALUES (?, ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("is", $memo_id, $role);
+                $stmt->execute();
+            }
+            
+            // Handle image uploads
+            if (!empty($_FILES['memo_images']['name'][0])) {
+                $file_count = count($_FILES['memo_images']['name']);
+                
+                for ($i = 0; $i < $file_count; $i++) {
+                    $file_name = $_FILES['memo_images']['name'][$i];
+                    $file_tmp = $_FILES['memo_images']['tmp_name'][$i];
+                    $file_error = $_FILES['memo_images']['error'][$i];
+                    
+                    if ($file_error === 0) {
+                        $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+                        $allowed_ext = array('jpg', 'jpeg', 'png', 'gif');
+                        
+                        if (in_array($file_ext, $allowed_ext)) {
+                            $new_file_name = uniqid('memo_') . '.' . $file_ext;
+                            $file_destination = $upload_dir . $new_file_name;
+                            
+                            if (move_uploaded_file($file_tmp, $file_destination)) {
+                                $sql = "INSERT INTO memo_images (memo_id, image_path, image_name) VALUES (?, ?, ?)";
+                                $stmt = $conn->prepare($sql);
+                                $stmt->bind_param("iss", $memo_id, $file_destination, $file_name);
+                                $stmt->execute();
+                            }
+                        }
+                    }
+                }
+            }
+            
+            $conn->commit();
+            $success_message = "Memo created successfully!";
+        } else {
+            throw new Exception("Error creating memo: " . $conn->error);
+        }
+    } catch (Exception $e) {
+        $conn->rollback();
+        $error_message = "Error creating memo: " . $e->getMessage();
+    }
+}
+
+// Get current tab and search
+$current_tab = isset($_GET['tab']) ? sanitizeInput($_GET['tab']) : 'all';
+$search_query = isset($_GET['search']) ? sanitizeInput($_GET['search']) : '';
+$search_active = !empty($search_query);
+
+// Build the base query based on user role and tab
+$base_sql = "";
+$where_conditions = [];
+$params = [];
+$param_types = "";
+
+if ($user['role'] == 'admin') {
+    $base_sql = "SELECT m.*, u.name as creator_name, GROUP_CONCAT(DISTINCT mv.visible_to_role) as visible_roles 
+                FROM memos m 
+                JOIN users u ON m.created_by = u.id 
+                LEFT JOIN memo_visibility mv ON m.memo_id = mv.memo_id";
+} else {
+    // Non-admin users see memos visible to their role
+    $role = $user['role'];
+    $base_sql = "SELECT m.*, u.name as creator_name 
+                FROM memos m 
+                JOIN users u ON m.created_by = u.id 
+                JOIN memo_visibility mv ON m.memo_id = mv.memo_id 
+                WHERE mv.visible_to_role = ?";
+    $params[] = $role;
+    $param_types .= "s";
+}
+
+// Add search condition if search is active
+if ($search_active) {
+    $where_conditions[] = "(m.title LIKE ? OR m.content LIKE ?)";
+    $search_param = "%$search_query%";
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $param_types .= "ss";
+}
+
+// Complete the SQL query
+$where_clause = !empty($where_conditions) ? ($user['role'] == 'admin' ? "WHERE " : "AND ") . implode(" AND ", $where_conditions) : "";
+$sql = $base_sql . " " . $where_clause . " GROUP BY m.memo_id ORDER BY m.created_at DESC";
+
+// Execute the query
+$stmt = $conn->prepare($sql);
+if (!empty($params)) {
+    $stmt->bind_param($param_types, ...$params);
+}
+$stmt->execute();
+$result = $stmt->get_result();
+
+$memos = [];
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $memos[] = $row;
+    }
+}
+
+// Get images for each memo
+foreach ($memos as &$memo) {
+    $memo_id = $memo['memo_id'];
+    $sql = "SELECT * FROM memo_images WHERE memo_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $memo_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $memo['images'] = [];
+    while ($row = $result->fetch_assoc()) {
+        $memo['images'][] = $row;
+    }
+}
+unset($memo);
+
+// Handle view memo request
+$view_memo = null;
+if (isset($_GET['view_memo'])) {
+    $memo_id = (int)$_GET['view_memo'];
+    
+    // Get memo details based on user role
+    if ($user['role'] == 'admin') {
+        $sql = "SELECT m.*, u.name as creator_name, 
+                GROUP_CONCAT(DISTINCT mv.visible_to_role) as visible_roles
+                FROM memos m 
+                JOIN users u ON m.created_by = u.id 
+                LEFT JOIN memo_visibility mv ON m.memo_id = mv.memo_id 
+                WHERE m.memo_id = ?
+                GROUP BY m.memo_id";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $memo_id);
+    } else {
+        $role = $user['role'];
+        $sql = "SELECT m.*, u.name as creator_name 
+                FROM memos m 
+                JOIN users u ON m.created_by = u.id 
+                JOIN memo_visibility mv ON m.memo_id = mv.memo_id 
+                WHERE m.memo_id = ? AND mv.visible_to_role = ?
+                GROUP BY m.memo_id";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("is", $memo_id, $role);
+    }
+    
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $view_memo = $result->fetch_assoc();
+        
+        // Get memo images
+        $sql = "SELECT * FROM memo_images WHERE memo_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $memo_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $view_memo['images'] = [];
+        while ($row = $result->fetch_assoc()) {
+            $view_memo['images'][] = $row;
+        }
+    }
+}
+
+// Get edit memo data
+$edit_memo = null;
+if (isset($_GET['edit_memo']) && $user['role'] == 'admin') {
+    $memo_id = (int)$_GET['edit_memo'];
+    
+    $sql = "SELECT m.*, GROUP_CONCAT(DISTINCT mv.visible_to_role) as visible_roles 
+            FROM memos m 
+            LEFT JOIN memo_visibility mv ON m.memo_id = mv.memo_id 
+            WHERE m.memo_id = ?
+            GROUP BY m.memo_id";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $memo_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $edit_memo = $result->fetch_assoc();
+        
+        // Get memo images
+        $sql = "SELECT * FROM memo_images WHERE memo_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $memo_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $edit_memo['images'] = [];
+        while ($row = $result->fetch_assoc()) {
+            $edit_memo['images'][] = $row;
+        }
+        
+        $edit_memo['visible_roles_array'] = explode(',', $edit_memo['visible_roles']);
+    }
+}
+?>
