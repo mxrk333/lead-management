@@ -3,6 +3,9 @@ session_start();
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
+// Set timezone to ensure accurate time display
+date_default_timezone_set('America/New_York'); // Adjust to your timezone
+
 // Enable error reporting
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -81,12 +84,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acknowledge_memo'])) 
         $check_stmt->execute();
         $result = $check_stmt->get_result();
         
+        // Use current timestamp to ensure accurate time recording
+        $current_time = date('Y-m-d H:i:s');
+        
         if ($result->num_rows === 0) {
-            $stmt = $conn->prepare("INSERT INTO memo_read_status (memo_id, employee_id, read_status, read_at) VALUES (?, ?, 1, NOW())");
-            $stmt->bind_param("ii", $memo_id, $user_id);
+            $stmt = $conn->prepare("INSERT INTO memo_read_status (memo_id, employee_id, read_status, read_at) VALUES (?, ?, 1, ?)");
+            $stmt->bind_param("iis", $memo_id, $user_id, $current_time);
         } else {
-            $stmt = $conn->prepare("UPDATE memo_read_status SET read_status = 1, read_at = NOW() WHERE memo_id = ? AND employee_id = ?");
-            $stmt->bind_param("ii", $memo_id, $user_id);
+            $stmt = $conn->prepare("UPDATE memo_read_status SET read_status = 1, read_at = ? WHERE memo_id = ? AND employee_id = ?");
+            $stmt->bind_param("sii", $current_time, $memo_id, $user_id);
         }
         
         $stmt->execute();
@@ -873,12 +879,12 @@ sort($team_names);
             opacity: 0.5;
             cursor: not-allowed;
             background: var(--gray-400);
-}
+        }
 
-.btn-acknowledge:disabled:hover {
-    background: var(--gray-400);
-    transform: none;
-}
+        .btn-acknowledge:disabled:hover {
+            background: var(--gray-400);
+            transform: none;
+        }
     </style>
 </head>
 <body>

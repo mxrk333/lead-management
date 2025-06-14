@@ -3,6 +3,9 @@ session_start();
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
+// Set timezone to ensure accurate time display
+date_default_timezone_set('America/New_York'); // Adjust to your timezone
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -163,8 +166,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acknowledge_memo'])) 
             throw new Exception("You don't have permission to acknowledge this memo.");
         }
         
-        $stmt = $conn->prepare("INSERT INTO memo_read_status (memo_id, employee_id, read_status, read_at) VALUES (?, ?, 1, NOW()) ON DUPLICATE KEY UPDATE read_status = 1, read_at = NOW()");
-        $stmt->bind_param("ii", $memo_id, $user_id);
+        // Use current timestamp to ensure accurate time recording
+        $current_time = date('Y-m-d H:i:s');
+        $stmt = $conn->prepare("INSERT INTO memo_read_status (memo_id, employee_id, read_status, read_at) VALUES (?, ?, 1, ?) ON DUPLICATE KEY UPDATE read_status = 1, read_at = ?");
+        $stmt->bind_param("iiss", $memo_id, $user_id, $current_time, $current_time);
         $stmt->execute();
         
         header("Location: memo-details.php?id=" . $memo_id . "&acknowledged=1");
@@ -534,9 +539,14 @@ function isPDF($file_path) {
             background: var(--gray-50);
             border-top: 1px solid var(--gray-200);
             display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .memo-actions-top {
+            display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            gap: 2rem;
+            align-items: center;
         }
 
         .status-badge {
@@ -604,8 +614,8 @@ function isPDF($file_path) {
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            align-items: flex-end;
-            min-width: 350px;
+            align-items: flex-start;
+            max-width: 400px;
         }
 
         .acknowledgment-checkbox {
@@ -614,13 +624,13 @@ function isPDF($file_path) {
             gap: 0.75rem;
             font-size: 0.875rem;
             line-height: 1.5;
-            max-width: 350px;
             padding: 0.75rem;
             background: white;
             border: 1px solid var(--gray-200);
             border-radius: var(--border-radius);
             cursor: pointer;
             transition: all 0.2s ease;
+            width: 100%;
         }
 
         .acknowledgment-checkbox:hover {
@@ -782,7 +792,7 @@ function isPDF($file_path) {
                 grid-template-columns: 1fr;
             }
 
-            .memo-actions {
+            .memo-actions-top {
                 flex-direction: column;
                 gap: 1rem;
                 align-items: stretch;
@@ -790,14 +800,11 @@ function isPDF($file_path) {
 
             .acknowledgment-form {
                 align-items: stretch;
+                max-width: none;
             }
 
             .btn-acknowledge {
                 justify-content: center;
-            }
-
-            .acknowledgment-checkbox {
-                max-width: none;
             }
         }
     </style>
@@ -925,39 +932,45 @@ function isPDF($file_path) {
                     </div>
 
                     <div class="memo-actions">
-                        <div>
-                            <?php if ($memo['read_status'] == 1): ?>
-                                <span class="status-badge read">
-                                    <i class="fas fa-check-circle"></i> 
-                                    Acknowledged on <?php echo date('M j, Y', strtotime($memo['read_at'])); ?>
-                                </span>
-                            <?php else: ?>
-                                <span class="status-badge unread">
-                                    <i class="fas fa-circle"></i> Not Acknowledged
-                                </span>
-                            <?php endif; ?>
+                        <div class="memo-actions-top">
+                            <div>
+                                <?php if ($memo['read_status'] == 1): ?>
+                                    <span class="status-badge read">
+                                        <i class="fas fa-check-circle"></i> 
+                                        Acknowledged on <?php echo date('F j, Y \a\t g:i A', strtotime($memo['read_at'])); ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="status-badge unread">
+                                        <i class="fas fa-circle"></i> Not Acknowledged
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div>
+                                <?php if ($memo['read_status'] == 1): ?>
+                                    <button class="btn-acknowledge btn-acknowledged" disabled>
+                                        <i class="fas fa-check"></i> Already Acknowledged
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
+                        <?php if ($memo['read_status'] != 1): ?>
                         <div>
-                            <?php if ($memo['read_status'] == 1): ?>
-                                <button class="btn-acknowledge btn-acknowledged" disabled>
-                                    <i class="fas fa-check"></i> Already Acknowledged
+                            <form method="POST" class="acknowledgment-form">
+                                <label class="acknowledgment-checkbox">
+                                    <input type="checkbox" id="acknowledge-checkbox-details" 
+                                           onchange="toggleAcknowledgeButton()">
+                                    <span>I hereby acknowledge receipt of this memo, understand the information provided, and will keep it for future reference.</span>
+                                </label>
+                                <button type="submit" name="acknowledge_memo" 
+                                        id="acknowledge-btn-details"
+                                        class="btn-acknowledge" disabled>
+                                    <i class="fas fa-check"></i> Acknowledge Memo
                                 </button>
-                            <?php else: ?>
-                                <form method="POST" class="acknowledgment-form">
-                                    <label class="acknowledgment-checkbox">
-                                        <input type="checkbox" id="acknowledge-checkbox-details" 
-                                               onchange="toggleAcknowledgeButton()">
-                                        <span>I hereby acknowledge receipt of this memo, understand the information provided, and will keep it for future reference.</span>
-                                    </label>
-                                    <button type="submit" name="acknowledge_memo" 
-                                            id="acknowledge-btn-details"
-                                            class="btn-acknowledge" disabled>
-                                        <i class="fas fa-check"></i> Acknowledge Memo
-                                    </button>
-                                </form>
-                            <?php endif; ?>
+                            </form>
                         </div>
+                        <?php endif; ?>
                     </div>
                     
                     <?php if ($canCreateMemos): ?>
