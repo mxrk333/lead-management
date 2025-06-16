@@ -87,6 +87,12 @@ $isSuperUser = isSuperUser($user['username']);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            
+            /* Sidebar variables */
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 80px;
+            --transition-duration: 0.3s;
+            --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         * {
@@ -103,30 +109,70 @@ $isSuperUser = isSuperUser($user['username']);
             margin: 0;
             min-height: 100vh;
             display: flex;
+            overflow-x: hidden;
         }
         
         .container {
             display: flex;
             width: 100%;
             min-height: 100vh;
+            position: relative;
         }
 
+        /* Enhanced main content with proper space utilization */
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
             background-color: var(--gray-50);
+            margin-left: var(--sidebar-width);
+            transition: margin-left var(--transition-duration) var(--transition-timing);
+            width: calc(100vw - var(--sidebar-width));
+            max-width: calc(100vw - var(--sidebar-width));
+            position: relative;
+            overflow-x: hidden;
         }
-        
+
+        /* Sidebar collapsed state - maximize space usage */
+        body.sidebar-collapsed .main-content {
+            margin-left: var(--sidebar-collapsed-width);
+            width: calc(100vw - var(--sidebar-collapsed-width));
+            max-width: calc(100vw - var(--sidebar-collapsed-width));
+        }
+
+        /* Mobile sidebar states */
+        body.sidebar-open .main-content {
+            transform: translateX(var(--sidebar-width));
+        }
+
+        /* Dashboard container with full width utilization */
         .dashboard {
             flex: 1;
             padding: 1.5rem;
             width: 100%;
+            max-width: 100%;
             margin: 0;
             min-height: calc(100vh - 100px);
             display: flex;
             flex-direction: column;
+            transition: all var(--transition-duration) var(--transition-timing);
+            box-sizing: border-box;
+        }
+
+        /* Enhanced Stats Container with better space utilization */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            transition: all var(--transition-duration) var(--transition-timing);
+            width: 100%;
+        }
+
+        /* Adjust grid for sidebar collapsed state - use extra space */
+        body.sidebar-collapsed .stats-container {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         }
         
         /* Dashboard Header */
@@ -140,6 +186,7 @@ $isSuperUser = isSuperUser($user['username']);
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
             border: 1px solid var(--gray-200);
+            transition: all var(--transition-duration) var(--transition-timing);
         }
         
         .dashboard h2 {
@@ -172,13 +219,7 @@ $isSuperUser = isSuperUser($user['username']);
             margin-right: 0.25rem;
         }
         
-        /* Stats Container */
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
+        
         
         .stat-card {
             background: white;
@@ -186,6 +227,15 @@ $isSuperUser = isSuperUser($user['username']);
             padding: 1.5rem;
             box-shadow: var(--shadow);
             border: 1px solid var(--gray-200);
+            transition: all var(--transition-duration) var(--transition-timing);
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
         
         .stat-icon {
@@ -199,8 +249,13 @@ $isSuperUser = isSuperUser($user['username']);
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all var(--transition-duration) var(--transition-timing);
         }
         
+        .stat-info {
+            flex: 1;
+        }
+
         .stat-info h3 {
             font-size: 0.875rem;
             color: var(--gray-500);
@@ -215,7 +270,7 @@ $isSuperUser = isSuperUser($user['username']);
             margin: 0;
         }
         
-        /* Recent Leads Section */
+        /* Enhanced Recent Leads Section */
         .recent-leads {
             background: white;
             border-radius: var(--border-radius);
@@ -223,6 +278,7 @@ $isSuperUser = isSuperUser($user['username']);
             border: 1px solid var(--gray-200);
             margin-bottom: 1.5rem;
             overflow: hidden;
+            transition: all var(--transition-duration) var(--transition-timing);
         }
         
         .recent-leads-header {
@@ -256,22 +312,30 @@ $isSuperUser = isSuperUser($user['username']);
             font-weight: 500;
             font-size: 0.875rem;
             text-decoration: none;
-            transition: all 0.2s ease;
+            transition: all var(--transition-duration) var(--transition-timing);
         }
         
         .view-all:hover {
             background: var(--primary-hover);
             transform: translateY(-1px);
+            text-decoration: none;
+            color: white;
         }
         
+        /* Enhanced table container to use full width */
         .leads-table-container {
-            overflow: auto;
+            overflow-x: auto;
+            transition: all var(--transition-duration) var(--transition-timing);
+            width: 100%;
+            max-width: 100%;
         }
         
         .leads-table {
             width: 100%;
+            min-width: 800px;
             border-collapse: separate;
             border-spacing: 0;
+            table-layout: auto;
         }
         
         .leads-table th {
@@ -285,6 +349,9 @@ $isSuperUser = isSuperUser($user['username']);
             border-bottom: 1px solid var(--gray-200);
             text-align: left;
             white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         .leads-table td {
@@ -292,6 +359,7 @@ $isSuperUser = isSuperUser($user['username']);
             font-size: 0.875rem;
             color: var(--gray-700);
             border-bottom: 1px solid var(--gray-200);
+            transition: all var(--transition-duration) var(--transition-timing);
         }
         
         .leads-table tr:hover td {
@@ -307,6 +375,7 @@ $isSuperUser = isSuperUser($user['username']);
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 500;
+            transition: all var(--transition-duration) var(--transition-timing);
         }
         
         .temperature.hot {
@@ -340,7 +409,7 @@ $isSuperUser = isSuperUser($user['username']);
             border-radius: var(--border-radius);
             border: none;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all var(--transition-duration) var(--transition-timing);
             font-size: 0.875rem;
             text-decoration: none;
         }
@@ -368,10 +437,72 @@ $isSuperUser = isSuperUser($user['username']);
         .btn-view:hover,
         .btn-edit:hover:not(.disabled) {
             transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
         }
-        
-        /* Responsive Design */
-        @media (max-width: 1200px) {
+
+        /* Loading states and animations */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive adjustments for better space usage */
+        @media (min-width: 1400px) {
+            .stats-container {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            body.sidebar-collapsed .stats-container {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+
+        @media (min-width: 1200px) and (max-width: 1399px) {
+            .stats-container {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            body.sidebar-collapsed .stats-container {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .stats-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            body.sidebar-collapsed .stats-container {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .dashboard {
+                padding: 1.25rem;
+            }
+        }
+
+        @media (max-width: 991px) {
+            .main-content {
+                margin-left: 0;
+                width: 100vw;
+                max-width: 100vw;
+            }
+
+            body.sidebar-collapsed .main-content {
+                margin-left: 0;
+                width: 100vw;
+                max-width: 100vw;
+            }
+
             .stats-container {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -386,10 +517,27 @@ $isSuperUser = isSuperUser($user['username']);
                 flex-direction: column;
                 gap: 1rem;
                 align-items: flex-start;
+                padding: 1rem;
             }
             
             .stats-container {
                 grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+                min-height: 100px;
+            }
+
+            .stat-icon {
+                width: 2.5rem;
+                height: 2.5rem;
+                font-size: 1.25rem;
+            }
+
+            .stat-info p {
+                font-size: 1.25rem;
             }
             
             .recent-leads {
@@ -400,11 +548,16 @@ $isSuperUser = isSuperUser($user['username']);
             .recent-leads-header {
                 flex-direction: column;
                 gap: 1rem;
+                padding: 1rem;
             }
             
             .view-all {
                 width: 100%;
                 justify-content: center;
+            }
+
+            .leads-table {
+                min-width: 600px;
             }
             
             .leads-table th.hide-mobile,
@@ -414,11 +567,117 @@ $isSuperUser = isSuperUser($user['username']);
             
             .action-buttons {
                 flex-direction: column;
+                gap: 0.25rem;
             }
             
             .btn-view,
             .btn-edit {
                 width: 100%;
+                height: 1.75rem;
+                font-size: 0.75rem;
+            }
+
+            /* Mobile sidebar overlay */
+            body.sidebar-open::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+                opacity: 1;
+                transition: opacity var(--transition-duration) var(--transition-timing);
+            }
+
+            body.sidebar-open .main-content {
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .dashboard {
+                padding: 0.75rem;
+            }
+
+            .dashboard-header {
+                padding: 0.75rem;
+                margin-bottom: 1rem;
+            }
+
+            .dashboard h2 {
+                font-size: 1.25rem;
+            }
+
+            .superuser-badge {
+                font-size: 0.625rem;
+                padding: 0.125rem 0.375rem;
+            }
+
+            .stat-card {
+                padding: 0.75rem;
+            }
+
+            .recent-leads-header {
+                padding: 0.75rem;
+            }
+
+            .leads-table th,
+            .leads-table td {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.8rem;
+            }
+
+            .temperature {
+                font-size: 0.625rem;
+                padding: 0.125rem 0.5rem;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
+            .action-buttons {
+                display: none;
+            }
+
+            .view-all {
+                display: none;
+            }
+
+            .dashboard {
+                padding: 0;
+            }
+
+            .stat-card,
+            .recent-leads {
+                box-shadow: none;
+                border: 1px solid var(--gray-300);
+            }
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .stat-card,
+            .recent-leads {
+                border: 2px solid var(--gray-400);
+            }
+
+            .temperature {
+                border: 1px solid currentColor;
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
             }
         }
     </style>
@@ -431,7 +690,7 @@ $isSuperUser = isSuperUser($user['username']);
         <div class="main-content">
             <?php include 'includes/header.php'; ?>
             
-            <div class="dashboard">
+            <div class="dashboard fade-in">
                 <div class="dashboard-header">
                     <h2>
                         <i class="fas fa-tachometer-alt"></i> Dashboard
@@ -571,6 +830,177 @@ $isSuperUser = isSuperUser($user['username']);
         </div>
     </div>
     
+    <script>
+        // Enhanced sidebar responsiveness script
+        document.addEventListener('DOMContentLoaded', function() {
+            const body = document.body;
+            const mainContent = document.querySelector('.main-content');
+            
+            // Handle sidebar toggle events
+            document.addEventListener('sidebarToggle', function(e) {
+                const isCollapsed = e.detail.collapsed;
+                
+                if (isCollapsed) {
+                    body.classList.add('sidebar-collapsed');
+                } else {
+                    body.classList.remove('sidebar-collapsed');
+                }
+                
+                // Trigger resize event to update any charts or dynamic content
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 300);
+            });
+            
+            // Handle mobile sidebar events
+            document.addEventListener('mobileSidebarToggle', function(e) {
+                const isOpen = e.detail.open;
+                
+                if (isOpen) {
+                    body.classList.add('sidebar-open');
+                } else {
+                    body.classList.remove('sidebar-open');
+                }
+            });
+            
+            // Handle window resize
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    // Update any responsive elements that need recalculation
+                    updateResponsiveElements();
+                }, 250);
+            });
+            
+            // Enhanced responsive handling function
+            function updateResponsiveElements() {
+                const mainContent = document.querySelector('.main-content');
+                const dashboard = document.querySelector('.dashboard');
+                const statsContainer = document.querySelector('.stats-container');
+                
+                if (!mainContent || !dashboard || !statsContainer) return;
+                
+                // Force recalculation of dimensions
+                const availableWidth = mainContent.offsetWidth - 48; // Account for padding
+                
+                // Update stats grid based on available width
+                const cardMinWidth = 220;
+                const gap = 16;
+                const maxColumns = Math.floor((availableWidth + gap) / (cardMinWidth + gap));
+                
+                // Determine optimal columns based on screen size and sidebar state
+                let optimalColumns;
+                const isSidebarCollapsed = document.body.classList.contains('sidebar-collapsed');
+                
+                if (window.innerWidth >= 1400) {
+                    optimalColumns = isSidebarCollapsed ? Math.min(maxColumns, 6) : Math.min(maxColumns, 5);
+                } else if (window.innerWidth >= 1200) {
+                    optimalColumns = isSidebarCollapsed ? Math.min(maxColumns, 5) : Math.min(maxColumns, 4);
+                } else if (window.innerWidth >= 992) {
+                    optimalColumns = isSidebarCollapsed ? Math.min(maxColumns, 4) : Math.min(maxColumns, 3);
+                } else if (window.innerWidth >= 768) {
+                    optimalColumns = 2;
+                } else {
+                    optimalColumns = 1;
+                }
+                
+                // Apply the calculated columns
+                if (optimalColumns > 0) {
+                    statsContainer.style.gridTemplateColumns = `repeat(${optimalColumns}, 1fr)`;
+                }
+                
+                // Update table responsiveness
+                const tables = document.querySelectorAll('.leads-table-container');
+                tables.forEach(table => {
+                    table.style.width = '100%';
+                    table.style.maxWidth = '100%';
+                });
+                
+                // Force layout recalculation
+                mainContent.style.width = mainContent.style.width;
+                dashboard.style.width = '100%';
+            }
+            
+            // Initialize responsive elements
+            updateResponsiveElements();
+            
+            // Add smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+            
+            // Add loading states for action buttons
+            document.querySelectorAll('.btn-view, .btn-edit:not(.disabled)').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (!this.classList.contains('disabled')) {
+                        this.classList.add('loading');
+                        this.style.pointerEvents = 'none';
+                        
+                        // Remove loading state after navigation (fallback)
+                        setTimeout(() => {
+                            this.classList.remove('loading');
+                            this.style.pointerEvents = '';
+                        }, 2000);
+                    }
+                });
+            });
+            
+            // Add intersection observer for fade-in animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('fade-in');
+                    }
+                });
+            }, observerOptions);
+            
+            // Observe stat cards and table rows
+            document.querySelectorAll('.stat-card, .leads-table tr').forEach(el => {
+                observer.observe(el);
+            });
+        });
+        
+        // Utility function to handle responsive breakpoints
+        function handleBreakpointChange() {
+            const breakpoints = {
+                mobile: window.matchMedia('(max-width: 768px)'),
+                tablet: window.matchMedia('(max-width: 992px)'),
+                desktop: window.matchMedia('(min-width: 993px)')
+            };
+            
+            Object.keys(breakpoints).forEach(key => {
+                breakpoints[key].addEventListener('change', (e) => {
+                    document.body.classList.toggle(`is-${key}`, e.matches);
+                    
+                    // Trigger custom event for other components to listen to
+                    document.dispatchEvent(new CustomEvent('breakpointChange', {
+                        detail: { breakpoint: key, matches: e.matches }
+                    }));
+                });
+                
+                // Set initial state
+                document.body.classList.toggle(`is-${key}`, breakpoints[key].matches);
+            });
+        }
+        
+        // Initialize breakpoint handling
+        handleBreakpointChange();
+    </script>
     <script src="assets/js/script.js"></script>
 </body>
 </html>
