@@ -1081,7 +1081,7 @@ sort($team_names);
                                                         <input type="checkbox" id="acknowledge-checkbox-<?php echo $memo['id']; ?>" 
                                                                onchange="toggleAcknowledgeButton(<?php echo $memo['id']; ?>)" 
                                                                style="margin-top: 0.125rem;">
-                                                        <span style="line-height: 1.3;">I hereby acknowledge receipt of this memo, understand the information provided, and will keep it for future reference.</span>
+                                                        <span style="line-height: 1.3; font-style: italic;">Acknowledged with clarity and confidence — this memo reflects our collective goals, and I am proud to contribute to them.</span>
                                                     </label>
                                                 </div>
                                                 <input type="hidden" name="memo_id" value="<?php echo $memo['id']; ?>">

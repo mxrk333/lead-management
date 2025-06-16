@@ -1,3 +1,26 @@
+# System Ownership and Usage Notice
+
+This system is the proprietary asset of Inner SPARC Realty Corporation and the following developers:
+
+- Mark Christian Patigayon
+- Yenzo Teo Gervacio
+
+Unauthorized use, reproduction, redistribution, or inclusion of this system—whether in personal portfolios, commercial projects, or any other form—is strictly prohibited. Proper credit must always be given to the original developers listed above.
+
+This system is intended solely for the operations and benefit of Inner SPARC Realty Corporation. Any misuse or use beyond its intended scope, without formal written consent, will be treated as a violation of intellectual property rights.
+
+Legal Action Notice:
+Any individual or entity found reproducing, copying, or misrepresenting ownership of this system without authorization will be subject to formal complaints, legal action, and potential civil liability as per applicable laws.
+
+# Respect the ownership, credit the developers, and use the system only as authorized. Any form of misuse will not be tolerated and will result in serious consequences.
+
+
+###### Mark Christian Patigayon: Happy Developing OJT's and future developers! :))) #####
+
+
+-------------------------------------------------------------------------------------------------------
+
+
 # InnerSPARC Lead Management System
 
 A comprehensive web-based lead management system designed specifically for real estate professionals to track, manage, and convert leads efficiently.
@@ -48,7 +71,7 @@ A comprehensive web-based lead management system designed specifically for real 
 
 ### 1. Clone the Repository
 \`\`\`bash
-git clone https://github.com/yourusername/innersparc-lead-management.git
+git clone https://github.com/mxrkrkk/innersparc-lead-management.git
 cd innersparc-lead-management
 \`\`\`
 
@@ -94,3 +117,6 @@ RewriteRule ^(.*)$ index.php [QSA,L]
 Header always set X-Content-Type-Options nosniff
 Header always set X-Frame-Options DENY
 Header always set X-XSS-Protection "1; mode=block"
+
+
+
