@@ -84,6 +84,16 @@ $links = [
         'category' => 'social'
     ],
     [
+        'title' => 'Inner SPARC — Official Facebook',
+        'description' => 'Visit our official Facebook page for updates and announcements',
+        'url' => 'https://www.facebook.com/InnerSPARCRealtyServices',
+        'icon' => 'fa-brands fa-facebook',
+        'color' => '#3b82f6',
+        'admin_only' => false,
+        'manager_only' => false,
+        'category' => 'social'
+    ],
+    [
         'title' => 'Company Website',
         'description' => 'Visit our official website for more information',
         'url' => 'https://innersparcrealty.com/',

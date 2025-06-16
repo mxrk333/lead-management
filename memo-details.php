@@ -615,7 +615,7 @@ function isPDF($file_path) {
             flex-direction: column;
             gap: 1rem;
             align-items: flex-start;
-            max-width: 400px;
+            max-width: 800px;
         }
 
         .acknowledgment-checkbox {
@@ -961,7 +961,7 @@ function isPDF($file_path) {
                                 <label class="acknowledgment-checkbox">
                                     <input type="checkbox" id="acknowledge-checkbox-details" 
                                            onchange="toggleAcknowledgeButton()">
-                                    <span>I hereby acknowledge receipt of this memo, understand the information provided, and will keep it for future reference.</span>
+                                    <span style="line-height: 1.3; font-style: italic;">Acknowledged with clarity and confidence — this memo reflects our collective goals, and I am proud to contribute to them.</span>
                                 </label>
                                 <button type="submit" name="acknowledge_memo" 
                                         id="acknowledge-btn-details"

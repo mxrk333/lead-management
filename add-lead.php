@@ -1,87 +1,433 @@
 <?php
+// Enhanced add-lead.php with specific focus on project models fetching
 session_start();
-require_once 'config/database.php';
-require_once 'includes/functions.php';
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+// Enable error logging
+ini_set('log_errors', 1);
+ini_set('error_log', dirname(__FILE__) . '/php_errors.log');
+
+// Debug logging function
+function debugLog($message) {
+    $timestamp = date('Y-m-d H:i:s');
+    error_log("[ADD-LEAD DEBUG] $timestamp - $message");
+}
+
+// Enhanced error handling
+function handleError($message, $redirect_page = 'leads.php') {
+    debugLog("ERROR: $message");
+    $_SESSION['error_message'] = $message;
+    header("Location: $redirect_page");
     exit();
 }
 
-// Get user information
-$user_id = $_SESSION['user_id'];
-$user = getUserById($user_id);
+debugLog("Add lead script started");
 
-// Get developers, project models, and lead sources for dropdowns
-$developers = getDevelopers();
-$projectModels = getProjectModels();
-$leadSources = getLeadSources();
+// Check if required files exist
+$required_files = [
+    'config/database.php',
+    'includes/functions.php'
+];
 
-$success = '';
-$error = '';
-
-// Process form submission
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Collect form data
-    $clientName = $_POST['client_name'];
-    $phone = $_POST['phone'];
-    $email = $_POST['email'];
-    $facebook = isset($_POST['facebook']) ? $_POST['facebook'] : '';
-    $linkedin = isset($_POST['linkedin']) ? $_POST['linkedin'] : '';
-    $temperature = $_POST['temperature'];
-    $status = $_POST['status'];
-    $developer = $_POST['developer'];
-    $projectModel = $_POST['project_model'];
-    // Clean and convert price
-    $price = str_replace(',', '', $_POST['price']);
-    $price = floatval($price);
-    $remarks = $_POST['remarks'];
-    $source = !empty($_POST['source']) ? $_POST['source'] : null;
-    
-    // Validate required fields
-    if (empty($clientName) || empty($phone) || empty($email) || empty($temperature) || 
-        empty($status) || empty($developer) || empty($projectModel) || empty($price) || empty($source)) {
-        $error = "Please fill in all required fields";
-    } else {
-        // Add lead to database
-        $result = addLead($user_id, $clientName, $phone, $email, $facebook, $linkedin, 
-                          $temperature, $status, $source, $developer, $projectModel, $price, $remarks);
-        
-        if ($result) {
-            $success = "Lead added successfully";
-            // Redirect after short delay
-            header("refresh:2;url=leads.php");
-        } else {
-            $error = "Failed to add lead. Please try again.";
-        }
+foreach ($required_files as $file) {
+    if (!file_exists($file)) {
+        handleError("Required file missing: $file");
     }
 }
 
-function getLeadSources() {
-    // Get all possible values from the source ENUM
-    $conn = getDbConnection();
-    $sources = [];
-    
-    // Get ENUM values directly from the column
-    $stmt = $conn->prepare("SHOW COLUMNS FROM leads WHERE Field = 'source'");
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $row = $result->fetch_assoc();
-    
-    // Parse ENUM values from the type definition
-    if ($row && preg_match("/^enum$$'(.*)'\$$$/", $row['Type'], $matches)) {
-        $values = explode("','", $matches[1]);
-        foreach ($values as $value) {
-            $sources[] = [
-                'id' => $value,
-                'name' => $value
-            ];
-        }
+try {
+    require_once 'config/database.php';
+    require_once 'includes/functions.php';
+    debugLog("Required files loaded successfully");
+} catch (Exception $e) {
+    handleError("Failed to load required files: " . $e->getMessage());
+}
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+    debugLog("User not logged in or invalid session");
+    header("Location: login.php?error=session_expired");
+    exit();
+}
+
+$user_id = intval($_SESSION['user_id']);
+debugLog("Processing request for user ID: $user_id");
+
+// Get user information with error handling
+try {
+    if (!function_exists('getUserById')) {
+        throw new Exception("getUserById function not found");
     }
     
-    // If no sources found from database, provide default values based on the schema
+    $user = getUserById($user_id);
+    if (!$user || !is_array($user)) {
+        throw new Exception("User not found or invalid user data for ID: $user_id");
+    }
+    debugLog("User found: " . ($user['name'] ?? 'Unknown'));
+} catch (Exception $e) {
+    handleError("Failed to get user information: " . $e->getMessage());
+}
+
+// Initialize variables
+$developers = [];
+$projectModels = [];
+$leadSources = [];
+$success = '';
+$error = '';
+
+// Enhanced function to get developers with fallback
+function getDevelopersEnhanced() {
+    debugLog("Getting developers");
+    
+    try {
+        // Try the original function first
+        if (function_exists('getDevelopers')) {
+            $developers = getDevelopers();
+            if (!empty($developers)) {
+                debugLog("Got " . count($developers) . " developers from getDevelopers()");
+                return $developers;
+            }
+        }
+        
+        // Fallback: Get directly from database
+        $conn = getDbConnection();
+        if (!$conn) {
+            throw new Exception("Database connection failed");
+        }
+        
+        $developers = [];
+        
+        // Try different possible table names and structures
+        $possible_queries = [
+            "SELECT DISTINCT name FROM developers WHERE status = 'active' ORDER BY name",
+            "SELECT DISTINCT name FROM developers ORDER BY name",
+            "SELECT DISTINCT developer_name as name FROM project_models ORDER BY developer_name",
+            "SELECT DISTINCT developer as name FROM leads ORDER BY developer",
+            "SELECT DISTINCT project as name FROM leads ORDER BY project"
+        ];
+        
+        foreach ($possible_queries as $query) {
+            try {
+                debugLog("Trying query: $query");
+                $result = $conn->query($query);
+                if ($result && $result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        $developers[] = ['name' => $row['name']];
+                    }
+                    debugLog("Successfully got " . count($developers) . " developers");
+                    break;
+                }
+            } catch (Exception $e) {
+                debugLog("Query failed: " . $e->getMessage());
+                continue;
+            }
+        }
+        
+        $conn->close();
+        
+        // If still no developers, provide defaults
+        if (empty($developers)) {
+            debugLog("No developers found, using defaults");
+            $defaultDevelopers = ['Lancaster', 'Antipolo Heights', 'Pleasant Fields', 'Vista Verde', 'Golden Hills'];
+            foreach ($defaultDevelopers as $dev) {
+                $developers[] = ['name' => $dev];
+            }
+        }
+        
+        return $developers;
+        
+    } catch (Exception $e) {
+        debugLog("Error getting developers: " . $e->getMessage());
+        
+        // Return default developers
+        $defaultDevelopers = ['Lancaster', 'Antipolo Heights', 'Pleasant Fields', 'Vista Verde', 'Golden Hills'];
+        $developers = [];
+        foreach ($defaultDevelopers as $dev) {
+            $developers[] = ['name' => $dev];
+        }
+        return $developers;
+    }
+}
+
+// Enhanced function to get project models with fallback
+function getProjectModelsEnhanced() {
+    debugLog("Getting project models");
+    
+    try {
+        // Try the original function first
+        if (function_exists('getProjectModels')) {
+            $models = getProjectModels();
+            if (!empty($models)) {
+                debugLog("Got " . count($models) . " project models from getProjectModels()");
+                return $models;
+            }
+        }
+        
+        // Fallback: Get directly from database
+        $conn = getDbConnection();
+        if (!$conn) {
+            throw new Exception("Database connection failed");
+        }
+        
+        $models = [];
+        
+        // Try different possible table names and structures
+        $possible_queries = [
+            "SELECT developer_name, name FROM project_models WHERE status = 'active' ORDER BY developer_name, name",
+            "SELECT developer_name, name FROM project_models ORDER BY developer_name, name",
+            "SELECT developer_name, model_name as name FROM project_models ORDER BY developer_name, model_name",
+            "SELECT project as developer_name, model as name FROM project_models ORDER BY project, model"
+        ];
+        
+        foreach ($possible_queries as $query) {
+            try {
+                debugLog("Trying query: $query");
+                $result = $conn->query($query);
+                if ($result && $result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        $models[] = [
+                            'developer_name' => $row['developer_name'],
+                            'name' => $row['name']
+                        ];
+                    }
+                    debugLog("Successfully got " . count($models) . " project models");
+                    break;
+                }
+            } catch (Exception $e) {
+                debugLog("Query failed: " . $e->getMessage());
+                continue;
+            }
+        }
+        
+        $conn->close();
+        
+        // If still no models, provide defaults
+        if (empty($models)) {
+            debugLog("No project models found, using defaults");
+            $defaultModels = [
+                ['developer_name' => 'Lancaster', 'name' => 'Kennedy'],
+                ['developer_name' => 'Lancaster', 'name' => 'Alexandra'],
+                ['developer_name' => 'Lancaster', 'name' => 'Victoria'],
+                ['developer_name' => 'Lancaster', 'name' => 'Elizabeth'],
+                ['developer_name' => 'Antipolo Heights', 'name' => 'Sierra'],
+                ['developer_name' => 'Antipolo Heights', 'name' => 'Montana'],
+                ['developer_name' => 'Antipolo Heights', 'name' => 'Alpine'],
+                ['developer_name' => 'Antipolo Heights', 'name' => 'Summit'],
+                ['developer_name' => 'Pleasant Fields', 'name' => 'Meadow'],
+                ['developer_name' => 'Pleasant Fields', 'name' => 'Garden'],
+                ['developer_name' => 'Pleasant Fields', 'name' => 'Park'],
+                ['developer_name' => 'Pleasant Fields', 'name' => 'Grove'],
+                ['developer_name' => 'Vista Verde', 'name' => 'Emerald'],
+                ['developer_name' => 'Vista Verde', 'name' => 'Sapphire'],
+                ['developer_name' => 'Golden Hills', 'name' => 'Premium'],
+                ['developer_name' => 'Golden Hills', 'name' => 'Deluxe']
+            ];
+            $models = $defaultModels;
+        }
+        
+        return $models;
+        
+    } catch (Exception $e) {
+        debugLog("Error getting project models: " . $e->getMessage());
+        
+        // Return default models
+        $defaultModels = [
+            ['developer_name' => 'Lancaster', 'name' => 'Kennedy'],
+            ['developer_name' => 'Lancaster', 'name' => 'Alexandra'],
+            ['developer_name' => 'Lancaster', 'name' => 'Victoria'],
+            ['developer_name' => 'Lancaster', 'name' => 'Elizabeth'],
+            ['developer_name' => 'Antipolo Heights', 'name' => 'Sierra'],
+            ['developer_name' => 'Antipolo Heights', 'name' => 'Montana'],
+            ['developer_name' => 'Antipolo Heights', 'name' => 'Alpine'],
+            ['developer_name' => 'Antipolo Heights', 'name' => 'Summit'],
+            ['developer_name' => 'Pleasant Fields', 'name' => 'Meadow'],
+            ['developer_name' => 'Pleasant Fields', 'name' => 'Garden'],
+            ['developer_name' => 'Pleasant Fields', 'name' => 'Park'],
+            ['developer_name' => 'Pleasant Fields', 'name' => 'Grove']
+        ];
+        return $defaultModels;
+    }
+}
+
+// Get data for dropdowns with enhanced error handling
+try {
+    debugLog("Loading dropdown data");
+    
+    $developers = getDevelopersEnhanced();
+    debugLog("Loaded " . count($developers) . " developers");
+    
+    $projectModels = getProjectModelsEnhanced();
+    debugLog("Loaded " . count($projectModels) . " project models");
+    
+    $leadSources = getLeadSources();
+    debugLog("Loaded " . count($leadSources) . " lead sources");
+    
+} catch (Exception $e) {
+    debugLog("Error loading dropdown data: " . $e->getMessage());
+    $error = "Failed to load form data. Please refresh the page.";
+}
+
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    debugLog("Processing form submission");
+    
+    try {
+        // Collect and sanitize form data
+        $clientName = isset($_POST['client_name']) ? trim($_POST['client_name']) : '';
+        $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
+        $email = isset($_POST['email']) ? trim($_POST['email']) : '';
+        $facebook = isset($_POST['facebook']) ? trim($_POST['facebook']) : '';
+        $linkedin = isset($_POST['linkedin']) ? trim($_POST['linkedin']) : '';
+        $temperature = isset($_POST['temperature']) ? trim($_POST['temperature']) : '';
+        $status = isset($_POST['status']) ? trim($_POST['status']) : '';
+        $developer = isset($_POST['developer']) ? trim($_POST['developer']) : '';
+        $projectModel = isset($_POST['project_model']) ? trim($_POST['project_model']) : '';
+        $priceRaw = isset($_POST['price']) ? trim($_POST['price']) : '';
+        $remarks = isset($_POST['remarks']) ? trim($_POST['remarks']) : '';
+        $source = isset($_POST['source']) ? trim($_POST['source']) : '';
+        
+        debugLog("Form data collected - Client: '$clientName', Phone: '$phone', Email: '$email'");
+        debugLog("Project data - Developer: '$developer', Model: '$projectModel'");
+        
+        // Clean and convert price
+        $price = str_replace([',', ' '], '', $priceRaw);
+        $price = floatval($price);
+        
+        debugLog("Price converted from '$priceRaw' to $price");
+        
+        // Enhanced validation
+        $validation_errors = [];
+        
+        if (empty($clientName)) {
+            $validation_errors[] = "Client name is required";
+        } elseif (strlen($clientName) > 100) {
+            $validation_errors[] = "Client name is too long (max 100 characters)";
+        }
+        
+        if (empty($phone)) {
+            $validation_errors[] = "Phone number is required";
+        } elseif (!preg_match('/^\d{11}$/', $phone)) {
+            $validation_errors[] = "Phone number must be 11 digits";
+        }
+        
+        if (empty($email)) {
+            $validation_errors[] = "Email address is required";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $validation_errors[] = "Invalid email address format";
+        }
+        
+        if (empty($temperature)) {
+            $validation_errors[] = "Temperature is required";
+        } elseif (!in_array($temperature, ['Hot', 'Warm', 'Cold'])) {
+            $validation_errors[] = "Invalid temperature value";
+        }
+        
+        if (empty($status)) {
+            $validation_errors[] = "Status is required";
+        }
+        
+        if (empty($developer)) {
+            $validation_errors[] = "Project is required";
+        }
+        
+        if (empty($projectModel)) {
+            $validation_errors[] = "Project model is required";
+        }
+        
+        if ($price <= 0) {
+            $validation_errors[] = "Valid price is required";
+        } elseif ($price > 999999999.99) {
+            $validation_errors[] = "Price is too large";
+        }
+        
+        if (empty($source)) {
+            $validation_errors[] = "Lead source is required";
+        }
+        
+        if (!empty($validation_errors)) {
+            $error = implode(", ", $validation_errors);
+            debugLog("Validation failed: $error");
+        } else {
+            debugLog("Validation passed, attempting to add lead");
+            
+            // Check if addLead function exists
+            if (!function_exists('addLead')) {
+                throw new Exception("addLead function not found");
+            }
+            
+            // Add lead to database
+            $result = addLead(
+                $user_id, $clientName, $phone, $email, $facebook, $linkedin, 
+                $temperature, $status, $source, $developer, $projectModel, $price, $remarks
+            );
+            
+            if ($result) {
+                debugLog("Lead added successfully with result: " . (is_numeric($result) ? "ID $result" : "true"));
+                $success = "Lead added successfully";
+                
+                // Clear form data on success
+                $_POST = [];
+                
+                // Redirect after short delay
+                header("refresh:2;url=leads.php");
+            } else {
+                throw new Exception("addLead function returned false/null");
+            }
+        }
+        
+    } catch (Exception $e) {
+        $error = "Failed to add lead: " . $e->getMessage();
+        debugLog("CRITICAL ERROR: $error");
+    }
+}
+
+// Enhanced getLeadSources function with better error handling
+function getLeadSources() {
+    debugLog("Getting lead sources");
+    
+    try {
+        $conn = getDbConnection();
+        if (!$conn) {
+            throw new Exception("Database connection failed");
+        }
+        
+        $sources = [];
+        
+        // Get ENUM values directly from the column
+        $stmt = $conn->prepare("SHOW COLUMNS FROM leads WHERE Field = 'source'");
+        if (!$stmt) {
+            throw new Exception("Failed to prepare statement: " . $conn->error);
+        }
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to execute statement: " . $stmt->error);
+        }
+        
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        // Parse ENUM values from the type definition
+        if ($row && preg_match("/^enum$$'(.*)'$$$/", $row['Type'], $matches)) {
+            $values = explode("','", $matches[1]);
+            foreach ($values as $value) {
+                $sources[] = [
+                    'id' => $value,
+                    'name' => $value
+                ];
+            }
+            debugLog("Found " . count($sources) . " lead sources from database");
+        }
+        
+        $stmt->close();
+        $conn->close();
+        
+    } catch (Exception $e) {
+        debugLog("Error getting lead sources from database: " . $e->getMessage());
+        $sources = [];
+    }
+    
+    // If no sources found from database, provide default values
     if (empty($sources)) {
+        debugLog("Using default lead sources");
         $defaultSources = [
             'Facebook Groups', 'KKK', 'Facebook Ads', 'TikTok ads', 'Google Ads', 
             'Facebook live', 'Referral', 'Teleprospecting', 'Video Message', 
@@ -99,10 +445,21 @@ function getLeadSources() {
         }
     }
     
-    $stmt->close();
-    $conn->close();
     return $sources;
 }
+
+// Check for session messages
+if (isset($_SESSION['error_message'])) {
+    $error = $_SESSION['error_message'];
+    unset($_SESSION['error_message']);
+}
+
+if (isset($_SESSION['success_message'])) {
+    $success = $_SESSION['success_message'];
+    unset($_SESSION['success_message']);
+}
+
+debugLog("Page rendering started");
 ?>
 
 <!DOCTYPE html>
@@ -522,14 +879,54 @@ function getLeadSources() {
             font-weight: normal;
             margin-left: 0.25rem;
         }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #4f46e5;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Debug info styling */
+        .debug-info {
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <?php include 'includes/sidebar.php'; ?>
+        <?php if (file_exists('includes/sidebar.php')): ?>
+            <?php include 'includes/sidebar.php'; ?>
+        <?php endif; ?>
         
         <div class="main-content">
-            <?php include 'includes/header.php'; ?>
+            <?php if (file_exists('includes/header.php')): ?>
+                <?php include 'includes/header.php'; ?>
+            <?php endif; ?>
             
             <div class="add-lead-page">
                 <div class="page-header">
@@ -539,38 +936,64 @@ function getLeadSources() {
                 
                 <?php if ($success): ?>
                 <div class="success-message">
-                    <i class="fas fa-check-circle"></i> <?php echo $success; ?>
+                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success); ?>
                 </div>
                 <?php endif; ?>
                 
                 <?php if ($error): ?>
                 <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i> <?php echo $error; ?>
+                    <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
+                </div>
+                <?php endif; ?>
+
+                <!-- Debug Information (remove in production) -->
+                <?php if (isset($_GET['debug'])): ?>
+                <div class="debug-info">
+                    <strong>Debug Information:</strong><br>
+                    Developers loaded: <?php echo count($developers); ?><br>
+                    Project models loaded: <?php echo count($projectModels); ?><br>
+                    Lead sources loaded: <?php echo count($leadSources); ?><br>
+                    <br>
+                    <strong>Developers:</strong><br>
+                    <?php foreach (array_slice($developers, 0, 5) as $dev): ?>
+                        - <?php echo htmlspecialchars($dev['name']); ?><br>
+                    <?php endforeach; ?>
+                    <br>
+                    <strong>Project Models (first 10):</strong><br>
+                    <?php foreach (array_slice($projectModels, 0, 10) as $model): ?>
+                        - <?php echo htmlspecialchars($model['developer_name']); ?>: <?php echo htmlspecialchars($model['name']); ?><br>
+                    <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
                 
                 <div class="required-note">Fields marked with <span>*</span> are required</div>
                 
-                <form method="POST" action="add-lead.php" class="lead-form">
+                <form method="POST" action="add-lead.php" class="lead-form" id="leadForm">
                     <div class="form-section">
                         <h3>Client Information</h3>
                         
                         <div class="form-row">
                             <div class="form-group required-field">
                                 <label for="client_name">Client Name</label>
-                                <input type="text" id="client_name" name="client_name" placeholder="Enter client's full name" required>
+                                <input type="text" id="client_name" name="client_name" 
+                                       value="<?php echo htmlspecialchars($_POST['client_name'] ?? ''); ?>"
+                                       placeholder="Enter client's full name" maxlength="100" required>
                             </div>
                             
                             <div class="form-group required-field">
                                 <label for="phone">Phone Number</label>
-                                <input type="text" id="phone" name="phone" placeholder="e.g. +63 912 345 6789" required>
-                            </div>
+                                <input type="text" id="phone" name="phone" 
+                                       value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
+                                       placeholder="e.g. 09123456789" maxlength="11" pattern="\d{11}" required>
+                            </div>      
                         </div>
                         
                         <div class="form-row">
-                            <div class="form-group">
-                                <label for="email">Email Address <span class="optional-field">(Optional)</span></label>
-                                <input type="email" id="email" name="email" placeholder="client@example.com" required>
+                            <div class="form-group required-field">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" name="email" 
+                                       value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+                                       placeholder="client@example.com" maxlength="100" required>
                             </div>
                             
                             <div class="form-group required-field">
@@ -578,7 +1001,8 @@ function getLeadSources() {
                                 <select id="source" name="source" required class="source-select">
                                     <option value="">Select Lead Source</option>
                                     <?php foreach ($leadSources as $source): ?>
-                                    <option value="<?php echo htmlspecialchars($source['name']); ?>">
+                                    <option value="<?php echo htmlspecialchars($source['name']); ?>"
+                                            <?php echo (isset($_POST['source']) && $_POST['source'] === $source['name']) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($source['name']); ?>
                                     </option>
                                     <?php endforeach; ?>
@@ -589,12 +1013,16 @@ function getLeadSources() {
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="facebook">Facebook Profile <span class="optional-field">(Optional)</span></label>
-                                <input type="text" id="facebook" name="facebook" placeholder="Facebook profile URL">
+                                <input type="url" id="facebook" name="facebook" 
+                                       value="<?php echo htmlspecialchars($_POST['facebook'] ?? ''); ?>"
+                                       placeholder="Facebook profile URL" maxlength="255">
                             </div>
                             
                             <div class="form-group">
                                 <label for="linkedin">LinkedIn Profile <span class="optional-field">(Optional)</span></label>
-                                <input type="text" id="linkedin" name="linkedin" placeholder="LinkedIn profile URL">
+                                <input type="url" id="linkedin" name="linkedin" 
+                                       value="<?php echo htmlspecialchars($_POST['linkedin'] ?? ''); ?>"
+                                       placeholder="LinkedIn profile URL" maxlength="255">
                             </div>
                         </div>
                     </div>
@@ -607,9 +1035,9 @@ function getLeadSources() {
                                 <label for="temperature">Temperature</label>
                                 <select id="temperature" name="temperature" required>
                                     <option value="">Select Temperature</option>
-                                    <option value="Hot">Hot</option>
-                                    <option value="Warm">Warm</option>
-                                    <option value="Cold">Cold</option>
+                                    <option value="Hot" <?php echo (isset($_POST['temperature']) && $_POST['temperature'] === 'Hot') ? 'selected' : ''; ?>>Hot</option>
+                                    <option value="Warm" <?php echo (isset($_POST['temperature']) && $_POST['temperature'] === 'Warm') ? 'selected' : ''; ?>>Warm</option>
+                                    <option value="Cold" <?php echo (isset($_POST['temperature']) && $_POST['temperature'] === 'Cold') ? 'selected' : ''; ?>>Cold</option>
                                 </select>
                             </div>
                             
@@ -617,31 +1045,32 @@ function getLeadSources() {
                                 <label for="status">Status</label>
                                 <select id="status" name="status" required>
                                     <option value="">Select Status</option>
-                                    <option value="Inquiry">Inquiry</option>
-                                    <option value="Presentation Stage">Presentation Stage</option>
-                                    <option value="Negotiation">Negotiation</option>
-                                    <option value="Closed">Closed</option>
-                                    <option value="Lost">Lost</option>
-                                    <option value="Site Tour">Site Tour</option>
-                                    <option value="Closed Deal">Closed Deal</option>
-                                    <option value="Requirement Stage">Requirement Stage</option>
-                                    <option value="Downpayment Stage">Downpayment Stage</option>
-                                    <option value="Housing Loan Application">Housing Loan Application</option>
-                                    <option value="Loan Approval">Loan Approval</option>
-                                    <option value="Loan Takeout">Loan Takeout</option>
-                                    <option value="House Inspection">House Inspection</option>
-                                    <option value="House Turn Over">House Turn Over</option>
+                                    <?php 
+                                    $statuses = [
+                                        'Inquiry', 'Presentation Stage', 'Negotiation', 'Closed', 'Lost', 'Site Tour',
+                                        'Closed Deal', 'Requirement Stage', 'Downpayment Stage', 'Housing Loan Application',
+                                        'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over'
+                                    ];
+                                    foreach ($statuses as $status_option): ?>
+                                    <option value="<?php echo htmlspecialchars($status_option); ?>"
+                                            <?php echo (isset($_POST['status']) && $_POST['status'] === $status_option) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($status_option); ?>
+                                    </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group required-field">
-                                <label for="developer">Developer</label>
+                                <label for="developer">Project</label>
                                 <select id="developer" name="developer" required onchange="loadProjectModels(this.value)">
-                                    <option value="">Select Developer</option>
+                                    <option value="">Select Project</option>
                                     <?php foreach ($developers as $dev): ?>
-                                    <option value="<?php echo htmlspecialchars($dev['name']); ?>"><?php echo htmlspecialchars($dev['name']); ?></option>
+                                    <option value="<?php echo htmlspecialchars($dev['name']); ?>"
+                                            <?php echo (isset($_POST['developer']) && $_POST['developer'] === $dev['name']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($dev['name']); ?>
+                                    </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -657,21 +1086,26 @@ function getLeadSources() {
                         <div class="form-row">
                             <div class="form-group required-field">
                                 <label for="price">Total Selling Price (PHP)</label>
-                                <input type="text" id="price" name="price" placeholder="e.g. 1,000,000.00" required>
+                                <input type="text" id="price" name="price" 
+                                       value="<?php echo htmlspecialchars($_POST['price'] ?? ''); ?>"
+                                       placeholder="e.g. 1,000,000.00" required>
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group full-width">
                                 <label for="remarks">Remarks <span class="optional-field">(Optional)</span></label>
-                                <textarea id="remarks" name="remarks" rows="4" placeholder="Add any additional notes or comments about this lead"></textarea>
+                                <textarea id="remarks" name="remarks" rows="4" maxlength="1000"
+                                          placeholder="Add any additional notes or comments about this lead"><?php echo htmlspecialchars($_POST['remarks'] ?? ''); ?></textarea>
                             </div>
                         </div>
                     </div>
                     
                     <div class="form-actions">
                         <a href="leads.php" class="btn-cancel">Cancel</a>
-                        <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Lead</button>
+                        <button type="submit" class="btn-save" id="saveBtn">
+                            <i class="fas fa-save"></i> Save Lead
+                        </button>
                     </div>
                 </form>
             </div>
@@ -679,77 +1113,222 @@ function getLeadSources() {
     </div>
     
     <script>
+        // Enhanced JavaScript with comprehensive project model handling
+        console.log('Add Lead form script loaded');
+        
+        // Project models data from PHP - with enhanced error handling
+        let projectModelsData = {};
+        try {
+            projectModelsData = <?php 
+                $modelsArray = [];
+                foreach ($projectModels as $model) {
+                    if (!isset($modelsArray[$model['developer_name']])) {
+                        $modelsArray[$model['developer_name']] = [];
+                    }
+                    $modelsArray[$model['developer_name']][] = $model['name'];
+                }
+                echo json_encode($modelsArray, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+            ?>;
+            console.log('Project models data loaded:', projectModelsData);
+        } catch (error) {
+            console.error('Error loading project models data:', error);
+            // Fallback data
+            projectModelsData = {
+                'Lancaster': ['Kennedy', 'Alexandra', 'Victoria', 'Elizabeth'],
+                'Antipolo Heights': ['Sierra', 'Montana', 'Alpine', 'Summit'],
+                'Pleasant Fields': ['Meadow', 'Garden', 'Park', 'Grove'],
+                'Vista Verde': ['Emerald', 'Sapphire'],
+                'Golden Hills': ['Premium', 'Deluxe']
+            };
+        }
+        
         // Function to load project models based on selected developer
         function loadProjectModels(developer) {
+            console.log('Loading project models for developer:', developer);
+            
             const projectModelSelect = document.getElementById('project_model');
+            if (!projectModelSelect) {
+                console.error('Project model select element not found');
+                return;
+            }
+            
+            // Clear existing options
             projectModelSelect.innerHTML = '<option value="">Select Project Model</option>';
             
             if (developer) {
-                // Get project models from PHP as JSON
-                const projectModelsData = <?php 
-                    $modelsArray = [];
-                    foreach ($projectModels as $model) {
-                        if (!isset($modelsArray[$model['developer_name']])) {
-                            $modelsArray[$model['developer_name']] = [];
-                        }
-                        $modelsArray[$model['developer_name']][] = $model['name'];
+                try {
+                    // Get models for the selected developer
+                    const models = projectModelsData[developer] || [];
+                    
+                    console.log('Models for', developer, ':', models);
+                    
+                    if (models.length === 0) {
+                        console.warn('No models found for developer:', developer);
+                        // Add a message option
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No models available';
+                        option.disabled = true;
+                        projectModelSelect.appendChild(option);
+                    } else {
+                        // Add model options
+                        models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            projectModelSelect.appendChild(option);
+                        });
                     }
-                    echo json_encode($modelsArray);
-                ?>;
-                
-                // Use the data from PHP or fallback to hardcoded values
-                const models = projectModelsData[developer] || {
-                    'Lancaster': ['Kennedy', 'Alexandra', 'Victoria', 'Elizabeth'],
-                    'Antipolo Heights': ['Sierra', 'Montana', 'Alpine', 'Summit'],
-                    'Pleasant Fields': ['Meadow', 'Garden', 'Park', 'Grove']
-                }[developer] || [];
-                
-                models.forEach(model => {
+                    
+                    // Restore selected value if form was submitted with errors
+                    const selectedModel = '<?php echo htmlspecialchars($_POST['project_model'] ?? ''); ?>';
+                    if (selectedModel && models.includes(selectedModel)) {
+                        projectModelSelect.value = selectedModel;
+                        console.log('Restored selected model:', selectedModel);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error loading project models:', error);
+                    
+                    // Add error option
                     const option = document.createElement('option');
-                    option.value = model;
-                    option.textContent = model;
+                    option.value = '';
+                    option.textContent = 'Error loading models';
+                    option.disabled = true;
                     projectModelSelect.appendChild(option);
-                });
+                }
             }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            var priceInput = document.getElementById('price');
+            console.log('DOM loaded, initializing form');
             
-            priceInput.addEventListener('input', function(e) {
-                // Get the current value and remove all non-digits
-                var value = this.value.replace(/\D/g, '');
-                
-                // Convert to number
-                var number = parseInt(value);
-                
-                // If it's a valid number
-                if (!isNaN(number)) {
-                    // Convert to string and add decimals
-                    var withDecimals = (number / 100).toFixed(2);
-                    
-                    // Add commas for thousands
-                    var parts = withDecimals.toString().split('.');
-                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                    
-                    // Update the input value
-                    this.value = parts.join('.');
-                } else {
-                    this.value = '';
+            try {
+                // Initialize project models if developer is already selected
+                const developerSelect = document.getElementById('developer');
+                if (developerSelect && developerSelect.value) {
+                    console.log('Initializing with pre-selected developer:', developerSelect.value);
+                    loadProjectModels(developerSelect.value);
                 }
-            });
-            
-            // Handle form submission
-            document.querySelector('form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                var price = priceInput.value.replace(/,/g, '');
-                priceInput.value = price;
-                this.submit();
-            });
+                
+                // Price formatting
+                const priceInput = document.getElementById('price');
+                if (priceInput) {
+                    priceInput.addEventListener('input', function(e) {
+                        try {
+                            // Get the current value and remove all non-digits and decimal points
+                            let value = this.value.replace(/[^\d.]/g, '');
+                            
+                            // Ensure only one decimal point
+                            const parts = value.split('.');
+                            if (parts.length > 2) {
+                                value = parts[0] + '.' + parts.slice(1).join('');
+                            }
+                            
+                            // Limit decimal places to 2
+                            if (parts[1] && parts[1].length > 2) {
+                                value = parts[0] + '.' + parts[1].substring(0, 2);
+                            }
+                            
+                            // Add commas for thousands
+                            if (value) {
+                                const numParts = value.split('.');
+                                numParts[0] = numParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                                this.value = numParts.join('.');
+                            }
+                            
+                        } catch (error) {
+                            console.error('Error formatting price:', error);
+                        }
+                    });
+                }
+                
+                // Phone number validation
+                const phoneInput = document.getElementById('phone');
+                if (phoneInput) {
+                    phoneInput.addEventListener('input', function(e) {
+                        // Remove all non-digits
+                        this.value = this.value.replace(/\D/g, '');
+                        
+                        // Limit to 11 digits
+                        if (this.value.length > 11) {
+                            this.value = this.value.substring(0, 11);
+                        }
+                    });
+                }
+                
+                // Form submission handling
+                const form = document.getElementById('leadForm');
+                const saveBtn = document.getElementById('saveBtn');
+                
+                if (form && saveBtn) {
+                    form.addEventListener('submit', function(e) {
+                        console.log('Form submission started');
+                        
+                        try {
+                            // Show loading state
+                            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                            saveBtn.disabled = true;
+                            
+                            // Clean price value for submission
+                            if (priceInput) {
+                                const price = priceInput.value.replace(/,/g, '');
+                                priceInput.value = price;
+                            }
+                            
+                            console.log('Form data prepared for submission');
+                            
+                        } catch (error) {
+                            console.error('Error preparing form submission:', error);
+                            e.preventDefault();
+                            
+                            // Reset button state
+                            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Lead';
+                            saveBtn.disabled = false;
+                        }
+                    });
+                }
+                
+                // Debug: Log current state
+                console.log('Form initialization complete');
+                console.log('Available developers:', Object.keys(projectModelsData));
+                console.log('Total project models:', Object.values(projectModelsData).flat().length);
+                
+            } catch (error) {
+                console.error('Error initializing form:', error);
+            }
         });
+
+        // Debug function to test project model loading
+        function debugProjectModels() {
+            console.log('=== DEBUG PROJECT MODELS ===');
+            console.log('Project Models Data:', projectModelsData);
+            
+            const developerSelect = document.getElementById('developer');
+            const projectModelSelect = document.getElementById('project_model');
+            
+            console.log('Developer Select:', developerSelect);
+            console.log('Project Model Select:', projectModelSelect);
+            
+            if (developerSelect) {
+                console.log('Current Developer Value:', developerSelect.value);
+                console.log('Available Options:', Array.from(developerSelect.options).map(opt => opt.value));
+            }
+            
+            if (projectModelSelect) {
+                console.log('Current Project Model Value:', projectModelSelect.value);
+                console.log('Available Options:', Array.from(projectModelSelect.options).map(opt => opt.value));
+            }
+            
+            console.log('=== END DEBUG ===');
+        }
+
+        // Make debug function available globally
+        window.debugProjectModels = debugProjectModels;
     </script>
     
-    <script src="assets/js/script.js"></script>
+    <?php if (file_exists('assets/js/script.js')): ?>
+        <script src="assets/js/script.js"></script>
+    <?php endif; ?>
 </body>
 </html>
- 

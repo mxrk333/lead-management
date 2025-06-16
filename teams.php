@@ -218,19 +218,19 @@ if (isset($_POST['transfer_member'])) {
     }
 }
 
-// Create new agent
-if (isset($_POST['create_agent'])) {
+// Enhanced Create new user with role selection and stricter limitations
+if (isset($_POST['create_user'])) {
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
     $confirm_password = trim($_POST['confirm_password']);
     $phone = trim($_POST['phone']);
-    $role = 'agent'; // Default role for new users
+    $role = trim($_POST['role']); // Get selected role
     $team_id = isset($_POST['team_id']) ? intval($_POST['team_id']) : NULL;
     
     // Validate inputs
-    if (empty($name) || empty($email) || empty($username) || empty($password) || empty($phone)) {
+    if (empty($name) || empty($email) || empty($username) || empty($password) || empty($phone) || empty($role)) {
         $error_message = "All fields are required.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = "Please enter a valid email address.";
@@ -240,31 +240,51 @@ if (isset($_POST['create_agent'])) {
         $error_message = "Password must be at least 8 characters long.";
     } elseif (!preg_match("/^[0-9]{11}$/", $phone)) {
         $error_message = "Phone number must be 11 digits.";
+    } elseif (!in_array($role, ['admin', 'manager', 'supervisor', 'agent'])) {
+        $error_message = "Invalid role selected.";
     } else {
-        // Check if username or email already exists
-        $check_stmt = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
-        $check_stmt->bind_param("ss", $username, $email);
-        $check_stmt->execute();
-        $check_result = $check_stmt->get_result();
-        
-        if ($check_result->num_rows > 0) {
-            $error_message = "Username or email already exists.";
-        } else {
-            // Hash password
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            
-            // Insert new user with phone number
-            $insert_stmt = $conn->prepare("INSERT INTO users (name, email, username, password, role, team_id, phone, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
-            $insert_stmt->bind_param("sssssss", $name, $email, $username, $hashed_password, $role, $team_id, $phone);
-            
-            if ($insert_stmt->execute()) {
-                $success_message = "New agent created successfully.";
-            } else {
-                $error_message = "Error creating agent: " . $conn->error;
+        // Enhanced role permissions - Strict validation for managers
+        if ($user['role'] == 'manager') {
+            // Managers can ONLY create agents and supervisors
+            if ($role == 'admin' || $role == 'manager') {
+                $error_message = "Access Denied: Managers cannot create users with Admin or Manager roles. You can only create Agents and Supervisors.";
             }
-            $insert_stmt->close();
+        } elseif ($user['role'] == 'supervisor') {
+            // Supervisors can only create agents (if we want to allow this)
+            if ($role != 'agent') {
+                $error_message = "Access Denied: Supervisors can only create Agent accounts.";
+            }
+        } elseif ($user['role'] != 'admin') {
+            // Only admins can create any role
+            $error_message = "Access Denied: You don't have permission to create user accounts.";
         }
-        $check_stmt->close();
+        
+        if (empty($error_message)) {
+            // Check if username or email already exists
+            $check_stmt = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
+            $check_stmt->bind_param("ss", $username, $email);
+            $check_stmt->execute();
+            $check_result = $check_stmt->get_result();
+            
+            if ($check_result->num_rows > 0) {
+                $error_message = "Username or email already exists.";
+            } else {
+                // Hash password
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                
+                // Insert new user with selected role
+                $insert_stmt = $conn->prepare("INSERT INTO users (name, email, username, password, role, team_id, phone, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+                $insert_stmt->bind_param("sssssss", $name, $email, $username, $hashed_password, $role, $team_id, $phone);
+                
+                if ($insert_stmt->execute()) {
+                    $success_message = "New " . ucfirst($role) . " created successfully.";
+                } else {
+                    $error_message = "Error creating user: " . $conn->error;
+                }
+                $insert_stmt->close();
+            }
+            $check_stmt->close();
+        }
     }
 }
 
@@ -403,6 +423,29 @@ foreach ($teams as $team) {
         ];
     }
     $lead_stmt->close();
+}
+
+// Define available roles based on current user's permissions with stricter controls
+$available_roles = [];
+if ($user['role'] == 'admin') {
+    // Only admins can create all roles
+    $available_roles = [
+        'agent' => ['label' => 'Agent', 'icon' => 'fa-user', 'description' => 'Handles leads and client interactions'],
+        'supervisor' => ['label' => 'Supervisor', 'icon' => 'fa-user-tie', 'description' => 'Supervises agents and manages team operations'],
+        'manager' => ['label' => 'Manager', 'icon' => 'fa-briefcase', 'description' => 'Manages teams and oversees operations'],
+        'admin' => ['label' => 'Administrator', 'icon' => 'fa-crown', 'description' => 'Full system access and management']
+    ];
+} elseif ($user['role'] == 'manager') {
+    // Managers can ONLY create agents and supervisors - NO admin or manager roles
+    $available_roles = [
+        'agent' => ['label' => 'Agent', 'icon' => 'fa-user', 'description' => 'Handles leads and client interactions'],
+        'supervisor' => ['label' => 'Supervisor', 'icon' => 'fa-user-tie', 'description' => 'Supervises agents and manages team operations']
+    ];
+} elseif ($user['role'] == 'supervisor') {
+    // Supervisors can only create agents (optional - you can remove this if supervisors shouldn't create users)
+    $available_roles = [
+        'agent' => ['label' => 'Agent', 'icon' => 'fa-user', 'description' => 'Handles leads and client interactions']
+    ];
 }
 ?>
 
@@ -974,6 +1017,376 @@ foreach ($teams as $team) {
             outline: none;
         }
 
+        /* Enhanced Role Selection Styles */
+        .role-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .role-option {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .role-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .role-card {
+            border: 2px solid var(--gray-light);
+            border-radius: var(--radius);
+            padding: 1rem;
+            transition: var(--transition);
+            background: var(--white);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .role-option input[type="radio"]:checked + .role-card {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .role-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .role-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            transition: var(--transition);
+        }
+
+        .role-option input[type="radio"]:checked + .role-card .role-icon {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .role-name {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .role-description {
+            font-size: 0.75rem;
+            color: var(--gray);
+            line-height: 1.4;
+        }
+
+        .password-display {
+            background: var(--secondary);
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius);
+            padding: 0.625rem 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-text {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-top: 0.25rem;
+        }
+
+        .text-muted {
+            color: var(--gray) !important;
+        }
+
+        .username-preview {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: var(--primary-light);
+            border-radius: var(--radius-sm);
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: var(--primary);
+            min-height: 1.5rem;
+        }
+
+        /* Transfer Modal Styles */
+        .team-radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .team-radio-option {
+            position: relative;
+        }
+
+        .team-radio {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .team-radio-label {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border: 2px solid var(--gray-light);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--white);
+            position: relative;
+        }
+
+        .team-radio-label:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .team-radio:checked + .team-radio-label {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .team-radio:checked + .team-radio-label::before {
+            content: '';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .team-radio:checked + .team-radio-label::after {
+            content: '✓';
+            position: absolute;
+            right: 1.375rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            z-index: 1;
+        }
+
+        .team-name {
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 0.875rem;
+        }
+
+        .team-radio:checked + .team-radio-label .team-name {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* User Selection Styles for Add Members Modal */
+        .search-box {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+            z-index: 2;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            color: var(--dark);
+            transition: var(--transition);
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+            outline: none;
+        }
+
+        .user-selection {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius);
+            padding: 0.5rem;
+        }
+
+        .user-selection-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .user-selection-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .user-selection-item input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .user-selection-item label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--white);
+        }
+
+        .user-selection-item label:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .user-selection-item input[type="checkbox"]:checked + label {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-email {
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+
+        .user-role {
+            display: flex;
+            align-items: center;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.625rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-admin {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .badge-manager {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .badge-supervisor {
+            background: var(--info-light);
+            color: var(--info);
+        }
+
+        .badge-agent {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        /* Empty State Styles */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--gray);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Table Responsive */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: var(--gray-light);
+            border-radius: var(--radius-sm);
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: var(--gray);
+            border-radius: var(--radius-sm);
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .main-content {
@@ -993,8 +1406,8 @@ foreach ($teams as $team) {
             }
 
             .team-detail-actions .btn {
-            width: 100%;
-        }
+                width: 100%;
+            }
         
             .team-stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -1006,18 +1419,22 @@ foreach ($teams as $team) {
             }
 
             .section-header .btn-group {
-            width: 100%;
-            display: flex;
+                width: 100%;
+                display: flex;
                 gap: 0.5rem;
             }
 
             .section-header .btn {
                 flex: 1;
             }
+
+            .role-selection {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 576px) {
-        .team-stats-grid {
+            .team-stats-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -1207,8 +1624,8 @@ foreach ($teams as $team) {
                         <button class="btn btn-primary" onclick="openAddMembersModal()">
                             <i class="fas fa-user-plus"></i> Add Members
                         </button>
-                        <button class="btn btn-primary" onclick="openCreateAgentModal()">
-                            <i class="fas fa-user-plus"></i> Create New Agent
+                        <button class="btn btn-primary" onclick="openCreateUserModal()">
+                            <i class="fas fa-user-plus"></i> Create New User
                         </button>
                         <?php endif; ?>
                         <?php if ($user['role'] == 'admin'): ?>
@@ -1268,8 +1685,8 @@ foreach ($teams as $team) {
                             <button class="btn btn-primary btn-sm" onclick="openAddMembersModal()">
                                 <i class="fas fa-user-plus"></i> Add Members
                             </button>
-                            <button class="btn btn-primary btn-sm" onclick="openCreateAgentModal()">
-                                <i class="fas fa-user-plus"></i> Create New Agent
+                            <button class="btn btn-primary btn-sm" onclick="openCreateUserModal()">
+                                <i class="fas fa-user-plus"></i> Create New User
                             </button>
                         </div>
                         <?php endif; ?>
@@ -1330,8 +1747,8 @@ foreach ($teams as $team) {
                             <button class="btn btn-primary btn-sm" onclick="openAddMembersModal()">
                                 <i class="fas fa-user-plus"></i> Add Members
                             </button>
-                            <button class="btn btn-primary btn-sm" onclick="openCreateAgentModal()">
-                                <i class="fas fa-user-plus"></i> Create New Agent
+                            <button class="btn btn-primary btn-sm" onclick="openCreateUserModal()">
+                                <i class="fas fa-user-plus"></i> Create New User
                             </button>
                         </div>
                         <?php endif; ?>
@@ -1480,47 +1897,93 @@ foreach ($teams as $team) {
     </div>
     <?php endif; ?>
     
-    <!-- Create Agent Modal -->
+    <!-- Enhanced Create User Modal with Role Selection -->
     <?php if ($selected_team && ($user['role'] == 'admin' || $user['role'] == 'manager')): ?>
-    <div id="createAgentModal" class="modal" role="dialog" aria-labelledby="createAgentModalTitle" aria-hidden="true">
-        <div class="modal-content">
+    <div id="createUserModal" class="modal" role="dialog" aria-labelledby="createUserModalTitle" aria-hidden="true">
+        <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h3 class="modal-title" id="createAgentModalTitle">Create New Agent</h3>
-                <button type="button" class="modal-close" onclick="closeCreateAgentModal()" aria-label="Close">
+                <h3 class="modal-title" id="createUserModalTitle">Create New User</h3>
+                <button type="button" class="modal-close" onclick="closeCreateUserModal()" aria-label="Close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form method="POST" action="" id="createAgentForm">
+            <form method="POST" action="" id="createUserForm">
                 <div class="modal-body">
+                    <!-- Role Restriction Notice for Managers -->
+                    <?php if ($user['role'] == 'manager'): ?>
+                    <div class="alert" style="background: var(--warning-light); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); margin-bottom: 1.5rem;">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Role Restrictions:</strong> As a Manager, you can only create Agent and Supervisor accounts. Admin and Manager roles are restricted.
+                    </div>
+                    <?php elseif ($user['role'] == 'supervisor'): ?>
+                    <div class="alert" style="background: var(--info-light); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); margin-bottom: 1.5rem;">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Role Restrictions:</strong> As a Supervisor, you can only create Agent accounts.
+                    </div>
+                    <?php endif; ?>
+
                     <div class="form-group">
-                        <label for="agent_name">Full Name *</label>
-                        <input type="text" id="agent_name" name="name" required class="form-control" oninput="generateUsername()">
-                        <small class="form-text text-muted">Enter the full name of the agent</small>
+                        <label for="user_name">Full Name *</label>
+                        <input type="text" id="user_name" name="name" required class="form-control" oninput="generateUsername()">
+                        <small class="form-text text-muted">Enter the full name of the user</small>
                     </div>
                     
                     <div class="form-group">
-                        <label for="agent_email">Email Address *</label>
-                        <input type="email" id="agent_email" name="email" required class="form-control">
+                        <label for="user_email">Email Address *</label>
+                        <input type="email" id="user_email" name="email" required class="form-control">
                         <small class="form-text text-muted">Enter a valid email address</small>
                     </div>
                     
                     <div class="form-group">
-                        <label for="agent_phone">Phone Number *</label>
-                        <input type="tel" id="agent_phone" name="phone" required pattern="[0-9]{11}" maxlength="11" placeholder="09123456789" class="form-control">
+                        <label for="user_phone">Phone Number *</label>
+                        <input type="tel" id="user_phone" name="phone" required pattern="[0-9]{11}" maxlength="11" placeholder="09123456789" class="form-control">
                         <small class="form-text text-muted">Enter 11-digit phone number</small>
                     </div>
                     
                     <div class="form-group">
-                        <label for="agent_username">Username</label>
-                        <input type="text" id="agent_username" name="username" required class="form-control" readonly>
+                        <label for="user_username">Username</label>
+                        <input type="text" id="user_username" name="username" required class="form-control" readonly>
                         <small class="form-text text-muted">Username will be automatically generated based on the full name</small>
                         <div class="username-preview" id="usernamePreview"></div>
                     </div>
                     
                     <div class="form-group">
+                        <label>Select Role * 
+                            <?php if ($user['role'] != 'admin'): ?>
+                            <span style="color: var(--warning); font-size: 0.75rem;">
+                                (Limited based on your permissions)
+                            </span>
+                            <?php endif; ?>
+                        </label>
+                        <div class="role-selection">
+                            <?php foreach ($available_roles as $role_key => $role_info): ?>
+                            <div class="role-option">
+                                <input type="radio" id="role_<?php echo $role_key; ?>" name="role" value="<?php echo $role_key; ?>" required>
+                                <label for="role_<?php echo $role_key; ?>" class="role-card">
+                                    <div class="role-icon">
+                                        <i class="fas <?php echo $role_info['icon']; ?>"></i>
+                                    </div>
+                                    <div class="role-name"><?php echo $role_info['label']; ?></div>
+                                    <div class="role-description"><?php echo $role_info['description']; ?></div>
+                                </label>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <small class="form-text text-muted">
+                            <?php if ($user['role'] == 'admin'): ?>
+                                You can create users with any role
+                            <?php elseif ($user['role'] == 'manager'): ?>
+                                You can only create Agent and Supervisor accounts
+                            <?php elseif ($user['role'] == 'supervisor'): ?>
+                                You can only create Agent accounts
+                            <?php endif; ?>
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
                         <label>Default Password</label>
                         <div class="password-display">123456789innersparc</div>
-                        <small class="form-text text-muted">This is the default password that will be set for the new agent</small>
+                        <small class="form-text text-muted">This is the default password that will be set for the new user</small>
                         <input type="hidden" name="password" value="123456789innersparc">
                         <input type="hidden" name="confirm_password" value="123456789innersparc">
                     </div>
@@ -1528,8 +1991,8 @@ foreach ($teams as $team) {
                     <input type="hidden" name="team_id" value="<?php echo $selected_team['id']; ?>">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeCreateAgentModal()">Cancel</button>
-                    <button type="submit" name="create_agent" class="btn btn-primary">Create Agent</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateUserModal()">Cancel</button>
+                    <button type="submit" name="create_user" class="btn btn-primary">Create User</button>
                 </div>
             </form>
         </div>
@@ -1578,34 +2041,58 @@ foreach ($teams as $team) {
         }
     }
     
-    // Transfer Member Modal
+    // Enhanced Transfer Member Modal
     function openTransferMemberModal(userId, userName, teamId) {
         const transferModal = document.getElementById('transferMemberModal');
         if (transferModal) {
             document.getElementById('user_id_to_transfer').value = userId;
             document.getElementById('transfer_member_name').textContent = userName;
+            
+            // Clear any previously selected radio buttons
+            const radioButtons = transferModal.querySelectorAll('input[type="radio"]');
+            radioButtons.forEach(radio => {
+                radio.checked = false;
+            });
+            
+            // Show the modal
             transferModal.style.display = 'block';
-            document.getElementById('new_team_id').focus();
+            document.body.style.overflow = 'hidden';
+            
+            // Focus on the first radio option
+            const firstRadio = transferModal.querySelector('input[type="radio"]');
+            if (firstRadio) {
+                setTimeout(() => firstRadio.focus(), 100);
+            }
         }
     }
-    
+
     function closeTransferMemberModal() {
         const transferModal = document.getElementById('transferMemberModal');
         if (transferModal) {
             transferModal.style.display = 'none';
+            document.body.style.overflow = '';
+            
+            // Clear form
+            const radioButtons = transferModal.querySelectorAll('input[type="radio"]');
+            radioButtons.forEach(radio => {
+                radio.checked = false;
+            });
         }
     }
     
-    // Create Agent Modal
-    function openCreateAgentModal() {
-        document.getElementById('createAgentModal').style.display = 'block';
-        document.getElementById('agent_name').focus();
+    // Enhanced Create User Modal
+    function openCreateUserModal() {
+        document.getElementById('createUserModal').style.display = 'block';
+        document.getElementById('user_name').focus();
         document.body.style.overflow = 'hidden'; // Prevent background scrolling
     }
     
-    function closeCreateAgentModal() {
-        document.getElementById('createAgentModal').style.display = 'none';
+    function closeCreateUserModal() {
+        document.getElementById('createUserModal').style.display = 'none';
         document.body.style.overflow = ''; // Restore scrolling
+        // Reset form
+        document.getElementById('createUserForm').reset();
+        document.getElementById('usernamePreview').textContent = '';
     }
     
     // Filter users in the add members modal
@@ -1649,9 +2136,9 @@ foreach ($teams as $team) {
         if (transferMemberModal && event.target == transferMemberModal) {
             closeTransferMemberModal();
         }
-        const createAgentModal = document.getElementById('createAgentModal');
-        if (createAgentModal && event.target == createAgentModal) {
-            closeCreateAgentModal();
+        const createUserModal = document.getElementById('createUserModal');
+        if (createUserModal && event.target == createUserModal) {
+            closeCreateUserModal();
         }
     }
     
@@ -1662,29 +2149,13 @@ foreach ($teams as $team) {
             closeEditTeamModal();
             closeAddMembersModal();
             closeTransferMemberModal();
-            closeCreateAgentModal();
+            closeCreateUserModal();
         }
     });
     
-    // Add this to your existing JavaScript
-    document.addEventListener('DOMContentLoaded', function() {
-        const phoneInput = document.getElementById('agent_phone');
-        if (phoneInput) {
-            phoneInput.addEventListener('input', function(e) {
-                // Remove any non-digit characters
-                this.value = this.value.replace(/\D/g, '');
-                
-                // Limit to 11 digits
-                if (this.value.length > 11) {
-                    this.value = this.value.slice(0, 11);
-                }
-            });
-        }
-    });
-
     // Function to generate username from full name
     function generateUsername() {
-        const fullName = document.getElementById('agent_name').value.trim();
+        const fullName = document.getElementById('user_name').value.trim();
         if (fullName) {
             // Convert to lowercase and remove special characters
             let username = fullName.toLowerCase()
@@ -1693,58 +2164,121 @@ foreach ($teams as $team) {
                 .replace(/[^a-z0-9\s]/g, '')     // Remove special characters
                 .replace(/\s+/g, '.');           // Replace spaces with dots
             username = username + '.innersparc';
-            document.getElementById('agent_username').value = username;
+            document.getElementById('user_username').value = username;
             document.getElementById('usernamePreview').textContent = username;
         } else {
-            document.getElementById('agent_username').value = '';
+            document.getElementById('user_username').value = '';
             document.getElementById('usernamePreview').textContent = '';
         }
     }
 
-    // Form validation
+    // Enhanced Form validation with role restrictions
     document.addEventListener('DOMContentLoaded', function() {
-        const createAgentForm = document.getElementById('createAgentForm');
-        const phoneInput = document.getElementById('agent_phone');
+    const createUserForm = document.getElementById('createUserForm');
+    const phoneInput = document.getElementById('user_phone');
+    const roleInputs = document.querySelectorAll('input[name="role"]');
 
-        if (createAgentForm) {
-            createAgentForm.addEventListener('submit', function(e) {
-                const name = document.getElementById('agent_name').value.trim();
-                const email = document.getElementById('agent_email').value.trim();
-                const phone = phoneInput.value.trim();
+    if (createUserForm) {
+        createUserForm.addEventListener('submit', function(e) {
+            const name = document.getElementById('user_name').value.trim();
+            const email = document.getElementById('user_email').value.trim();
+            const phone = phoneInput.value.trim();
+            const selectedRole = document.querySelector('input[name="role"]:checked');
 
-                if (!name || !email || !phone) {
-                    e.preventDefault();
-                    alert('Please fill in all required fields.');
-                    return false;
-                }
+            if (!name || !email || !phone || !selectedRole) {
+                e.preventDefault();
+                alert('Please fill in all required fields and select a role.');
+                return false;
+            }
 
-                if (phone.length !== 11 || !/^[0-9]{11}$/.test(phone)) {
-                    e.preventDefault();
-                    alert('Please enter a valid 11-digit phone number.');
-                    return false;
-                }
+            if (phone.length !== 11 || !/^[0-9]{11}$/.test(phone)) {
+                e.preventDefault();
+                alert('Please enter a valid 11-digit phone number.');
+                return false;
+            }
 
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    e.preventDefault();
-                    alert('Please enter a valid email address.');
-                    return false;
-                }
-            });
-        }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                e.preventDefault();
+                alert('Please enter a valid email address.');
+                return false;
+            }
 
-        // Phone number input formatting
-        if (phoneInput) {
-            phoneInput.addEventListener('input', function(e) {
-                // Remove any non-digit characters
-                this.value = this.value.replace(/\D/g, '');
-                
-                // Limit to 11 digits
-                if (this.value.length > 11) {
-                    this.value = this.value.slice(0, 11);
-                }
-            });
-        }
-    });
+            // Additional frontend validation for role restrictions
+            const userRole = '<?php echo $user['role']; ?>';
+            const selectedRoleValue = selectedRole.value;
+            
+            if (userRole === 'manager' && (selectedRoleValue === 'admin' || selectedRoleValue === 'manager')) {
+                e.preventDefault();
+                alert('Access Denied: As a Manager, you can only create Agent and Supervisor accounts.');
+                return false;
+            }
+            
+            if (userRole === 'supervisor' && selectedRoleValue !== 'agent') {
+                e.preventDefault();
+                alert('Access Denied: As a Supervisor, you can only create Agent accounts.');
+                return false;
+            }
+        });
+    }
+
+    // Phone number input formatting
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            this.value = this.value.replace(/\D/g, '');
+            
+            // Limit to 11 digits
+            if (this.value.length > 11) {
+                this.value = this.value.slice(0, 11);
+            }
+        });
+    }
+
+    // Add visual feedback for role restrictions
+    if (roleInputs.length > 0) {
+        const userRole = '<?php echo $user['role']; ?>';
+        
+        roleInputs.forEach(input => {
+            const roleValue = input.value;
+            const roleCard = input.nextElementSibling;
+            
+            // Disable restricted roles visually and functionally
+            if (userRole === 'manager' && (roleValue === 'admin' || roleValue === 'manager')) {
+                input.disabled = true;
+                roleCard.style.opacity = '0.5';
+                roleCard.style.cursor = 'not-allowed';
+                roleCard.title = 'Access Denied: Managers cannot create Admin or Manager accounts';
+            } else if (userRole === 'supervisor' && roleValue !== 'agent') {
+                input.disabled = true;
+                roleCard.style.opacity = '0.5';
+                roleCard.style.cursor = 'not-allowed';
+                roleCard.title = 'Access Denied: Supervisors can only create Agent accounts';
+            }
+        });
+    }
+
+    // Add transfer form validation
+    const transferForm = document.querySelector('#transferMemberModal form');
+    if (transferForm) {
+        transferForm.addEventListener('submit', function(e) {
+            const selectedTeam = document.querySelector('input[name="new_team_id"]:checked');
+            if (!selectedTeam) {
+                e.preventDefault();
+                alert('Please select a team to transfer the member to.');
+                return false;
+            }
+            
+            const memberName = document.getElementById('transfer_member_name').textContent;
+            const teamName = selectedTeam.value === '' ? 'No Team Assignment' : 
+                            selectedTeam.nextElementSibling.querySelector('.team-name').textContent;
+            
+            if (!confirm(`Are you sure you want to transfer ${memberName} to ${teamName}?`)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+});
     </script>
     
     <script src="assets/js/script.js"></script>
