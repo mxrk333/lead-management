@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $success = '';
     
     
-    $valid_reset_code = 'boboka'; 
+    $valid_reset_code = 'INNERSPARC2019'; // This should be securely stored and retrieved from a database or config file
     
     if ($reset_code != $valid_reset_code) {
         $error = "Invalid reset code. Please contact the system administrator.";

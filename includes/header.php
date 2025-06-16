@@ -56,6 +56,7 @@ function getRecentNotifications($user_id, $limit = 10) {
             JOIN leads l ON la.lead_id = l.id
             JOIN users u ON la.user_id = u.id
             WHERE (l.user_id = ? OR la.user_id = ?)
+            AND la.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
             ORDER BY la.created_at DESC
             LIMIT ?
         ";
@@ -86,16 +87,24 @@ function getRecentNotifications($user_id, $limit = 10) {
                     m.id as lead_id,
                     u.name as user_name,
                     'memo' as notification_type,
-                    'memo' as activity_relation
+                    'memo' as activity_relation,
+                    COALESCE(mrs.read_status, 0) as memo_read_status
                 FROM memos m
                 JOIN users u ON m.created_by = u.id
-                WHERE m.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                LEFT JOIN memo_read_status mrs ON m.id = mrs.memo_id AND mrs.employee_id = ?
+                WHERE m.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                AND (m.visible_to_all = 1 OR EXISTS (
+                    SELECT 1 FROM memo_team_visibility mtv 
+                    JOIN users u2 ON u2.team_id = mtv.team_id 
+                    WHERE mtv.memo_id = m.id AND u2.id = ?
+                ))
                 ORDER BY m.created_at DESC
                 LIMIT 5
             ";
             
             $memo_stmt = $conn->prepare($memo_query);
             if ($memo_stmt) {
+                $memo_stmt->bind_param("ii", $user_id, $user_id);
                 $memo_stmt->execute();
                 $memo_result = $memo_stmt->get_result();
                 
@@ -118,22 +127,28 @@ function getRecentNotifications($user_id, $limit = 10) {
         foreach ($notifications as &$notification) {
             $notification['is_read'] = true; // Default to read
             
-            if ($last_read) {
-                // Convert both timestamps to Unix timestamps for comparison
-                $notification_time = strtotime($notification['created_at']);
-                $last_read_time = strtotime($last_read);
-                
-                // If notification was created AFTER the last read time, it's unread
-                if ($notification_time > $last_read_time) {
-                    $notification['is_read'] = false;
-                }
-                
-                // Debug logging for each notification
-                error_log("Notification: {$notification['activity_type']}, Created: {$notification['created_at']} ($notification_time), Last Read: $last_read ($last_read_time), Is Read: " . ($notification['is_read'] ? 'true' : 'false'));
+            if ($notification['notification_type'] === 'memo') {
+                // For memos, check the memo_read_status
+                $notification['is_read'] = isset($notification['memo_read_status']) && $notification['memo_read_status'] == 1;
             } else {
-                // If no last_read timestamp, consider all notifications as unread
-                $notification['is_read'] = false;
-                error_log("No last_read timestamp, marking as unread: {$notification['activity_type']}");
+                // For activities, use the last_read timestamp
+                if ($last_read) {
+                    // Convert both timestamps to Unix timestamps for comparison
+                    $notification_time = strtotime($notification['created_at']);
+                    $last_read_time = strtotime($last_read);
+                    
+                    // If notification was created AFTER the last read time, it's unread
+                    if ($notification_time > $last_read_time) {
+                        $notification['is_read'] = false;
+                    }
+                    
+                    // Debug logging for each notification
+                    error_log("Notification: {$notification['activity_type']}, Created: {$notification['created_at']} ($notification_time), Last Read: $last_read ($last_read_time), Is Read: " . ($notification['is_read'] ? 'true' : 'false'));
+                } else {
+                    // If no last_read timestamp, consider all notifications as unread
+                    $notification['is_read'] = false;
+                    error_log("No last_read timestamp, marking as unread: {$notification['activity_type']}");
+                }
             }
         }
         
@@ -183,7 +198,7 @@ function getNotificationUrl($notification) {
     if ($notification['notification_type'] === 'memo') {
         // Check if memo.php exists, otherwise fallback to dashboard
         if (file_exists('memo.php')) {
-            return 'memo.php';
+            return 'memo.php?id=' . $notification['lead_id'];
         } else {
             return 'dashboard.php';
         }
@@ -248,12 +263,12 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
                         <div class="notification-header">
                             <h4>Recent Activities</h4>
                             <?php if ($unread_count > 0): ?>
-                                <span class="mark-all-read" onclick="event.preventDefault(); event.stopPropagation(); markAllNotificationsAsRead(); return false;">
+                                <button class="mark-all-read" onclick="markAllNotificationsAsRead(); return false;">
                                     <span class="mark-text">Mark all as read</span>
                                     <span class="loading-spinner" style="display: none;">
                                         <i class="fas fa-spinner fa-spin"></i>
                                     </span>
-                                </span>
+                                </button>
                             <?php endif; ?>
                         </div>
                         <div class="notification-list">
@@ -370,8 +385,9 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
     </div>
 </header>
 
+<!-- Include the CSS and JavaScript inline to ensure they work -->
 <style>
-/* Comprehensive reset to eliminate header spacing */
+/* Your existing CSS styles here - keeping them the same */
 html, body {
     margin: 0 !important;
     padding: 0 !important;
@@ -386,23 +402,12 @@ html, body {
     box-sizing: border-box;
 }
 
-/* Ensure no spacing above header */
 body > *:first-child,
 .main-header {
     margin-top: 0 !important;
     padding-top: 0 !important;
 }
 
-/* Remove any potential spacing from wrapper elements */
-.header-wrapper,
-.page-wrapper,
-.container-fluid,
-.main-content {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
-/* Header Styles */
 .main-header {
     margin: 0 !important;
     padding: 0 !important;
@@ -443,7 +448,6 @@ body > *:first-child,
     margin-left: auto;
 }
 
-/* Mobile Toggle */
 .mobile-toggle {
     display: none;
     flex-shrink: 0;
@@ -469,7 +473,6 @@ body > *:first-child,
     background: #e5e7eb;
 }
 
-/* Search */
 .header-search {
     flex: 1;
     min-width: 0;
@@ -532,7 +535,6 @@ body > *:first-child,
     background: #f3f4f6;
 }
 
-/* Header Actions */
 .header-actions {
     display: flex;
     align-items: center;
@@ -540,7 +542,6 @@ body > *:first-child,
     margin-left: auto;
 }
 
-/* Quick Actions */
 .quick-actions {
     display: flex;
     gap: 0.5rem;
@@ -572,7 +573,6 @@ body > *:first-child,
     display: none;
 }
 
-/* Notifications */
 .header-notification {
     position: relative;
     flex-shrink: 0;
@@ -616,7 +616,6 @@ body > *:first-child,
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Desktop Dropdown Styles */
 .notification-dropdown {
     position: absolute;
     right: 0;
@@ -660,9 +659,15 @@ body > *:first-child,
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
 }
 
 .mark-all-read:hover {
+    background: rgba(79, 70, 229, 0.1);
     text-decoration: underline;
 }
 
@@ -794,7 +799,6 @@ body > *:first-child,
     text-decoration: underline;
 }
 
-/* User Menu */
 .header-user-menu {
     position: relative;
     flex-shrink: 0;
@@ -956,7 +960,6 @@ body > *:first-child,
     margin: 0.5rem 0;
 }
 
-/* Utility Classes */
 .text-blue { color: #3b82f6; }
 .text-green { color: #10b981; }
 .text-orange { color: #f59e0b; }
@@ -964,7 +967,6 @@ body > *:first-child,
 .text-red { color: #ef4444; }
 .text-gray { color: #6b7280; }
 
-/* Animations */
 @keyframes slideDown {
     from {
         opacity: 0;
@@ -976,18 +978,6 @@ body > *:first-child,
     }
 }
 
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(100%);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Mobile Overlay */
 .mobile-overlay {
     display: none;
     position: fixed;
@@ -1006,7 +996,6 @@ body > *:first-child,
     opacity: 1;
 }
 
-/* Responsive Design */
 @media (max-width: 1200px) {
     .action-text {
         display: none;
@@ -1045,7 +1034,6 @@ body > *:first-child,
         display: none;
     }
     
-    /* Mobile Dropdown Styles */
     .notification-dropdown,
     .user-menu-dropdown {
         position: fixed !important;
@@ -1082,7 +1070,6 @@ body > *:first-child,
         -webkit-overflow-scrolling: touch;
     }
     
-    /* Mobile close button */
     .mobile-close {
         display: block;
         position: absolute;
@@ -1106,103 +1093,31 @@ body > *:first-child,
         background: #e5e7eb;
     }
     
-    /* Add padding to account for close button */
     .notification-header,
     .dropdown-header {
         padding-right: 3rem !important;
     }
 }
 
-@media (max-width: 576px) {
-    .header-container {
-        padding: 0.5rem 0.75rem;
-        gap: 0.75rem;
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(100%);
     }
-    
-    .search-input {
-        font-size: 0.8rem;
-        padding: 0.625rem 1rem 0.625rem 2.25rem;
-    }
-    
-    .notification-item,
-    .menu-item {
-        padding: 0.875rem 1rem;
-    }
-    
-    .search-input-wrapper {
-        max-width: 100%;
-    }
-    
-    .search-input {
-        width: 100%;
-    }
-    
-    .notification-btn,
-    .sidebar-toggle {
-        width: 36px;
-        height: 36px;
-    }
-    
-    .user-avatar {
-        width: 32px;
-        height: 32px;
-        font-size: 0.8rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .header-container {
-        padding: 0.5rem;
-        gap: 0.5rem;
-    }
-    
-    .search-input {
-        padding: 0.5rem 0.75rem 0.5rem 2rem;
-    }
-    
-    .search-icon {
-        left: 0.75rem;
-    }
-    
-    .clear-search {
-        right: 0.75rem;
-    }
-}
-
-/* Force remove any top spacing - highest specificity */
-html body .main-header,
-body .main-header,
-.main-header {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-    top: 0 !important;
-}
-
-/* Remove spacing from any parent containers */
-.main-header::before,
-.main-header::after {
-    display: none !important;
-}
-
-/* Desktop only styles */
-@media (min-width: 769px) {
-    .mobile-overlay,
-    .mobile-close {
-        display: none !important;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 </style>
 
 <script>
+// Enhanced JavaScript for notification handling
+document.addEventListener('DOMContentLoaded', function() {
     // Create mobile overlay element
     const mobileOverlay = document.createElement('div');
     mobileOverlay.className = 'mobile-overlay';
     document.body.appendChild(mobileOverlay);
-    
-    // Override any existing markAllAsRead function to prevent conflicts
-    window.markAllAsRead = function() {
-        markAllNotificationsAsRead();
-    };
     
     // Toggle notification dropdown
     const notificationBtn = document.querySelector('.notification-btn');
@@ -1453,12 +1368,6 @@ function updateNotificationBadge() {
 
 // Mark all notifications as read - this is our main function
 function markAllNotificationsAsRead() {
-    // Prevent any default behavior or propagation
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    
     console.log('markAllNotificationsAsRead called');
     
     // Show loading spinner
@@ -1478,95 +1387,108 @@ function markAllNotificationsAsRead() {
     // Update badge count
     updateNotificationBadge();
     
-    // Try multiple possible paths for the mark-notifications-read.php file
-    const possiblePaths = [
-        'mark-notifications-read.php',
-        './mark-notifications-read.php',
-        '/mark-notifications-read.php',
-        '../mark-notifications-read.php',
-        'mark-notification-read.php'  // In case there's a typo in filename
-    ];
-    
-    let currentPathIndex = 0;
-    
-    function tryNextPath() {
-        if (currentPathIndex >= possiblePaths.length) {
-            console.error('All paths failed');
+    // Send AJAX request to your existing mark-notification-read.php file
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'mark-notification-read.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            console.log('AJAX response received. Status:', xhr.status);
+            console.log('Response text:', xhr.responseText);
+            
             // Hide loading spinner
             if (markText) markText.style.display = 'inline';
             if (loadingSpinner) loadingSpinner.style.display = 'none';
             
-            alert('Error: Could not find mark-notifications-read.php file. Please check if the file exists in the correct directory.');
-            return;
-        }
-        
-        const currentPath = possiblePaths[currentPathIndex];
-        console.log('Trying path:', currentPath);
-        
-        // Send AJAX request to server to mark notifications as read in the database
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', currentPath, true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                console.log('AJAX response received. Status:', xhr.status, 'Path:', currentPath);
-                console.log('Response text:', xhr.responseText);
-                
-                if (xhr.status === 404) {
-                    // Try next path
-                    currentPathIndex++;
-                    tryNextPath();
-                    return;
-                }
-                
-                // Hide loading spinner
-                if (markText) markText.style.display = 'inline';
-                if (loadingSpinner) loadingSpinner.style.display = 'none';
-                
-                if (xhr.status === 200) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        console.log('Parsed response:', response);
-                        
-                        if (response.success) {
-                            console.log('Notifications marked as read in database');
-                            // Hide the mark all as read button
-                            const markAllBtn = document.querySelector('.mark-all-read');
-                            if (markAllBtn) {
-                                markAllBtn.style.display = 'none';
-                            }
-                            
-                            // Show success message briefly
-                            const successMsg = document.createElement('div');
-                            successMsg.textContent = 'All notifications marked as read!';
-                            successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 10px 20px; border-radius: 5px; z-index: 9999;';
-                            document.body.appendChild(successMsg);
-                            setTimeout(() => {
-                                document.body.removeChild(successMsg);
-                            }, 3000);
-                            
-                        } else {
-                            console.error('Server returned error:', response.error);
-                            alert('Error: ' + response.error);
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    console.log('Parsed response:', response);
+                    
+                    if (response.success) {
+                        console.log('Notifications marked as read in database');
+                        // Hide the mark all as read button
+                        const markAllBtn = document.querySelector('.mark-all-read');
+                        if (markAllBtn) {
+                            markAllBtn.style.display = 'none';
                         }
-                    } catch (e) {
-                        console.error('Failed to parse server response:', xhr.responseText);
-                        alert('Server response error: ' + xhr.responseText);
+                        
+                        // Show success message briefly
+                        showNotificationMessage('All notifications marked as read!', 'success');
+                        
+                    } else {
+                        console.error('Server returned error:', response.error);
+                        showNotificationMessage('Error: ' + response.error, 'error');
+                        
+                        // Revert UI changes on error
+                        unreadItems.forEach(item => {
+                            item.classList.add('unread');
+                            item.classList.remove('read');
+                        });
+                        updateNotificationBadge();
                     }
-                } else {
-                    console.error('HTTP error:', xhr.status, xhr.responseText);
-                    alert('HTTP Error ' + xhr.status + ': ' + xhr.responseText);
+                } catch (e) {
+                    console.error('Failed to parse server response:', xhr.responseText);
+                    showNotificationMessage('Server response error: ' + xhr.responseText, 'error');
+                    
+                    // Revert UI changes on error
+                    unreadItems.forEach(item => {
+                        item.classList.add('unread');
+                        item.classList.remove('read');
+                    });
+                    updateNotificationBadge();
                 }
+            } else {
+                console.error('HTTP error:', xhr.status, xhr.responseText);
+                showNotificationMessage('HTTP Error ' + xhr.status + ': ' + xhr.responseText, 'error');
+                
+                // Revert UI changes on error
+                unreadItems.forEach(item => {
+                    item.classList.add('unread');
+                    item.classList.remove('read');
+                });
+                updateNotificationBadge();
             }
-        };
-        xhr.send('action=mark_all_read');
-    }
-    
-    // Start trying paths
-    tryNextPath();
+        }
+    };
+    xhr.send('action=mark_all_read');
     
     // Return false to prevent any further event handling
     return false;
+}
+
+// Show notification message
+function showNotificationMessage(message, type = 'success') {
+    // Remove any existing message
+    const existingMsg = document.querySelector('.notification-message');
+    if (existingMsg) {
+        existingMsg.remove();
+    }
+    
+    const msg = document.createElement('div');
+    msg.className = 'notification-message';
+    msg.textContent = message;
+    msg.style.cssText = `
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        background: ${type === 'success' ? '#10b981' : '#ef4444'}; 
+        color: white; 
+        padding: 12px 20px; 
+        border-radius: 8px; 
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-weight: 500;
+        max-width: 300px;
+    `;
+    
+    document.body.appendChild(msg);
+    
+    setTimeout(() => {
+        if (msg.parentNode) {
+            msg.parentNode.removeChild(msg);
+        }
+    }, 4000);
 }
 
 // Override any existing markAllAsRead function globally
