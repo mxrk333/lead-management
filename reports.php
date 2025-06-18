@@ -411,10 +411,10 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         $stmt = $conn->prepare($sources_query);
         $stmt->bind_param("ss", $start_date, $end_date);
     }
-
+    
     $stmt->execute();
     $result = $stmt->get_result();
-
+    
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $reportData['top_sources'][] = $row;
@@ -538,11 +538,12 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         }
     }
 } else {
-    // Get data for specific team
-    $team_id = $selected_team_id;
+    // Handle specific team selection (non-admin or admin with specific team)
+    $team_id = ($user['role'] == 'admin') ? $selected_team_id : $user['team_id'];
     
-    // Get summary data for the selected team
+    // Get summary data for specific team
     if ($selected_team_member) {
+        // Filter by selected team member
         $summary_query = "
             SELECT 
                 COUNT(DISTINCT l.id) as total_leads,
@@ -553,14 +554,18 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 leads l
             LEFT JOIN 
                 lead_activities la ON la.lead_id = l.id
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 l.user_id = ? AND
+                u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
         ";
         
         $stmt = $conn->prepare($summary_query);
-        $stmt->bind_param("iss", $selected_team_member, $start_date, $end_date);
+        $stmt->bind_param("iiss", $selected_team_member, $team_id, $start_date, $end_date);
     } else {
+        // No team member filter, get all data for the team
         $summary_query = "
             SELECT 
                 COUNT(DISTINCT l.id) as total_leads,
@@ -571,8 +576,8 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 leads l
             LEFT JOIN 
                 lead_activities la ON la.lead_id = l.id
-            JOIN 
-                users u ON l.user_id = u.id
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
@@ -598,7 +603,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         }
     }
     
-    // Get status distribution for the selected team
+    // Get status distribution for specific team
     if ($selected_team_member) {
         $status_query = "
             SELECT 
@@ -607,8 +612,11 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 SUM(CASE WHEN l.status = 'Closed Deal' THEN l.price ELSE 0 END) as value
             FROM 
                 leads l
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 l.user_id = ? AND
+                u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
             GROUP BY 
                 l.status
@@ -617,7 +625,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         ";
         
         $stmt = $conn->prepare($status_query);
-        $stmt->bind_param("iss", $selected_team_member, $start_date, $end_date);
+        $stmt->bind_param("iiss", $selected_team_member, $team_id, $start_date, $end_date);
     } else {
         $status_query = "
             SELECT 
@@ -626,8 +634,8 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 SUM(CASE WHEN l.status = 'Closed Deal' THEN l.price ELSE 0 END) as value
             FROM 
                 leads l
-            JOIN 
-                users u ON l.user_id = u.id
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
@@ -650,7 +658,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         }
     }
     
-    // Get temperature distribution for the selected team
+    // Get temperature distribution for specific team
     if ($selected_team_member) {
         $temp_query = "
             SELECT 
@@ -659,8 +667,11 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 SUM(CASE WHEN l.status = 'Closed Deal' THEN l.price ELSE 0 END) as value
             FROM 
                 leads l
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 l.user_id = ? AND
+                u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
             GROUP BY 
                 l.temperature
@@ -669,7 +680,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         ";
         
         $stmt = $conn->prepare($temp_query);
-        $stmt->bind_param("iss", $selected_team_member, $start_date, $end_date);
+        $stmt->bind_param("iiss", $selected_team_member, $team_id, $start_date, $end_date);
     } else {
         $temp_query = "
             SELECT 
@@ -678,8 +689,8 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 SUM(CASE WHEN l.status = 'Closed Deal' THEN l.price ELSE 0 END) as value
             FROM 
                 leads l
-            JOIN 
-                users u ON l.user_id = u.id
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
@@ -702,7 +713,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         }
     }
     
-    // Get top projects for the selected team
+    // Get top projects for specific team
     if ($selected_team_member) {
         $projects_query = "
             SELECT 
@@ -710,8 +721,11 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 COUNT(l.id) as count
             FROM 
                 leads l
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 l.user_id = ? AND
+                u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
             GROUP BY 
                 l.developer
@@ -721,7 +735,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         ";
         
         $stmt = $conn->prepare($projects_query);
-        $stmt->bind_param("iss", $selected_team_member, $start_date, $end_date);
+        $stmt->bind_param("iiss", $selected_team_member, $team_id, $start_date, $end_date);
     } else {
         $projects_query = "
             SELECT 
@@ -729,8 +743,8 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 COUNT(l.id) as count
             FROM 
                 leads l
-            JOIN 
-                users u ON l.user_id = u.id
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
@@ -754,7 +768,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         }
     }
     
-    // Get top models for the selected team
+    // Get top models for specific team
     if ($selected_team_member) {
         $models_query = "
             SELECT 
@@ -762,8 +776,11 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 COUNT(l.id) as count
             FROM 
                 leads l
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 l.user_id = ? AND
+                u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
             GROUP BY 
                 l.project_model
@@ -773,7 +790,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         ";
         
         $stmt = $conn->prepare($models_query);
-        $stmt->bind_param("iss", $selected_team_member, $start_date, $end_date);
+        $stmt->bind_param("iiss", $selected_team_member, $team_id, $start_date, $end_date);
     } else {
         $models_query = "
             SELECT 
@@ -781,8 +798,8 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 COUNT(l.id) as count
             FROM 
                 leads l
-            JOIN 
-                users u ON l.user_id = u.id
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
@@ -806,7 +823,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         }
     }
     
-    // Get top sources for the selected team
+    // Get top sources for specific team
     if ($selected_team_member) {
         $sources_query = "
             SELECT 
@@ -814,8 +831,11 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 COUNT(l.id) as count
             FROM 
                 leads l
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 l.user_id = ? AND
+                u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
             GROUP BY 
                 l.source
@@ -825,7 +845,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         ";
         
         $stmt = $conn->prepare($sources_query);
-        $stmt->bind_param("iss", $selected_team_member, $start_date, $end_date);
+        $stmt->bind_param("iiss", $selected_team_member, $team_id, $start_date, $end_date);
     } else {
         $sources_query = "
             SELECT 
@@ -833,8 +853,8 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
                 COUNT(l.id) as count
             FROM 
                 leads l
-            JOIN 
-                users u ON l.user_id = u.id
+            LEFT JOIN 
+                users u ON u.id = l.user_id
             WHERE 
                 u.team_id = ? AND
                 l.created_at BETWEEN ? AND ?
@@ -848,18 +868,19 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         $stmt = $conn->prepare($sources_query);
         $stmt->bind_param("iss", $team_id, $start_date, $end_date);
     }
-
+    
     $stmt->execute();
     $result = $stmt->get_result();
-
+    
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $reportData['top_sources'][] = $row;
         }
     }
     
-    // Get team member performance data
+    // Get team performance data for specific team
     if ($selected_team_member) {
+        // If a team member is selected, only show that member's performance
         $team_query = "
             SELECT 
                 u.id,
@@ -880,7 +901,7 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
             LEFT JOIN 
                 lead_activities la ON la.lead_id = l.id
             WHERE 
-                u.id = ?
+                u.id = ? AND u.team_id = ?
             GROUP BY 
                 u.id, u.name
             ORDER BY 
@@ -888,8 +909,9 @@ if ($selected_team_id == 'all' && $user['role'] == 'admin') {
         ";
         
         $stmt = $conn->prepare($team_query);
-        $stmt->bind_param("ssi", $start_date, $end_date, $selected_team_member);
+        $stmt->bind_param("ssii", $start_date, $end_date, $selected_team_member, $team_id);
     } else {
+        // Get team member performance for specific team
         $team_query = "
             SELECT 
                 u.id,
@@ -1055,13 +1077,13 @@ $quarterName = $quarterNames[$quarter];
 
     /* Reports Page */
     .reports-page {
-            flex: 1;
-            padding: 1.5rem;
-            width: 100%;
-            margin: 0;
-            min-height: calc(100vh - 100px);
-            display: flex;
-            flex-direction: column;
+        flex: 1;
+        padding: 1.5rem;
+        width: 100%;
+        margin: 0;
+        min-height: calc(100vh - 100px);
+        display: flex;
+        flex-direction: column;
     }
 
     /* Page Header */
@@ -1333,98 +1355,186 @@ $quarterName = $quarterNames[$quarter];
         color: var(--primary);
     }
 
-    .performance-table-container {
-        overflow-x: auto;
+    /* Card Styles */
+    .card {
+        background-color: var(--white);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
     }
 
-    .performance-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .performance-table th,
-    .performance-table td {
-        padding: 0.75rem 1rem;
-        text-align: left;
+    .card-header {
+        padding: 1.25rem;
         border-bottom: 1px solid var(--gray-light);
+        background-color: var(--secondary);
     }
 
-    .performance-table th {
-        background-color: var(--secondary);
-        color: var(--dark);
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    /* Table Styles */
+    .table-container {
+        overflow-x: auto;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background-color: var(--white);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin-bottom: 0;
+    }
+
+    .table thead {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    }
+
+    .table th {
+        color: var(--white);
         font-weight: 600;
         font-size: 0.875rem;
-        position: relative;
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 2px solid var(--primary-dark);
         cursor: pointer;
+        user-select: none;
+        position: relative;
+        transition: all 0.2s ease;
         white-space: nowrap;
     }
 
-    .performance-table th:hover {
-        background-color: #eaecf4;
+    .table th:hover {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    .performance-table th i {
-        margin-left: 0.375rem;
+    .table th i {
+        margin-left: 0.5rem;
         font-size: 0.75rem;
-        color: var(--gray);
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
     }
 
-    .performance-table tbody tr {
-        transition: var(--transition);
+    .table th:hover i {
+        opacity: 1;
     }
 
-    .performance-table tbody tr:hover {
-        background-color: var(--secondary);
+    .table th.asc::after,
+    .table th.desc::after {
+        content: '';
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
     }
 
-    .performance-table tbody tr:last-child td {
+    .table th.asc::after {
+        border-bottom: 5px solid var(--white);
+    }
+
+    .table th.desc::after {
+        border-top: 5px solid var(--white);
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .table tbody tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    .table tbody tr:nth-child(odd) {
+        background-color: var(--white);
+    }
+
+    .table tbody tr:hover {
+        background: linear-gradient(135deg, var(--primary-light) 0%, rgba(67, 97, 238, 0.05) 100%);
+        transform: translateX(2px);
+        box-shadow: 0 2px 8px rgba(67, 97, 238, 0.15);
+        border-left: 4px solid var(--primary);
+    }
+
+    .table tbody tr:last-child {
         border-bottom: none;
     }
 
-    .performance-table td {
+    .table td {
+        padding: 1rem;
+        vertical-align: middle;
         font-size: 0.875rem;
         color: var(--dark);
+        border-bottom: 1px solid var(--gray-light);
+        position: relative;
     }
 
-    .performance-table td.name {
-        font-weight: 500;
+    .table td.name {
+        font-weight: 600;
+        color: var(--primary-dark);
+        font-size: 0.9rem;
     }
 
-    .performance-table td.sorted {
-        background-color: var(--primary-light);
+    .table td:first-child {
+        border-left: 3px solid transparent;
+        transition: border-left-color 0.2s ease;
     }
 
-    .performance-metric {
+    .table tbody tr:hover td:first-child {
+        border-left-color: var(--primary);
+    }
+
+    /* Metric Styles */
+    .metric-value {
+        font-weight: 600;
+        color: var(--dark);
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
 
-    .metric-value {
+    .metric-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.375rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
         font-weight: 600;
+        white-space: nowrap;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
     }
 
-    .metric-badge {
-        display: inline-block;
-        padding: 0.125rem 0.5rem;
-        border-radius: var(--radius-sm);
-        font-size: 0.75rem;
-        font-weight: 500;
+    .metric-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
 
     .metric-badge.high {
-        background-color: var(--success-light);
-        color: var(--success);
+        background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        color: var(--white);
     }
 
     .metric-badge.medium {
-        background-color: var(--warning-light);
-        color: var(--warning);
+        background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+        color: var(--white);
     }
 
     .metric-badge.low {
-        background-color: var(--danger-light);
-        color: var(--danger);
+        background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        color: var(--white);
     }
 
     /* No Data */
@@ -1477,12 +1587,12 @@ $quarterName = $quarterNames[$quarter];
         cursor: pointer;
         transition: var(--transition);
         text-decoration: none;
+        border: none;
     }
 
     .btn-primary {
         background-color: var(--primary);
         color: var(--white);
-        border: none;
     }
 
     .btn-primary:hover {
@@ -1499,158 +1609,6 @@ $quarterName = $quarterNames[$quarter];
         background-color: var(--gray-light);
     }
 
-    /* Responsive */
-    @media (max-width: 992px) {
-        .report-charts {
-            grid-template-columns: 1fr;
-        }
-        
-        .chart-container {
-            height: 300px;
-        }
-        
-        .sources-chart-container {
-            height: 350px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .page-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-        
-        .filter-form {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .form-group {
-            width: 100%;
-        }
-        
-        .report-summary {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 576px) {
-        .report-summary {
-            grid-template-columns: 1fr;
-        }
-        
-        .team-badge, .period-badge {
-            display: flex;
-            margin-left: 0;
-            margin-top: 0.5rem;
-        }
-        
-        .report-actions {
-            flex-direction: column;
-        }
-        
-        .btn {
-            width: 100%;
-            justify-content: center;
-        }
-    }
-
-    /* Print Styles */
-    @media print {
-        /* Hide non-printable elements */
-        .sidebar,
-        .header,
-        .search-filter-container,
-        .report-actions,
-        .btn,
-        .view-toggle {
-            display: none !important;
-        }
-
-        /* Reset page margins */
-        @page {
-            margin: 1cm;
-        }
-
-        /* Ensure content fits print page */
-        body {
-            margin: 0;
-            padding: 0;
-            background: white;
-        }
-
-        .container {
-            display: block;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
-        .main-content {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-        }
-
-        .content {
-            padding: 0;
-            max-width: none;
-        }
-
-        /* Adjust card styles for print */
-        .card {
-            break-inside: avoid;
-            border: 1px solid #ddd;
-            margin-bottom: 20px;
-            box-shadow: none;
-        }
-
-        .chart-container {
-            break-inside: avoid;
-            page-break-inside: avoid;
-            height: 300px !important;
-        }
-
-        /* Ensure tables fit on page */
-        .table {
-            font-size: 10pt;
-            width: 100%;
-        }
-
-        .table th,
-        .table td {
-            padding: 4pt 8pt;
-        }
-
-        /* Add report header for print */
-        .print-header {
-            display: block !important;
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 20px 0;
-            border-bottom: 2px solid #000;
-        }
-
-        .print-header h1 {
-            margin: 0;
-            font-size: 24pt;
-            color: #000;
-        }
-
-        .print-header p {
-            margin: 5px 0 0;
-            font-size: 12pt;
-            color: #666;
-        }
-    }
-
-    /* Add these styles to your existing CSS */
-    .chart-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
-
     .btn-sm {
         padding: 0.375rem 0.75rem;
         font-size: 0.875rem;
@@ -1658,8 +1616,8 @@ $quarterName = $quarterNames[$quarter];
 
     .btn-outline {
         background-color: white;
-        border: 1px solid var(--gray-300);
-        color: var(--gray-700);
+        border: 1px solid var(--gray-light);
+        color: var(--gray);
         transition: all 0.2s ease;
     }
 
@@ -1670,158 +1628,13 @@ $quarterName = $quarterNames[$quarter];
         color: white;
     }
 
-    .metric-value {
-        font-weight: 600;
-        color: var(--gray-800);
+    /* Chart Actions */
+    .chart-actions {
         display: flex;
-        align-items: center;
         gap: 0.5rem;
     }
 
-    .metric-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 1rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .metric-badge.high {
-        background-color: var(--success-light);
-        color: #065f46;
-    }
-
-    .metric-badge.medium {
-        background-color: var(--warning-light);
-        color: #92400e;
-    }
-
-    .metric-badge.low {
-        background-color: var(--danger-light);
-        color: #991b1b;
-    }
-
-    .table th {
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: var(--gray-700);
-        background-color: var(--gray-50);
-        padding: 0.75rem 1rem;
-        border-bottom: 2px solid var(--gray-200);
-    }
-
-    .table td {
-        padding: 1rem;
-        border-bottom: 1px solid var(--gray-200);
-        vertical-align: middle;
-    }
-
-    .table tr:hover {
-        background-color: var(--gray-50);
-    }
-
-    .table th i.fas {
-        font-size: 0.75rem;
-        margin-left: 0.25rem;
-        color: var(--gray-400);
-    }
-
-    .chart-container {
-        margin: 1rem 0;
-        padding: 1rem;
-        background-color: white;
-        border-radius: var(--border-radius);
-    }
-
-    /* Team Performance Styles */
-    .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .table {
-        width: 100%;
-        margin-bottom: 0;
-        border-collapse: separate;
-        border-spacing: 0;
-    }
-
-    .table th {
-        background-color: var(--gray-50);
-        font-weight: 600;
-        padding: 1rem;
-        border-bottom: 2px solid var(--gray-200);
-        white-space: nowrap;
-    }
-
-    .table td {
-        padding: 1rem;
-        vertical-align: middle;
-        border-bottom: 1px solid var(--gray-200);
-    }
-
-    .table tbody tr:hover {
-        background-color: var(--gray-50);
-    }
-
-    .badge {
-        padding: 0.35em 0.65em;
-        font-size: 0.75em;
-        font-weight: 500;
-        border-radius: 0.25rem;
-        text-transform: capitalize;
-    }
-
-    .bg-admin {
-        background-color: #4f46e5;
-        color: white;
-    }
-
-    .bg-manager {
-        background-color: #0ea5e9;
-        color: white;
-    }
-
-    .bg-supervisor {
-        background-color: #10b981;
-        color: white;
-    }
-
-    .bg-agent {
-        background-color: #6366f1;
-        color: white;
-    }
-
-    .metric-value {
-        font-weight: 600;
-        color: var(--gray-800);
-    }
-
-    .metric-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        white-space: nowrap;
-    }
-
-    .metric-badge.high {
-        background-color: var(--success-light);
-        color: #065f46;
-    }
-
-    .metric-badge.medium {
-        background-color: var(--warning-light);
-        color: #92400e;
-    }
-
-    .metric-badge.low {
-        background-color: var(--danger-light);
-        color: #991b1b;
-    }
-
+    /* Utility Classes */
     .text-center {
         text-align: center;
     }
@@ -1842,21 +1655,369 @@ $quarterName = $quarterNames[$quarter];
         color: var(--primary);
     }
 
-    /* Print styles for team performance */
+    .text-info {
+        color: var(--info);
+    }
+
+    .text-success {
+        color: var(--success);
+    }
+
+    .text-warning {
+        color: var(--warning);
+    }
+
+    /* COMPLETELY REVISED PRINT STYLES - FIXED CHART ALIGNMENT AND TABLE PLACEMENT */
     @media print {
-        .table-responsive {
-            overflow-x: visible;
+        /* Basic print setup */
+        @page {
+            margin: 0.5in;
+            size: A4 landscape;
+        }
+        
+        * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
+        body {
+            font-family: Arial, sans-serif !important;
+            font-size: 10pt !important;
+            line-height: 1.2 !important;
+            color: black !important;
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+        
+        /* Hide non-essential elements */
+        .sidebar,
+        .header,
+        .report-filters,
+        .report-actions,
+        .btn,
+        .no-data,
+        .chart-actions {
+            display: none !important;
+        }
+        
+        /* Show main content */
+        .reports-page {
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            min-height: auto !important;
+            display: block !important;
+        }
+        
+        /* Page header for print */
+        .page-header {
+            text-align: center !important;
+            margin-bottom: 15px !important;
+            padding-bottom: 8px !important;
+            border-bottom: 2px solid black !important;
+            page-break-after: avoid !important;
+            display: block !important;
+        }
+        
+        .page-title {
+            font-size: 16pt !important;
+            font-weight: bold !important;
+            color: black !important;
+            margin-bottom: 5px !important;
+            display: block !important;
+            text-align: center !important;
+        }
+        
+        .team-badge,
+        .period-badge {
+            font-size: 10pt !important;
+            color: black !important;
+            background: #f0f0f0 !important;
+            border: 1px solid black !important;
+            padding: 3px 8px !important;
+            margin: 0 5px !important;
+            display: inline-block !important;
+        }
+        
+        /* Summary cards - FIXED LAYOUT */
+        .report-summary {
+            width: 100% !important;
+            margin-bottom: 15px !important;
+            page-break-after: avoid !important;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            justify-content: space-between !important;
+        }
+        
+        .summary-card {
+            width: 24% !important;
+            border: 1px solid black !important;
+            padding: 8px !important;
+            text-align: center !important;
+            background: #f8f8f8 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+        }
+        
+        .summary-card::before {
+            display: none !important;
+        }
+        
+        .summary-icon {
+            display: none !important;
+        }
+        
+        .summary-info {
+            display: block !important;
+        }
+        
+        .summary-info h3 {
+            font-size: 8pt !important;
+            margin: 0 0 3px 0 !important;
+            color: black !important;
+            text-transform: uppercase !important;
+            font-weight: bold !important;
+        }
+        
+        .summary-info p {
+            font-size: 12pt !important;
+            font-weight: bold !important;
+            color: black !important;
+            margin: 0 !important;
+        }
+        
+        /* REORDERED CONTENT - Team Performance Table First */
+        /* This is a special container we'll add in the HTML */
+        .print-order-wrapper {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        
+        .print-first {
+            order: -1 !important;
+        }
+        
+        /* Team performance cards - FIXED */
+        .card {
+            border: 1px solid black !important;
+            margin-bottom: 10px !important;
+            box-shadow: none !important;
+            page-break-inside: avoid !important;
+            display: block !important;
+            width: 100% !important;
+        }
+        
+        .card-header {
+            background: #e0e0e0 !important;
+            border-bottom: 1px solid black !important;
+            padding: 5px 8px !important;
+            display: block !important;
+        }
+        
+        .card-body {
+            padding: 0 !important;
+            display: block !important;
+        }
+        
+        /* Table - FIXED DISPLAY */
+        .table-container {
+            overflow: visible !important;
+            display: block !important;
+        }
+        
+        .table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            display: table !important;
+            margin: 0 !important;
+        }
+        
+        .table thead {
+            display: table-header-group !important;
+            background: #d0d0d0 !important;
+        }
+        
+        .table tbody {
+            display: table-row-group !important;
+        }
+        
+        .table tr {
+            display: table-row !important;
+            page-break-inside: avoid !important;
+        }
+        
+        .table th,
+        .table td {
+            display: table-cell !important;
+            border: 1px solid black !important;
+            padding: 4px 6px !important;
+            text-align: left !important;
+            font-size: 8pt !important;
+            vertical-align: top !important;
         }
         
         .table th {
-            background-color: #f8f9fa !important;
-            color: #000 !important;
+            background: #d0d0d0 !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            color: black !important;
         }
         
-        .metric-badge {
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
+        .table tbody tr:nth-child(even) {
+            background: #f8f8f8 !important;
         }
+        
+        .table tbody tr:nth-child(odd) {
+            background: white !important;
+        }
+        
+        /* Charts - COMPLETELY REVISED FOR BETTER ALIGNMENT */
+        .report-charts {
+            width: 100% !important;
+            margin-bottom: 15px !important;
+            page-break-before: always !important;
+            display: block !important;
+        }
+        
+        /* Make each chart container a block element with consistent sizing */
+        .chart-container {
+            display: block !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 200px !important;
+            max-height: 250px !important;
+            margin-bottom: 20px !important;
+            border: 1px solid black !important;
+            padding: 10px !important;
+            background: white !important;
+            box-shadow: none !important;
+            page-break-inside: avoid !important;
+            overflow: hidden !important;
+        }
+        
+        .chart-header {
+            margin-bottom: 5px !important;
+            text-align: center !important;
+            display: block !important;
+        }
+        
+        .chart-title {
+            font-size: 10pt !important;
+            font-weight: bold !important;
+            color: black !important;
+            margin: 0 !important;
+            display: block !important;
+        }
+        
+        .chart-title i {
+            display: none !important;
+        }
+        
+        .chart-body {
+            height: 180px !important;
+            width: 100% !important;
+            display: block !important;
+            position: relative !important;
+            text-align: center !important;
+        }
+        
+        /* Canvas elements - FORCE THEM TO PRINT */
+        canvas {
+            max-width: 100% !important;
+            height: 180px !important;
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            margin: 0 auto !important;
+        }
+        
+        /* Sources chart - FULL WIDTH */
+        .sources-chart-container {
+            width: 100% !important;
+            height: auto !important;
+            min-height: 200px !important;
+            margin-bottom: 20px !important;
+        }
+        
+        /* Metric badges - SIMPLIFIED */
+        .metric-badge {
+            padding: 1px 4px !important;
+            border-radius: 2px !important;
+            font-size: 7pt !important;
+            font-weight: bold !important;
+            display: inline-block !important;
+        }
+        
+        .metric-badge.high {
+            background: #d4edda !important;
+            color: #155724 !important;
+            border: 1px solid #155724 !important;
+        }
+        
+        .metric-badge.medium {
+            background: #fff3cd !important;
+            color: #856404 !important;
+            border: 1px solid #856404 !important;
+        }
+        
+        .metric-badge.low {
+            background: #f8d7da !important;
+            color: #721c24 !important;
+            border: 1px solid #721c24 !important;
+        }
+        
+        /* Hide all icons in print */
+        .fas, .far, .fab, i[class*="fa"] {
+            display: none !important;
+        }
+        
+        /* Metric values - SIMPLIFIED */
+        .metric-value {
+            display: block !important;
+            text-align: center !important;
+        }
+        
+        /* Force visibility of all content */
+        .reports-page * {
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* Two-column chart layout for first page */
+        .two-column-charts {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            justify-content: space-between !important;
+            margin-bottom: 15px !important;
+        }
+        
+        .two-column-charts .chart-container {
+            width: 48% !important;
+            display: inline-block !important;
+            vertical-align: top !important;
+        }
+    }
+
+    /* Animation for sorting */
+    @keyframes rowSlideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .row-animate {
+        animation: rowSlideIn 0.3s ease-out forwards;
     }
 </style>
 
@@ -1985,192 +2146,230 @@ const reportData = {
                 </div>
                 
                 <?php if ($hasData): ?>
-                <div class="report-summary">
-                    <div class="summary-card leads">
-                        <div class="summary-icon">
-                            <i class="fas fa-users"></i>
+                <!-- Wrap content in a print-order-wrapper to control print order -->
+                <div class="print-order-wrapper">
+                    <div class="report-summary">
+                        <div class="summary-card leads">
+                            <div class="summary-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="summary-info">
+                                <h3>Total Leads</h3>
+                                <p><?php echo $reportData['total_leads']; ?></p>
+                            </div>
                         </div>
-                        <div class="summary-info">
-                            <h3>Total Leads</h3>
-                            <p><?php echo $reportData['total_leads']; ?></p>
+                        
+                        <div class="summary-card presentations">
+                            <div class="summary-icon">
+                                <i class="fas fa-handshake"></i>
+                            </div>
+                            <div class="summary-info">
+                                <h3>Presentations</h3>
+                                <p><?php echo $reportData['presentations']; ?></p>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="summary-card presentations">
-                        <div class="summary-icon">
-                            <i class="fas fa-handshake"></i>
+                        
+                        <div class="summary-card closed">
+                            <div class="summary-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="summary-info">
+                                <h3>Closed Deals</h3>
+                                <p><?php echo $reportData['closed_deals']; ?></p>
+                            </div>
                         </div>
-                        <div class="summary-info">
-                            <h3>Presentations</h3>
-                            <p><?php echo $reportData['presentations']; ?></p>
-                        </div>
-                    </div>
-                    
-                    <div class="summary-card closed">
-                        <div class="summary-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="summary-info">
-                            <h3>Closed Deals</h3>
-                            <p><?php echo $reportData['closed_deals']; ?></p>
-                        </div>
-                    </div>
-                    
-                    <div class="summary-card rate">
-                        <div class="summary-icon">
-                            <i class="fas fa-percentage"></i>
-                        </div>
-                        <div class="summary-info">
-                            <h3>Closed Deal Rate</h3>
-                            <p><?php echo $reportData['conversion_rate']; ?>%</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <?php if ($hasCharts): ?>
-                <div class="report-charts">
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <h3 class="chart-title"><i class="fas fa-chart-pie"></i> Lead Status Distribution</h3>
-                        </div>
-                        <div class="chart-body">
-                            <canvas id="statusChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <h3 class="chart-title"><i class="fas fa-thermometer-half"></i> Lead Temperature</h3>
-                        </div>
-                        <div class="chart-body">
-                            <canvas id="temperatureChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="report-charts">
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <h3 class="chart-title"><i class="fas fa-building"></i> Top Projects</h3>
-                        </div>
-                        <div class="chart-body">
-                            <canvas id="projectsChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <h3 class="chart-title"><i class="fas fa-home"></i> Top Models Inquired</h3>
-                        </div>
-                        <div class="chart-body">
-                            <canvas id="modelsChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                
-<div class="chart-container sources-chart-container">
-    <div class="chart-header">
-        <h3 class="chart-title"><i class="fas fa-bullhorn"></i> Lead Sources</h3>
-    </div>
-    <div class="chart-body">
-        <canvas id="sourcesChart"></canvas>
-    </div>
-</div>
-
-                <?php endif; ?>
-                
-                
-                <?php if (!empty($reportData['team_performance'])): ?>
-                <!-- Team Performance Graph -->
-                <div class="card">
-                    <div class="card-header">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h3 class="chart-title">
-                                <i class="fas fa-chart-bar"></i> Team Performance Overview
-                            </h3>
-                            <div class="chart-actions">
-                                <button type="button" class="btn btn-outline btn-sm active" onclick="updateTeamChart('leads')">
-                                    <i class="fas fa-users"></i> Leads
-                                </button>
-                                <button type="button" class="btn btn-outline btn-sm" onclick="updateTeamChart('conversion')">
-                                    <i class="fas fa-percentage"></i> Conversion
-                                </button>
-                                <button type="button" class="btn btn-outline btn-sm" onclick="updateTeamChart('value')">
-                                    <i class="fas fa-money-bill-wave"></i> Value
-                                </button>
+                        
+                        <div class="summary-card rate">
+                            <div class="summary-icon">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <div class="summary-info">
+                                <h3>Closed Deal Rate</h3>
+                                <p><?php echo $reportData['conversion_rate']; ?>%</p>
                             </div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div class="chart-container" style="position: relative; height: 400px;">
-                            <canvas id="teamPerformanceChart"></canvas>
+                    
+                    <?php if (!empty($reportData['team_performance'])): ?>
+                    <!-- Team Performance Table - Now with print-first class to appear on first page -->
+                    <div class="print-first">
+                        <!-- Team Performance Table -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="chart-title">
+                                    <?php if ($user['role'] == 'admin' && $selected_team_id == 'all'): ?>
+                                        Team Performance Details
+                                    <?php elseif ($user['role'] == 'admin'): ?>
+                                        Team Member Performance
+                                    <?php else: ?>
+                                        Team Member Performance
+                                    <?php endif; ?>
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-container">
+                                    <div class="table-responsive">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th data-column="name">Name</th>
+                                                    <th data-column="total_leads">Total Leads</th>
+                                                    <th data-column="presentations">Presentations</th>
+                                                    <th data-column="closed_deals">Closed Deals</th>
+                                                    <th data-column="conversion_rate">Conversion Rate</th>
+                                                    <th data-column="total_value">Total Value</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($reportData['team_performance'] as $performer): ?>
+                                                <tr data-name="<?php echo htmlspecialchars($performer['name']); ?>" 
+                                                    data-leads="<?php echo $performer['total_leads']; ?>"
+                                                    data-presentations="<?php echo $performer['presentations']; ?>"
+                                                    data-closed="<?php echo $performer['closed_deals']; ?>"
+                                                    data-rate="<?php echo $performer['conversion_rate']; ?>"
+                                                    data-value="<?php echo $performer['total_value']; ?>">
+                                                    <td class="name">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-user me-2 text-primary"></i>
+                                                            <?php echo htmlspecialchars($performer['name']); ?>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="metric-value">
+                                                            <i class="fas fa-users me-2 text-primary"></i>
+                                                            <?php echo number_format($performer['total_leads']); ?>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="metric-value">
+                                                            <i class="fas fa-handshake me-2 text-info"></i>
+                                                            <?php echo number_format($performer['presentations']); ?>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="metric-value">
+                                                            <i class="fas fa-check-circle me-2 text-success"></i>
+                                                            <?php echo number_format($performer['closed_deals']); ?>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="metric-value">
+                                                            <?php
+                                                            $rate = floatval($performer['conversion_rate']);
+                                                            $rateClass = $rate >= 50 ? 'high' : ($rate >= 25 ? 'medium' : 'low');
+                                                            $rateIcon = $rate >= 50 ? 'fas fa-arrow-up' : ($rate >= 25 ? 'fas fa-minus' : 'fas fa-arrow-down');
+                                                            ?>
+                                                            <i class="<?php echo $rateIcon; ?> me-2"></i>
+                                                            <span class="metric-badge <?php echo $rateClass; ?>">
+                                                                <?php echo number_format($rate, 1); ?>%
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="metric-value">
+                                                            <i class="fas fa-money-bill-wave me-2 text-warning"></i>
+                                                            ₱<?php echo number_format($performer['total_value'], 2); ?>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($hasCharts): ?>
+                    <!-- Charts section - will appear after team performance table in print -->
+                    <div>
+                        <!-- First row of charts - 2 column layout -->
+                        <div class="two-column-charts">
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h3 class="chart-title"><i class="fas fa-chart-pie"></i> Lead Status Distribution</h3>
+                                </div>
+                                <div class="chart-body">
+                                    <canvas id="statusChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h3 class="chart-title"><i class="fas fa-thermometer-half"></i> Lead Temperature</h3>
+                                </div>
+                                <div class="chart-body">
+                                    <canvas id="temperatureChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Second row of charts - 2 column layout -->
+                        <div class="two-column-charts">
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h3 class="chart-title"><i class="fas fa-building"></i> Top Projects</h3>
+                                </div>
+                                <div class="chart-body">
+                                    <canvas id="projectsChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h3 class="chart-title"><i class="fas fa-home"></i> Top Models Inquired</h3>
+                                </div>
+                                <div class="chart-body">
+                                    <canvas id="modelsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-                <!-- Team Performance Table -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="chart-title">
-                            <?php if ($user['role'] == 'admin' && $selected_team_id == 'all'): ?>
-                                <i class="fas fa-users"></i> Team Performance Details
-                            <?php elseif ($user['role'] == 'admin'): ?>
-                                <i class="fas fa-user-friends"></i> Team Member Performance
-                            <?php else: ?>
-                                <i class="fas fa-user-friends"></i> Team Member Performance
-                            <?php endif; ?>
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th data-column="name">Name <i class="fas fa-sort"></i></th>
-                                        <th data-column="total_leads">Total Leads <i class="fas fa-sort"></i></th>
-                                        <th data-column="presentations">Presentations <i class="fas fa-sort"></i></th>
-                                        <th data-column="closed_deals">Closed Deals <i class="fas fa-sort"></i></th>
-                                        <th data-column="conversion_rate">Conversion Rate <i class="fas fa-sort"></i></th>
-                                        <th data-column="total_value">Total Value <i class="fas fa-sort"></i></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($reportData['team_performance'] as $performer): ?>
-                                    <tr>
-                                        <td class="name"><?php echo htmlspecialchars($performer['name']); ?></td>
-                                        <td>
-                                            <div class="metric-value"><?php echo number_format($performer['total_leads']); ?></div>
-                                        </td>
-                                        <td>
-                                            <div class="metric-value"><?php echo number_format($performer['presentations']); ?></div>
-                                        </td>
-                                        <td>
-                                            <div class="metric-value"><?php echo number_format($performer['closed_deals']); ?></div>
-                                        </td>
-                                        <td>
-                                            <div class="metric-value">
-                                                <?php
-                                                $rate = floatval($performer['conversion_rate']);
-                                                $rateClass = $rate >= 50 ? 'high' : ($rate >= 25 ? 'medium' : 'low');
-                                                ?>
-                                                <span class="metric-badge <?php echo $rateClass; ?>">
-                                                    <?php echo number_format($rate, 1); ?>%
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="metric-value">₱<?php echo number_format($performer['total_value'], 2); ?></div>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                        <!-- Sources chart - full width -->
+                        <div class="chart-container sources-chart-container">
+                            <div class="chart-header">
+                                <h3 class="chart-title"><i class="fas fa-bullhorn"></i> Lead Sources</h3>
+                            </div>
+                            <div class="chart-body">
+                                <canvas id="sourcesChart"></canvas>
+                            </div>
                         </div>
                     </div>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($reportData['team_performance'])): ?>
+                    <!-- Team Performance Graph - will appear after charts in print -->
+                    <div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h3 class="chart-title">
+                                        <i class="fas fa-chart-bar"></i> Team Performance Overview
+                                    </h3>
+                                    <div class="chart-actions">
+                                        <button type="button" class="btn btn-outline btn-sm active" onclick="updateTeamChart('leads')">
+                                            <i class="fas fa-users"></i> Leads
+                                        </button>
+                                        <button type="button" class="btn btn-outline btn-sm" onclick="updateTeamChart('conversion')">
+                                            <i class="fas fa-percentage"></i> Conversion
+                                        </button>
+                                        <button type="button" class="btn btn-outline btn-sm" onclick="updateTeamChart('value')">
+                                            <i class="fas fa-money-bill-wave"></i> Value
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="position: relative; height: 400px;">
+                                    <canvas id="teamPerformanceChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <?php endif; ?>
-                
                 <?php else: ?>
                 <div class="no-data">
                     <i class="fas fa-chart-bar"></i>
@@ -2193,16 +2392,6 @@ const reportData = {
         </div>
     </div>
 
-    <!-- Add print header (hidden by default) -->
-    <div class="print-header" style="display: none;">
-        <h1>Performance Report</h1>
-        <p>
-            <?php echo $team_name; ?> - 
-            <?php echo $year; ?> <?php echo $quarterName; ?>
-            <?php echo $month > 0 ? ' - ' . date('F', mktime(0, 0, 0, $month, 1)) : ''; ?>
-        </p>
-    </div>
-
     <script>
     // Function to handle report export
     function exportReport() {
@@ -2221,105 +2410,176 @@ const reportData = {
         window.location.href = exportUrl;
     }
 
-    // Function to handle report printing
+    // COMPLETELY REVISED PRINT FUNCTION FOR BETTER CHART RENDERING
     function printReport() {
-        // Wait for charts to be fully rendered
-        setTimeout(() => {
-            // Show print header
-            document.querySelector('.print-header').style.display = 'block';
+        console.log('Print function called');
+        
+        // Set chart defaults for better print rendering
+        Chart.defaults.font.size = 10;
+        Chart.defaults.plugins.legend.position = 'bottom';
+        Chart.defaults.plugins.legend.labels.boxWidth = 10;
+        Chart.defaults.plugins.legend.labels.padding = 5;
+        
+        // Force all charts to render at their maximum size
+        const charts = document.querySelectorAll('canvas');
+        charts.forEach(canvas => {
+            if (canvas.chart) {
+                canvas.chart.resize();
+            }
+        });
+        
+        // Convert all charts to images before printing
+        const chartImages = [];
+        
+        const processCharts = async () => {
+            for (let i = 0; i < charts.length; i++) {
+                const canvas = charts[i];
+                try {
+                    // Wait for any animations to complete
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    // Convert canvas to image with high quality
+                    const imageData = canvas.toDataURL('image/png', 1.0);
+                    const img = document.createElement('img');
+                    img.src = imageData;
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    img.style.display = 'block';
+                    img.style.margin = '0 auto';
+                    img.className = 'chart-print-image';
+                    
+                    // Replace canvas with image
+                    const container = canvas.parentElement;
+                    container.appendChild(img);
+                    canvas.style.display = 'none';
+                    
+                    chartImages.push({ canvas, img, container });
+                    console.log(`Chart ${i + 1} converted to image`);
+                } catch (error) {
+                    console.error(`Error converting chart ${i + 1}:`, error);
+                }
+            }
             
-            // Print the report
-            window.print();
-            
-            // Hide print header after printing
-            document.querySelector('.print-header').style.display = 'none';
-        }, 500);
+            // Wait for images to load then print
+            setTimeout(() => {
+                console.log('Initiating print...');
+                window.print();
+                
+                // Restore canvases after printing
+                setTimeout(() => {
+                    chartImages.forEach(({ canvas, img, container }) => {
+                        canvas.style.display = 'block';
+                        if (container.contains(img)) {
+                            container.removeChild(img);
+                        }
+                    });
+                    console.log('Charts restored after printing');
+                }, 1000);
+            }, 500);
+        };
+        
+        processCharts();
     }
+
+    // Enhanced table sorting functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.querySelector('.table');
+        if (!table) return;
+
+        const tbody = table.querySelector('tbody');
+        const headers = table.querySelectorAll('th[data-column]');
+        
+        let currentSort = {
+            column: null,
+            direction: 'asc'
+        };
+
+        // Add click event listeners to headers
+        headers.forEach(header => {
+            header.addEventListener('click', function() {
+                const column = this.getAttribute('data-column');
+                sortTable(column);
+            });
+        });
+
+        function sortTable(column) {
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Remove existing sort classes
+            headers.forEach(h => {
+                h.classList.remove('asc', 'desc');
+            });
+            
+            // Determine sort direction
+            let direction = 'asc';
+            if (currentSort.column === column && currentSort.direction === 'asc') {
+                direction = 'desc';
+            }
+            
+            // Update current sort
+            currentSort = { column, direction };
+            
+            // Add sort class to current header
+            const currentHeader = table.querySelector(`th[data-column="${column}"]`);
+            currentHeader.classList.add(direction);
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aValue, bValue;
+                
+                // Use data attributes for more reliable sorting
+                switch(column) {
+                    case 'name':
+                        aValue = a.getAttribute('data-name').toLowerCase();
+                        bValue = b.getAttribute('data-name').toLowerCase();
+                        break;
+                    case 'total_leads':
+                        aValue = parseInt(a.getAttribute('data-leads'));
+                        bValue = parseInt(b.getAttribute('data-leads'));
+                        break;
+                    case 'presentations':
+                        aValue = parseInt(a.getAttribute('data-presentations'));
+                        bValue = parseInt(b.getAttribute('data-presentations'));
+                        break;
+                    case 'closed_deals':
+                        aValue = parseInt(a.getAttribute('data-closed'));
+                        bValue = parseInt(b.getAttribute('data-closed'));
+                        break;
+                    case 'conversion_rate':
+                        aValue = parseFloat(a.getAttribute('data-rate'));
+                        bValue = parseFloat(b.getAttribute('data-rate'));
+                        break;
+                    case 'total_value':
+                        aValue = parseFloat(a.getAttribute('data-value'));
+                        bValue = parseFloat(b.getAttribute('data-value'));
+                        break;
+                    default:
+                        aValue = 0;
+                        bValue = 0;
+                }
+                
+                if (direction === 'asc') {
+                    return aValue > bValue ? 1 : -1;
+                } else {
+                    return aValue < bValue ? 1 : -1;
+                }
+            });
+            
+            // Reorder rows in the table
+            rows.forEach(row => {
+                tbody.appendChild(row);
+            });
+            
+            // Add animation effect
+            rows.forEach((row, index) => {
+                row.style.animationDelay = `${index * 0.05}s`;
+                row.classList.add('row-animate');
+                setTimeout(() => {
+                    row.classList.remove('row-animate');
+                }, 300 + (index * 50));
+            });
+        }
+    });
     </script>
-
-    <style>
-    /* Add these styles for the team performance table */
-    .table th {
-        cursor: pointer;
-        user-select: none;
-        position: relative;
-    }
-
-    .table th:hover {
-        background-color: var(--gray-100);
-    }
-
-    .table th.asc::after,
-    .table th.desc::after {
-        content: '';
-        position: absolute;
-        right: 0.5rem;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 0;
-        height: 0;
-        border-left: 4px solid transparent;
-        border-right: 4px solid transparent;
-    }
-
-    .table th.asc::after {
-        border-bottom: 4px solid var(--primary);
-    }
-
-    .table th.desc::after {
-        border-top: 4px solid var(--primary);
-    }
-
-    .table td[data-column] {
-        position: relative;
-    }
-
-    .table tr:hover td[data-column]::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        height: 100%;
-        width: 3px;
-        background-color: var(--primary);
-    }
-
-    .performance-metric {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .performance-value {
-        font-weight: 600;
-        color: var(--gray-900);
-    }
-
-    .performance-label {
-        color: var(--gray-600);
-        font-size: 0.875rem;
-    }
-
-    .performance-trend {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-size: 0.875rem;
-    }
-
-    .trend-up {
-        color: var(--success);
-    }
-
-    .trend-down {
-        color: var(--danger);
-    }
-
-    .trend-neutral {
-        color: var(--warning);
-    }
-    </style>
-    
-    <script src="assets/js/script.js"></script>
 </body>
 </html>

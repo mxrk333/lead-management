@@ -191,7 +191,7 @@ CREATE TABLE `handbooks` (
 
 INSERT INTO `handbooks` (`id`, `title`, `description`, `category`, `cover_image`, `pdf_file`, `created_by`, `created_at`, `updated_at`) VALUES
 (1, 'Handbook: Version 1', '', '', 'uploads/handbook_covers/1749801234_Screenshot 2025-06-13 154516.png', 'uploads/handbook_pdfs/1749801234_Copy of Blue and Gold Modern Simple Professional Employee Handbook Booklet.pdf', 54, '2025-06-13 07:53:54', '2025-06-13 07:53:54'),
-(2, 'From Zero to Hero:', 'A Rookie Agent’s\r\n\r\n16-step Ultimate Playbook', '', 'uploads/handbook_covers/1750055656_Screenshot 2025-06-16 141054.png', 'uploads/handbook_pdfs/1750055656_Copy of HandBook_20250616_140352_0000 (1).pdf', 15, '2025-06-16 06:34:20', '2025-06-16 06:34:20');
+(2, 'From Zero to Hero:', 'A Rookie Agent''s 16-step Ultimate Playbook', '', 'uploads/handbook_covers/1750055656_Screenshot 2025-06-16 141054.png', 'uploads/handbook_pdfs/1750055656_Copy of HandBook_20250616_140352_0000 (1).pdf', 15, '2025-06-16 06:34:20', '2025-06-16 06:34:20');
 
 -- --------------------------------------------------------
 
@@ -348,7 +348,7 @@ CREATE TABLE `memos` (
   `visible_to_all` tinyint(1) DEFAULT '1',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `memos`
@@ -385,7 +385,7 @@ CREATE TABLE `memo_read_status` (
   `read_status` tinyint(1) NOT NULL DEFAULT '0',
   `read_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `memo_read_status`
@@ -414,7 +414,7 @@ CREATE TABLE `memo_team_visibility` (
   `memo_id` int NOT NULL,
   `team_id` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 

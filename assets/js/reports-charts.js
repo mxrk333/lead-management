@@ -1,11 +1,42 @@
-// Chart color configuration
+// Professional chart color configuration for print
 const chartColors = {
-    primary: '#4361ee',
-    success: '#10b981', 
-    warning: '#f59e0b',
-    danger: '#ef4444',
-    info: '#3b82f6',
-    gray: '#6b7280'
+    primary: '#2E86AB',
+    success: '#A23B72', 
+    warning: '#F18F01',
+    danger: '#C73E1D',
+    info: '#3B82F6',
+    gray: '#6B7280',
+    purple: '#8B5CF6',
+    teal: '#14B8A6'
+};
+
+// Professional print chart options
+const printChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            position: 'bottom',
+            labels: {
+                font: {
+                    size: 14,
+                    family: 'Times New Roman, serif'
+                },
+                padding: 20,
+                usePointStyle: true,
+                pointStyle: 'circle'
+            }
+        },
+        title: {
+            display: false
+        }
+    },
+    elements: {
+        arc: {
+            borderWidth: 2,
+            borderColor: '#fff'
+        }
+    }
 };
 
 // Initialize all charts when document is ready
@@ -27,15 +58,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         chartColors.warning,
                         chartColors.danger,
                         chartColors.info
-                    ]
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 2
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                ...printChartOptions,
                 plugins: {
                     legend: {
-                        position: 'right'
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 16,
+                                family: 'Times New Roman, serif'
+                            },
+                            padding: 25,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
                     }
                 }
             }
@@ -57,15 +98,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         chartColors.danger,
                         chartColors.warning,
                         chartColors.info
-                    ]
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 2
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                ...printChartOptions,
                 plugins: {
                     legend: {
-                        position: 'right'
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 16,
+                                family: 'Times New Roman, serif'
+                            },
+                            padding: 25,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
                     }
                 }
             }
