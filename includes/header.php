@@ -219,12 +219,6 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
 <header class="main-header">
     <div class="header-container">
         <div class="header-left">
-            <div class="mobile-toggle">
-                <button id="sidebar-toggle" class="sidebar-toggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-            
             <div class="header-search">
                 <form action="leads.php" method="GET" class="search-form">
                     <div class="search-input-wrapper">
