@@ -989,11 +989,11 @@ debugLog("Page rendering started");
                         </div>
                         
                         <div class="form-row">
-                            <div class="form-group required-field">
-                                <label for="email">Email Address</label>
+                            <div class="form-group">
+                                <label for="email">Email Addres <span class="optional-field">(Optional)</span></label>
                                 <input type="email" id="email" name="email" 
                                        value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
-                                       placeholder="client@example.com" maxlength="100" required>
+                                       placeholder="client@example.com" maxlength="100">
                             </div>
                             
                             <div class="form-group required-field">
@@ -1076,9 +1076,9 @@ debugLog("Page rendering started");
                             </div>
                             
                             <div class="form-group required-field">
-                                <label for="project_model">Project Model</label>
+                                <label for="project_model">House Model</label>
                                 <select id="project_model" name="project_model" required>
-                                    <option value="">Select Project Model</option>
+                                    <option value="">Select House Model</option>
                                 </select>
                             </div>
                         </div>

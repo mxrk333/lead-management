@@ -30,6 +30,32 @@ while ($team = $teams_result->fetch_assoc()) {
     $teams[$team['id']] = $team['name'];
 }
 
+// Get all users for person selection
+$users_query = "SELECT id, name, username, role, team_id FROM users WHERE is_active = 1 ORDER BY name ASC";
+$users_result = $conn->query($users_query);
+
+// Debug: Check if query failed
+if (!$users_result) {
+    error_log("Users query failed: " . $conn->error);
+    // Try without is_active filter
+    $users_query_fallback = "SELECT id, name, username, role, team_id FROM users ORDER BY name ASC";
+    $users_result = $conn->query($users_query_fallback);
+    if (!$users_result) {
+        error_log("Fallback users query also failed: " . $conn->error);
+    }
+}
+
+$users = [];
+if ($users_result) {
+    while ($user_data = $users_result->fetch_assoc()) {
+        $users[$user_data['id']] = $user_data;
+    }
+}
+
+// Debug: Log user data
+error_log("Users fetched: " . count($users));
+error_log("Users data: " . print_r($users, true));
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -37,8 +63,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = $_POST['description'];
         $when = date('Y-m-d H:i:s');
         $file_path = null;
-        $visible_to_all = isset($_POST['visible_to_all']) ? (int)$_POST['visible_to_all'] : 0;
+        $visibility_type = $_POST['visibility_type'] ?? 'all';
         $priority = $_POST['priority'] ?? 'Medium';
+        
+        // Debug: Log the visibility data
+        error_log("Memo creation - Visibility type: " . $visibility_type);
+        error_log("Memo creation - POST data: " . print_r($_POST, true));
         
         if (isset($_FILES['memo_file']) && $_FILES['memo_file']['size'] > 0) {
             $target_dir = "uploads/memos/";
@@ -52,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->begin_transaction();
         
         $team_id = $user['team_id'];
+        $visible_to_all = ($visibility_type === 'all') ? 1 : 0;
         
         $stmt = $conn->prepare("INSERT INTO memos (title, file_path, description, memo_when, priority, created_by, team_id, visible_to_all, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
         $stmt->bind_param("sssssiii", $title, $file_path, $description, $when, $priority, $_SESSION['user_id'], $team_id, $visible_to_all);
@@ -61,12 +92,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $memo_id = $conn->insert_id;
+        error_log("Memo created with ID: " . $memo_id);
         
         // Handle team visibility
-        if ($visible_to_all == 0) {
+        if ($visibility_type === 'teams') {
             $selected_teams = (isset($_POST['team_ids']) && is_array($_POST['team_ids'])) 
                 ? array_map('intval', $_POST['team_ids']) 
                 : [];
+            
+            error_log("Selected teams: " . print_r($selected_teams, true));
             
             if (!empty($selected_teams)) {
                 $insert_stmt = $conn->prepare("INSERT INTO memo_team_visibility (memo_id, team_id) VALUES (?, ?)");
@@ -74,15 +108,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $insert_stmt->bind_param("ii", $memo_id, $valid_team_id);
                     $insert_stmt->execute();
                 }
+                error_log("Team visibility records inserted");
+            }
+        }
+        
+        // Handle specific person visibility
+        if ($visibility_type === 'persons') {
+            $selected_persons = (isset($_POST['person_ids']) && is_array($_POST['person_ids'])) 
+                ? array_map('intval', $_POST['person_ids']) 
+                : [];
+            
+            error_log("Selected persons: " . print_r($selected_persons, true));
+            
+            if (!empty($selected_persons)) {
+                // Create memo_person_visibility table if it doesn't exist
+                $create_table_sql = "
+                CREATE TABLE IF NOT EXISTS `memo_person_visibility` (
+                  `id` int NOT NULL AUTO_INCREMENT,
+                  `memo_id` int NOT NULL,
+                  `user_id` int NOT NULL,
+                  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `memo_user_unique` (`memo_id`,`user_id`),
+                  KEY `memo_id` (`memo_id`),
+                  KEY `user_id` (`user_id`),
+                  CONSTRAINT `memo_person_visibility_ibfk_1` FOREIGN KEY (`memo_id`) REFERENCES `memos` (`id`) ON DELETE CASCADE,
+                  CONSTRAINT `memo_person_visibility_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+                ";
+                $conn->query($create_table_sql);
+                
+                $insert_stmt = $conn->prepare("INSERT INTO memo_person_visibility (memo_id, user_id) VALUES (?, ?)");
+                foreach ($selected_persons as $valid_user_id) {
+                    $insert_stmt->bind_param("ii", $memo_id, $valid_user_id);
+                    $insert_stmt->execute();
+                }
+                error_log("Person visibility records inserted");
             }
         }
         
         $conn->commit();
+        error_log("Memo creation completed successfully");
         header("Location: memo.php?success=1");
         exit();
         
     } catch (Exception $e) {
         $conn->rollback();
+        error_log("Memo creation error: " . $e->getMessage());
         $error_message = $e->getMessage();
     }
 }
@@ -259,6 +331,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: flex;
             gap: 1.5rem;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
         }
 
         .radio-option {
@@ -319,7 +392,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 600;
         }
 
-        .team-selector {
+        .selector-container {
             border: 1px solid var(--gray-200);
             border-radius: var(--border-radius);
             overflow: hidden;
@@ -327,7 +400,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: none;
         }
 
-        .team-selector-header {
+        .selector-header {
             background-color: var(--gray-50);
             padding: 1rem;
             border-bottom: 1px solid var(--gray-200);
@@ -336,31 +409,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
         }
 
-        .team-actions {
+        .selector-actions {
             display: flex;
             gap: 1rem;
         }
 
-        .team-action {
+        .selector-action {
             color: var(--primary);
             text-decoration: none;
             font-size: 0.875rem;
         }
 
-        .team-action:hover {
+        .selector-action:hover {
             text-decoration: underline;
         }
 
-        .team-grid {
+        .selector-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 0.75rem;
             padding: 1rem;
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
         }
 
-        .team-checkbox {
+        .selector-checkbox {
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -369,13 +442,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: background-color 0.2s;
         }
 
-        .team-checkbox:hover {
+        .selector-checkbox:hover {
             background-color: var(--gray-50);
         }
 
-        .team-checkbox input {
+        .selector-checkbox input {
             width: 1rem;
             height: 1rem;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: var(--gray-900);
+        }
+
+        .user-details {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        .search-box {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 4px;
+            font-size: 0.875rem;
         }
 
         .btn-primary {
@@ -421,8 +523,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 padding: 1.5rem;
             }
 
-            .team-grid {
+            .selector-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .radio-group {
+                flex-direction: column;
+                gap: 1rem;
             }
         }
     </style>
@@ -492,30 +599,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label class="form-label">Visibility</label>
                             <div class="radio-group">
                                 <div class="radio-option">
-                                    <input type="radio" name="visible_to_all" id="visible_all" value="1" checked>
-                                    <label for="visible_all">All Teams</label>
+                                    <input type="radio" name="visibility_type" id="visibility_all" value="all" checked>
+                                    <label for="visibility_all">All Teams</label>
                                 </div>
                                 <div class="radio-option">
-                                    <input type="radio" name="visible_to_all" id="visible_specific" value="0">
-                                    <label for="visible_specific">Specific Teams</label>
+                                    <input type="radio" name="visibility_type" id="visibility_teams" value="teams">
+                                    <label for="visibility_teams">Specific Teams</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" name="visibility_type" id="visibility_persons" value="persons">
+                                    <label for="visibility_persons">Specific Persons</label>
                                 </div>
                             </div>
                             
-                            <div id="team-selection" class="team-selector">
-                                <div class="team-selector-header">
+                            <!-- Team Selection -->
+                            <div id="team-selection" class="selector-container">
+                                <div class="selector-header">
                                     <span>Select teams to share with:</span>
-                                    <div class="team-actions">
-                                        <a href="#" id="select-all" class="team-action">Select All</a>
-                                        <a href="#" id="deselect-all" class="team-action">Deselect All</a>
+                                    <div class="selector-actions">
+                                        <a href="#" id="select-all-teams" class="selector-action">Select All</a>
+                                        <a href="#" id="deselect-all-teams" class="selector-action">Deselect All</a>
                                     </div>
                                 </div>
-                                <div class="team-grid">
+                                <div class="selector-grid">
                                     <?php foreach ($teams as $team_id => $team_name): ?>
-                                        <div class="team-checkbox">
+                                        <div class="selector-checkbox">
                                             <input type="checkbox" id="team_<?php echo $team_id; ?>" 
                                                    name="team_ids[]" value="<?php echo $team_id; ?>"
                                                    <?php echo $team_id == $user['team_id'] ? 'checked' : ''; ?>>
                                             <label for="team_<?php echo $team_id; ?>"><?php echo htmlspecialchars($team_name); ?></label>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            
+                            <!-- Person Selection -->
+                            <div id="person-selection" class="selector-container">
+                                <div class="selector-header">
+                                    <span>Select persons to share with:</span>
+                                    <div class="selector-actions">
+                                        <a href="#" id="select-all-persons" class="selector-action">Select All</a>
+                                        <a href="#" id="deselect-all-persons" class="selector-action">Deselect All</a>
+                                    </div>
+                                </div>
+                                <div class="search-box">
+                                    <input type="text" id="person-search" class="search-input" placeholder="Search persons...">
+                                </div>
+                                <div class="selector-grid">
+                                    <?php foreach ($users as $user_id => $user_data): ?>
+                                        <div class="selector-checkbox person-item" data-name="<?php echo strtolower($user_data['name']); ?>" data-username="<?php echo strtolower($user_data['username']); ?>">
+                                            <input type="checkbox" id="person_<?php echo $user_id; ?>" 
+                                                   name="person_ids[]" value="<?php echo $user_id; ?>"
+                                                   <?php echo $user_id == $_SESSION['user_id'] ? 'checked' : ''; ?>>
+                                            <div class="user-info">
+                                                <label for="person_<?php echo $user_id; ?>" class="user-name"><?php echo htmlspecialchars($user_data['name']); ?></label>
+                                                <div class="user-details">
+                                                    <?php echo htmlspecialchars($user_data['username']); ?> • 
+                                                    <?php echo ucfirst($user_data['role']); ?>
+                                                    <?php if (isset($teams[$user_data['team_id']])): ?>
+                                                        • <?php echo htmlspecialchars($teams[$user_data['team_id']]); ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -533,36 +678,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const visibilityRadios = document.querySelectorAll('input[name="visible_to_all"]');
+            const visibilityRadios = document.querySelectorAll('input[name="visibility_type"]');
             const teamSelection = document.getElementById('team-selection');
-            const selectAllBtn = document.getElementById('select-all');
-            const deselectAllBtn = document.getElementById('deselect-all');
+            const personSelection = document.getElementById('person-selection');
+            const selectAllTeamsBtn = document.getElementById('select-all-teams');
+            const deselectAllTeamsBtn = document.getElementById('deselect-all-teams');
+            const selectAllPersonsBtn = document.getElementById('select-all-persons');
+            const deselectAllPersonsBtn = document.getElementById('deselect-all-persons');
             const teamCheckboxes = document.querySelectorAll('input[name="team_ids[]"]');
+            const personCheckboxes = document.querySelectorAll('input[name="person_ids[]"]');
+            const personSearch = document.getElementById('person-search');
+            const personItems = document.querySelectorAll('.person-item');
 
-            function toggleTeamSelection() {
-                const isVisibleToAll = document.querySelector('input[name="visible_to_all"]:checked').value === '1';
-                teamSelection.style.display = isVisibleToAll ? 'none' : 'block';
+            function toggleVisibility() {
+                const selectedVisibility = document.querySelector('input[name="visibility_type"]:checked').value;
+                
+                // Hide all selectors
+                teamSelection.style.display = 'none';
+                personSelection.style.display = 'none';
+                
+                // Show relevant selector
+                if (selectedVisibility === 'teams') {
+                    teamSelection.style.display = 'block';
+                } else if (selectedVisibility === 'persons') {
+                    personSelection.style.display = 'block';
+                }
             }
 
+            // Handle visibility radio changes
             visibilityRadios.forEach(radio => {
-                radio.addEventListener('change', toggleTeamSelection);
+                radio.addEventListener('change', toggleVisibility);
             });
 
-            if (selectAllBtn) {
-                selectAllBtn.addEventListener('click', function(e) {
+            // Team selection handlers
+            if (selectAllTeamsBtn) {
+                selectAllTeamsBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     teamCheckboxes.forEach(checkbox => checkbox.checked = true);
                 });
             }
 
-            if (deselectAllBtn) {
-                deselectAllBtn.addEventListener('click', function(e) {
+            if (deselectAllTeamsBtn) {
+                deselectAllTeamsBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     teamCheckboxes.forEach(checkbox => checkbox.checked = false);
                 });
             }
 
-            toggleTeamSelection();
+            // Person selection handlers
+            if (selectAllPersonsBtn) {
+                selectAllPersonsBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    personCheckboxes.forEach(checkbox => checkbox.checked = true);
+                });
+            }
+
+            if (deselectAllPersonsBtn) {
+                deselectAllPersonsBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    personCheckboxes.forEach(checkbox => checkbox.checked = false);
+                });
+            }
+
+            // Person search functionality
+            if (personSearch) {
+                personSearch.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    
+                    personItems.forEach(item => {
+                        const name = item.dataset.name;
+                        const username = item.dataset.username;
+                        
+                        if (name.includes(searchTerm) || username.includes(searchTerm)) {
+                            item.style.display = 'flex';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            }
+
+            // Initialize visibility
+            toggleVisibility();
         });
     </script>
     

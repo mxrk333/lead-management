@@ -218,6 +218,46 @@ if (isset($_POST['transfer_member'])) {
     }
 }
 
+// Delete team member - Admin can delete from any team, manager only from their team
+if (isset($_POST['delete_member'])) {
+    $user_id_to_delete = intval($_POST['user_id']);
+    $team_id = intval($_POST['team_id']);
+    
+    // Check if manager has permission for this team
+    if ($user['role'] == 'manager' && $user['team_id'] != $team_id) {
+        $error_message = "You don't have permission to remove members from this team.";
+    } else {
+        // Check if user exists and belongs to the team
+        $check_stmt = $conn->prepare("SELECT id, name, role FROM users WHERE id = ? AND team_id = ?");
+        $check_stmt->bind_param("ii", $user_id_to_delete, $team_id);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        
+        if ($check_result->num_rows > 0) {
+            $user_to_delete = $check_result->fetch_assoc();
+            
+            // Prevent managers from deleting other managers or admins
+            if ($user['role'] == 'manager' && ($user_to_delete['role'] == 'manager' || $user_to_delete['role'] == 'admin')) {
+                $error_message = "You cannot remove managers or admins from the team.";
+            } else {
+                // Remove user from team (set team_id to NULL)
+                $update_stmt = $conn->prepare("UPDATE users SET team_id = NULL WHERE id = ?");
+                $update_stmt->bind_param("i", $user_id_to_delete);
+                
+                if ($update_stmt->execute()) {
+                    $success_message = "User " . htmlspecialchars($user_to_delete['name']) . " removed from team successfully.";
+                } else {
+                    $error_message = "Error removing user from team: " . $conn->error;
+                }
+                $update_stmt->close();
+            }
+        } else {
+            $error_message = "User not found or does not belong to this team.";
+        }
+        $check_stmt->close();
+    }
+}
+
 // Enhanced Create new user with role selection and stricter limitations
 if (isset($_POST['create_user'])) {
     $name = trim($_POST['name']);
@@ -1513,6 +1553,27 @@ if ($user['role'] == 'admin') {
             color: var(--white);
             transform: translateY(-2px);
         }
+
+        .btn-delete {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-sm);
+            background: var(--danger-light);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: var(--white);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -1729,6 +1790,11 @@ if ($user['role'] == 'admin') {
                                             <button type="button" onclick="openTransferMemberModal(<?php echo $member['id']; ?>, '<?php echo htmlspecialchars(addslashes($member['name'])); ?>', <?php echo $selected_team['id']; ?>)" class="btn-transfer">
                                                 <i class="fas fa-exchange-alt"></i> Transfer
                                             </button>
+                                            <?php if ($user['role'] == 'manager' || $user['role'] == 'admin'): ?>
+                                            <button type="button" onclick="deleteTeamMember(<?php echo $member['id']; ?>, '<?php echo htmlspecialchars(addslashes($member['name'])); ?>')" class="btn-delete" title="Remove from Team">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -2117,6 +2183,38 @@ if ($user['role'] == 'admin') {
     function confirmDeleteTeam(teamId, teamName) {
         if (confirm('Are you sure you want to delete the team "' + teamName + '"? This action cannot be undone.')) {
             window.location.href = 'teams.php?delete=' + teamId;
+        }
+    }
+    
+    // Delete Team Member Confirmation
+    function deleteTeamMember(userId, userName) {
+        if (confirm('Are you sure you want to remove "' + userName + '" from this team? This will unassign them from the team.')) {
+            // Create a form to submit the delete request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '';
+            
+            const userIdInput = document.createElement('input');
+            userIdInput.type = 'hidden';
+            userIdInput.name = 'user_id';
+            userIdInput.value = userId;
+            
+            const teamIdInput = document.createElement('input');
+            teamIdInput.type = 'hidden';
+            teamIdInput.name = 'team_id';
+            teamIdInput.value = <?php echo $selected_team ? $selected_team['id'] : 'null'; ?>;
+            
+            const deleteInput = document.createElement('input');
+            deleteInput.type = 'hidden';
+            deleteInput.name = 'delete_member';
+            deleteInput.value = '1';
+            
+            form.appendChild(userIdInput);
+            form.appendChild(teamIdInput);
+            form.appendChild(deleteInput);
+            
+            document.body.appendChild(form);
+            form.submit();
         }
     }
     
