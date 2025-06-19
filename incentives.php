@@ -19,15 +19,16 @@ $user = getUserById($user_id);
 
 // Check if user is admin or manager
 $isAuthorized = ($user['role'] === 'admin' || $user['role'] === 'manager');
+$isAdmin = ($user['role'] === 'admin');
 
-// Initialize success and error messages
+// Initialize messages
 $success_message = '';
 $error_message = '';
 
-// Establish database connection using the function from database.php
+// Establish database connection
 $conn = getDbConnection();
 
-// Ensure incentives table exists
+// Ensure required tables exist
 $conn->query("CREATE TABLE IF NOT EXISTS incentives (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
     user_id INT(11) NOT NULL,
@@ -40,7 +41,6 @@ $conn->query("CREATE TABLE IF NOT EXISTS incentives (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 )");
 
-// Ensure tour_targets table exists
 $conn->query("CREATE TABLE IF NOT EXISTS tour_targets (
     id INT(11) AUTO_INCREMENT PRIMARY KEY,
     tour_type VARCHAR(50) NOT NULL,
@@ -52,78 +52,129 @@ $conn->query("CREATE TABLE IF NOT EXISTS tour_targets (
     UNIQUE KEY tour_destination (tour_type, destination)
 )");
 
-// Ensure teams table exists
-$conn->query("CREATE TABLE IF NOT EXISTS teams (
-    id INT(11) AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)");
+// Insert default tour targets
+$conn->query("INSERT IGNORE INTO tour_targets (tour_type, destination, agent_target, supervisor_target, manager_target) VALUES 
+('Local Tour', 'Boracay', 500000, 800000, 1000000),
+('Local Tour', 'Baguio', 400000, 600000, 800000),
+('International Tour', 'Malaysia/Indonesia', 800000, 1200000, 1500000),
+('International Tour', 'Singapore', 600000, 900000, 1200000)");
 
-// Add default team if none exists
-$result = $conn->query("SELECT COUNT(*) as count FROM teams");
-$row = $result->fetch_assoc();
-if ($row['count'] == 0) {
-    $conn->query("INSERT INTO teams (name) VALUES ('Default Team')");
-}
-
-// Make sure users table has team_id and position columns
-$result = $conn->query("SHOW COLUMNS FROM users LIKE 'team_id'");
-if ($result->num_rows == 0) {
-    $conn->query("ALTER TABLE users ADD COLUMN team_id INT(11) DEFAULT 1");
-}
-
+// Ensure users have position column and check for profile column
 $result = $conn->query("SHOW COLUMNS FROM users LIKE 'position'");
 if ($result->num_rows == 0) {
     $conn->query("ALTER TABLE users ADD COLUMN position VARCHAR(50) DEFAULT 'Agent'");
 }
+$conn->query("UPDATE users SET position = 'Agent' WHERE position IS NULL OR position = ''");
 
-// Update users with default team if not set
-$conn->query("UPDATE users SET team_id = 1 WHERE team_id IS NULL");
+// Check for profile column (could be 'profile', 'profile_picture', or 'avatar')
+$profile_column = null;
+$possible_columns = ['profile', 'profile_picture', 'avatar', 'photo'];
+foreach ($possible_columns as $col) {
+    $result = $conn->query("SHOW COLUMNS FROM users LIKE '$col'");
+    if ($result->num_rows > 0) {
+        $profile_column = $col;
+        break;
+    }
+}
 
-// Get all teams for the dropdown
-$teams_result = $conn->query("SELECT id, name FROM teams ORDER BY name");
+// Handle form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['update_sales']) && $isAuthorized) {
+        try {
+            $target_user_id = intval($_POST['user_id']);
+            $total_sales = floatval($_POST['total_sales']);
+            
+            // Get user position
+            $user_query = $conn->prepare("SELECT position FROM users WHERE id = ?");
+            $user_query->bind_param("i", $target_user_id);
+            $user_query->execute();
+            $user_result = $user_query->get_result();
+            $user_data = $user_result->fetch_assoc();
+            $position = $user_data['position'] ?? 'Agent';
+            
+            // Get all tour type and destination combinations
+            $tours_query = "SELECT DISTINCT tour_type, destination FROM tour_targets";
+            $tours_result = $conn->query($tours_query);
+            
+            $updated_count = 0;
+            
+            // Apply the same sales amount to ALL tour type/destination combinations
+            while ($tour = $tours_result->fetch_assoc()) {
+                $stmt = $conn->prepare("INSERT INTO incentives (user_id, position, total_sales, incentive_type, destination) 
+                                      VALUES (?, ?, ?, ?, ?) 
+                                      ON DUPLICATE KEY UPDATE total_sales = ?, position = ?");
+                
+                $stmt->bind_param("issssds", $target_user_id, $position, $total_sales, 
+                                $tour['tour_type'], $tour['destination'], $total_sales, $position);
+                $stmt->execute();
+                $updated_count++;
+            }
+            
+            $success_message = "Sales data updated successfully across all {$updated_count} tour combinations!";
+        } catch (Exception $e) {
+            $error_message = "Error updating sales data: " . $e->getMessage();
+        }
+    }
+    
+    if (isset($_POST['add_tour_target']) && $isAdmin) {
+        try {
+            $tour_type = $_POST['new_tour_type'];
+            $destination = $_POST['new_destination'];
+            $agent_target = floatval($_POST['agent_target']);
+            $supervisor_target = floatval($_POST['supervisor_target']);
+            $manager_target = floatval($_POST['manager_target']);
+            
+            $stmt = $conn->prepare("INSERT INTO tour_targets (tour_type, destination, agent_target, supervisor_target, manager_target) 
+                                  VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssddd", $tour_type, $destination, $agent_target, $supervisor_target, $manager_target);
+            $stmt->execute();
+            
+            $success_message = "New tour target added successfully!";
+        } catch (Exception $e) {
+            $error_message = "Error adding tour target: " . $e->getMessage();
+        }
+    }
 
-// Get all tour destinations for the dropdown
-$conn->query("INSERT IGNORE INTO tour_targets (tour_type, destination, agent_target, supervisor_target, manager_target) VALUES 
-    ('Local Tour', 'Boracay', 500000, 800000, 1000000),
-    ('Local Tour', 'Baguio', 400000, 600000, 800000),
-    ('International Tour', 'Malaysia/Indonesia', 800000, 1200000, 1500000),
-    ('International Tour', 'Singapore', 600000, 900000, 1200000)");
-$tours_result = $conn->query("SELECT DISTINCT tour_type, destination FROM tour_targets ORDER BY tour_type, destination");
+    if (isset($_POST['edit_tour_target']) && $isAdmin) {
+        try {
+            $tour_id = intval($_POST['tour_id']);
+            $tour_type = $_POST['edit_tour_type'];
+            $destination = $_POST['edit_destination'];
+            $agent_target = floatval($_POST['edit_agent_target']);
+            $supervisor_target = floatval($_POST['edit_supervisor_target']);
+            $manager_target = floatval($_POST['edit_manager_target']);
+            
+            $stmt = $conn->prepare("UPDATE tour_targets SET tour_type = ?, destination = ?, agent_target = ?, supervisor_target = ?, manager_target = ? WHERE id = ?");
+            $stmt->bind_param("ssdddi", $tour_type, $destination, $agent_target, $supervisor_target, $manager_target, $tour_id);
+            $stmt->execute();
+            
+            $success_message = "Tour target updated successfully!";
+        } catch (Exception $e) {
+            $error_message = "Error updating tour target: " . $e->getMessage();
+        }
+    }
+
+    if (isset($_POST['delete_tour_target']) && $isAdmin) {
+        try {
+            $tour_id = intval($_POST['tour_id']);
+            
+            $stmt = $conn->prepare("DELETE FROM tour_targets WHERE id = ?");
+            $stmt->bind_param("i", $tour_id);
+            $stmt->execute();
+            
+            $success_message = "Tour target deleted successfully!";
+        } catch (Exception $e) {
+            $error_message = "Error deleting tour target: " . $e->getMessage();
+        }
+    }
+}
 
 // Get filter parameters
 $selected_team = isset($_GET['team_id']) ? $_GET['team_id'] : ($user['role'] === 'manager' ? $user['team_id'] : 'all');
 $selected_agent = isset($_GET['agent_id']) ? $_GET['agent_id'] : 'all';
 $selected_tour_type = isset($_GET['tour_type']) ? $_GET['tour_type'] : 'Local Tour';
 $selected_destination = isset($_GET['destination']) ? $_GET['destination'] : 'Boracay';
-
-// Handle form submission for updating sales
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAuthorized) {
-    if (isset($_POST['update_sales'])) {
-        try {
-            $target_user_id = $_POST['user_id'];
-            $total_sales = $_POST['total_sales'];
-            $incentive_type = $_POST['incentive_type'];
-            $destination = $_POST['destination'];
-            
-            // Update or insert incentive record
-            $stmt = $conn->prepare("INSERT INTO incentives (user_id, position, total_sales, incentive_type, destination) 
-                                   VALUES (?, ?, ?, ?, ?) 
-                                   ON DUPLICATE KEY UPDATE total_sales = ?, incentive_type = ?, destination = ?");
-            
-            $position = getUserPosition($target_user_id);
-            
-            $stmt->bind_param("isssssss", $target_user_id, $position, $total_sales, $incentive_type, $destination, 
-                             $total_sales, $incentive_type, $destination);
-            $stmt->execute();
-            
-            $success_message = "Sales data updated successfully for " . getUserNameById($target_user_id);
-        } catch (Exception $e) {
-            $error_message = "Error updating sales data: " . $e->getMessage();
-            error_log("Error updating incentives: " . $e->getMessage());
-        }
-    }
-}
+$selected_position = isset($_GET['position']) ? $_GET['position'] : 'all';
 
 // Get tour targets
 $tour_targets_query = "SELECT * FROM tour_targets WHERE tour_type = ? AND destination = ?";
@@ -133,7 +184,7 @@ $tour_targets_stmt->execute();
 $tour_targets_result = $tour_targets_stmt->get_result();
 $tour_targets = $tour_targets_result->fetch_assoc();
 
-// If no targets found, use default values
+// Default values if no targets found
 if (!$tour_targets) {
     $tour_targets = [
         'agent_target' => 500000,
@@ -142,103 +193,176 @@ if (!$tour_targets) {
     ];
 }
 
-// Build the users query based on filters
+// Build the users query with ranking - include profile column if it exists
+$profile_select = $profile_column ? ", u.$profile_column as profile_picture" : ", NULL as profile_picture";
+
 $query = "SELECT 
     u.id, 
     u.name, 
     u.position,
-    u.team_id,
+    u.team_id
+    $profile_select,
     t.name as team_name,
     COALESCE(i.total_sales, 0) as total_sales,
     COALESCE(i.incentive_type, ?) as incentive_type,
     COALESCE(i.destination, ?) as destination
 FROM users u 
 LEFT JOIN teams t ON u.team_id = t.id
-LEFT JOIN incentives i ON u.id = i.user_id
-WHERE u.role != 'admin'";
+LEFT JOIN incentives i ON u.id = i.user_id AND i.incentive_type = ? AND i.destination = ?
+WHERE u.role != 'admin' AND u.is_active = 1";
 
-// Add team filter
+$params = [$selected_tour_type, $selected_destination, $selected_tour_type, $selected_destination];
+$param_types = "ssss";
+
+// Add filters
 if ($selected_team !== 'all') {
     $query .= " AND u.team_id = ?";
+    $params[] = $selected_team;
+    $param_types .= "i";
 }
 
-// Add agent filter
 if ($selected_agent !== 'all') {
     $query .= " AND u.id = ?";
+    $params[] = $selected_agent;
+    $param_types .= "i";
 }
 
-// For managers, only show their team
+if ($selected_position !== 'all') {
+    $query .= " AND u.position = ?";
+    $params[] = $selected_position;
+    $param_types .= "s";
+}
+
 if ($user['role'] === 'manager') {
     $query .= " AND u.team_id = ?";
+    $params[] = $user['team_id'];
+    $param_types .= "i";
 }
 
-$query .= " ORDER BY u.position, u.name";
+$query .= " ORDER BY total_sales DESC, u.name";
 
-// Prepare and execute the query
+// Execute query
 $stmt = $conn->prepare($query);
-
-// Create parameter array
-$param_types = "ss"; // For incentive_type and destination
-$param_values = array($selected_tour_type, $selected_destination);
-
-if ($selected_team !== 'all') {
-    $param_types .= "i";
-    $param_values[] = $selected_team;
+if (!empty($params)) {
+    $stmt->bind_param($param_types, ...$params);
 }
-
-if ($selected_agent !== 'all') {
-    $param_types .= "i";
-    $param_values[] = $selected_agent;
-}
-
-if ($user['role'] === 'manager') {
-    $param_types .= "i";
-    $param_values[] = $user['team_id'];
-}
-
-// Create array of references
-$params = array($param_types);
-foreach ($param_values as &$value) {
-    $params[] = &$value;
-}
-
-// Get agents for the dropdown if needed
-if ($user['role'] === 'admin' || $user['role'] === 'manager') {
-    $agents_query = "SELECT id, name FROM users WHERE role != 'admin'";
-    if ($user['role'] === 'manager') {
-        $agents_query .= " AND team_id = ?";
-    }
-    if ($selected_team !== 'all') {
-        $agents_query .= " AND team_id = ?";
-    }
-    $agents_query .= " ORDER BY name";
-    
-    $agents_stmt = $conn->prepare($agents_query);
-    
-    if ($user['role'] === 'manager' && $selected_team !== 'all') {
-        $agents_stmt->bind_param("ii", $user['team_id'], $selected_team);
-    } else if ($user['role'] === 'manager') {
-        $agents_stmt->bind_param("i", $user['team_id']);
-    } else if ($selected_team !== 'all') {
-        $agents_stmt->bind_param("i", $selected_team);
-    }
-    
-    $agents_stmt->execute();
-    $agents_result = $agents_stmt->get_result();
-}
-
-// Execute the main query
-call_user_func_array(array($stmt, 'bind_param'), $params);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Get all teams for filter
+// Get teams for filter
 $teams_query = "SELECT * FROM teams ORDER BY name";
 $teams_result = $conn->query($teams_query);
 
-// Get all tour types and destinations
+// Get agents for filter
+$agents_query = "SELECT id, name FROM users WHERE role != 'admin' AND is_active = 1";
+if ($user['role'] === 'manager') {
+    $agents_query .= " AND team_id = " . intval($user['team_id']);
+}
+$agents_query .= " ORDER BY name";
+$agents_result = $conn->query($agents_query);
+
+// Get tour types and destinations
 $tours_query = "SELECT DISTINCT tour_type, destination FROM tour_targets ORDER BY tour_type, destination";
 $tours_result = $conn->query($tours_query);
+
+// Get existing tour types for modal dropdown
+$existing_tour_types_query = "SELECT DISTINCT tour_type FROM tour_targets ORDER BY tour_type";
+$existing_tour_types_result = $conn->query($existing_tour_types_query);
+
+// Get all tour targets for management
+$all_tour_targets_query = "SELECT * FROM tour_targets ORDER BY tour_type, destination";
+$all_tour_targets_result = $conn->query($all_tour_targets_query);
+
+// Helper functions
+function calculateProgress($sales, $target) {
+    if ($target <= 0) return 0;
+    return min(100, ($sales / $target) * 100);
+}
+
+function getTargetForPosition($position, $targets) {
+    switch (strtolower($position)) {
+        case 'manager':
+            return $targets['manager_target'];
+        case 'supervisor':
+            return $targets['supervisor_target'];
+        default:
+            return $targets['agent_target'];
+    }
+}
+
+function getRankSuffix($rank) {
+    if ($rank % 100 >= 11 && $rank % 100 <= 13) {
+        return $rank . 'th';
+    }
+    switch ($rank % 10) {
+        case 1: return $rank . 'st';
+        case 2: return $rank . 'nd';
+        case 3: return $rank . 'rd';
+        default: return $rank . 'th';
+    }
+}
+
+function getProfilePicture($profile_picture, $name) {
+    if ($profile_picture) {
+        // Check multiple possible paths
+        $possible_paths = [
+            'uploads/profiles/' . $profile_picture,
+            'uploads/' . $profile_picture,
+            'assets/images/profiles/' . $profile_picture,
+            'images/profiles/' . $profile_picture,
+            $profile_picture // Direct path
+        ];
+        
+        foreach ($possible_paths as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+    }
+    
+    // Generate initials as fallback
+    $initials = '';
+    $name_parts = explode(' ', $name);
+    foreach ($name_parts as $part) {
+        if (!empty($part)) {
+            $initials .= strtoupper($part[0]);
+        }
+    }
+    return $initials;
+}
+
+// Calculate statistics
+$all_agents = [];
+$total_sales_all = 0;
+$total_target_all = 0;
+$agents_on_track = 0;
+
+$result->data_seek(0);
+while ($row = $result->fetch_assoc()) {
+    $target = getTargetForPosition($row['position'], $tour_targets);
+    $progress = calculateProgress($row['total_sales'], $target);
+    
+    $all_agents[] = [
+        'id' => $row['id'],
+        'name' => $row['name'],
+        'position' => $row['position'],
+        'team_name' => $row['team_name'],
+        'profile_picture' => $row['profile_picture'],
+        'total_sales' => $row['total_sales'],
+        'target' => $target,
+        'progress' => $progress
+    ];
+    
+    $total_sales_all += $row['total_sales'];
+    $total_target_all += $target;
+    
+    if ($progress >= 100) {
+        $agents_on_track++;
+    }
+}
+
+$agent_count = count($all_agents);
+$overall_progress = $total_target_all > 0 ? calculateProgress($total_sales_all, $total_target_all) : 0;
 ?>
 
 <!DOCTYPE html>
@@ -246,145 +370,584 @@ $tours_result = $conn->query($tours_query);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Agent Incentive Performance - Inners SPARC Realty Corporation</title>
+    <title>Sales Incentive Performance - InnerSPARC Real Estate</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4338ca;
-            --primary-light: #6366f1;
-            --primary-dark: #3730a3;
-            --success: #16a34a;
-            --danger: #dc2626;
-            --warning: #ca8a04;
-            --background: #f8fafc;
-            --surface: #ffffff;
-            --text: #0f172a;
-            --text-light: #64748b;
-            --border: #e2e8f0;
-            --radius: 0.75rem;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #e0e7ff;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --info: #3b82f6;
+            --info-light: #dbeafe;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --border-radius: 0.5rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --gold: #ffd700;
+            --silver: #c0c0c0;
+            --bronze: #cd7f32;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            background-color: var(--background);
+            font-family: var(--font-family);
+            background-color: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.5;
             margin: 0;
-            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+        }
+        
+        .container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
         }
 
         .main-content {
-            padding: 1.5rem;
-            max-width: 1600px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--gray-50);
+        }
+        
+        .incentives-page {
+            flex: 1;
+            padding: 2rem;
+            width: 100%;
+            margin: 0;
+            min-height: calc(100vh - 100px);
+            display: flex;
+            flex-direction: column;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
-        .content-wrapper {
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-
         .page-header {
-            padding: 2rem;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--gray-200);
         }
 
         .page-header h2 {
             font-size: 1.875rem;
             font-weight: 700;
-            color: var(--text);
+            color: var(--gray-900);
             margin: 0;
             display: flex;
             align-items: center;
             gap: 0.75rem;
         }
 
-        .filter-section {
-            padding: 1.5rem 2rem;
-            background: var(--background);
-            border-bottom: 1px solid var(--border);
+        .page-header h2 i {
+            color: var(--primary);
+            font-size: 1.5rem;
         }
 
-        .filter-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
         }
 
-        .filter-group label {
-            display: block;
-            font-size: 0.875rem;
+        .btn-add {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
             font-weight: 600;
-            color: var(--text);
-            margin-bottom: 0.5rem;
-        }
-
-        .filter-group select {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 0.5rem;
-            background-color: var(--surface);
-            color: var(--text);
             font-size: 0.875rem;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            background-size: 1rem;
-            transition: all 0.2s;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
         }
 
-        .filter-group select:hover {
-            border-color: var(--primary);
+        .btn-add:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
-        .filter-group select:focus {
+        .btn-manage {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            background: var(--info);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+        }
+
+        .btn-manage:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.75rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+            border: 1px solid var(--gray-200);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .summary-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1.25rem;
+            font-size: 1.5rem;
+        }
+
+        .summary-info {
+            flex: 1;
+        }
+
+        .summary-info h3 {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            margin: 0 0 0.5rem 0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .summary-info p {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0;
+        }
+
+        /* Minimalistic Filter Design */
+        .filters-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-200);
+        }
+
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 160px;
+        }
+
+        .filter-item label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-600);
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+
+        .filter-item select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            background-color: white;
+            color: var(--gray-700);
+            transition: all 0.2s ease;
+            min-width: 120px;
+            flex: 1;
+        }
+
+        .filter-item select:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 2px var(--primary-light);
         }
 
-        .table-container {
-            padding: 1.5rem 2rem;
-            overflow-x: auto;
+        .filter-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-left: auto;
         }
 
+        .btn-filter-mini {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .btn-filter-mini:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-reset-mini {
+            padding: 0.5rem 1rem;
+            background: var(--gray-100);
+            color: var(--gray-600);
+            border: 1px solid var(--gray-300);
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            text-decoration: none;
+        }
+
+        .btn-reset-mini:hover {
+            background: var(--gray-200);
+            border-color: var(--gray-400);
+        }
+
+        .rankings-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--gray-200);
+        }
+
+        .rankings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .rankings-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0;
+        }
+
+        .top-performers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 2rem;
+        }
+
+        .performer-card {
+            background: var(--gray-50);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            min-height: 140px;
+        }
+
+        .performer-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .performer-card.rank-1 {
+            border-color: var(--gold);
+            background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);
+        }
+
+        .performer-card.rank-2 {
+            border-color: var(--silver);
+            background: linear-gradient(135deg, #f3f4f6 0%, #9ca3af 100%);
+        }
+
+        .performer-card.rank-3 {
+            border-color: var(--bronze);
+            background: linear-gradient(135deg, #fed7aa 0%, #ea580c 100%);
+        }
+
+        .performer-avatar {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .rank-badge {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            background: var(--primary);
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .performer-card.rank-1 .rank-badge {
+            background: var(--gold);
+            color: var(--gray-900);
+        }
+
+        .performer-card.rank-2 .rank-badge {
+            background: var(--silver);
+            color: var(--gray-900);
+        }
+
+        .performer-card.rank-3 .rank-badge {
+            background: var(--bronze);
+            color: white;
+        }
+
+        .profile-picture {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+            box-shadow: var(--shadow-md);
+            margin-left: 1rem;
+        }
+
+        .profile-initials {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.125rem;
+            border: 3px solid white;
+            box-shadow: var(--shadow-md);
+            margin-left: 1rem;
+        }
+
+        .performer-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .performer-info h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            line-height: 1.3;
+        }
+
+        .performer-info p {
+            margin: 0.25rem 0;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .performer-stats {
+            text-align: right;
+            flex-shrink: 0;
+            min-width: 140px;
+        }
+
+        .sales-amount {
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+        }
+
+        .progress-mini {
+            width: 140px;
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            margin: 0.75rem 0;
+        }
+
+        .progress-bar-mini {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text-mini {
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            font-weight: 600;
+        }
+
+        .incentives-table-container {
+            flex: 1;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: auto;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--gray-200);
+        }
+        
         .incentives-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            font-size: 0.875rem;
         }
-
+        
+        .incentives-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: var(--gray-50);
+        }
+        
         .incentives-table th {
-            background: var(--background);
-            padding: 1rem;
-            font-weight: 600;
-            color: var(--text);
+            background: var(--gray-50);
+            padding: 1.25rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--gray-600);
+            border-bottom: 2px solid var(--gray-200);
             text-align: left;
-            border-bottom: 2px solid var(--border);
             white-space: nowrap;
         }
-
+        
         .incentives-table td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
-            color: var(--text);
-            vertical-align: middle;
+            padding: 1.25rem 1rem;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            border-bottom: 1px solid var(--gray-200);
+            background: white;
         }
 
-        .incentives-table tr:hover td {
-            background-color: var(--background);
+        .incentives-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .incentives-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .incentives-table tbody tr:hover {
+            background: var(--gray-50);
+        }
+
+        .top-performer {
+            background: var(--warning-light) !important;
+        }
+
+        .rank-cell {
+            text-align: center;
+        }
+
+        .rank-badge-table {
+            padding: 0.5rem 0.875rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .rank-badge-table.gold {
+            background-color: var(--gold);
+            color: var(--gray-900);
+        }
+
+        .rank-badge-table.silver {
+            background-color: var(--silver);
+            color: var(--gray-900);
+        }
+
+        .rank-badge-table.bronze {
+            background-color: var(--bronze);
+            color: white;
         }
 
         .position-badge {
-            padding: 0.375rem 0.75rem;
+            padding: 0.5rem 0.875rem;
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 600;
@@ -393,42 +956,42 @@ $tours_result = $conn->query($tours_query);
         }
 
         .position-manager {
-            background-color: #818cf8;
-            color: white;
+            background-color: var(--primary-light);
+            color: var(--primary);
         }
 
         .position-supervisor {
-            background-color: #f472b6;
-            color: white;
+            background-color: var(--info-light);
+            color: var(--info);
         }
 
         .position-agent {
-            background-color: #34d399;
-            color: white;
+            background-color: var(--success-light);
+            color: var(--success);
         }
 
         .amount-cell {
             font-family: 'Inter', monospace;
-            font-weight: 500;
+            font-weight: 600;
             white-space: nowrap;
         }
 
         .progress-wrapper {
             width: 100%;
-            min-width: 150px;
+            min-width: 180px;
         }
 
         .progress-container {
             width: 100%;
-            height: 0.5rem;
-            background-color: #e2e8f0;
+            height: 0.75rem;
+            background-color: var(--gray-200);
             border-radius: 9999px;
             overflow: hidden;
         }
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(to right, var(--primary-light), var(--primary));
+            background: linear-gradient(to right, var(--primary), var(--primary-hover));
             border-radius: 9999px;
             transition: width 0.5s ease;
         }
@@ -437,27 +1000,28 @@ $tours_result = $conn->query($tours_query);
             display: flex;
             justify-content: space-between;
             font-size: 0.75rem;
-            color: var(--text-light);
+            color: var(--gray-500);
             margin-top: 0.5rem;
+            font-weight: 500;
         }
 
         .status-badge {
             display: inline-flex;
             align-items: center;
-            padding: 0.25rem 0.75rem;
+            padding: 0.375rem 0.875rem;
             border-radius: 9999px;
             font-size: 0.75rem;
-            font-weight: 500;
+            font-weight: 600;
             white-space: nowrap;
         }
 
         .status-needed {
-            background-color: #fee2e2;
+            background-color: var(--danger-light);
             color: var(--danger);
         }
 
         .status-exceeded {
-            background-color: #dcfce7;
+            background-color: var(--success-light);
             color: var(--success);
         }
 
@@ -470,2609 +1034,1076 @@ $tours_result = $conn->query($tours_query);
         .edit-form input[type="number"] {
             width: 140px;
             padding: 0.625rem;
-            border: 1px solid var(--border);
-            border-radius: 0.5rem;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--border-radius);
             font-size: 0.875rem;
-            color: var(--text);
-            transition: all 0.2s;
+            color: var(--gray-700);
+            font-weight: 500;
         }
 
         .edit-form input[type="number"]:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 3px var(--primary-light);
         }
 
-        .edit-form button {
-            padding: 0.625rem 1.25rem;
+        .btn-update {
+            padding: 0.625rem 1rem;
             background: var(--primary);
             color: white;
             border: none;
-            border-radius: 0.5rem;
+            border-radius: var(--border-radius);
             font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            white-space: nowrap;
+            gap: 0.375rem;
+            box-shadow: var(--shadow-sm);
         }
 
-        .edit-form button:hover {
-            background: var(--primary-dark);
+        .btn-update:hover {
+            background: var(--primary-hover);
             transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
-        .edit-form button:active {
-            transform: translateY(0);
+        .alert {
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid;
+        }
+
+        .alert-success {
+            background-color: var(--success-light);
+            color: var(--success);
+            border-color: #bbf7d0;
+        }
+
+        .alert-error {
+            background-color: var(--danger-light);
+            color: var(--danger);
+            border-color: #fecaca;
         }
 
         .total-row td {
-            background: var(--background) !important;
-            font-weight: 600;
-            border-top: 2px solid var(--border);
+            background: var(--gray-50) !important;
+            font-weight: 700;
+            border-top: 3px solid var(--gray-300);
         }
 
-        .total-label {
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-dialog {
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h5 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--gray-700);
+            font-size: 0.875rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .btn-secondary {
+            padding: 0.75rem 1.5rem;
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 2px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+            border-color: var(--gray-400);
+        }
+
+        .btn-edit {
+            padding: 0.5rem 1rem;
+            background: var(--warning);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 0.5rem;
+        }
+
+        .btn-edit:hover {
+            background: #d97706;
+        }
+
+        .btn-delete {
+            padding: 0.5rem 1rem;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+
+        .close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-400);
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+        }
+
+        .close:hover {
+            color: var(--gray-600);
+            background: var(--gray-100);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .custom-tour-input {
+            display: none;
+            margin-top: 0.75rem;
+        }
+
+        .custom-tour-input.show {
+            display: block;
+        }
+
+        .global-update-notice {
+            background: var(--info-light);
+            border: 1px solid var(--info);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            color: var(--info);
+            font-size: 0.875rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            color: var(--text);
         }
 
-        @media (max-width: 1024px) {
-            .main-content {
+        .tours-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 1rem;
+        }
+
+        .tours-table th,
+        .tours-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .tours-table th {
+            background: var(--gray-50);
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+
+        .tours-table td {
+            font-size: 0.875rem;
+        }
+
+        .number-input {
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .incentives-page {
                 padding: 1rem;
             }
 
-            .page-header,
-            .filter-section,
-            .table-container {
-                padding: 1rem;
+            .page-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-item {
+                min-width: auto;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.25rem;
+            }
+
+            .filter-item label {
+                font-size: 0.8rem;
+            }
+
+            .filter-actions {
+                margin-left: 0;
+                justify-content: stretch;
+                gap: 0.5rem;
+            }
+
+            .btn-filter-mini,
+            .btn-reset-mini {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .top-performers {
+                grid-template-columns: 1fr;
+            }
+
+            .performer-card {
+                min-height: auto;
+                padding: 1.5rem;
+                gap: 1rem;
+            }
+
+            .rank-badge {
+                width: 3rem;
+                height: 3rem;
+                font-size: 0.875rem;
+            }
+
+            .profile-picture,
+            .profile-initials {
+                width: 3rem;
+                height: 3rem;
+            }
+
+            .performer-info h4 {
+                font-size: 1.125rem;
+            }
+
+            .sales-amount {
+                font-size: 1.25rem;
+            }
+
+            .progress-mini {
+                width: 120px;
+            }
+
+            .incentives-table-container {
+                margin: 0 -1rem;
+                border-radius: 0;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
- 
-<div class="min-h-screen bg-gray-50 py-4">
-  <div class="container mx-auto px-4 sm:px-6 max-w-[95%]">
-    <!-- Page Title -->
-    <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-      <h1 class="text-2xl sm:text-4xl font-bold text-white mb-1">Memo Management Dashboard</h1>
-      <p class="text-base sm:text-xl text-blue-100">Create and manage your memos efficiently</p>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-      <!-- Memo Submission Form -->
-      {% if request.user.is_superuser %}
-      <div class="lg:col-span-3">
-        <div class="bg-white rounded-xl shadow-lg p-4 sticky top-4">
-          <h2 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 flex items-center">
-            <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Create New Memo
-          </h2>
-          <form method="post" enctype="multipart/form-data" id="memo-form" class="space-y-3">
-            {% csrf_token %}
-            <div class="space-y-1">
-              <label for="id_title" class="block text-base sm:text-lg font-medium text-gray-700">Title</label>
-              {{ form.title|add_class:"mt-1 block w-full rounded-lg border-2 border-gray-300 px-3 sm:px-4 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-150" }}
-            </div>
-            <div class="space-y-1">
-              <label for="id_description" class="block text-base sm:text-lg font-medium text-gray-700">Description</label>
-              {{ form.description|add_class:"mt-1 block w-full rounded-lg border-2 border-gray-300 px-3 sm:px-4 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-150" }}
-            </div>
-            <div class="space-y-1">
-              <label for="id_when" class="block text-base sm:text-lg font-medium text-gray-700">When</label>
-              {{ form.when|add_class:"mt-1 block w-full rounded-lg border-2 border-gray-300 px-3 sm:px-4 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-150" }}
-            </div>
-            <div class="space-y-1">
-              <label for="id_where" class="block text-base sm:text-lg font-medium text-gray-700">Where (Optional)</label>
-              {{ form.where|add_class:"mt-1 block w-full rounded-lg border-2 border-gray-300 px-3 sm:px-4 py-2 text-base shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-150" }}
-            </div>
-            <div class="space-y-1">
-              <label for="id_file" class="block text-base sm:text-lg font-medium text-gray-700">Upload File</label>
-              <div class="mt-1 flex justify-center px-3 sm:px-4 py-3 border-2 border-gray-300 border-dashed rounded-lg">
-                <div class="space-y-1 text-center">
-                  <svg class="mx-auto h-6 w-6 sm:h-8 sm:w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  {{ form.file|add_class:"sr-only" }}
-                  <div class="flex text-sm sm:text-base text-gray-600 justify-center">
-                    <label for="id_file" class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                      <span>Upload a file</span>
-                    </label>
-                    <p class="pl-1">or drag and drop</p>
-                  </div>
-                  <p class="text-sm sm:text-base text-gray-500">PDF, DOC up to 10MB</p>
-                </div>
-              </div>
-            </div>
-            <div class="pt-2">
-              <button type="submit" class="w-full flex justify-center items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition duration-150 text-lg font-semibold">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Create Memo
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-      {% endif %}
-
-      <!-- Memos List Section -->
-      <div class="{% if request.user.is_superuser %}lg:col-span-9{% else %}lg:col-span-12{% endif %}">
-        <!-- Filters -->
-        <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-          <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 flex items-center">
-            <svg class="w-6 h-6 sm:w-7 sm:h-7 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            Filter Memos
-          </h3>
-          <form method="get" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div class="space-y-1">
-              <label for="q" class="block text-base sm:text-lg font-medium text-gray-700">Search Title</label>
-              <div class="mt-1 relative rounded-lg shadow-sm">
-                <div class="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <input type="text" 
-                       name="q" 
-                       id="q" 
-                       value="{{ request.GET.q }}"
-                       placeholder="Search memos..."
-                       class="block w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2 sm:py-3 border-2 border-gray-300 rounded-lg text-base sm:text-lg focus:ring-blue-500 focus:border-blue-500">
-              </div>
-            </div>
-            <div class="space-y-1">
-              <label for="date" class="block text-base sm:text-lg font-medium text-gray-700">Filter by Date</label>
-              <input type="date" 
-                     name="date" 
-                     id="date" 
-                     value="{{ request.GET.date }}" 
-                     class="mt-1 block w-full rounded-lg border-2 border-gray-300 px-3 sm:px-4 py-2 sm:py-3 text-base sm:text-lg focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div class="col-span-2">
-              <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-base sm:text-lg font-medium transition duration-150 flex items-center justify-center">
-                <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                Search
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <!-- View Toggle -->
-        <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h3 class="text-xl sm:text-2xl font-semibold text-gray-800 flex items-center">
-              <svg class="w-6 h-6 sm:w-7 sm:h-7 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
-              View Options
-            </h3>
-            <div class="flex flex-wrap gap-2">
-              <button type="button" id="listViewBtn" class="view-toggle-btn px-3 sm:px-4 py-2 text-base sm:text-lg font-medium rounded-lg bg-blue-600 text-white">
-                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                List
-              </button>
-              <button type="button" id="cardViewBtn" class="view-toggle-btn px-3 sm:px-4 py-2 text-base sm:text-lg font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2zm0 8a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z" />
-                </svg>
-                Cards
-              </button>
-              <button type="button" id="calendarViewBtn" class="view-toggle-btn px-3 sm:px-4 py-2 text-base sm:text-lg font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Calendar
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Calendar View Container -->
-        <div id="calendarViewContainer" class="hidden">
-          <div class="calendar-container">
-            <!-- Calendar Header -->
-            <div class="calendar-toolbar">
-              <div class="calendar-navigation">
-                <button id="prevDate" class="p-2 hover:bg-gray-100 rounded-lg">
-                  <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <h2 id="currentDate" class="text-2xl font-bold text-gray-800">August 2023</h2>
-                <button id="nextDate" class="p-2 hover:bg-gray-100 rounded-lg">
-                  <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-                <button id="today" class="ml-4 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg">
-                  Today
-                </button>
-              </div>
-              <div class="calendar-view-selector">
-                <button data-view="month" class="calendar-view-btn px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white">
-                  Month
-                </button>
-                <button data-view="week" class="calendar-view-btn px-4 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                  Week
-                </button>
-                <button data-view="day" class="calendar-view-btn px-4 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100">
-                  Day
-                </button>
-              </div>
-            </div>
+    <div class="container">
+        <?php include 'includes/sidebar.php'; ?>
+        
+        <div class="main-content">
+            <?php include 'includes/header.php'; ?>
             
-            <!-- Calendar Grid -->
-            <div class="p-6">
-              <!-- Month View -->
-              <div id="monthView" class="calendar-view active">
-                <div id="monthGrid" class="grid grid-cols-7 gap-px bg-gray-200">
-                  <!-- Calendar days will be inserted here by JavaScript -->
+            <div class="incentives-page">
+                <div class="page-header">
+                    <h2>
+                        <i class="fas fa-trophy"></i> Sales Incentive Performance
+                    </h2>
+                    <div class="header-actions">
+                        <?php if ($isAdmin): ?>
+                        <button type="button" class="btn-manage" onclick="showModal('manageTourModal')">
+                            <i class="fas fa-cog"></i> Manage Tours
+                        </button>
+                        <button type="button" class="btn-add" onclick="showModal('addTourModal')">
+                            <i class="fas fa-plus"></i> Add Tour Target
+                        </button>
+                        <?php endif; ?>
+                    </div>
                 </div>
-              </div>
 
-              <!-- Week View -->
-              <div id="weekView" class="calendar-view hidden">
-                <div class="flex h-full">
-                  <!-- Time column -->
-                  <div class="w-20 flex-shrink-0 border-r border-gray-200">
-                    <div class="h-16"></div> <!-- Header spacer -->
-                    <div id="weekTimeColumn" class="relative">
-                      <!-- Time slots will be inserted here -->
+                <!-- Success/Error Messages -->
+                <?php if ($success_message): ?>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success_message); ?>
                     </div>
-                  </div>
-                  <!-- Days columns -->
-                  <div class="flex-1">
-                    <div class="grid grid-cols-7 border-b border-gray-200">
-                      <!-- Day headers will be inserted here -->
+                <?php endif; ?>
+
+                <?php if ($error_message): ?>
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error_message); ?>
                     </div>
-                    <div id="weekGrid" class="grid grid-cols-7 relative">
-                      <!-- Time grid will be inserted here -->
-                      <div id="currentTimeIndicator" class="hidden absolute w-full border-t-2 border-red-500 z-50">
-                        <div class="absolute -top-2 -left-3 w-3 h-3 rounded-full bg-red-500"></div>
-                      </div>
-                    </div>
-                  </div>
+                <?php endif; ?>
+
+                <!-- Global Update Notice -->
+                <?php if ($isAuthorized): ?>
+                <div class="global-update-notice">
+                    <i class="fas fa-info-circle"></i>
+                    <span><strong>Note:</strong> When you update sales amounts, they will be applied across ALL tour types and destinations for that agent.</span>
                 </div>
-              </div>
-
-              <!-- Day View -->
-              <div id="dayView" class="calendar-view hidden">
-                <div class="flex">
-                  <!-- Time column -->
-                  <div class="w-20 flex-shrink-0 border-r border-gray-200">
-                    <div class="h-16"></div> <!-- Header spacer -->
-                    <div id="dayTimeColumn" class="relative">
-                      <!-- Time slots will be inserted here -->
+                <?php endif; ?>
+                
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: var(--primary-light); color: var(--primary);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="summary-info">
+                            <h3>Total Agents</h3>
+                            <p><?php echo $agent_count; ?></p>
+                        </div>
                     </div>
-                  </div>
-                  <!-- Day column -->
-                  <div class="flex-1">
-                    <div id="dayHeader" class="h-16 border-b border-gray-200">
-                      <!-- Day header will be inserted here -->
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: var(--success-light); color: var(--success);">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="summary-info">
+                            <h3>Total Sales</h3>
+                            <p>₱<?php echo number_format($total_sales_all, 0); ?></p>
+                        </div>
                     </div>
-                    <div id="dayGrid" class="relative">
-                      <!-- Time grid will be inserted here -->
-                      <div id="dayCurrentTimeIndicator" class="hidden absolute w-full border-t-2 border-red-500 z-50">
-                        <div class="absolute -top-2 -left-3 w-3 h-3 rounded-full bg-red-500"></div>
-                      </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: var(--warning-light); color: var(--warning);">
+                            <i class="fas fa-target"></i>
+                        </div>
+                        <div class="summary-info">
+                            <h3>Overall Progress</h3>
+                            <p><?php echo number_format($overall_progress, 1); ?>%</p>
+                        </div>
                     </div>
-                  </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: var(--info-light); color: var(--info);">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <div class="summary-info">
+                            <h3>Achieved Target</h3>
+                            <p><?php echo $agents_on_track; ?></p>
+                        </div>
+                    </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
+                
+                <!-- Minimalistic Filters -->
+                <div class="filters-container">
+                    <form class="filter-form" method="GET" action="">
+                        <?php if ($user['role'] === 'admin'): ?>
+                        <div class="filter-item">
+                            <label for="team_id">Team:</label>
+                            <select name="team_id" id="team_id">
+                                <option value="all" <?php echo $selected_team === 'all' ? 'selected' : ''; ?>>All Teams</option>
+                                <?php 
+                                $teams_result->data_seek(0);
+                                while ($team = $teams_result->fetch_assoc()): ?>
+                                    <option value="<?php echo $team['id']; ?>" <?php echo $selected_team == $team['id'] ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($team['name']); ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+                        <?php endif; ?>
 
-        <!-- List View Container -->
-        <div id="listViewContainer">
-          <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200 memo-table">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="px-4 sm:px-6 py-3 sm:py-4 text-left text-gray-500 tracking-wider">
-                      <button class="sort-btn flex items-center space-x-2 hover:text-gray-700 group" data-sort="title">
-                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <div class="flex flex-col items-start">
-                          <span class="text-base sm:text-lg font-semibold">Title</span>
-                          <span class="text-xs sm:text-sm text-gray-400 font-normal sort-direction">A to Z</span>
+                        <div class="filter-item">
+                            <label for="agent_id">Agent:</label>
+                            <select name="agent_id" id="agent_id">
+                                <option value="all" <?php echo $selected_agent === 'all' ? 'selected' : ''; ?>>All Agents</option>
+                                <?php 
+                                $agents_result->data_seek(0);
+                                while ($agent = $agents_result->fetch_assoc()): ?>
+                                    <option value="<?php echo $agent['id']; ?>" <?php echo $selected_agent == $agent['id'] ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($agent['name']); ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
                         </div>
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 sort-icon hidden ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                        </svg>
-                      </button>
-                    </th>
-                    <th class="px-6 py-4 text-left text-gray-500 tracking-wider">
-                      <div class="flex items-center space-x-2">
-                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        <div class="flex flex-col">
-                          <span class="text-lg font-semibold">View</span>
-                          <span class="text-sm text-gray-400 font-normal">Preview file</span>
+
+                        <div class="filter-item">
+                            <label for="position">Position:</label>
+                            <select name="position" id="position">
+                                <option value="all" <?php echo $selected_position === 'all' ? 'selected' : ''; ?>>All Positions</option>
+                                <option value="Agent" <?php echo $selected_position === 'Agent' ? 'selected' : ''; ?>>Agent</option>
+                                <option value="Supervisor" <?php echo $selected_position === 'Supervisor' ? 'selected' : ''; ?>>Supervisor</option>
+                                <option value="Manager" <?php echo $selected_position === 'Manager' ? 'selected' : ''; ?>>Manager</option>
+                            </select>
                         </div>
-                      </div>
-                    </th>
-                    <th class="px-6 py-4 text-left text-gray-500 tracking-wider">
-                      <button class="sort-btn flex items-center space-x-2 hover:text-gray-700 group" data-sort="when" data-type="date">
-                        <svg class="w-6 h-6 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <div class="flex flex-col items-start">
-                          <span class="text-lg font-semibold">When</span>
-                          <span class="text-sm text-gray-400 font-normal">Sort by date</span>
+
+                        <div class="filter-item">
+                            <label for="tour_type">Tour Type:</label>
+                            <select name="tour_type" id="tour_type">
+                                <?php 
+                                $tours_result->data_seek(0);
+                                $tour_types = [];
+                                while ($tour = $tours_result->fetch_assoc()) {
+                                    if (!in_array($tour['tour_type'], $tour_types)) {
+                                        $tour_types[] = $tour['tour_type'];
+                                        echo '<option value="' . htmlspecialchars($tour['tour_type']) . '"' . 
+                                             ($selected_tour_type === $tour['tour_type'] ? ' selected' : '') . '>' . 
+                                             htmlspecialchars($tour['tour_type']) . '</option>';
+                                    }
+                                }
+                                ?>
+                            </select>
                         </div>
-                        <svg class="w-5 h-5 sort-icon hidden ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                        </svg>
-                      </button>
-                    </th>
-                    <th class="px-6 py-4 text-left text-gray-500 tracking-wider">
-                      <button class="sort-btn flex items-center space-x-2 hover:text-gray-700 group" data-sort="where">
-                        <svg class="w-6 h-6 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <div class="flex flex-col items-start">
-                          <span class="text-lg font-semibold">Where</span>
-                          <span class="text-sm text-gray-400 font-normal">Sort by location</span>
+
+                        <div class="filter-item">
+                            <label for="destination">Destination:</label>
+                            <select name="destination" id="destination">
+                                <?php 
+                                $tours_result->data_seek(0);
+                                while ($tour = $tours_result->fetch_assoc()) {
+                                    if ($tour['tour_type'] === $selected_tour_type) {
+                                        echo '<option value="' . htmlspecialchars($tour['destination']) . '"' . 
+                                             ($selected_destination === $tour['destination'] ? ' selected' : '') . '>' . 
+                                             htmlspecialchars($tour['destination']) . '</option>';
+                                    }
+                                }
+                                ?>
+                            </select>
                         </div>
-                        <svg class="w-5 h-5 sort-icon hidden ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                        </svg>
-                      </button>
-                    </th>
-                    <th class="px-6 py-4 text-left text-gray-500 tracking-wider">
-                      <div class="flex items-center space-x-2">
-                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <div class="flex flex-col">
-                          <span class="text-lg font-semibold">Actions</span>
-                          <span class="text-sm text-gray-400 font-normal">Available options</span>
-                        </div>
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 bg-white">
-                  {% if page_obj %}
-                    {% for memo in page_obj %}
-                    <tr class="hover:bg-gray-50 transition duration-150">
-                      <td class="px-6 py-3 whitespace-nowrap text-xl font-medium text-gray-900">{{ memo.title }}</td>
-                      <td class="px-6 py-3 whitespace-nowrap text-xl text-gray-500">
-                        {% if memo.file %}
-                          {% if memo.file.url|lower|slice:"-4:" in ".pdf,.doc,docx,.txt" %}
-                            <a href="{{ memo.file.url }}" target="_blank" class="inline-flex items-center text-blue-600 hover:text-blue-800">
-                              <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              View
+                        
+                        <div class="filter-actions">
+                            <a href="incentives.php" class="btn-reset-mini">
+                                <i class="fas fa-undo"></i> Clear
                             </a>
-                          {% else %}
-                            <span class="text-gray-400">Not viewable</span>
-                          {% endif %}
-                        {% else %}
-                          <span class="text-gray-400">No file</span>
-                        {% endif %}
-                      </td>
-                      <td class="px-6 py-3 whitespace-nowrap text-xl text-gray-500">{{ memo.when|date:"Y-m-d" }}</td>
-                      <td class="px-6 py-3 whitespace-nowrap text-xl text-gray-500">{{ memo.where|default:"—" }}</td>
-                      <td class="px-6 py-3 whitespace-nowrap space-x-3">
-                        <button data-memo-id="{{ memo.id }}" class="view-details inline-flex items-center px-4 py-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-lg font-medium transition-colors duration-150">
-                          <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          Details
-                        </button>
-                        {% if request.user.is_superuser %}
-                        <button data-memo-id="{{ memo.id }}" class="view-readers inline-flex items-center px-4 py-2 border-2 border-green-600 text-green-600 hover:bg-green-50 rounded-lg text-lg font-medium transition-colors duration-150">
-                          <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          Readers
-                        </button>
-                        {% endif %}
-                      </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                      <td colspan="5" class="px-6 py-8 text-center">
-                        <div class="flex flex-col items-center">
-                          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <p class="mt-2 text-xl text-gray-500">No memos found</p>
+                            <button type="submit" class="btn-filter-mini">
+                                <i class="fas fa-search"></i> Filter
+                            </button>
                         </div>
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  {% else %}
-                    <tr>
-                      <td colspan="5" class="px-6 py-8 text-center text-gray-500 text-sm bg-gray-50">
-                        <div class="flex flex-col items-center">
-                          <svg class="h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                          <p class="text-gray-600">Error loading memos. Please try refreshing the page.</p>
-                        </div>
-                      </td>
-                    </tr>
-                  {% endif %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pagination -->
-        <div class="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
-          {% if page_obj.has_previous %}
-          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
-             class="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 border-2 border-gray-300 rounded-lg text-base sm:text-xl font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150">
-            <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            Previous
-          </a>
-          {% endif %}
-
-          <span class="text-base sm:text-xl text-gray-700">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-          </span>
-
-          {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
-             class="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 border-2 border-gray-300 rounded-lg text-base sm:text-xl font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150">
-            Next
-            <svg class="w-5 h-5 sm:w-6 sm:h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modals -->
-<div id="detailsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-xl w-full max-w-6xl p-0 relative mx-4">
-    <!-- Modal Header -->
-    <div class="border-b border-gray-200 px-8 py-5">
-      <div class="flex items-center justify-between">
-        <h3 class="text-3xl font-bold text-gray-900 leading-relaxed" id="memoTitle">Memo Details</h3>
-        <button class="text-gray-400 hover:text-gray-600 transition duration-150 p-2" onclick="closeModal('detailsModal')" aria-label="Close modal">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Modal Content -->
-    <div class="px-8 py-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-      <div id="detailsContent" class="space-y-8">
-        <!-- Meta Information -->
-        <div class="bg-gray-50 rounded-lg p-6 space-y-3">
-          <div class="flex items-center text-gray-700">
-            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <p class="text-lg" id="memoDate">Loading...</p>
-          </div>
-          <div class="flex items-center text-gray-700" id="locationContainer">
-            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <p class="text-lg" id="memoLocation">Loading...</p>
-          </div>
-        </div>
-
-        <!-- Description -->
-        <div class="prose prose-lg max-w-none">
-          <h4 class="text-2xl font-semibold text-gray-900 mb-4">Description</h4>
-          <div id="memoDescription" class="text-lg text-gray-700 whitespace-pre-wrap leading-relaxed">Loading...</div>
-        </div>
-
-        <!-- File Attachment -->
-        <div id="memoFile" class="hidden">
-          <h4 class="text-2xl font-semibold text-gray-900 mb-4">Attachment</h4>
-          <a href="#" id="memoFileLink" class="inline-flex items-center px-6 py-3 border-2 border-gray-300 shadow-sm text-lg font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150">
-            <svg class="w-6 h-6 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Download Attachment
-          </a>
-        </div>
-
-        <!-- Acknowledgment Section -->
-        <div id="acknowledgmentSection" class="border-t-2 border-gray-200 pt-8 mt-8" {% if request.user.is_superuser %}style="display: none;"{% endif %}>
-          <div id="notAcknowledged" class="hidden">
-            <form id="acknowledgmentForm" class="space-y-6">
-              <input type="hidden" id="memoId" name="memoId" value="">
-              <div class="flex items-start space-x-4">
-                <div class="flex items-center h-6 mt-1">
-                  <input id="acknowledgmentCheckbox" type="checkbox" class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer" required>
+                    </form>
                 </div>
-                <div class="flex-1">
-                  <label for="acknowledgmentCheckbox" class="text-xl text-gray-900 font-medium">
-                    Acknowledgment
-                  </label>
-                  <p class="text-lg text-gray-600 mt-2 leading-relaxed">
-                    I confirm that I have read and understood the contents of this memo.
-                  </p>
-                </div>
-              </div>
-              <button type="submit" class="w-full inline-flex justify-center items-center px-6 py-4 border-2 border-transparent text-xl font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-colors duration-150">
-                <svg class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                Submit Acknowledgment
-              </button>
-            </form>
-          </div>
-          <div id="alreadyAcknowledged" class="hidden">
-            <div class="bg-green-50 rounded-lg p-6">
-              <div class="flex items-start">
-                <div class="flex-shrink-0">
-                  <svg class="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div class="ml-4">
-                  <h3 class="text-xl font-medium text-green-800">Memo Acknowledged</h3>
-                  <div class="mt-2 text-lg text-green-700" id="acknowledgedDate"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
-<div id="readersModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl p-8 relative mx-4">
-    <button class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition duration-150" onclick="closeModal('readersModal')">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-    <h3 class="text-2xl font-bold text-gray-900 mb-4">Readers</h3>
-    <div id="readersContent" class="prose prose-sm max-w-none text-gray-600">
-      <!-- AJAX-loaded content -->
-    </div>
-  </div>
-</div>
-
-<!-- Quick Create Event Modal -->
-<div id="quickCreateModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative mx-4">
-    <button class="absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="closeQuickCreateModal()">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-    <h3 class="text-xl font-bold text-gray-900 mb-4">Create Memo</h3>
-    <form id="quickCreateForm" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Title</label>
-        <input type="text" id="quickTitle" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-      </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Start</label>
-          <input type="datetime-local" id="quickStart" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">End</label>
-          <input type="datetime-local" id="quickEnd" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-        </div>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Location</label>
-        <input type="text" id="quickLocation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Description</label>
-        <textarea id="quickDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
-      </div>
-      <div class="flex justify-end space-x-3">
-        <button type="button" onclick="closeQuickCreateModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-          Cancel
-        </button>
-        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-          Save
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // View Details Button Click Handler
-    document.querySelectorAll('.view-details').forEach(button => {
-      button.addEventListener('click', function() {
-        const memoId = this.getAttribute('data-memo-id');
-        const detailsModal = document.getElementById('detailsModal');
-        const detailsContent = document.getElementById('detailsContent');
-        
-        if (!detailsModal || !detailsContent) {
-          console.error('Modal elements not found');
-          return;
-        }
-        
-        // Show modal
-        detailsModal.classList.remove('hidden');
-        
-        // Set loading state
-        const titleElement = document.getElementById('memoTitle');
-        if (titleElement) {
-          titleElement.textContent = 'Loading...';
-        }
-
-        // Get CSRF token
-        const csrftoken = getCookie('csrftoken');
-        
-        // Fetch memo details
-        fetch(`/memos/${memoId}/detail/`, {
-          method: 'GET',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': csrftoken,
-            'Accept': 'application/json',
-          },
-          credentials: 'same-origin'
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          // Update modal content
-          if (detailsContent) {
-            detailsContent.innerHTML = `
-              <div class="prose prose-lg max-w-none">
-                <h4 class="text-2xl font-semibold text-gray-900 mb-4">Description</h4>
-                <div id="memoDescription" class="text-lg text-gray-700 whitespace-pre-wrap leading-relaxed">${data.description}</div>
-              </div>
-
-              <!-- File Attachment -->
-              <div id="memoFile" class="hidden">
-                <h4 class="text-2xl font-semibold text-gray-900 mb-4">Attachment</h4>
-                <a href="#" id="memoFileLink" class="inline-flex items-center px-6 py-3 border-2 border-gray-300 shadow-sm text-lg font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150">
-                  <svg class="w-6 h-6 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Download Attachment
-                </a>
-              </div>
-
-              <!-- Acknowledgment Section -->
-              <div id="acknowledgmentSection" class="border-t-2 border-gray-200 pt-8 mt-8" {% if request.user.is_superuser %}style="display: none;"{% endif %}>
-                <div id="notAcknowledged" class="hidden">
-                  <form id="acknowledgmentForm" class="space-y-6">
-                    <input type="hidden" id="memoId" name="memoId" value="${memoId}">
-                    <div class="flex items-start space-x-4">
-                      <div class="flex items-center h-6 mt-1">
-                        <input id="acknowledgmentCheckbox" type="checkbox" class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer" required>
-                      </div>
-                      <div class="flex-1">
-                        <label for="acknowledgmentCheckbox" class="text-xl text-gray-900 font-medium">
-                          Acknowledgment
-                        </label>
-                        <p class="text-lg text-gray-600 mt-2 leading-relaxed">
-                          I confirm that I have read and understood the contents of this memo.
-                        </p>
-                      </div>
+                <!-- Rankings Section -->
+                <div class="rankings-section">
+                    <div class="rankings-header">
+                        <h3><i class="fas fa-medal"></i> Top Performers - <?php echo htmlspecialchars($selected_tour_type . ' to ' . $selected_destination); ?></h3>
                     </div>
-                    <button type="submit" class="w-full inline-flex justify-center items-center px-6 py-4 border-2 border-transparent text-xl font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-colors duration-150">
-                      <svg class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                      Submit Acknowledgment
+                    <div class="top-performers">
+                        <?php 
+                        $top_performers = array_slice($all_agents, 0, 5);
+                        foreach ($top_performers as $index => $performer): 
+                            $rank = $index + 1;
+                            $profile_pic = getProfilePicture($performer['profile_picture'], $performer['name']);
+                        ?>
+                            <div class="performer-card rank-<?php echo $rank; ?>">
+                                <div class="performer-avatar">
+                                    <div class="rank-badge">
+                                        <?php if ($rank == 1): ?>
+                                            <i class="fas fa-crown"></i>
+                                        <?php elseif ($rank == 2): ?>
+                                            <i class="fas fa-medal"></i>
+                                        <?php elseif ($rank == 3): ?>
+                                            <i class="fas fa-award"></i>
+                                        <?php else: ?>
+                                            <?php echo $rank; ?>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php if (strpos($profile_pic, '/') !== false || strpos($profile_pic, '.') !== false): ?>
+                                        <img src="<?php echo $profile_pic; ?>" alt="<?php echo htmlspecialchars($performer['name']); ?>" class="profile-picture">
+                                    <?php else: ?>
+                                        <div class="profile-initials"><?php echo $profile_pic; ?></div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="performer-info">
+                                    <h4><?php echo htmlspecialchars($performer['name']); ?></h4>
+                                    <p><?php echo htmlspecialchars($performer['team_name'] ?? 'No Team'); ?></p>
+                                    <p><?php echo htmlspecialchars($performer['position']); ?></p>
+                                </div>
+                                <div class="performer-stats">
+                                    <div class="sales-amount">₱<?php echo number_format($performer['total_sales'], 0); ?></div>
+                                    <div class="progress-mini">
+                                        <div class="progress-bar-mini" style="width: <?php echo $performer['progress']; ?>%"></div>
+                                    </div>
+                                    <div class="progress-text-mini"><?php echo number_format($performer['progress'], 1); ?>% of target</div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                
+                <div class="incentives-table-container">
+                    <table class="incentives-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Agent</th>
+                                <th>Team</th>
+                                <th>Position</th>
+                                <th>Current Sales</th>
+                                <th>Target</th>
+                                <th>Progress</th>
+                                <th>Status</th>
+                                <?php if ($isAuthorized): ?>
+                                <th>Actions</th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($all_agents)): ?>
+                            <tr>
+                                <td colspan="<?php echo $isAuthorized ? 9 : 8; ?>" style="text-align: center; padding: 3rem;">
+                                    <div style="color: var(--gray-400);">
+                                        <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                                        <p style="font-size: 1.125rem;">No agents found matching the current filters.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php else: ?>
+                                <?php foreach ($all_agents as $index => $agent): 
+                                    $rank = $index + 1;
+                                    $status = $agent['total_sales'] >= $agent['target'] ? 'exceeded' : 'needed';
+                                ?>
+                                <tr class="<?php echo $rank <= 3 ? 'top-performer' : ''; ?>">
+                                    <td class="rank-cell">
+                                        <?php if ($rank == 1): ?>
+                                            <span class="rank-badge-table gold"><i class="fas fa-crown"></i> <?php echo getRankSuffix($rank); ?></span>
+                                        <?php elseif ($rank == 2): ?>
+                                            <span class="rank-badge-table silver"><i class="fas fa-medal"></i> <?php echo getRankSuffix($rank); ?></span>
+                                        <?php elseif ($rank == 3): ?>
+                                            <span class="rank-badge-table bronze"><i class="fas fa-award"></i> <?php echo getRankSuffix($rank); ?></span>
+                                        <?php else: ?>
+                                            <span class="rank-badge-table"><?php echo getRankSuffix($rank); ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><strong><?php echo htmlspecialchars($agent['name']); ?></strong></td>
+                                    <td><?php echo htmlspecialchars($agent['team_name'] ?? 'No Team'); ?></td>
+                                    <td>
+                                        <span class="position-badge position-<?php echo strtolower($agent['position']); ?>">
+                                            <?php echo htmlspecialchars($agent['position']); ?>
+                                        </span>
+                                    </td>
+                                    <td class="amount-cell">₱<?php echo number_format($agent['total_sales'], 2); ?></td>
+                                    <td class="amount-cell">₱<?php echo number_format($agent['target'], 2); ?></td>
+                                    <td>
+                                        <div class="progress-wrapper">
+                                            <div class="progress-container">
+                                                <div class="progress-bar" style="width: <?php echo $agent['progress']; ?>%"></div>
+                                            </div>
+                                            <div class="progress-text">
+                                                <span><?php echo number_format($agent['progress'], 1); ?>%</span>
+                                                <span>₱<?php echo number_format($agent['target'] - $agent['total_sales'], 0); ?> needed</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-<?php echo $status; ?>">
+                                            <?php if ($status === 'exceeded'): ?>
+                                                <i class="fas fa-check"></i> Target Achieved
+                                            <?php else: ?>
+                                                <i class="fas fa-clock"></i> In Progress
+                                            <?php endif; ?>
+                                        </span>
+                                    </td>
+                                    <?php if ($isAuthorized): ?>
+                                    <td>
+                                        <form method="POST" class="edit-form">
+                                            <input type="hidden" name="user_id" value="<?php echo $agent['id']; ?>">
+                                            <input type="number" 
+                                                   name="total_sales" 
+                                                   value="<?php echo $agent['total_sales']; ?>" 
+                                                   step="0.01" 
+                                                   min="0"
+                                                   placeholder="Enter sales amount"
+                                                   title="This amount will be applied to ALL tour types and destinations">
+                                            <button type="submit" name="update_sales" class="btn-update">
+                                                <i class="fas fa-save"></i> Update All
+                                            </button>
+                                        </form>
+                                    </td>
+                                    <?php endif; ?>
+                                </tr>
+                                <?php endforeach; ?>
+                                
+                                <tr class="total-row">
+                                    <td colspan="4">
+                                        <strong><i class="fas fa-calculator"></i> TOTALS (<?php echo $agent_count; ?> agents)</strong>
+                                    </td>
+                                    <td class="amount-cell">
+                                        <strong>₱<?php echo number_format($total_sales_all, 2); ?></strong>
+                                    </td>
+                                    <td class="amount-cell">
+                                        <strong>₱<?php echo number_format($total_target_all, 2); ?></strong>
+                                    </td>
+                                    <td>
+                                        <div class="progress-wrapper">
+                                            <div class="progress-container">
+                                                <div class="progress-bar" style="width: <?php echo $overall_progress; ?>%"></div>
+                                            </div>
+                                            <div class="progress-text">
+                                                <span><strong><?php echo number_format($overall_progress, 1); ?>%</strong></span>
+                                                <span><strong>₱<?php echo number_format($total_target_all - $total_sales_all, 0); ?> needed</strong></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td colspan="<?php echo $isAuthorized ? 2 : 1; ?>">
+                                        <span class="status-badge status-<?php echo $total_sales_all >= $total_target_all ? 'exceeded' : 'needed'; ?>">
+                                            <?php if ($total_sales_all >= $total_target_all): ?>
+                                                <i class="fas fa-trophy"></i> Team Target Achieved!
+                                            <?php else: ?>
+                                                <i class="fas fa-target"></i> Team Target In Progress
+                                            <?php endif; ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Tour Target Modal -->
+    <?php if ($isAdmin): ?>
+    <div class="modal" id="addTourModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5><i class="fas fa-plus-circle"></i> Add New Tour Target</h5>
+                    <button type="button" class="close" onclick="hideModal('addTourModal')">
+                        <span>&times;</span>
                     </button>
-                  </form>
                 </div>
-                <div id="alreadyAcknowledged" class="hidden">
-                  <div class="bg-green-50 rounded-lg p-6">
-                    <div class="flex items-start">
-                      <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <div class="ml-4">
-                        <h3 class="text-xl font-medium text-green-800">Memo Acknowledged</h3>
-                        <div class="mt-2 text-lg text-green-700" id="acknowledgedDate"></div>
-                      </div>
+                <form method="POST">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="new_tour_type">Tour Type</label>
+                            <select class="form-control" id="new_tour_type" name="new_tour_type" onchange="toggleCustomTourInput()" required>
+                                <option value="">Select Tour Type</option>
+                                <?php 
+                                $existing_tour_types_result->data_seek(0);
+                                while ($tour_type = $existing_tour_types_result->fetch_assoc()): ?>
+                                    <option value="<?php echo htmlspecialchars($tour_type['tour_type']); ?>">
+                                        <?php echo htmlspecialchars($tour_type['tour_type']); ?>
+                                    </option>
+                                <?php endwhile; ?>
+                                <option value="custom">+ Add New Tour Type</option>
+                            </select>
+                            <div class="custom-tour-input" id="customTourInput">
+                                <input type="text" class="form-control" id="custom_tour_type" name="custom_tour_type" placeholder="Enter new tour type">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="new_destination">Destination</label>
+                            <input type="text" class="form-control" id="new_destination" name="new_destination" placeholder="e.g., Palawan, Thailand, Japan" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="agent_target">Agent Target (₱)</label>
+                                <input type="text" class="form-control number-input" id="agent_target" name="agent_target" placeholder="500,000" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="supervisor_target">Supervisor Target (₱)</label>
+                                <input type="text" class="form-control number-input" id="supervisor_target" name="supervisor_target" placeholder="800,000" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="manager_target">Manager Target (₱)</label>
+                            <input type="text" class="form-control number-input" id="manager_target" name="manager_target" placeholder="1,000,000" required>
+                        </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-
-          // Update title
-          if (titleElement) {
-            titleElement.textContent = data.title;
-          }
-
-          // Handle file attachment
-          const fileSection = document.getElementById('memoFile');
-          const fileLink = document.getElementById('memoFileLink');
-          if (fileSection && fileLink) {
-            if (data.file_url) {
-              fileSection.classList.remove('hidden');
-              fileLink.href = data.file_url;
-            } else {
-              fileSection.classList.add('hidden');
-            }
-          }
-
-          // Handle acknowledgment section
-          const acknowledgmentSection = document.getElementById('acknowledgmentSection');
-          if (acknowledgmentSection && !document.body.classList.contains('is-superuser')) {
-            fetch(`/memos/${memoId}/check-acknowledgment/`, {
-              headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrftoken,
-                'Accept': 'application/json',
-              },
-              credentials: 'same-origin'
-            })
-            .then(response => {
-              if (!response.ok) throw new Error('Failed to check acknowledgment status');
-              return response.json();
-            })
-            .then(ackData => {
-              const notAcknowledgedSection = document.getElementById('notAcknowledged');
-              const alreadyAcknowledgedSection = document.getElementById('alreadyAcknowledged');
-              const acknowledgedDateElement = document.getElementById('acknowledgedDate');
-              
-              if (notAcknowledgedSection && alreadyAcknowledgedSection && acknowledgedDateElement) {
-                if (ackData.acknowledged) {
-                  notAcknowledgedSection.classList.add('hidden');
-                  alreadyAcknowledgedSection.classList.remove('hidden');
-                  acknowledgedDateElement.textContent = `Acknowledged on ${ackData.acknowledged_date}`;
-                } else {
-                  notAcknowledgedSection.classList.remove('hidden');
-                  alreadyAcknowledgedSection.classList.add('hidden');
-                }
-              }
-            })
-            .catch(error => {
-              console.error('Error checking acknowledgment status:', error);
-              acknowledgmentSection.innerHTML = `
-                <div class="bg-yellow-50 rounded-lg p-4">
-                  <div class="flex">
-                    <div class="flex-shrink-0">
-                      <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.667-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                      </svg>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="hideModal('addTourModal')">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" name="add_tour_target" class="btn-add">
+                            <i class="fas fa-plus"></i> Add Target
+                        </button>
                     </div>
-                    <div class="ml-3">
-                      <h3 class="text-sm font-medium text-yellow-800">Unable to check acknowledgment status</h3>
-                      <p class="mt-2 text-sm text-yellow-700">Please try refreshing the page or contact support if the issue persists.</p>
-                    </div>
-                  </div>
-                </div>
-              `;
-            });
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching memo details:', error);
-          if (detailsContent) {
-            detailsContent.innerHTML = `
-              <div class="text-center py-8">
-                <svg class="mx-auto h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 class="mt-2 text-xl font-medium text-gray-900">Error Loading Memo</h3>
-                <p class="mt-1 text-gray-500">There was a problem loading the memo details. Please try again later.</p>
-                <p class="mt-1 text-sm text-gray-400">${error.message}</p>
-                <button onclick="closeModal('detailsModal')" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  Close
-                </button>
-              </div>
-            `;
-          }
-          // Update title to show error
-          const titleElement = document.getElementById('memoTitle');
-          if (titleElement) {
-            titleElement.textContent = 'Error Loading Memo';
-          }
-        });
-      });
-    });
-
-    // Handle acknowledgment form submission
-    document.addEventListener('submit', function(e) {
-      if (e.target && e.target.id === 'acknowledgmentForm') {
-        e.preventDefault();
-        const memoId = document.getElementById('memoId').value;
-        const checkbox = document.getElementById('acknowledgmentCheckbox');
-        
-        if (!checkbox.checked) {
-          alert('Please check the acknowledgment checkbox');
-          return;
-        }
-
-        // Show loading state
-        const submitButton = e.target.querySelector('button[type="submit"]');
-        const originalButtonContent = submitButton.innerHTML;
-        submitButton.disabled = true;
-        submitButton.innerHTML = `
-          <svg class="animate-spin h-7 w-7 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Submitting...
-        `;
-
-        fetch(`/memos/mark-read/${memoId}/`, {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          credentials: 'same-origin'
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (data.success) {
-            // Update UI to show acknowledgment
-            document.getElementById('notAcknowledged').classList.add('hidden');
-            document.getElementById('alreadyAcknowledged').classList.remove('hidden');
-            document.getElementById('acknowledgedDate').textContent = `Acknowledged on ${data.acknowledged_date}`;
-          } else {
-            throw new Error('Server returned unsuccessful response');
-          }
-        })
-        .catch(error => {
-          console.error('Error submitting acknowledgment:', error);
-          // Restore button state
-          submitButton.disabled = false;
-          submitButton.innerHTML = originalButtonContent;
-          // Show error message
-          alert('Error submitting acknowledgment. Please try again.');
-        });
-      }
-    });
-
-    // Utility function to get CSRF token
-    function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
-        }
-      }
-      return cookieValue;
-    }
-
-    // Close modal function
-    window.closeModal = function(modalId) {
-      document.getElementById(modalId).classList.add('hidden');
-    };
-
-    // Close modal when clicking outside
-    document.getElementById('detailsModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        this.classList.add('hidden');
-      }
-    });
-
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        document.getElementById('detailsModal').classList.add('hidden');
-      }
-    });
-
-    // Calendar View Functionality
-    const listViewBtn = document.getElementById('listViewBtn');
-    const calendarViewBtn = document.getElementById('calendarViewBtn');
-    const listViewContainer = document.getElementById('listViewContainer');
-    const calendarViewContainer = document.getElementById('calendarViewContainer');
-    const calendarViewBtns = document.querySelectorAll('.calendar-view-btn');
-    const calendarViews = document.querySelectorAll('.calendar-view');
-    const prevDateBtn = document.getElementById('prevDate');
-    const nextDateBtn = document.getElementById('nextDate');
-    const todayBtn = document.getElementById('today');
-    const currentDateEl = document.getElementById('currentDate');
-
-    let currentDate = new Date();
-    let currentView = 'month';
-
-    // View Toggle Handlers
-    listViewBtn.addEventListener('click', () => {
-      listViewBtn.classList.add('bg-blue-600', 'text-white');
-      listViewBtn.classList.remove('text-gray-700', 'hover:bg-gray-100');
-      calendarViewBtn.classList.remove('bg-blue-600', 'text-white');
-      calendarViewBtn.classList.add('text-gray-700', 'hover:bg-gray-100');
-      listViewContainer.classList.remove('hidden');
-      calendarViewContainer.classList.add('hidden');
-    });
-
-    calendarViewBtn.addEventListener('click', () => {
-      calendarViewBtn.classList.add('bg-blue-600', 'text-white');
-      calendarViewBtn.classList.remove('text-gray-700', 'hover:bg-gray-100');
-      listViewBtn.classList.remove('bg-blue-600', 'text-white');
-      listViewBtn.classList.add('text-gray-700', 'hover:bg-gray-100');
-      calendarViewContainer.classList.remove('hidden');
-      listViewContainer.classList.add('hidden');
-      renderCalendar();
-    });
-
-    // Calendar View Type Handlers
-    function switchView(view) {
-      currentView = view;
-      
-      // Hide all views first
-      calendarViews.forEach(v => {
-        v.classList.add('hidden');
-        v.classList.remove('active');
-      });
-      
-      // Show selected view
-      const selectedView = document.getElementById(`${view}View`);
-      if (selectedView) {
-        selectedView.classList.remove('hidden');
-        selectedView.classList.add('active');
-      }
-      
-      // Update button styles
-      calendarViewBtns.forEach(btn => {
-        if (btn.dataset.view === view) {
-          btn.classList.add('bg-blue-600', 'text-white');
-          btn.classList.remove('text-gray-700', 'hover:bg-gray-100');
-        } else {
-          btn.classList.remove('bg-blue-600', 'text-white');
-          btn.classList.add('text-gray-700', 'hover:bg-gray-100');
-        }
-      });
-      
-      // Re-render calendar with new view
-      renderCalendar();
-    }
-
-    calendarViewBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const view = btn.dataset.view;
-        switchView(view);
-      });
-    });
-
-    // Navigation Handlers
-    prevDateBtn.addEventListener('click', () => {
-      switch(currentView) {
-        case 'month':
-          currentDate.setMonth(currentDate.getMonth() - 1);
-          break;
-        case 'week':
-          currentDate.setDate(currentDate.getDate() - 7);
-          break;
-        case 'day':
-          currentDate.setDate(currentDate.getDate() - 1);
-          break;
-      }
-      renderCalendar();
-    });
-
-    nextDateBtn.addEventListener('click', () => {
-      switch(currentView) {
-        case 'month':
-          currentDate.setMonth(currentDate.getMonth() + 1);
-          break;
-        case 'week':
-          currentDate.setDate(currentDate.getDate() + 7);
-          break;
-        case 'day':
-          currentDate.setDate(currentDate.getDate() + 1);
-          break;
-      }
-      renderCalendar();
-    });
-
-    todayBtn.addEventListener('click', () => {
-      currentDate = new Date();
-      renderCalendar();
-    });
-
-    function renderCalendar() {
-      updateCurrentDateDisplay();
-      
-      switch(currentView) {
-        case 'month':
-          renderMonthView();
-          break;
-        case 'week':
-          renderWeekView();
-          break;
-        case 'day':
-          renderDayView();
-          break;
-      }
-    }
-
-    function updateCurrentDateDisplay() {
-      const options = { year: 'numeric', month: 'long' };
-      if (currentView === 'day') {
-        options.day = 'numeric';
-      }
-      currentDateEl.textContent = currentDate.toLocaleDateString('en-US', options);
-    }
-
-    function renderMonthView() {
-      const monthGrid = document.getElementById('monthGrid');
-      monthGrid.innerHTML = '';
-
-      const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-      const startingDay = firstDay.getDay();
-      const totalDays = lastDay.getDate();
-
-      // Previous month days
-      for (let i = 0; i < startingDay; i++) {
-        const prevMonthLastDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate();
-        const day = prevMonthLastDay - startingDay + i + 1;
-        monthGrid.appendChild(createDayCell(day, true));
-      }
-
-      // Current month days
-      for (let i = 1; i <= totalDays; i++) {
-        monthGrid.appendChild(createDayCell(i, false));
-      }
-
-      // Next month days
-      const remainingCells = 42 - (startingDay + totalDays); // 42 = 6 rows × 7 days
-      for (let i = 1; i <= remainingCells; i++) {
-        monthGrid.appendChild(createDayCell(i, true));
-      }
-    }
-
-    function createDayCell(day, isOtherMonth) {
-      const cell = document.createElement('div');
-      cell.className = `month-day-cell ${isOtherMonth ? 'other-month' : ''}`;
-      
-      const dateNum = document.createElement('span');
-      dateNum.className = 'date-number';
-      dateNum.textContent = day;
-      
-      const eventContainer = document.createElement('div');
-      eventContainer.className = 'event-container';
-      
-      cell.appendChild(dateNum);
-      cell.appendChild(eventContainer);
-
-      // Only fetch and display memos for current month days
-      if (!isOtherMonth) {
-        const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-        fetchAndDisplayMemos(selectedDate, eventContainer);
-      }
-      
-      return cell;
-    }
-
-    function fetchAndDisplayMemos(date, container, forTimeGrid = false) {
-      // Format date as YYYY-MM-DD for the API
-      const formattedDate = date.toISOString().split('T')[0];
-      
-      // Get CSRF token
-      const csrftoken = getCookie('csrftoken');
-      
-      // Use the same endpoint as the list view with date filter
-      const searchParams = new URLSearchParams({
-        date: formattedDate
-      });
-      
-      console.log(`Fetching memos for date: ${formattedDate}`);  // Debug log
-      
-      fetch(`/memos/?${searchParams.toString()}`, {
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRFToken': csrftoken,
-          'Accept': 'application/json',
-        },
-        credentials: 'same-origin'
-      })
-      .then(response => {
-        console.log('Response status:', response.status);  // Debug log
-        if (!response.ok) {
-          return response.text().then(text => {
-            console.error('Error response body:', text);  // Debug log
-            throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
-          });
-        }
-        return response.json().catch(error => {
-          console.error('JSON parsing error:', error);  // Debug log
-          throw new Error('Failed to parse JSON response');
-        });
-      })
-      .then(data => {
-        console.log('Received data:', data);  // Debug log
-        
-        if (!data || !Array.isArray(data.memos)) {
-          console.error('Invalid response format:', data);  // Debug log
-          throw new Error('Invalid response format: memos array not found');
-        }
-        
-        // Clear existing events
-        container.innerHTML = '';
-        
-        // Add new events
-        data.memos.forEach(memo => {
-          try {
-            const memoElement = createEventElement(memo, forTimeGrid);
-            container.appendChild(memoElement);
-          } catch (error) {
-            console.error('Error creating memo element:', error, memo);  // Debug log
-          }
-        });
-        
-        // Add has-events class if there are events
-        if (!forTimeGrid && data.memos.length > 0) {
-          container.parentElement.classList.add('has-events');
-        }
-        
-        console.log(`Successfully displayed ${data.memos.length} memos`);  // Debug log
-      })
-      .catch(error => {
-        console.error('Error in fetchAndDisplayMemos:', error);  // Debug log
-        
-        // Add error indicator to container
-        container.innerHTML = '';  // Clear any partial content
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'text-sm text-red-600 mt-2 p-2 bg-red-50 rounded-md';
-        errorDiv.innerHTML = `
-          <div class="font-medium">Failed to load memos</div>
-          <div class="text-xs mt-1">${error.message}</div>
-        `;
-        container.appendChild(errorDiv);
-      });
-    }
-
-    function showMemoDetailsModal(memoId) {
-      // Reuse the existing details modal
-      const detailsModal = document.getElementById('detailsModal');
-      const detailsContent = document.getElementById('detailsContent');
-      
-      if (!detailsModal || !detailsContent) return;
-
-      // Show modal
-      detailsModal.classList.remove('hidden');
-      
-      // Set loading state
-      const titleElement = document.getElementById('memoTitle');
-      if (titleElement) {
-        titleElement.textContent = 'Loading...';
-      }
-
-      // Get CSRF token
-      const csrftoken = getCookie('csrftoken');
-      
-      console.log('Fetching memo details for ID:', memoId);  // Debug log
-      
-      // Fetch memo details using the correct URL pattern
-      fetch(`/memos/${memoId}/detail/`, {
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRFToken': csrftoken,
-          'Accept': 'application/json',
-        },
-        credentials: 'same-origin'
-      })
-      .then(response => {
-        console.log('Details response status:', response.status);  // Debug log
-        if (!response.ok) {
-          return response.text().then(text => {
-            console.error('Error response body:', text);  // Debug log
-            throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
-          });
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log('Received memo details:', data);  // Debug log
-        
-        // Update modal content
-        const elements = {
-          title: document.getElementById('memoTitle'),
-          date: document.getElementById('memoDate'),
-          location: document.getElementById('memoLocation'),
-          locationContainer: document.getElementById('locationContainer'),
-          description: document.getElementById('memoDescription'),
-          fileSection: document.getElementById('memoFile'),
-          fileLink: document.getElementById('memoFileLink'),
-        };
-
-        // Update title if element exists
-        if (elements.title) {
-          elements.title.textContent = data.title || 'Untitled Memo';
-        }
-
-        // Update date if element exists
-        if (elements.date) {
-          const date = new Date(data.when);
-          const options = { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-          };
-          elements.date.textContent = date.toLocaleDateString('en-US', options);
-        }
-
-        // Update location if elements exist
-        if (elements.location && elements.locationContainer) {
-          if (data.where) {
-            elements.location.textContent = `Location: ${data.where}`;
-            elements.locationContainer.classList.remove('hidden');
-          } else {
-            elements.locationContainer.classList.add('hidden');
-          }
-        }
-
-        // Update description if element exists
-        if (elements.description) {
-          elements.description.textContent = data.description || 'No description available';
-        }
-
-        // Update file attachment if elements exist
-        if (elements.fileSection && elements.fileLink) {
-          if (data.file_url) {
-            elements.fileSection.classList.remove('hidden');
-            elements.fileLink.href = data.file_url;
-          } else {
-            elements.fileSection.classList.add('hidden');
-          }
-        }
-
-        // Handle acknowledgment section
-        const acknowledgmentSection = document.getElementById('acknowledgmentSection');
-        if (acknowledgmentSection) {
-          const memoIdInput = document.getElementById('memoId');
-          if (memoIdInput) {
-            memoIdInput.value = memoId;
-          }
-
-          fetch(`/memos/${memoId}/check-acknowledgment/`, {
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest',
-              'X-CSRFToken': csrftoken,
-              'Accept': 'application/json',
-            },
-            credentials: 'same-origin'
-          })
-          .then(response => {
-            if (!response.ok) throw new Error('Failed to check acknowledgment status');
-            return response.json();
-          })
-          .then(ackData => {
-            const notAcknowledgedSection = document.getElementById('notAcknowledged');
-            const alreadyAcknowledgedSection = document.getElementById('alreadyAcknowledged');
-            const acknowledgedDateElement = document.getElementById('acknowledgedDate');
-            
-            if (notAcknowledgedSection && alreadyAcknowledgedSection && acknowledgedDateElement) {
-              if (ackData.acknowledged) {
-                notAcknowledgedSection.classList.add('hidden');
-                alreadyAcknowledgedSection.classList.remove('hidden');
-                acknowledgedDateElement.textContent = `Acknowledged on ${ackData.acknowledged_date}`;
-              } else {
-                notAcknowledgedSection.classList.remove('hidden');
-                alreadyAcknowledgedSection.classList.add('hidden');
-              }
-            }
-          })
-          .catch(error => {
-            console.error('Error checking acknowledgment status:', error);
-            acknowledgmentSection.innerHTML = `
-              <div class="bg-yellow-50 rounded-lg p-4">
-                <div class="flex">
-                  <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.667-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                    </svg>
-                  </div>
-                  <div class="ml-3">
-                    <h3 class="text-sm font-medium text-yellow-800">Unable to check acknowledgment status</h3>
-                    <p class="mt-2 text-sm text-yellow-700">Please try refreshing the page or contact support if the issue persists.</p>
-                  </div>
-                </div>
-              </div>
-            `;
-          });
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching memo details:', error);
-        if (detailsContent) {
-          detailsContent.innerHTML = `
-            <div class="text-center py-8">
-              <svg class="mx-auto h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 class="mt-2 text-xl font-medium text-gray-900">Error Loading Memo</h3>
-              <p class="mt-1 text-gray-500">There was a problem loading the memo details. Please try again later.</p>
-              <p class="mt-1 text-sm text-gray-400">${error.message}</p>
-              <button onclick="closeModal('detailsModal')" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Close
-              </button>
+                </form>
             </div>
-          `;
-        }
-        // Update title to show error
-        const titleElement = document.getElementById('memoTitle');
-        if (titleElement) {
-          titleElement.textContent = 'Error Loading Memo';
-        }
-      });
-    }
-
-    // Initialize calendar if it's the active view
-    if (!calendarViewContainer.classList.contains('hidden')) {
-      renderCalendar();
-    }
-
-    let dragStartY = 0;
-    let dragStartTime = null;
-    let currentDragEvent = null;
-    let resizing = false;
-    let dragging = false;
-
-    function createTimeGrid(container, slots = 24) {
-      container.innerHTML = '';
-      const hourHeight = 60; // pixels per hour
-
-      // Create background grid
-      for (let i = 0; i < slots; i++) {
-        const hour = document.createElement('div');
-        hour.className = 'border-t border-gray-200';
-        hour.style.height = `${hourHeight}px`;
-        
-        const label = document.createElement('div');
-        label.className = 'absolute -top-3 left-2 text-sm text-gray-500';
-        label.textContent = `${i.toString().padStart(2, '0')}:00`;
-        
-        hour.appendChild(label);
-        container.appendChild(hour);
-      }
-
-      return hourHeight;
-    }
-
-    function renderWeekView() {
-      const weekView = document.getElementById('weekView');
-      const weekGrid = document.getElementById('weekGrid');
-      const weekTimeColumn = document.getElementById('weekTimeColumn');
-      
-      // Create time column
-      weekTimeColumn.innerHTML = '';
-      for (let hour = 0; hour < 24; hour++) {
-        const timeSlot = document.createElement('div');
-        timeSlot.className = 'time-slot';
-        const timeLabel = document.createElement('div');
-        timeLabel.className = 'time-label';
-        timeLabel.textContent = hour.toString().padStart(2, '0') + ':00';
-        timeSlot.appendChild(timeLabel);
-        weekTimeColumn.appendChild(timeSlot);
-      }
-
-      // Clear and create day columns
-      weekGrid.innerHTML = '';
-      const startOfWeek = new Date(currentDate);
-      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-
-      // Create day headers and columns
-      const headerContainer = weekView.querySelector('.grid-cols-7');
-      headerContainer.innerHTML = '';
-      
-      for (let i = 0; i < 7; i++) {
-        const dayDate = new Date(startOfWeek);
-        dayDate.setDate(startOfWeek.getDate() + i);
-        
-        // Create header
-        const header = document.createElement('div');
-        header.className = `day-header ${dayDate.toDateString() === new Date().toDateString() ? 'bg-blue-50' : ''} p-2 text-center border-b border-gray-200`;
-        header.textContent = dayDate.toLocaleDateString('en-US', { 
-          weekday: 'short', 
-          month: 'numeric', 
-          day: 'numeric' 
-        });
-        headerContainer.appendChild(header);
-
-        // Create day column
-        const dayColumn = document.createElement('div');
-        dayColumn.className = 'day-column relative';
-        dayColumn.style.height = '1440px'; // 24 hours * 60px
-        
-        // Create time slots for visual reference
-        for (let hour = 0; hour < 24; hour++) {
-          const timeSlot = document.createElement('div');
-          timeSlot.className = 'time-slot';
-          dayColumn.appendChild(timeSlot);
-        }
-        
-        // Fetch and display events for this day
-        fetchAndDisplayMemos(dayDate, dayColumn, true);
-        
-        weekGrid.appendChild(dayColumn);
-      }
-
-      updateCurrentTimeIndicator();
-    }
-
-    function renderDayView() {
-      const dayView = document.getElementById('dayView');
-      const dayGrid = document.getElementById('dayGrid');
-      const dayTimeColumn = document.getElementById('dayTimeColumn');
-      
-      // Create time column
-      dayTimeColumn.innerHTML = '';
-      for (let hour = 0; hour < 24; hour++) {
-        const timeSlot = document.createElement('div');
-        timeSlot.className = 'time-slot';
-        const timeLabel = document.createElement('div');
-        timeLabel.className = 'time-label';
-        timeLabel.textContent = hour.toString().padStart(2, '0') + ':00';
-        timeSlot.appendChild(timeLabel);
-        dayTimeColumn.appendChild(timeSlot);
-      }
-
-      // Clear and setup day column
-      dayGrid.innerHTML = '';
-      dayGrid.style.height = '1440px'; // 24 hours * 60px
-
-      // Create time slots for visual reference
-      for (let hour = 0; hour < 24; hour++) {
-        const timeSlot = document.createElement('div');
-        timeSlot.className = 'time-slot';
-        dayGrid.appendChild(timeSlot);
-      }
-
-      // Update day header
-      const dayHeader = document.getElementById('dayHeader');
-      dayHeader.className = 'p-4 text-center text-lg font-semibold border-b border-gray-200';
-      dayHeader.textContent = currentDate.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-
-      // Fetch and display events for this day
-      fetchAndDisplayMemos(currentDate, dayGrid, true);
-
-      updateCurrentTimeIndicator();
-    }
-
-    function createEventElement(memo, forTimeGrid = false) {
-      const event = document.createElement('div');
-      const startTime = new Date(memo.when);
-      
-      if (forTimeGrid) {
-        // Calculate end time (default 1 hour if not specified)
-        const endTime = memo.end_time ? new Date(memo.end_time) : new Date(startTime.getTime() + 60 * 60 * 1000);
-        
-        const hourHeight = 60; // pixels per hour
-        const top = (startTime.getHours() + startTime.getMinutes() / 60) * hourHeight;
-        const height = ((endTime.getHours() + endTime.getMinutes() / 60) - 
-                       (startTime.getHours() + startTime.getMinutes() / 60)) * hourHeight;
-        
-        event.style.top = `${top}px`;
-        event.style.height = `${height}px`;
-        
-        // Add resize handle
-        const resizeHandle = document.createElement('div');
-        resizeHandle.className = 'absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize';
-        event.appendChild(resizeHandle);
-        
-        resizeHandle.addEventListener('mousedown', (e) => {
-          e.stopPropagation();
-          resizing = true;
-          currentDragEvent = event;
-          dragStartY = e.clientY;
-        });
-      }
-
-      const eventContent = document.createElement('div');
-      eventContent.className = 'p-2';
-      
-      const titleDiv = document.createElement('div');
-      titleDiv.className = 'font-medium';
-      titleDiv.textContent = memo.title;
-      eventContent.appendChild(titleDiv);
-      
-      if (forTimeGrid) {
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'text-sm text-gray-600';
-        const eventTime = new Date(memo.when);
-        timeDiv.textContent = eventTime.toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit' 
-        });
-        eventContent.appendChild(timeDiv);
-      }
-      
-      event.appendChild(eventContent);
-
-      // Add drag handlers
-      event.addEventListener('dragstart', (e) => {
-        dragging = true;
-        currentDragEvent = event;
-        dragStartY = e.clientY;
-        dragStartTime = new Date(memo.when);
-        e.dataTransfer.setData('text/plain', memo.id);
-        event.classList.add('dragging');
-      });
-
-      event.addEventListener('dragend', () => {
-        event.classList.remove('dragging');
-      });
-
-      // Add click handler for modal
-      event.addEventListener('click', (e) => {
-        if (!dragging && !resizing) {
-          e.stopPropagation();
-          showMemoDetailsModal(memo.id);
-        }
-      });
-
-      return event;
-    }
-
-    function handleDragOver(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-    }
-
-    function handleDrop(e) {
-      e.preventDefault();
-      const memoId = e.dataTransfer.getData('text/plain');
-      const targetDate = e.currentTarget.getAttribute('data-date');
-      
-      if (!memoId || !targetDate) return;
-
-      // Calculate new time based on drop position
-      const rect = e.currentTarget.getBoundingClientRect();
-      const hourHeight = 60;
-      const hours = (e.clientY - rect.top) / hourHeight;
-      
-      const newDate = new Date(targetDate);
-      newDate.setHours(Math.floor(hours));
-      newDate.setMinutes((hours % 1) * 60);
-
-      // Update memo with new date/time
-      updateMemoDateTime(memoId, newDate);
-    }
-
-    function updateMemoDateTime(memoId, newDateTime) {
-      const csrftoken = getCookie('csrftoken');
-      
-      fetch(`/memos/${memoId}/update-time/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrftoken,
-        },
-        body: JSON.stringify({
-          when: newDateTime.toISOString()
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          renderCalendar(); // Refresh the calendar view
-        }
-      })
-      .catch(error => console.error('Error updating memo time:', error));
-    }
-
-    function updateCurrentTimeIndicator() {
-      const now = new Date();
-      const currentView = document.querySelector('.calendar-view:not(.hidden)');
-      const indicator = currentView.querySelector('[id$="CurrentTimeIndicator"]');
-      
-      if (!indicator) return;
-
-      const hourHeight = 60;
-      const top = (now.getHours() + now.getMinutes() / 60) * hourHeight;
-      
-      indicator.style.top = `${top}px`;
-      indicator.classList.remove('hidden');
-    }
-
-    // Set up interval to update current time indicator
-    setInterval(updateCurrentTimeIndicator, 60000); // Update every minute
-
-    // Quick create functionality
-    function showQuickCreateModal(date, timeSlot = null) {
-      const modal = document.getElementById('quickCreateModal');
-      const startInput = document.getElementById('quickStart');
-      const endInput = document.getElementById('quickEnd');
-      
-      const startDate = new Date(date);
-      if (timeSlot) {
-        startDate.setHours(timeSlot, 0, 0, 0);
-      }
-      
-      const endDate = new Date(startDate);
-      endDate.setHours(startDate.getHours() + 1);
-      
-      startInput.value = startDate.toISOString().slice(0, 16);
-      endInput.value = endDate.toISOString().slice(0, 16);
-      
-      modal.classList.remove('hidden');
-    }
-
-    function closeQuickCreateModal() {
-      document.getElementById('quickCreateModal').classList.add('hidden');
-    }
-
-    // Handle quick create form submission
-    document.getElementById('quickCreateForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const formData = {
-        title: document.getElementById('quickTitle').value,
-        when: document.getElementById('quickStart').value,
-        where: document.getElementById('quickLocation').value,
-        description: document.getElementById('quickDescription').value
-      };
-
-      const csrftoken = getCookie('csrftoken');
-      
-      fetch('/memos/create/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrftoken,
-        },
-        body: JSON.stringify(formData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          closeQuickCreateModal();
-          renderCalendar();
-        }
-      })
-      .catch(error => console.error('Error creating memo:', error));
-    });
-
-    // Add double-click handlers for quick create
-    document.addEventListener('dblclick', function(e) {
-      const timeGrid = e.target.closest('#weekGrid, #dayGrid');
-      if (timeGrid) {
-        const rect = timeGrid.getBoundingClientRect();
-        const hourHeight = 60;
-        const hours = Math.floor((e.clientY - rect.top) / hourHeight);
-        const date = timeGrid.getAttribute('data-date');
-        
-        if (date) {
-          showQuickCreateModal(date, hours);
-        }
-      }
-    });
-
-    // Handle window resize
-    window.addEventListener('resize', function() {
-      if (!calendarViewContainer.classList.contains('hidden')) {
-        renderCalendar();
-      }
-    });
-
-    // Handle document-wide mouse events for dragging
-    document.addEventListener('mousemove', function(e) {
-      if (resizing && currentDragEvent) {
-        const hourHeight = 60;
-        const deltaY = e.clientY - dragStartY;
-        const deltaHours = Math.round(deltaY / hourHeight * 2) / 2; // Snap to 30-minute intervals
-        
-        const newHeight = Math.max(hourHeight / 2, 
-          parseInt(currentDragEvent.style.height) + deltaY);
-        currentDragEvent.style.height = `${newHeight}px`;
-        
-        dragStartY = e.clientY;
-      }
-    });
-
-    document.addEventListener('mouseup', function() {
-      if (resizing && currentDragEvent) {
-        const memoId = currentDragEvent.getAttribute('data-memo-id');
-        const height = parseInt(currentDragEvent.style.height);
-        const startTop = parseInt(currentDragEvent.style.top);
-        const hourHeight = 60;
-        
-        const startTime = new Date(dragStartTime);
-        const endTime = new Date(startTime.getTime() + (height / hourHeight) * 60 * 60 * 1000);
-        
-        updateMemoDateTime(memoId, startTime, endTime);
-      }
-      
-      resizing = false;
-      dragging = false;
-      currentDragEvent = null;
-    });
-
-    // Add this at the end of your script section
-    function initializeCalendar() {
-      // Initial calendar render
-      renderCalendar();
-      
-      // Set up interval to update current time indicator
-      setInterval(updateCurrentTimeIndicator, 60000);
-      
-      // Add AJAX response type handler for memo list
-      $(document).ajaxComplete(function(event, xhr, settings) {
-        if (settings.url.includes('/memo_combined/')) {
-          try {
-            const contentType = xhr.getResponseHeader('content-type');
-            if (contentType && contentType.includes('application/json')) {
-              const data = JSON.parse(xhr.responseText);
-              if (data.page_obj) {
-                renderCalendar(); // Re-render calendar when memo list updates
-              }
-            }
-          } catch (e) {
-            console.error('Error handling AJAX response:', e);
-          }
-        }
-      });
-    }
-
-    // Initialize calendar when document is ready
-    document.addEventListener('DOMContentLoaded', function() {
-      initializeCalendar();
-    });
-
-    // Table Sorting Functionality
-    const table = document.querySelector('.memo-table');
-    const sortButtons = document.querySelectorAll('.sort-btn');
-    
-    sortButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const column = this.getAttribute('data-sort');
-        const type = this.getAttribute('data-type') || 'text';
-        const currentDirection = this.querySelector('.sort-direction').textContent;
-        const isAscending = currentDirection.includes('A to Z') || currentDirection.includes('Oldest first');
-        
-        // Update sort direction text and icon
-        const directionText = this.querySelector('.sort-direction');
-        const sortIcon = this.querySelector('.sort-icon');
-        
-        if (column === 'title') {
-          directionText.textContent = isAscending ? 'Z to A' : 'A to Z';
-        } else if (column === 'when') {
-          directionText.textContent = isAscending ? 'Newest first' : 'Oldest first';
-        } else if (column === 'where') {
-          directionText.textContent = isAscending ? 'Z to A' : 'A to Z';
-        }
-        
-        sortIcon.classList.remove('hidden');
-        sortIcon.style.transform = isAscending ? 'rotate(180deg)' : 'rotate(0deg)';
-        
-        // Get table rows and convert to array for sorting
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        
-        // Sort rows
-        rows.sort((a, b) => {
-          let aValue = a.querySelector(`td:nth-child(${getColumnIndex(column)})`).textContent.trim();
-          let bValue = b.querySelector(`td:nth-child(${getColumnIndex(column)})`).textContent.trim();
-          
-          if (type === 'date') {
-            aValue = new Date(aValue);
-            bValue = new Date(bValue);
-          }
-          
-          if (aValue === bValue) return 0;
-          
-          if (type === 'date') {
-            return isAscending ? aValue - bValue : bValue - aValue;
-          } else {
-            return isAscending ? 
-              bValue.localeCompare(aValue) : 
-              aValue.localeCompare(bValue);
-          }
-        });
-        
-        // Clear and re-append sorted rows
-        while (tbody.firstChild) {
-          tbody.removeChild(tbody.firstChild);
-        }
-        rows.forEach(row => tbody.appendChild(row));
-      });
-    });
-    
-    function getColumnIndex(column) {
-      switch(column) {
-        case 'title': return 1;
-        case 'when': return 3;
-        case 'where': return 4;
-        default: return 1;
-      }
-    }
-    
-    // Readers Functionality
-    document.querySelectorAll('.view-readers').forEach(button => {
-      button.addEventListener('click', function() {
-        const memoId = this.getAttribute('data-memo-id');
-        const readersModal = document.getElementById('readersModal');
-        const readersContent = document.getElementById('readersContent');
-        
-        if (!readersModal || !readersContent) {
-          console.error('Modal elements not found');
-          return;
-        }
-        
-        // Show modal
-        readersModal.classList.remove('hidden');
-        
-        // Set loading state
-        readersContent.innerHTML = `
-          <div class="flex justify-center items-center p-4">
-            <svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          </div>
-        `;
-        
-        // Fetch readers data
-        fetch(`/get_memo_readers/${memoId}/`, {
-          method: 'GET',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json',
-          },
-          credentials: 'same-origin'
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          if (!data || !Array.isArray(data.readers)) {
-            throw new Error('Invalid response format: expected readers array');
-          }
-          
-          if (data.readers.length === 0) {
-            readersContent.innerHTML = `
-              <div class="text-center py-6">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <h3 class="text-xl font-medium text-gray-900">${data.memo_title}</h3>
-                <p class="mt-2 text-lg text-gray-500">No readers yet</p>
-              </div>
-            `;
-            return;
-          }
-          
-          // Create readers list
-          const readersList = document.createElement('div');
-          readersList.className = 'space-y-4';
-
-          // Add memo title
-          const titleDiv = document.createElement('div');
-          titleDiv.className = 'mb-6 pb-4 border-b border-gray-200';
-          titleDiv.innerHTML = `
-            <h3 class="text-xl font-medium text-gray-900">${data.memo_title}</h3>
-            <p class="mt-1 text-sm text-gray-500">${data.count} reader${data.count !== 1 ? 's' : ''}</p>
-          `;
-          readersList.appendChild(titleDiv);
-          
-          data.readers.forEach(username => {
-            const readerItem = document.createElement('div');
-            readerItem.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-150';
-            
-            readerItem.innerHTML = `
-              <div class="flex items-center space-x-4">
-                <div class="flex-shrink-0">
-                  <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                </div>
-                <div>
-                  <p class="text-lg font-medium text-gray-900">${username}</p>
-                </div>
-              </div>
-            `;
-            
-            readersList.appendChild(readerItem);
-          });
-          
-          readersContent.innerHTML = '';
-          readersContent.appendChild(readersList);
-        })
-        .catch(error => {
-          console.error('Error fetching readers:', error);
-          readersContent.innerHTML = `
-            <div class="text-center py-6">
-              <svg class="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 class="mt-2 text-xl font-medium text-gray-900">Error Loading Readers</h3>
-              <p class="mt-1 text-lg text-gray-500">Unable to load reader information.</p>
-              <button onclick="closeModal('readersModal')" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Close
-              </button>
-            </div>
-          `;
-        });
-      });
-    });
-
-    // Add card view button handler
-    const cardViewBtn = document.getElementById('cardViewBtn');
-    const cardViewContainer = document.getElementById('cardViewContainer');
-    
-    cardViewBtn.addEventListener('click', () => {
-      // Update button styles
-      cardViewBtn.classList.add('bg-blue-600', 'text-white');
-      cardViewBtn.classList.remove('text-gray-700', 'hover:bg-gray-100');
-      
-      listViewBtn.classList.remove('bg-blue-600', 'text-white');
-      listViewBtn.classList.add('text-gray-700', 'hover:bg-gray-100');
-      
-      calendarViewBtn.classList.remove('bg-blue-600', 'text-white');
-      calendarViewBtn.classList.add('text-gray-700', 'hover:bg-gray-100');
-      
-      // Show/hide containers
-      cardViewContainer.classList.remove('hidden');
-      listViewContainer.classList.add('hidden');
-      calendarViewContainer.classList.add('hidden');
-    });
-
-    // Update list view button handler
-    listViewBtn.addEventListener('click', () => {
-      listViewBtn.classList.add('bg-blue-600', 'text-white');
-      listViewBtn.classList.remove('text-gray-700', 'hover:bg-gray-100');
-      
-      cardViewBtn.classList.remove('bg-blue-600', 'text-white');
-      cardViewBtn.classList.add('text-gray-700', 'hover:bg-gray-100');
-      
-      calendarViewBtn.classList.remove('bg-blue-600', 'text-white');
-      calendarViewBtn.classList.add('text-gray-700', 'hover:bg-gray-100');
-      
-      listViewContainer.classList.remove('hidden');
-      cardViewContainer.classList.add('hidden');
-      calendarViewContainer.classList.add('hidden');
-    });
-
-    // Update calendar view button handler
-    calendarViewBtn.addEventListener('click', () => {
-      calendarViewBtn.classList.add('bg-blue-600', 'text-white');
-      calendarViewBtn.classList.remove('text-gray-700', 'hover:bg-gray-100');
-      
-      listViewBtn.classList.remove('bg-blue-600', 'text-white');
-      listViewBtn.classList.add('text-gray-700', 'hover:bg-gray-100');
-      
-      cardViewBtn.classList.remove('bg-blue-600', 'text-white');
-      cardViewBtn.classList.add('text-gray-700', 'hover:bg-gray-100');
-      
-      calendarViewContainer.classList.remove('hidden');
-      listViewContainer.classList.add('hidden');
-      cardViewContainer.classList.add('hidden');
-      renderCalendar();
-    });
-  });
-</script>
-
-<!-- Update the table text sizes in the main list view -->
-<style>
-.memo-table th {
-  font-size: 1.125rem !important;
-  padding: 0.75rem 1.5rem !important;
-}
-
-.memo-table td {
-  font-size: 1.125rem !important;
-  padding: 0.75rem 1.5rem !important;
-}
-
-.memo-table button {
-  font-size: 1.125rem !important;
-  padding: 0.5rem 1rem !important;
-}
-
-/* Adjust modal content spacing */
-.modal-content {
-  padding: 1.5rem !important;
-}
-
-/* Adjust form elements spacing */
-.form-input, .form-textarea, .form-select {
-  padding: 0.75rem 1rem !important;
-}
-
-/* Adjust button spacing */
-.btn {
-  padding: 0.75rem 1.5rem !important;
-}
-
-/* Calendar Styles */
-.calendar-view.active {
-  display: block;
-}
-
-#monthGrid {
-  min-height: calc(100vh - 400px);
-}
-
-@media (max-width: 768px) {
-  #monthGrid {
-    min-height: calc(100vh - 300px);
-  }
-  
-  .month-day-cell {
-    min-height: 120px;
-    padding: 0.5rem;
-  }
-  
-  .month-day-cell .date-number {
-    font-size: 0.875rem;
-    top: 0.25rem;
-    right: 0.5rem;
-  }
-  
-  .month-day-cell .event-container {
-    margin-top: 1.5rem;
-  }
-  
-  .calendar-event {
-    padding: 4px 8px;
-    margin: 1px 2px;
-    font-size: 0.75rem;
-  }
-  
-  /* Week/Day View Mobile Adjustments */
-  #weekView, #dayView {
-    height: calc(100vh - 250px);
-  }
-  
-  .time-slot {
-    height: 40px;
-  }
-  
-  .time-label {
-    font-size: 0.7rem;
-    top: -8px;
-  }
-  
-  /* Calendar Header Mobile Adjustments */
-  .calendar-toolbar {
-    padding: 0.75rem;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .calendar-navigation {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .calendar-view-selector {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .calendar-view-btn {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.875rem;
-  }
-  
-  /* Calendar Container Mobile Adjustments */
-  .calendar-container {
-    margin: 0 -1rem;
-    border-radius: 0;
-  }
-}
-
-/* Month View Day Cell */
-.month-day-cell {
-  background-color: white;
-  padding: 1rem;
-  min-height: 180px;
-  position: relative;
-  transition: all 0.2s ease-in-out;
-}
-
-.month-day-cell:hover {
-  background-color: #f3f4f6;
-}
-
-.month-day-cell.has-events {
-  background-color: #f0f9ff;
-}
-
-.month-day-cell.has-events:hover {
-  background-color: #e0f2fe;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.month-day-cell.other-month {
-  background-color: #f9fafb;
-  color: #9ca3af;
-}
-
-.month-day-cell.other-month:hover {
-  background-color: #f3f4f6;
-}
-
-.month-day-cell .date-number {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.75rem;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.month-day-cell .event-container {
-  margin-top: 2rem;
-  overflow-y: auto;
-  max-height: calc(100% - 2.5rem);
-}
-
-.calendar-event {
-  padding: 6px 10px;
-  margin: 2px 4px;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  background-color: rgba(59, 130, 246, 0.1);
-  color: rgb(37, 99, 235);
-  border-radius: 4px;
-  border-left: 3px solid rgb(37, 99, 235);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 150ms ease-in-out;
-  cursor: pointer;
-}
-
-.calendar-event:hover {
-  background-color: rgba(59, 130, 246, 0.15);
-  transform: translateX(2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.calendar-event.dragging {
-  opacity: 0.7;
-  transform: scale(0.95);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* Calendar Container */
-#calendarViewContainer {
-  margin-bottom: 2rem;
-}
-
-/* Calendar Views */
-.calendar-view {
-  display: none;
-  background-color: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.calendar-view.active {
-  display: block;
-}
-
-/* Month View */
-#monthView .grid-cols-7 > div {
-  min-height: 120px;
-  padding: 0.75rem;
-  position: relative;
-}
-
-#monthView .bg-gray-50 {
-  background-color: #f9fafb;
-}
-
-/* Week/Day View */
-#weekView, #dayView {
-  height: calc(100vh - 300px);
-  overflow-y: auto;
-}
-
-.time-grid-container {
-  position: relative;
-  border-top: 1px solid #e5e7eb;
-}
-
-.time-slot {
-  height: 60px;
-  border-bottom: 1px solid #e5e7eb;
-  position: relative;
-}
-
-.time-label {
-  position: absolute;
-  top: -10px;
-  left: 8px;
-  font-size: 0.75rem;
-  color: #6b7280;
-  background-color: white;
-  padding: 0 4px;
-}
-
-/* Current Time Indicator */
-.current-time-indicator {
-  position: absolute;
-  left: 0;
-  right: 0;
-  border-top: 2px solid #ef4444;
-  z-index: 50;
-}
-
-.current-time-indicator::before {
-  content: '';
-  position: absolute;
-  left: -6px;
-  top: -4px;
-  width: 8px;
-  height: 8px;
-  background-color: #ef4444;
-  border-radius: 50%;
-}
-
-/* Event Styles */
-.calendar-event {
-  margin: 1px 2px;
-  padding: 4px 8px;
-  font-size: 0.875rem;
-  border-radius: 4px;
-  background-color: rgba(59, 130, 246, 0.1);
-  border-left: 3px solid rgb(37, 99, 235);
-  color: rgb(37, 99, 235);
-  cursor: pointer;
-  transition: all 150ms ease-in-out;
-}
-
-.calendar-event:hover {
-  background-color: rgba(59, 130, 246, 0.15);
-  transform: translateX(2px);
-}
-
-/* Time Grid Events */
-.time-grid-event {
-  position: absolute;
-  left: 1px;
-  right: 1px;
-  background-color: rgba(59, 130, 246, 0.1);
-  border-left: 3px solid rgb(37, 99, 235);
-  border-radius: 4px;
-  padding: 4px;
-  font-size: 0.875rem;
-  color: rgb(37, 99, 235);
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 150ms ease-in-out;
-}
-
-.time-grid-event:hover {
-  background-color: rgba(59, 130, 246, 0.15);
-  z-index: 10;
-}
-
-/* Calendar Header */
-.calendar-header {
-  background-color: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1rem;
-}
-
-.calendar-header button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 150ms ease-in-out;
-}
-
-.calendar-header button:hover {
-  background-color: #f3f4f6;
-}
-
-.calendar-header button.active {
-  background-color: #2563eb;
-  color: white;
-}
-
-/* Day Headers */
-.day-header {
-  padding: 0.75rem;
-  text-align: center;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
-}
-
-.day-header.today {
-  background-color: #dbeafe;
-  color: #2563eb;
-}
-
-/* Add these new styles for better visual hierarchy */
-.calendar-container {
-  background-color: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-}
-
-.calendar-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.calendar-navigation {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.calendar-view-selector {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* Update the JavaScript to handle view switching */
-function switchView(view) {
-  // Hide all views
-  document.querySelectorAll('.calendar-view').forEach(v => {
-    v.classList.remove('active');
-    v.style.display = 'none';
-  });
-  
-  // Show selected view
-  const selectedView = document.getElementById(`${view}View`);
-  if (selectedView) {
-    selectedView.classList.add('active');
-    selectedView.style.display = 'block';
-  }
-  
-  // Update buttons
-  document.querySelectorAll('.calendar-view-btn').forEach(btn => {
-    btn.classList.remove('bg-blue-600', 'text-white');
-    btn.classList.add('text-gray-700', 'hover:bg-gray-100');
-  });
-  
-  const activeBtn = document.querySelector(`[data-view="${view}"]`);
-  if (activeBtn) {
-    activeBtn.classList.add('bg-blue-600', 'text-white');
-    activeBtn.classList.remove('text-gray-700', 'hover:bg-gray-100');
-  }
-  
-  // Re-render the calendar with the new view
-  currentView = view;
-  renderCalendar();
-}
-
-// Update the click handlers for view buttons
-document.querySelectorAll('.calendar-view-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const view = btn.dataset.view;
-    switchView(view);
-  });
-});
-
-/* Card View Styles */
-#cardViewContainer .grid {
-  margin-bottom: 2rem;
-}
-
-#cardViewContainer .bg-white {
-  transition: all 0.2s ease-in-out;
-}
-
-#cardViewContainer .bg-white:hover {
-  transform: translateY(-2px);
-}
-
-/* Ensure consistent button sizing in card view */
-#cardViewContainer .view-details,
-#cardViewContainer .view-readers {
-  white-space: nowrap;
-}
-
-/* Add responsive padding for card content */
-@media (min-width: 768px) {
-  #cardViewContainer .p-6 {
-    padding: 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  #cardViewContainer .p-6 {
-    padding: 2rem;
-  }
-}
-</style>
-
-<!-- Card View Container -->
-<div id="cardViewContainer" class="hidden">
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% if page_obj %}
-      {% for memo in page_obj %}
-      <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-200">
-        <div class="p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-semibold text-gray-900 truncate">{{ memo.title }}</h3>
-            <span class="flex-shrink-0 ml-2">
-              {% if memo.file %}
-                {% if memo.file.url|lower|slice:"-4:" in ".pdf,.doc,docx,.txt" %}
-                  <a href="{{ memo.file.url }}" target="_blank" class="text-blue-600 hover:text-blue-800">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </a>
-                {% endif %}
-              {% endif %}
-            </span>
-          </div>
-          
-          <div class="space-y-3">
-            <div class="flex items-center text-gray-600">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span class="text-lg">{{ memo.when|date:"Y-m-d" }}</span>
-            </div>
-            
-            {% if memo.where %}
-            <div class="flex items-center text-gray-600">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span class="text-lg">{{ memo.where }}</span>
-            </div>
-            {% endif %}
-          </div>
-
-          <div class="mt-4 border-t border-gray-200 pt-4">
-            <div class="flex justify-between items-center">
-              <button data-memo-id="{{ memo.id }}" class="view-details inline-flex items-center px-4 py-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-lg font-medium transition-colors duration-150">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                Details
-              </button>
-              {% if request.user.is_superuser %}
-              <button data-memo-id="{{ memo.id }}" class="view-readers inline-flex items-center px-4 py-2 border-2 border-green-600 text-green-600 hover:bg-green-50 rounded-lg text-lg font-medium transition-colors duration-150">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                Readers
-              </button>
-              {% endif %}
-            </div>
-          </div>
         </div>
-      </div>
-      {% empty %}
-      <div class="col-span-full">
-        <div class="text-center px-6 py-16 bg-white rounded-xl shadow-sm">
-          <div class="rounded-full bg-blue-100 h-20 w-20 flex items-center justify-center mx-auto">
-            <svg class="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h3 class="mt-6 text-2xl font-medium text-gray-900">No Memos Found</h3>
-          <p class="mt-3 text-lg text-gray-500 max-w-md mx-auto">
-            There are no memos in the system at the moment.
-          </p>
-        </div>
-      </div>
-      {% endfor %}
-    {% endif %}
-  </div>
-</div>
-
-<!-- Memo Detail Modal -->
-<div id="memoDetailModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-  <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-      <div class="bg-white px-4 sm:px-6 pt-5 sm:pt-6 pb-4 sm:pb-6">
-        <div class="sm:flex sm:items-start">
-          <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-            <h3 class="text-lg sm:text-2xl font-medium leading-6 text-gray-900 mb-4" id="modal-title">
-              Memo Details
-            </h3>
-            <div class="mt-2 space-y-4">
-              <div>
-                <h4 class="text-base sm:text-lg font-medium text-gray-900">Title</h4>
-                <p class="mt-1 text-sm sm:text-base text-gray-600" id="modalTitle"></p>
-              </div>
-              <div>
-                <h4 class="text-base sm:text-lg font-medium text-gray-900">Description</h4>
-                <p class="mt-1 text-sm sm:text-base text-gray-600" id="modalDescription"></p>
-              </div>
-              <div>
-                <h4 class="text-base sm:text-lg font-medium text-gray-900">Date</h4>
-                <p class="mt-1 text-sm sm:text-base text-gray-600" id="modalDate"></p>
-              </div>
-              <div>
-                <h4 class="text-base sm:text-lg font-medium text-gray-900">Location</h4>
-                <p class="mt-1 text-sm sm:text-base text-gray-600" id="modalLocation"></p>
-              </div>
-              <div>
-                <h4 class="text-base sm:text-lg font-medium text-gray-900">File</h4>
-                <p class="mt-1 text-sm sm:text-base text-gray-600" id="modalFile"></p>
-              </div>
-              <div>
-                <h4 class="text-base sm:text-lg font-medium text-gray-900">Readers</h4>
-                <div class="mt-1 text-sm sm:text-base text-gray-600" id="modalReaders"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 sm:flex sm:flex-row-reverse">
-        <button type="button" class="w-full sm:w-auto mt-3 sm:mt-0 inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 sm:px-6 py-2 sm:py-3 bg-white text-base sm:text-lg font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm" onclick="closeMemoDetailModal()">
-          Close
-        </button>
-      </div>
     </div>
-  </div>
-</div>
 
+    <!-- Manage Tours Modal -->
+    <div class="modal" id="manageTourModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5><i class="fas fa-cog"></i> Manage Tour Targets</h5>
+                    <button type="button" class="close" onclick="hideModal('manageTourModal')">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <table class="tours-table">
+                        <thead>
+                            <tr>
+                                <th>Tour Type</th>
+                                <th>Destination</th>
+                                <th>Agent Target</th>
+                                <th>Supervisor Target</th>
+                                <th>Manager Target</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php 
+                            $all_tour_targets_result->data_seek(0);
+                            while ($tour = $all_tour_targets_result->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($tour['tour_type']); ?></td>
+                                    <td><?php echo htmlspecialchars($tour['destination']); ?></td>
+                                    <td>₱<?php echo number_format($tour['agent_target'], 0); ?></td>
+                                    <td>₱<?php echo number_format($tour['supervisor_target'], 0); ?></td>
+                                    <td>₱<?php echo number_format($tour['manager_target'], 0); ?></td>
+                                    <td>
+                                        <button type="button" class="btn-edit" onclick="editTour(<?php echo $tour['id']; ?>, '<?php echo htmlspecialchars($tour['tour_type']); ?>', '<?php echo htmlspecialchars($tour['destination']); ?>', <?php echo $tour['agent_target']; ?>, <?php echo $tour['supervisor_target']; ?>, <?php echo $tour['manager_target']; ?>)">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this tour target?')">
+                                            <input type="hidden" name="tour_id" value="<?php echo $tour['id']; ?>">
+                                            <button type="submit" name="delete_tour_target" class="btn-delete">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="hideModal('manageTourModal')">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Tour Target Modal -->
+    <div class="modal" id="editTourModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5><i class="fas fa-edit"></i> Edit Tour Target</h5>
+                    <button type="button" class="close" onclick="hideModal('editTourModal')">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form method="POST" id="editTourForm">
+                    <div class="modal-body">
+                        <input type="hidden" name="tour_id" id="edit_tour_id">
+                        
+                        <div class="form-group">
+                            <label for="edit_tour_type">Tour Type</label>
+                            <input type="text" class="form-control" id="edit_tour_type" name="edit_tour_type" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit_destination">Destination</label>
+                            <input type="text" class="form-control" id="edit_destination" name="edit_destination" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit_agent_target">Agent Target (₱)</label>
+                                <input type="text" class="form-control number-input" id="edit_agent_target" name="edit_agent_target" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_supervisor_target">Supervisor Target (₱)</label>
+                                <input type="text" class="form-control number-input" id="edit_supervisor_target" name="edit_supervisor_target" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit_manager_target">Manager Target (₱)</label>
+                            <input type="text" class="form-control number-input" id="edit_manager_target" name="edit_manager_target" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="hideModal('editTourModal')">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" name="edit_tour_target" class="btn-add">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <script>
+    // Dynamic destination filtering
+    document.getElementById('tour_type').addEventListener('change', function() {
+        const tourType = this.value;
+        const destinationSelect = document.getElementById('destination');
+        
+        // Get all tour data from PHP
+        const tours = <?php 
+        $tours_result->data_seek(0);
+        $tours_data = [];
+        while ($tour = $tours_result->fetch_assoc()) {
+            $tours_data[] = $tour;
+        }
+        echo json_encode($tours_data);
+        ?>;
+        
+        destinationSelect.innerHTML = '';
+        
+        tours.forEach(tour => {
+            if (tour.tour_type === tourType) {
+                const option = document.createElement('option');
+                option.value = tour.destination;
+                option.textContent = tour.destination;
+                destinationSelect.appendChild(option);
+            }
+        });
+    });
+
+    // Auto-submit form when filters change
+    document.querySelectorAll('#team_id, #agent_id, #position, #tour_type, #destination').forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+
+    // Form validation with global update warning
+    document.querySelectorAll('.edit-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const salesInput = this.querySelector('input[name="total_sales"]');
+            const salesValue = parseFloat(salesInput.value);
+            
+            if (isNaN(salesValue) || salesValue < 0) {
+                e.preventDefault();
+                alert('Please enter a valid sales amount (0 or greater).');
+                salesInput.focus();
+                return false;
+            }
+            
+            if (salesValue > 10000000) {
+                if (!confirm('You entered a large amount (₱' + salesValue.toLocaleString() + '). Are you sure this is correct?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+
+            // Confirm global update
+            if (!confirm('This will update the sales amount for ALL tour types and destinations for this agent. Continue?')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
+
+    // Number formatting for currency inputs
+    function formatNumber(input) {
+        let value = input.value.replace(/,/g, '');
+        if (!isNaN(value) && value !== '') {
+            input.value = parseFloat(value).toLocaleString();
+        }
+    }
+
+    function unformatNumber(input) {
+        input.value = input.value.replace(/,/g, '');
+    }
+
+    // Add event listeners to number inputs
+    document.querySelectorAll('.number-input').forEach(input => {
+        input.addEventListener('blur', function() {
+            formatNumber(this);
+        });
+        
+        input.addEventListener('focus', function() {
+            unformatNumber(this);
+        });
+    });
+
+    // Modal functionality
+    function showModal(modalId) {
+        document.getElementById(modalId).classList.add('show');
+    }
+
+    function hideModal(modalId) {
+        document.getElementById(modalId).classList.remove('show');
+    }
+
+    // Edit tour function
+    function editTour(id, tourType, destination, agentTarget, supervisorTarget, managerTarget) {
+        document.getElementById('edit_tour_id').value = id;
+        document.getElementById('edit_tour_type').value = tourType;
+        document.getElementById('edit_destination').value = destination;
+        document.getElementById('edit_agent_target').value = agentTarget.toLocaleString();
+        document.getElementById('edit_supervisor_target').value = supervisorTarget.toLocaleString();
+        document.getElementById('edit_manager_target').value = managerTarget.toLocaleString();
+        
+        hideModal('manageTourModal');
+        showModal('editTourModal');
+    }
+
+    // Toggle custom tour type input
+    function toggleCustomTourInput() {
+        const select = document.getElementById('new_tour_type');
+        const customInput = document.getElementById('customTourInput');
+        const customField = document.getElementById('custom_tour_type');
+        
+        if (select.value === 'custom') {
+            customInput.classList.add('show');
+            customField.required = true;
+            customField.focus();
+        } else {
+            customInput.classList.remove('show');
+            customField.required = false;
+            customField.value = '';
+        }
+    }
+
+    // Handle form submission for custom tour type
+    document.querySelector('#addTourModal form').addEventListener('submit', function(e) {
+        const tourTypeSelect = document.getElementById('new_tour_type');
+        const customTourType = document.getElementById('custom_tour_type');
+        
+        if (tourTypeSelect.value === 'custom') {
+            if (!customTourType.value.trim()) {
+                e.preventDefault();
+                alert('Please enter a custom tour type.');
+                customTourType.focus();
+                return false;
+            }
+            // Set the custom value as the tour type
+            tourTypeSelect.value = customTourType.value.trim();
+        }
+
+        // Convert formatted numbers back to numeric values
+        const agentTarget = document.getElementById('agent_target');
+        const supervisorTarget = document.getElementById('supervisor_target');
+        const managerTarget = document.getElementById('manager_target');
+        
+        agentTarget.value = agentTarget.value.replace(/,/g, '');
+        supervisorTarget.value = supervisorTarget.value.replace(/,/g, '');
+        managerTarget.value = managerTarget.value.replace(/,/g, '');
+    });
+
+    // Handle edit form submission
+    document.getElementById('editTourForm').addEventListener('submit', function(e) {
+        // Convert formatted numbers back to numeric values
+        const agentTarget = document.getElementById('edit_agent_target');
+        const supervisorTarget = document.getElementById('edit_supervisor_target');
+        const managerTarget = document.getElementById('edit_manager_target');
+        
+        agentTarget.value = agentTarget.value.replace(/,/g, '');
+        supervisorTarget.value = supervisorTarget.value.replace(/,/g, '');
+        managerTarget.value = managerTarget.value.replace(/,/g, '');
+    });
+
+    // Auto-hide messages
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            alert.style.transition = 'opacity 0.5s ease-out';
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 500);
+        });
+    }, 5000);
+    </script>
 </body>
 </html>

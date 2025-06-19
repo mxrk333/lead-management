@@ -1582,13 +1582,13 @@ function hasValidChartData(data) {
             
             <div class="reports-page">
                 <div class="print-footer" style="display: none;">
-                    <strong>CONFIDENTIAL BUSINESS REPORT</strong> | Generated: <?php echo date('F j, Y \a\t g:i A'); ?> | <?php echo htmlspecialchars($team_name); ?>
+                    <strong>CONFIDENTIAL LEADS REPORT</strong> | Generated: <?php echo date('F j, Y \a\t g:i A'); ?> | <?php echo htmlspecialchars($team_name); ?>
                 </div>
                 
                 <div class="page-header">
                     <div>
                         <h1 class="page-title">
-                            <i class="fas fa-chart-line"></i> QUARTERLY BUSINESS REPORTS
+                            <i class="fas fa-chart-line"></i> QUARTERLY LEADS REPORTS
                             <?php if ($user['role'] == 'admin' && $selected_team_id != 'all'): ?>
                                 <span class="team-badge">
                                     <i class="fas fa-users"></i> <?php echo htmlspecialchars($team_name); ?>
@@ -2386,7 +2386,7 @@ function hasValidChartData(data) {
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false,
+                        maintainAspectRatio: false, // dubug complete...  $cookie 
                         plugins: {
                             legend: {
                                 position: 'bottom',

@@ -9950,3 +9950,2234 @@ Stack trace:
 [18-Jun-2025 19:51:18 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
 [18-Jun-2025 19:51:18 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
 [18-Jun-2025 19:51:18 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 13:57:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:57:53 Europe/Berlin] Database connection error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:57:53 Europe/Berlin] Database initialization error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:57:53 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:57:57 Europe/Berlin] Database connection error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:57:57 Europe/Berlin] Database initialization error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:57:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:58:02 Europe/Berlin] Database connection error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:58:02 Europe/Berlin] Database initialization error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:58:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:58:06 Europe/Berlin] Database connection error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:58:06 Europe/Berlin] Database initialization error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:58:38 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:58:42 Europe/Berlin] Database connection error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:58:42 Europe/Berlin] Database initialization error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:58:42 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:58:47 Europe/Berlin] Database connection error: No connection could be made because the target machine actively refused it
+[19-Jun-2025 13:58:47 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: No connection could be made because the target machine actively refused it in C:\xampp\htdocs\lead-management\config\database.php:85
+Stack trace:
+#0 C:\xampp\htdocs\lead-management\config\database.php(85): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'real_estate_lea...')
+#1 C:\xampp\htdocs\lead-management\includes\functions.php(283): getDbConnection()
+#2 C:\xampp\htdocs\lead-management\login.php(20): validateLogin('markpatigayon.i...', 'markpatigayon22')
+#3 {main}
+  thrown in C:\xampp\htdocs\lead-management\config\database.php on line 85
+[19-Jun-2025 13:58:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:58:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 13:58:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:58:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 13:58:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:58:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 13:58:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:58:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 13:58:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:58:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 13:58:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:58:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 13:58:57 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 13:58:57 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 13:58:57 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 13:58:57 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 13:58:57 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 13:59:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:59:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 13:59:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:59:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 13:59:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 13:59:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:00:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:00:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:00:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:00:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:00:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:00:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:00:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:00:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:00:49 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:00:49 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:00:49 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:00:49 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:00:49 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:02:26 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:02:26 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:02:26 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:02:26 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:02:26 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:02:26 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:02:26 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:02:26 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:02:26 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:02:26 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:02:26 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:02:26 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:02:26 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:02:29 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:02:29 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:02:29 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:02:29 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:02:29 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:02:29 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:02:29 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:02:29 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:02:29 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:02:29 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:02:29 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:02:29 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:02:29 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:03:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:03:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:03:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:03:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:03:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:03:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:03:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:03:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:03:02 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:03:02 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:03:02 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:03:02 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:03:02 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:06:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:06:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:06:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:06:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:06:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:06:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:06:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:06:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:06:37 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:06:37 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:06:37 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:06:37 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:06:37 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:06:39 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:06:39 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:06:39 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:06:39 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:06:39 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:06:39 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:06:39 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:06:39 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:06:39 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:06:39 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:06:39 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:06:39 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:06:39 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:07:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:07:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 08:07:27 America/New_York] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 08:07:27 America/New_York] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 08:07:27 America/New_York] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 08:07:27 America/New_York] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 08:07:27 America/New_York] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 08:07:28 America/New_York] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749503817), Last Read: 2025-06-18 18:44:48 (1750286688), Is Read: true
+[19-Jun-2025 08:07:28 America/New_York] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749481466), Last Read: 2025-06-18 18:44:48 (1750286688), Is Read: true
+[19-Jun-2025 08:07:28 America/New_York] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749481450), Last Read: 2025-06-18 18:44:48 (1750286688), Is Read: true
+[19-Jun-2025 08:07:28 America/New_York] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:07:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:07:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:07:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:07:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:07:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:07:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:07:31 Europe/Berlin] Users fetched: 62
+[19-Jun-2025 14:07:31 Europe/Berlin] Users data: Array
+(
+    [1] => Array
+        (
+            [id] => 1
+            [name] => Administrator
+            [username] => admin
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [26] => Array
+        (
+            [id] => 26
+            [name] => Ailyn Llaneta De Torres
+            [username] => ailyndetorres.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [9] => Array
+        (
+            [id] => 9
+            [name] => Alvin  Llaneta
+            [username] => alvinllaneta.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [33] => Array
+        (
+            [id] => 33
+            [name] => Anela Dela Cruz Tabuyan
+            [username] => anelatabuyan.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [60] => Array
+        (
+            [id] => 60
+            [name] => Angelica Rubrico
+            [username] => angelicarubrico.itdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [55] => Array
+        (
+            [id] => 55
+            [name] => Annabelle Alonzo
+            [username] => annabellealonzo.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [32] => Array
+        (
+            [id] => 32
+            [name] => Annalyn Salting Violenta
+            [username] => annalynviolenta.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [63] => Array
+        (
+            [id] => 63
+            [name] => Arian  Fabila Ramos
+            [username] => arian.fabila.ramos.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [30] => Array
+        (
+            [id] => 30
+            [name] => Arlene Umali
+            [username] => arleneumali.innersparc
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [41] => Array
+        (
+            [id] => 41
+            [name] => Charito Palonson
+            [username] => charitopalonson.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [8] => Array
+        (
+            [id] => 8
+            [name] => Charlene Dellosa
+            [username] => charlenedellosa.innersparc
+            [role] => manager
+            [team_id] => 8
+        )
+
+    [11] => Array
+        (
+            [id] => 11
+            [name] => Clarence Danielle Lim Serdon
+            [username] => clarencedanielleserdon.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [48] => Array
+        (
+            [id] => 48
+            [name] => Cynthia Caballes
+            [username] => cynthiacaballes.innersparc
+            [role] => manager
+            [team_id] => 3
+        )
+
+    [58] => Array
+        (
+            [id] => 58
+            [name] => Daniel Boni Pagilagan
+            [username] => danielpagilagan.itdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [44] => Array
+        (
+            [id] => 44
+            [name] => Dennisa Anne  Lizano
+            [username] => dennisalizano.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [51] => Array
+        (
+            [id] => 51
+            [name] => Desiree   Jacosalem
+            [username] => desireejacosalem.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [38] => Array
+        (
+            [id] => 38
+            [name] => Eden Rose Ramos Demerin
+            [username] => edenrosedemerin.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [47] => Array
+        (
+            [id] => 47
+            [name] => Edsel  Caraballo
+            [username] => edselcaraballo.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [5] => Array
+        (
+            [id] => 5
+            [name] => Eduardaliza Dulay Torres
+            [username] => eduardalizatorres.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [27] => Array
+        (
+            [id] => 27
+            [name] => Emilyn Marcelo Cantuba
+            [username] => emilyncantuba.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [20] => Array
+        (
+            [id] => 20
+            [name] => Erwin Gonzales Baguioan
+            [username] => erwingonzales.innersparc
+            [role] => manager
+            [team_id] => 1
+        )
+
+    [12] => Array
+        (
+            [id] => 12
+            [name] => Gabcyrose Samsona Benson
+            [username] => gabcyrosebenson.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [19] => Array
+        (
+            [id] => 19
+            [name] => Gabriel Jr. Villamor Libacao
+            [username] => gabriellibacao.founder
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [56] => Array
+        (
+            [id] => 56
+            [name] => Genesis Contreras
+            [username] => genesis.contreras.innersparc
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [61] => Array
+        (
+            [id] => 61
+            [name] => Genine Angelique
+            [username] => genineangelique.innersparc
+            [role] => agent
+            [team_id] => 13
+        )
+
+    [18] => Array
+        (
+            [id] => 18
+            [name] => Irene Noble Blanca
+            [username] => ireneblanca.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [43] => Array
+        (
+            [id] => 43
+            [name] => jan Aerrol Retuya
+            [username] => janaerrolretuya.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [62] => Array
+        (
+            [id] => 62
+            [name] => Jericho Santiago
+            [username] => jerichosantiago.innersparc
+            [role] => agent
+            [team_id] => 13
+        )
+
+    [40] => Array
+        (
+            [id] => 40
+            [name] => Jerome Badua
+            [username] => jeromebadua.itdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [36] => Array
+        (
+            [id] => 36
+            [name] => Jerusalino Tan Santos
+            [username] => jerusalinosantos.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [42] => Array
+        (
+            [id] => 42
+            [name] => Jesselie Abayon
+            [username] => jesselieabayon.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [24] => Array
+        (
+            [id] => 24
+            [name] => Joan Mahinay Barceta
+            [username] => joanbarceta.innersparc
+            [role] => manager
+            [team_id] => 2
+        )
+
+    [34] => Array
+        (
+            [id] => 34
+            [name] => Jocelyn Santos
+            [username] => jocelynsantos.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [50] => Array
+        (
+            [id] => 50
+            [name] => John   Palonson
+            [username] => johnpalonson.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [54] => Array
+        (
+            [id] => 54
+            [name] => Krizel    Apan
+            [username] => krizelapan.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [35] => Array
+        (
+            [id] => 35
+            [name] => Lenily  Rana Timajo
+            [username] => lenilyntimajo.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [13] => Array
+        (
+            [id] => 13
+            [name] => Leniza Flores pasion
+            [username] => lenizaflorespasion.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [29] => Array
+        (
+            [id] => 29
+            [name] => Leo Dellosa
+            [username] => leodellosa.innersparc
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [59] => Array
+        (
+            [id] => 59
+            [name] => Leonardy Pistano
+            [username] => leonadpistano.itdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [4] => Array
+        (
+            [id] => 4
+            [name] => Luzviminda Labrado Lim
+            [username] => luzvimindalim.innersparc
+            [role] => supervisor
+            [team_id] => 2
+        )
+
+    [31] => Array
+        (
+            [id] => 31
+            [name] => Manny Alberto Violenta
+            [username] => mannyviolenta.innersparc
+            [role] => manager
+            [team_id] => 12
+        )
+
+    [15] => Array
+        (
+            [id] => 15
+            [name] => Mark Christian Patigayon
+            [username] => markpatigayon.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [39] => Array
+        (
+            [id] => 39
+            [name] => Mark Vincent Bacli
+            [username] => markbacli.hrdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [52] => Array
+        (
+            [id] => 52
+            [name] => Mary Angeli    Corullo
+            [username] => marycorullo.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [45] => Array
+        (
+            [id] => 45
+            [name] => Mercy  Tubania
+            [username] => mercytubania.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [6] => Array
+        (
+            [id] => 6
+            [name] => Mike Gabriel Bedion Escarilla
+            [username] => mikegabrielbedionescarilla.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [46] => Array
+        (
+            [id] => 46
+            [name] => Myra  Magbagay
+            [username] => myramagbagay.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [21] => Array
+        (
+            [id] => 21
+            [name] => Nelyn Serad Ortega
+            [username] => nelynortega.innersparc
+            [role] => supervisor
+            [team_id] => 1
+        )
+
+    [23] => Array
+        (
+            [id] => 23
+            [name] => Nephele Telmo Panganiban
+            [username] => nephelepanganiban
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [28] => Array
+        (
+            [id] => 28
+            [name] => Novelita  Letran Tabudlong
+            [username] => novelitatabudlong.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [37] => Array
+        (
+            [id] => 37
+            [name] => Novelyn Macalam  Bualat
+            [username] => novelynbualat.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [14] => Array
+        (
+            [id] => 14
+            [name] => Perlita Santiago Go
+            [username] => perlitasantiagogo.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [49] => Array
+        (
+            [id] => 49
+            [name] => Rebecca   Resurreccion
+            [username] => rebeccaresurreccion.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [53] => Array
+        (
+            [id] => 53
+            [name] => Renato  Mendoza
+            [username] => renatomendoza.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [64] => Array
+        (
+            [id] => 64
+            [name] => RheaMahilum
+            [username] => rheamahilum.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [17] => Array
+        (
+            [id] => 17
+            [name] => Rize OwogOwog Lagrimas
+            [username] => rizelagrimas.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [7] => Array
+        (
+            [id] => 7
+            [name] => Romeo Jr. Cerna Cobreta
+            [username] => romeojrcernacorberta.itdept
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [22] => Array
+        (
+            [id] => 22
+            [name] => Sarah Jean Lagatic Lopez
+            [username] => sarahlopez.innersparc
+            [role] => supervisor
+            [team_id] => 1
+        )
+
+    [3] => Array
+        (
+            [id] => 3
+            [name] => Sheila Mae Fontelo Fajutagana
+            [username] => shielamaefajutagana.innersparc
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [25] => Array
+        (
+            [id] => 25
+            [name] => Teresa Rosanto Sandoval
+            [username] => teresasandoval.innersparc
+            [role] => supervisor
+            [team_id] => 2
+        )
+
+    [16] => Array
+        (
+            [id] => 16
+            [name] => Verlyn Bizconde Vesagas
+            [username] => verlynbizcondevesagas.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [57] => Array
+        (
+            [id] => 57
+            [name] => Yenzo Teo Gervacio
+            [username] => yenz.itdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+)
+
+[19-Jun-2025 14:07:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:07:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:07:31 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:07:31 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:07:31 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:07:31 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:07:31 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:08:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:03 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:08:03 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:08:03 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:08:03 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:08:03 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:08:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:05 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:08:05 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:08:05 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:08:05 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:08:05 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:08:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 08:08:57 America/New_York] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 08:08:57 America/New_York] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 08:08:57 America/New_York] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 08:08:57 America/New_York] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 08:08:57 America/New_York] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 08:08:57 America/New_York] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749503817), Last Read: 2025-06-18 18:44:48 (1750286688), Is Read: true
+[19-Jun-2025 08:08:57 America/New_York] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749481466), Last Read: 2025-06-18 18:44:48 (1750286688), Is Read: true
+[19-Jun-2025 08:08:57 America/New_York] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749481450), Last Read: 2025-06-18 18:44:48 (1750286688), Is Read: true
+[19-Jun-2025 08:08:57 America/New_York] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:08:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:58 Europe/Berlin] Users fetched: 62
+[19-Jun-2025 14:08:58 Europe/Berlin] Users data: Array
+(
+    [1] => Array
+        (
+            [id] => 1
+            [name] => Administrator
+            [username] => admin
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [26] => Array
+        (
+            [id] => 26
+            [name] => Ailyn Llaneta De Torres
+            [username] => ailyndetorres.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [9] => Array
+        (
+            [id] => 9
+            [name] => Alvin  Llaneta
+            [username] => alvinllaneta.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [33] => Array
+        (
+            [id] => 33
+            [name] => Anela Dela Cruz Tabuyan
+            [username] => anelatabuyan.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [60] => Array
+        (
+            [id] => 60
+            [name] => Angelica Rubrico
+            [username] => angelicarubrico.itdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [55] => Array
+        (
+            [id] => 55
+            [name] => Annabelle Alonzo
+            [username] => annabellealonzo.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [32] => Array
+        (
+            [id] => 32
+            [name] => Annalyn Salting Violenta
+            [username] => annalynviolenta.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [63] => Array
+        (
+            [id] => 63
+            [name] => Arian  Fabila Ramos
+            [username] => arian.fabila.ramos.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [30] => Array
+        (
+            [id] => 30
+            [name] => Arlene Umali
+            [username] => arleneumali.innersparc
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [41] => Array
+        (
+            [id] => 41
+            [name] => Charito Palonson
+            [username] => charitopalonson.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [8] => Array
+        (
+            [id] => 8
+            [name] => Charlene Dellosa
+            [username] => charlenedellosa.innersparc
+            [role] => manager
+            [team_id] => 8
+        )
+
+    [11] => Array
+        (
+            [id] => 11
+            [name] => Clarence Danielle Lim Serdon
+            [username] => clarencedanielleserdon.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [48] => Array
+        (
+            [id] => 48
+            [name] => Cynthia Caballes
+            [username] => cynthiacaballes.innersparc
+            [role] => manager
+            [team_id] => 3
+        )
+
+    [58] => Array
+        (
+            [id] => 58
+            [name] => Daniel Boni Pagilagan
+            [username] => danielpagilagan.itdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [44] => Array
+        (
+            [id] => 44
+            [name] => Dennisa Anne  Lizano
+            [username] => dennisalizano.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [51] => Array
+        (
+            [id] => 51
+            [name] => Desiree   Jacosalem
+            [username] => desireejacosalem.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [38] => Array
+        (
+            [id] => 38
+            [name] => Eden Rose Ramos Demerin
+            [username] => edenrosedemerin.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [47] => Array
+        (
+            [id] => 47
+            [name] => Edsel  Caraballo
+            [username] => edselcaraballo.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [5] => Array
+        (
+            [id] => 5
+            [name] => Eduardaliza Dulay Torres
+            [username] => eduardalizatorres.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [27] => Array
+        (
+            [id] => 27
+            [name] => Emilyn Marcelo Cantuba
+            [username] => emilyncantuba.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [20] => Array
+        (
+            [id] => 20
+            [name] => Erwin Gonzales Baguioan
+            [username] => erwingonzales.innersparc
+            [role] => manager
+            [team_id] => 1
+        )
+
+    [12] => Array
+        (
+            [id] => 12
+            [name] => Gabcyrose Samsona Benson
+            [username] => gabcyrosebenson.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [19] => Array
+        (
+            [id] => 19
+            [name] => Gabriel Jr. Villamor Libacao
+            [username] => gabriellibacao.founder
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [56] => Array
+        (
+            [id] => 56
+            [name] => Genesis Contreras
+            [username] => genesis.contreras.innersparc
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [61] => Array
+        (
+            [id] => 61
+            [name] => Genine Angelique
+            [username] => genineangelique.innersparc
+            [role] => agent
+            [team_id] => 13
+        )
+
+    [18] => Array
+        (
+            [id] => 18
+            [name] => Irene Noble Blanca
+            [username] => ireneblanca.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [43] => Array
+        (
+            [id] => 43
+            [name] => jan Aerrol Retuya
+            [username] => janaerrolretuya.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [62] => Array
+        (
+            [id] => 62
+            [name] => Jericho Santiago
+            [username] => jerichosantiago.innersparc
+            [role] => agent
+            [team_id] => 13
+        )
+
+    [40] => Array
+        (
+            [id] => 40
+            [name] => Jerome Badua
+            [username] => jeromebadua.itdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [36] => Array
+        (
+            [id] => 36
+            [name] => Jerusalino Tan Santos
+            [username] => jerusalinosantos.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [42] => Array
+        (
+            [id] => 42
+            [name] => Jesselie Abayon
+            [username] => jesselieabayon.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [24] => Array
+        (
+            [id] => 24
+            [name] => Joan Mahinay Barceta
+            [username] => joanbarceta.innersparc
+            [role] => manager
+            [team_id] => 2
+        )
+
+    [34] => Array
+        (
+            [id] => 34
+            [name] => Jocelyn Santos
+            [username] => jocelynsantos.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [50] => Array
+        (
+            [id] => 50
+            [name] => John   Palonson
+            [username] => johnpalonson.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [54] => Array
+        (
+            [id] => 54
+            [name] => Krizel    Apan
+            [username] => krizelapan.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [35] => Array
+        (
+            [id] => 35
+            [name] => Lenily  Rana Timajo
+            [username] => lenilyntimajo.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [13] => Array
+        (
+            [id] => 13
+            [name] => Leniza Flores pasion
+            [username] => lenizaflorespasion.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [29] => Array
+        (
+            [id] => 29
+            [name] => Leo Dellosa
+            [username] => leodellosa.innersparc
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [59] => Array
+        (
+            [id] => 59
+            [name] => Leonardy Pistano
+            [username] => leonadpistano.itdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [4] => Array
+        (
+            [id] => 4
+            [name] => Luzviminda Labrado Lim
+            [username] => luzvimindalim.innersparc
+            [role] => supervisor
+            [team_id] => 2
+        )
+
+    [31] => Array
+        (
+            [id] => 31
+            [name] => Manny Alberto Violenta
+            [username] => mannyviolenta.innersparc
+            [role] => manager
+            [team_id] => 12
+        )
+
+    [15] => Array
+        (
+            [id] => 15
+            [name] => Mark Christian Patigayon
+            [username] => markpatigayon.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [39] => Array
+        (
+            [id] => 39
+            [name] => Mark Vincent Bacli
+            [username] => markbacli.hrdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [52] => Array
+        (
+            [id] => 52
+            [name] => Mary Angeli    Corullo
+            [username] => marycorullo.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [45] => Array
+        (
+            [id] => 45
+            [name] => Mercy  Tubania
+            [username] => mercytubania.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [6] => Array
+        (
+            [id] => 6
+            [name] => Mike Gabriel Bedion Escarilla
+            [username] => mikegabrielbedionescarilla.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [46] => Array
+        (
+            [id] => 46
+            [name] => Myra  Magbagay
+            [username] => myramagbagay.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [21] => Array
+        (
+            [id] => 21
+            [name] => Nelyn Serad Ortega
+            [username] => nelynortega.innersparc
+            [role] => supervisor
+            [team_id] => 1
+        )
+
+    [23] => Array
+        (
+            [id] => 23
+            [name] => Nephele Telmo Panganiban
+            [username] => nephelepanganiban
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [28] => Array
+        (
+            [id] => 28
+            [name] => Novelita  Letran Tabudlong
+            [username] => novelitatabudlong.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [37] => Array
+        (
+            [id] => 37
+            [name] => Novelyn Macalam  Bualat
+            [username] => novelynbualat.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [14] => Array
+        (
+            [id] => 14
+            [name] => Perlita Santiago Go
+            [username] => perlitasantiagogo.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [49] => Array
+        (
+            [id] => 49
+            [name] => Rebecca   Resurreccion
+            [username] => rebeccaresurreccion.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [53] => Array
+        (
+            [id] => 53
+            [name] => Renato  Mendoza
+            [username] => renatomendoza.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [64] => Array
+        (
+            [id] => 64
+            [name] => RheaMahilum
+            [username] => rheamahilum.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [17] => Array
+        (
+            [id] => 17
+            [name] => Rize OwogOwog Lagrimas
+            [username] => rizelagrimas.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [7] => Array
+        (
+            [id] => 7
+            [name] => Romeo Jr. Cerna Cobreta
+            [username] => romeojrcernacorberta.itdept
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [22] => Array
+        (
+            [id] => 22
+            [name] => Sarah Jean Lagatic Lopez
+            [username] => sarahlopez.innersparc
+            [role] => supervisor
+            [team_id] => 1
+        )
+
+    [3] => Array
+        (
+            [id] => 3
+            [name] => Sheila Mae Fontelo Fajutagana
+            [username] => shielamaefajutagana.innersparc
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [25] => Array
+        (
+            [id] => 25
+            [name] => Teresa Rosanto Sandoval
+            [username] => teresasandoval.innersparc
+            [role] => supervisor
+            [team_id] => 2
+        )
+
+    [16] => Array
+        (
+            [id] => 16
+            [name] => Verlyn Bizconde Vesagas
+            [username] => verlynbizcondevesagas.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [57] => Array
+        (
+            [id] => 57
+            [name] => Yenzo Teo Gervacio
+            [username] => yenz.itdept
+            [role] => admin
+            [team_id] => 13
+        )
+
+)
+
+[19-Jun-2025 14:08:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:08:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:08:58 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:08:58 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:08:58 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:08:58 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:08:58 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:10:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:01 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:10:01 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:10:01 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:10:01 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:10:01 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:10:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:04 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:04 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:04 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:04 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:04 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:10:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:10:04 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:10:04 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:10:04 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:10:04 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:10:04 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:16:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:31 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[19-Jun-2025 14:16:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:33 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:16:33 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:16:33 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:16:33 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:16:33 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:16:34 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:34 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:34 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:16:34 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:16:34 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[19-Jun-2025 14:18:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:18:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:18:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:18:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:18:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:18:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:19:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:19:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:19:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:19:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:19:13 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[19-Jun-2025 14:19:42 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:19:42 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:19:42 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:19:42 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:19:42 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[19-Jun-2025 14:19:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:19:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:19:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:19:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:19:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:19:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:20:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:20:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:20:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:20:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:20:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:20:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:20:50 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:20:50 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:20:50 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:20:50 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:20:50 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[19-Jun-2025 14:21:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:21:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:21:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:21:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:21:06 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[19-Jun-2025 14:21:08 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:21:08 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:21:08 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:21:08 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:21:08 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:21:08 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:21:10 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:21:10 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:21:10 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:21:10 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:21:10 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[19-Jun-2025 14:22:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:22:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:22:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:22:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:22:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:22:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:02 Europe/Berlin] DEBUG - Checking closed deals for user_id: 15
+[19-Jun-2025 14:23:02 Europe/Berlin] Found closed deal - ID: 14, Client: asd;ljkas;ld, Status: Closed Deal, Price: 19283838.38, Updated: 2025-06-09 11:04:26
+[19-Jun-2025 14:23:02 Europe/Berlin] Found closed deal - ID: 15, Client: test4, Status: Closed Deal, Price: 1212121212.11, Updated: 2025-06-09 17:16:57
+[19-Jun-2025 14:23:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:02 Europe/Berlin] DEBUG - No current goal found for user
+[19-Jun-2025 14:23:02 Europe/Berlin] DEBUG - Current Goal: 
+[19-Jun-2025 14:23:02 Europe/Berlin] DEBUG - Goal Progress: Array
+(
+)
+
+[19-Jun-2025 14:23:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:02 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:23:02 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:23:02 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:23:02 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:23:02 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:23:22 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:22 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:22 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:22 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:22 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:22 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:22 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:22 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:22 Europe/Berlin] DEBUG - Checking closed deals for user_id: 15
+[19-Jun-2025 14:23:22 Europe/Berlin] Found closed deal - ID: 14, Client: asd;ljkas;ld, Status: Closed Deal, Price: 19283838.38, Updated: 2025-06-09 11:04:26
+[19-Jun-2025 14:23:22 Europe/Berlin] Found closed deal - ID: 15, Client: test4, Status: Closed Deal, Price: 1212121212.11, Updated: 2025-06-09 17:16:57
+[19-Jun-2025 14:23:22 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:22 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:22 Europe/Berlin] DEBUG - No current goal found for user
+[19-Jun-2025 14:23:22 Europe/Berlin] DEBUG - Current Goal: 
+[19-Jun-2025 14:23:22 Europe/Berlin] DEBUG - Goal Progress: Array
+(
+)
+
+[19-Jun-2025 14:23:22 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:22 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:22 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:22 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:22 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:23:22 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:23:22 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:23:22 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:23:22 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:23:24 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:24 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:24 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:24 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:24 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:24 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:32 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:32 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:32 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:32 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:32 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:32 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:39 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:39 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:39 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:39 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:39 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:39 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:23:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:23:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:24:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:24:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:24:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:24:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:24:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:24:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:18 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:18 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:18 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:18 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:18 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:18 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:25 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:25 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:25 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:25 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:25 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:25 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:29 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:29 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:29 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:29 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:26:29 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:26:29 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:39 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:39 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:39 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:39 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:39 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:39 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:28:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:28:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:31:04 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:31:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:31:04 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:31:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:31:04 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:31:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:31:04 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:31:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:31:04 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:31:04 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:31:04 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:31:04 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:31:04 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:32:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:32:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:32:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:32:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:32:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:32:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:32:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:32:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:32:36 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:32:36 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:32:36 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:32:36 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:32:36 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:32:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:32:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:32:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:32:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:32:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:32:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:32:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:32:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:32:45 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:32:45 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:32:45 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:32:45 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:32:45 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:33:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:33:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:33:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:33:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:33:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:33:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:33:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:33:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:33:11 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:33:11 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:33:11 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:33:11 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:33:11 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:33:12 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:33:12 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:33:12 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:33:12 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:33:12 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:33:12 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:33:12 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:33:12 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:33:12 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:33:12 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:33:12 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:33:12 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:33:12 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:35:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:11 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:35:11 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:11 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:11 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:11 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:35:17 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:17 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:17 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:17 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:17 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:17 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:17 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:17 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:17 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:35:17 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:17 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:17 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:17 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:35:34 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:34 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:34 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:34 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:34 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:34 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:34 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:34 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:34 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:35:34 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:34 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:34 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:34 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:35:42 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:42 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:42 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:42 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:42 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:42 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:42 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:42 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:42 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:35:42 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:42 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:42 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:42 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:35:47 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:47 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:47 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:47 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:47 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:47 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:47 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:47 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:47 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:35:47 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:47 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:47 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:47 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:35:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 08:35:49 America/New_York] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 08:35:49 America/New_York] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 08:35:49 America/New_York] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 08:35:49 America/New_York] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 08:35:49 America/New_York] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 08:35:49 America/New_York] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749503817), Last Read: 2025-06-18 18:44:48 (1750286688), Is Read: true
+[19-Jun-2025 08:35:49 America/New_York] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749481466), Last Read: 2025-06-18 18:44:48 (1750286688), Is Read: true
+[19-Jun-2025 08:35:49 America/New_York] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749481450), Last Read: 2025-06-18 18:44:48 (1750286688), Is Read: true
+[19-Jun-2025 08:35:49 America/New_York] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:35:50 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:50 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:50 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:50 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:50 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:50 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:50 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:35:50 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:35:50 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:35:50 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:50 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:50 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:35:50 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:36:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:06 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:36:06 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:36:06 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:36:06 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:36:06 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:36:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:30 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:36:30 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:36:30 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:36:30 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:36:30 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:36:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:36:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:36:45 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:36:45 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:36:45 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:36:45 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:36:45 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:39:48 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:39:48 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:39:48 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:39:48 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:39:48 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:39:48 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:39:48 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:39:48 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:39:48 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:39:49 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:39:49 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:39:49 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:39:49 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:39:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:39:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:39:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:39:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:39:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:39:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:39:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:39:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:39:52 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:39:52 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:39:52 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:39:52 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:39:52 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:40:00 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:00 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:00 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:00 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:00 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:00 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:00 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:00 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:00 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:40:00 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:00 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:00 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:00 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:40:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:01 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:40:01 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:01 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:01 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:01 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:40:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:02 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:40:02 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:02 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:02 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:02 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:40:14 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:14 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:14 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:14 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:14 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:14 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:15 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:15 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:15 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:40:15 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:15 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:15 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:15 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:40:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:40:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:40:23 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:40:23 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:23 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:23 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:40:23 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:44:16 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:44:16 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:44:16 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:44:16 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:44:16 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:44:16 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:44:17 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:44:17 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:44:17 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:44:17 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:44:17 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:44:17 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:44:17 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:44:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:44:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:44:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:44:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:44:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:44:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:44:30 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:44:30 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:44:30 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:44:31 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:44:31 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:44:31 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:44:31 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:48:35 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:48:35 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:48:35 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:48:35 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:48:35 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:48:35 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:48:35 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:48:35 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:48:35 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:48:35 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:48:35 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:48:35 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:48:35 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:49:34 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:34 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:34 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:34 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:34 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:34 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:34 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:34 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:34 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:49:34 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:49:34 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:49:34 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:49:34 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:49:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:52 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:49:52 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:49:52 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:49:52 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:49:52 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:49:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:49:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:49:56 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:49:56 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:49:56 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:49:56 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:49:56 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:50:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:02 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:50:02 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:02 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:02 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:02 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:50:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:06 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:50:06 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:06 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:06 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:06 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:50:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:14 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:14 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:14 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:14 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:14 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:14 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:14 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:50:14 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:14 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:14 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:14 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:50:18 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:19 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:19 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:19 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:19 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:19 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:19 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:19 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:19 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:50:19 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:19 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:19 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:19 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:50:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:27 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:50:27 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:27 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:27 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:27 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:50:32 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:32 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:32 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:32 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:32 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:32 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:32 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:50:32 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:50:32 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:50:32 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:32 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:32 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:50:32 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:52:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:52:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:52:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:52:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:52:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:52:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:52:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:52:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:52:31 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:52:32 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:52:32 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:52:32 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:52:32 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:54:09 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:09 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:09 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:09 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:09 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:09 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:09 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:09 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:09 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:54:09 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:54:09 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:54:09 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:54:09 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:54:20 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:20 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:20 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:20 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:20 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:20 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:20 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:20 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:20 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:54:20 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:54:20 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:54:20 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:54:20 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:54:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:54:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:54:56 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:54:56 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:54:56 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:54:56 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:54:56 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:55:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:55:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:55:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:55:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:55:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:55:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:55:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:55:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:55:40 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:55:40 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:55:40 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:55:40 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:55:40 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:55:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:55:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:55:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:55:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:55:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:55:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:55:45 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:55:45 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:55:45 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:55:45 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:55:45 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:55:45 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:55:45 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:57:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:57:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:57:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:57:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:57:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:57:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:57:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:57:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:57:40 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:57:40 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:57:40 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:57:40 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:57:40 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:57:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:57:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:57:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:57:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:57:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:57:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:57:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:57:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:57:57 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:57:57 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:57:57 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:57:57 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:57:57 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:58:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:58:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:58:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:58:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:58:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:58:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:58:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:58:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:58:02 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:58:02 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:58:02 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:58:02 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:58:02 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:58:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:58:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:58:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:58:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:58:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:58:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:58:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:58:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:58:05 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:58:06 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:58:06 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:58:06 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:58:06 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 14:59:07 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:59:07 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:59:07 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:59:07 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:59:07 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:59:07 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:59:08 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 14:59:08 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 14:59:08 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 14:59:08 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:59:08 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:59:08 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 14:59:08 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 15:05:54 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:05:54 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:05:54 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:05:54 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:05:54 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:05:54 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:05:54 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:05:54 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:05:54 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 15:05:54 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 15:05:54 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 15:05:54 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 15:05:54 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 15:07:17 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:07:17 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:07:17 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:07:17 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:07:17 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:07:17 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:07:17 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:07:17 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:07:17 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 15:07:17 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 15:07:17 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 15:07:17 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 15:07:17 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
+[19-Jun-2025 15:07:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:07:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:07:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:07:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:07:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:07:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:07:36 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Jun-2025 15:07:36 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Jun-2025 15:07:36 Europe/Berlin] getRecentNotifications - User ID: 15, Last Read: 2025-06-18 18:44:48
+[19-Jun-2025 15:07:36 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 17:16:57 (1749482217), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 15:07:36 Europe/Berlin] Notification: Lead Update, Created: 2025-06-09 11:04:26 (1749459866), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 15:07:36 Europe/Berlin] Notification: Downpayment Tracker, Created: 2025-06-09 11:04:10 (1749459850), Last Read: 2025-06-18 18:44:48 (1750265088), Is Read: true
+[19-Jun-2025 15:07:36 Europe/Berlin] Header loaded - Total notifications: 8, Unread count: 0
