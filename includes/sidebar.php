@@ -110,6 +110,13 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
                                 <span class="nav-text">Memos</span>
                             </a>
                         </li>
+
+                            <li class="nav-item">
+                            <a href="incentives.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'incentives.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-coins nav-icon"></i>
+                                <span class="nav-text">Incentives</span>
+                            </a>
+                        </li>
                         
                         <?php if (isset($user['role']) && $user['role'] == 'admin'): ?>
                         <li class="nav-item">
