@@ -1115,7 +1115,7 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
     .text-success { color: var(--success); }
     .text-warning { color: var(--warning); }
 
-    /* OPTIMIZED COMPACT PRINT STYLES - NO WASTED PAGES */
+    /* FIXED PRINT STYLES - CIRCULAR CHARTS ASPECT RATIO */
     @media print {
         @page {
             margin: 0.5in;
@@ -1371,7 +1371,7 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             font-weight: bold !important;
         }
         
-        /* CHARTS SECTION - NEW PAGE BUT COMPACT */
+        /* CHARTS SECTION - NEW PAGE BUT COMPACT WITH FIXED ASPECT RATIO */
         .small-charts-grid {
             page-break-before: always !important;
             display: grid !important;
@@ -1390,6 +1390,7 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             background: #fff !important;
             border-radius: 5px !important;
             page-break-inside: avoid !important;
+            position: relative !important;
         }
         
         .report-charts {
@@ -1410,6 +1411,7 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             background: #fff !important;
             border-radius: 5px !important;
             page-break-inside: avoid !important;
+            position: relative !important;
         }
         
         .chart-header {
@@ -1438,9 +1440,10 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             display: block !important;
             height: calc(100% - 30px) !important;
             width: 100% !important;
+            position: relative !important;
         }
         
-        /* CANVAS OPTIMIZATION */
+        /* FIXED: CANVAS OPTIMIZATION FOR CIRCULAR CHARTS */
         canvas {
             display: block !important;
             max-width: 100% !important;
@@ -1448,6 +1451,37 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             margin: 0 auto !important;
             visibility: visible !important;
             opacity: 1 !important;
+            /* CRITICAL FIX: Force aspect ratio for circular charts */
+            aspect-ratio: 1 / 1 !important;
+            object-fit: contain !important;
+        }
+        
+        /* SPECIFIC FIX FOR PIE AND DOUGHNUT CHARTS */
+        #statusChart,
+        #temperatureChart {
+            width: 180px !important;
+            height: 180px !important;
+            aspect-ratio: 1 / 1 !important;
+            object-fit: contain !important;
+            margin: 0 auto !important;
+        }
+        
+        /* ENSURE CHART CONTAINERS MAINTAIN SQUARE ASPECT FOR CIRCULAR CHARTS */
+        .small-chart-container:has(#statusChart),
+        .small-chart-container:has(#temperatureChart) {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .small-chart-container:has(#statusChart) .chart-body,
+        .small-chart-container:has(#temperatureChart) .chart-body {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: calc(100% - 30px) !important;
         }
         
         /* METRIC BADGES */
@@ -1938,7 +1972,7 @@ function hasValidChartData(data) {
             teamCard.style.pageBreakBefore = 'avoid';
         }
         
-        // Set compact print-optimized chart configurations
+        // FIXED: Set print-optimized chart configurations with proper aspect ratio
         Chart.defaults.font.size = 8;
         Chart.defaults.plugins.legend.position = 'bottom';
         Chart.defaults.plugins.legend.labels.boxWidth = 8;
@@ -1949,14 +1983,22 @@ function hasValidChartData(data) {
             weight: 'normal'
         };
         
-        // Force chart resize for compact print optimization
+        // CRITICAL FIX: Force chart resize with proper aspect ratio for circular charts
         const charts = document.querySelectorAll('canvas');
         const chartPromises = [];
         
         charts.forEach((canvas, index) => {
             if (canvas.chart) {
-                // Compact print size for charts
-                canvas.chart.resize(300, 200);
+                // FIXED: Maintain aspect ratio for pie/doughnut charts
+                if (canvas.id === 'statusChart' || canvas.id === 'temperatureChart') {
+                    // Force square dimensions for circular charts
+                    canvas.chart.resize(180, 180);
+                    canvas.chart.options.maintainAspectRatio = true;
+                    canvas.chart.options.aspectRatio = 1;
+                } else {
+                    // Regular resize for other charts
+                    canvas.chart.resize(300, 200);
+                }
                 
                 const promise = new Promise((resolve) => {
                     setTimeout(() => {
@@ -1971,7 +2013,7 @@ function hasValidChartData(data) {
         // Wait for charts to render, then print
         Promise.all(chartPromises).then(() => {
             setTimeout(() => {
-                console.log('Initiating compact print...');
+                console.log('Initiating compact print with fixed circular charts...');
                 window.print();
             }, 500);
         });
@@ -2078,7 +2120,7 @@ function hasValidChartData(data) {
         initializeCharts();
     });
 
-    // FIXED: Chart initialization function with proper data validation
+    // FIXED: Chart initialization function with proper aspect ratio for circular charts
     function initializeCharts() {
         // Chart color schemes
         const colorSchemes = {
@@ -2090,7 +2132,7 @@ function hasValidChartData(data) {
             sources: ['#2563eb', '#059669', '#d97706', '#dc2626', '#8b5cf6', '#06b6d4', '#84cc16', '#f59e0b']
         };
 
-        // FIXED: Initialize Status Chart with data validation
+        // FIXED: Initialize Status Chart with proper aspect ratio
         if (hasValidChartData(reportData.status_distribution)) {
             const statusCtx = document.getElementById('statusChart');
             if (statusCtx) {
@@ -2107,7 +2149,8 @@ function hasValidChartData(data) {
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false,
+                        maintainAspectRatio: true,
+                        aspectRatio: 1,
                         plugins: {
                             legend: {
                                 position: 'bottom',
@@ -2133,7 +2176,7 @@ function hasValidChartData(data) {
             }
         }
 
-        // FIXED: Initialize Temperature Chart with data validation
+        // FIXED: Initialize Temperature Chart with proper aspect ratio
         if (hasValidChartData(reportData.temperature_distribution)) {
             const tempCtx = document.getElementById('temperatureChart');
             if (tempCtx) {
@@ -2150,7 +2193,8 @@ function hasValidChartData(data) {
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false,
+                        maintainAspectRatio: true,
+                        aspectRatio: 1,
                         plugins: {
                             legend: {
                                 position: 'bottom',
@@ -2386,7 +2430,7 @@ function hasValidChartData(data) {
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false, // dubug complete...  $cookie 
+                        maintainAspectRatio: false,
                         plugins: {
                             legend: {
                                 position: 'bottom',
@@ -2437,7 +2481,7 @@ function hasValidChartData(data) {
             }
         }
 
-        console.log('All charts initialized successfully with data validation');
+        console.log('All charts initialized successfully with fixed circular aspect ratios');
     }
     </script>
 </body>
