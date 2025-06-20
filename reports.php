@@ -189,7 +189,7 @@ if ($result && $result->num_rows > 0) {
 }
 $stmt->close();
 
-// Get status distribution
+// Get status distribution with percentages
 $status_query = "
     SELECT 
         l.status,
@@ -214,14 +214,29 @@ if (!empty($params)) {
 $stmt->execute();
 $result = $stmt->get_result();
 
+$status_total = 0;
+$status_temp = [];
+
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $reportData['status_distribution'][] = $row;
+        $status_temp[] = $row;
+        $status_total += $row['count'];
     }
+}
+
+// Calculate percentages for status distribution
+foreach ($status_temp as $status) {
+    $percentage = $status_total > 0 ? round(($status['count'] / $status_total) * 100, 1) : 0;
+    $reportData['status_distribution'][] = [
+        'status' => $status['status'],
+        'count' => $status['count'],
+        'value' => $status['value'],
+        'percentage' => $percentage
+    ];
 }
 $stmt->close();
 
-// Get temperature distribution
+// Get temperature distribution with percentages
 $temp_query = "
     SELECT 
         l.temperature,
@@ -246,14 +261,29 @@ if (!empty($params)) {
 $stmt->execute();
 $result = $stmt->get_result();
 
+$temp_total = 0;
+$temp_temp = [];
+
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $reportData['temperature_distribution'][] = $row;
+        $temp_temp[] = $row;
+        $temp_total += $row['count'];
     }
+}
+
+// Calculate percentages for temperature distribution
+foreach ($temp_temp as $temp) {
+    $percentage = $temp_total > 0 ? round(($temp['count'] / $temp_total) * 100, 1) : 0;
+    $reportData['temperature_distribution'][] = [
+        'temperature' => $temp['temperature'],
+        'count' => $temp['count'],
+        'value' => $temp['value'],
+        'percentage' => $percentage
+    ];
 }
 $stmt->close();
 
-// Get top projects
+// Get top projects with percentages
 $projects_query = "
     SELECT 
         l.developer,
@@ -278,14 +308,28 @@ if (!empty($params)) {
 $stmt->execute();
 $result = $stmt->get_result();
 
+$projects_total = 0;
+$projects_temp = [];
+
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $reportData['top_projects'][] = $row;
+        $projects_temp[] = $row;
+        $projects_total += $row['count'];
     }
+}
+
+// Calculate percentages for projects
+foreach ($projects_temp as $project) {
+    $percentage = $projects_total > 0 ? round(($project['count'] / $projects_total) * 100, 1) : 0;
+    $reportData['top_projects'][] = [
+        'developer' => $project['developer'],
+        'count' => $project['count'],
+        'percentage' => $percentage
+    ];
 }
 $stmt->close();
 
-// Get top models
+// Get top models with percentages
 $models_query = "
     SELECT 
         l.project_model,
@@ -310,14 +354,28 @@ if (!empty($params)) {
 $stmt->execute();
 $result = $stmt->get_result();
 
+$models_total = 0;
+$models_temp = [];
+
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $reportData['top_models'][] = $row;
+        $models_temp[] = $row;
+        $models_total += $row['count'];
     }
+}
+
+// Calculate percentages for models
+foreach ($models_temp as $model) {
+    $percentage = $models_total > 0 ? round(($model['count'] / $models_total) * 100, 1) : 0;
+    $reportData['top_models'][] = [
+        'project_model' => $model['project_model'],
+        'count' => $model['count'],
+        'percentage' => $percentage
+    ];
 }
 $stmt->close();
 
-// Get top sources
+// Get top sources with percentages
 $sources_query = "
     SELECT 
         l.source,
@@ -342,10 +400,24 @@ if (!empty($params)) {
 $stmt->execute();
 $result = $stmt->get_result();
 
+$sources_total = 0;
+$sources_temp = [];
+
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $reportData['top_sources'][] = $row;
+        $sources_temp[] = $row;
+        $sources_total += $row['count'];
     }
+}
+
+// Calculate percentages for sources
+foreach ($sources_temp as $source) {
+    $percentage = $sources_total > 0 ? round(($source['count'] / $sources_total) * 100, 1) : 0;
+    $reportData['top_sources'][] = [
+        'source' => $source['source'],
+        'count' => $source['count'],
+        'percentage' => $percentage
+    ];
 }
 $stmt->close();
 
@@ -450,10 +522,39 @@ if ($selected_team_member) {
 $stmt->execute();
 $result = $stmt->get_result();
 
+// Calculate team performance totals for percentage calculation
+$team_total_leads = 0;
+$team_total_presentations = 0;
+$team_total_closed = 0;
+$team_temp = [];
+
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        $reportData['team_performance'][] = $row;
+        $team_temp[] = $row;
+        $team_total_leads += $row['total_leads'];
+        $team_total_presentations += $row['presentations'];
+        $team_total_closed += $row['closed_deals'];
     }
+}
+
+// Calculate percentages for team performance
+foreach ($team_temp as $performer) {
+    $leads_percentage = $team_total_leads > 0 ? round(($performer['total_leads'] / $team_total_leads) * 100, 1) : 0;
+    $presentations_percentage = $team_total_presentations > 0 ? round(($performer['presentations'] / $team_total_presentations) * 100, 1) : 0;
+    $closed_percentage = $team_total_closed > 0 ? round(($performer['closed_deals'] / $team_total_closed) * 100, 1) : 0;
+    
+    $reportData['team_performance'][] = [
+        'id' => $performer['id'],
+        'name' => $performer['name'],
+        'total_leads' => $performer['total_leads'],
+        'presentations' => $performer['presentations'],
+        'closed_deals' => $performer['closed_deals'],
+        'conversion_rate' => $performer['conversion_rate'],
+        'total_value' => $performer['total_value'],
+        'leads_percentage' => $leads_percentage,
+        'presentations_percentage' => $presentations_percentage,
+        'closed_percentage' => $closed_percentage
+    ];
 }
 $stmt->close();
 
@@ -527,8 +628,36 @@ function getMonthsInQuarter($quarter) {
 }
 
 $monthsInQuarter = getMonthsInQuarter($quarter);
-?>
 
+// Function to format percentage display
+function formatPercentageDisplay($label, $count, $percentage) {
+    return $label . "\n" . number_format($count) . " (" . $percentage . "%)";
+}
+
+// Function to get chart data with percentages for JavaScript
+function getChartDataWithPercentages($data, $labelKey, $countKey) {
+    $result = [
+        'labels' => [],
+        'data' => [],
+        'percentages' => []
+    ];
+    
+    foreach ($data as $item) {
+        $result['labels'][] = $item[$labelKey];
+        $result['data'][] = $item[$countKey];
+        $result['percentages'][] = $item['percentage'];
+    }
+    
+    return $result;
+}
+
+// Prepare chart data with percentages
+$statusChartData = getChartDataWithPercentages($reportData['status_distribution'], 'status', 'count');
+$temperatureChartData = getChartDataWithPercentages($reportData['temperature_distribution'], 'temperature', 'count');
+$projectsChartData = getChartDataWithPercentages($reportData['top_projects'], 'developer', 'count');
+$modelsChartData = getChartDataWithPercentages($reportData['top_models'], 'project_model', 'count');
+$sourcesChartData = getChartDataWithPercentages($reportData['top_sources'], 'source', 'count');
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -586,16 +715,7 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
         flex-direction: column;
     }
 
-    /* Page Header */
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid var(--gray-light);
-    }
-
+    
     .page-title {
         margin: 0;
         font-size: 1.75rem;
@@ -645,6 +765,20 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
     .period-badge i {
         margin-right: 0.5rem;
         color: var(--primary);
+    }
+
+    /* PRINT NOTE STYLES */
+    .print-note {
+        display: none; /* Hidden on screen */
+        font-style: italic;
+        text-align: center;
+        margin: 15px 0;
+        padding: 10px;
+        font-size: 10pt;
+        color: #666;
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+        background: #f9f9f9;
     }
 
     /* Filters */
@@ -784,7 +918,7 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
     .summary-card.closed .summary-icon { background: linear-gradient(135deg, var(--success-light) 0%, rgba(5, 150, 105, 0.2) 100%); color: var(--success); border-color: var(--success-light); }
     .summary-card.rate .summary-icon { background: linear-gradient(135deg, var(--warning-light) 0%, rgba(217, 119, 6, 0.2) 100%); color: var(--warning); border-color: var(--warning-light); }
 
-    /* Charts - Redesigned Layout */
+    /* Charts - Screen Layout (2x2 grid) */
     .report-charts {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -805,15 +939,6 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
     .chart-container:hover {
         transform: translateY(-2px);
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-
-    .chart-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.25rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 2px solid var(--gray-light);
     }
 
     .chart-title {
@@ -846,24 +971,42 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
         margin-bottom: 2rem;
     }
 
+    /* IMPROVED: Better circular chart sizing and layout for screen view */
     .small-chart-container {
         background: linear-gradient(135deg, var(--white) 0%, var(--secondary) 100%);
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-lg);
         padding: 1.25rem;
-        height: 280px;
+        height: 400px; /* INCREASED: Much larger container */
         transition: var(--transition);
         border: 1px solid var(--gray-light);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .small-chart-container .chart-body {
+        height: calc(100% - 3rem);
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    /* SPECIFIC IMPROVEMENTS FOR CIRCULAR CHARTS */
+    #statusChart,
+    #temperatureChart {
+        max-width: 320px !important;
+        max-height: 320px !important;
+        width: 320px !important;
+        height: 320px !important;
     }
 
     .small-chart-container:hover {
         transform: translateY(-2px);
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-
-    .small-chart-container .chart-header {
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
     }
 
     .small-chart-container .chart-title {
@@ -882,21 +1025,6 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
         margin-bottom: 2rem;
         overflow: hidden;
         border: 1px solid var(--gray-light);
-    }
-
-    .card-header {
-        padding: 1.5rem;
-        border-bottom: 2px solid var(--gray-light);
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    }
-
-    .card-header h3 {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--white);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
 
     .card-body {
@@ -1115,7 +1243,94 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
     .text-success { color: var(--success); }
     .text-warning { color: var(--warning); }
 
-    /* FIXED PRINT STYLES - CIRCULAR CHARTS ASPECT RATIO */
+    /* FIRST PAGE CHARTS */
+    .first-page-charts {
+        margin: 20px 0;
+        page-break-inside: avoid;
+        page-break-after: avoid;
+    }
+
+    .circular-charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* IMPROVED: Better chart containers for screen view */
+    .first-page-charts .chart-container {
+        background: linear-gradient(135deg, var(--white) 0%, var(--secondary) 100%);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        padding: 1.5rem;
+        height: 450px; /* INCREASED: Larger height for better display */
+        transition: var(--transition);
+        border: 1px solid var(--gray-light);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .first-page-charts .chart-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .first-page-charts .chart-body {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        min-height: 350px;
+    }
+
+    /* SPECIFIC IMPROVEMENTS FOR CIRCULAR CHARTS ON SCREEN */
+    .first-page-charts #statusChart,
+    .first-page-charts #temperatureChart {
+        max-width: 350px !important;
+        max-height: 350px !important;
+        width: 350px !important;
+        height: 350px !important;
+    }
+
+    /* PAGE BREAK */
+    .page-break-before {
+        page-break-before: always;
+    }
+
+    /* REMAINING CHARTS */
+    .remaining-charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    /* IMPROVED: Better chart containers for remaining charts */
+    .remaining-charts-grid .chart-container {
+        background: linear-gradient(135deg, var(--white) 0%, var(--secondary) 100%);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        padding: 1.5rem;
+        height: 400px; /* INCREASED: Better height */
+        transition: var(--transition);
+        border: 1px solid var(--gray-light);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .remaining-charts-grid .chart-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .remaining-charts-grid .chart-body {
+        flex: 1;
+        position: relative;
+        min-height: 300px;
+    }
+
+    /* UPDATED PRINT STYLES - HIDE HEADER, SIDEBAR AND TOGGLE BUTTONS */
     @media print {
         @page {
             margin: 0.5in;
@@ -1129,6 +1344,40 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             box-shadow: none !important;
         }
         
+        /* HIDE ALL NAVIGATION ELEMENTS INCLUDING HEADER, SIDEBAR AND TOGGLES */
+        .container > .sidebar,
+        .main-content > .header,
+        .sidebar,
+        .header,
+        nav,
+        .navbar,
+        .navigation,
+        .menu,
+        .toggle,
+        .toggle-btn,
+        .sidebar-toggle,
+        .menu-toggle,
+        .hamburger,
+        .nav-toggle,
+        [class*="toggle"],
+        [class*="sidebar"],
+        [class*="header"],
+        [class*="nav"],
+        .report-filters,
+        .report-actions,
+        .btn,
+        .no-data,
+        .chart-actions {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+        
+        /* FORCE BODY TO START IMMEDIATELY */
         body {
             font-family: 'Arial', sans-serif !important;
             font-size: 11pt !important;
@@ -1138,42 +1387,24 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             margin: 0 !important;
             padding: 0 !important;
         }
-        
-        /* FORCE HIDE ALL SCREEN ELEMENTS */
-        .sidebar,
-        .header,
-        .main-content > .header,
-        .report-filters,
-        .report-actions,
-        .btn,
-        .no-data,
-        .chart-actions,
-        nav,
-        .navbar,
-        .menu,
-        .navigation {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        
-        /* FORCE SHOW ONLY REPORT CONTENT */
+
         .container {
             display: block !important;
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            page-break-before: avoid !important;
         }
-        
+
         .main-content {
             display: block !important;
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            page-break-before: avoid !important;
         }
         
+        /* FORCE SHOW ONLY REPORT CONTENT - START IMMEDIATELY */
         .reports-page {
             display: block !important;
             width: 100% !important;
@@ -1182,17 +1413,7 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             min-height: auto !important;
         }
         
-        /* COMPACT HEADER - NO PAGE WASTE */
-        .page-header {
-            display: block !important;
-            text-align: center !important;
-            margin-bottom: 15px !important;
-            padding: 10px 0 !important;
-            border-bottom: 2px solid #000 !important;
-            background: #f5f5f5 !important;
-            page-break-after: avoid !important;
-        }
-        
+        /* FIXED: PAGE HEADER - COMPACT AND IMMEDIATE */
         .page-title {
             display: block !important;
             font-size: 16pt !important;
@@ -1210,19 +1431,36 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             font-size: 9pt !important;
             color: #000 !important;
             background: #fff !important;
-            border: 1px solid #000 !important;
+            border: 2px solid #000 !important;
             padding: 4px 8px !important;
-            margin: 2px 5px !important;
+            margin: 2px 6px !important;
             border-radius: 3px !important;
             font-weight: bold !important;
         }
         
-        /* COMPACT EXECUTIVE SUMMARY - SAME PAGE AS HEADER */
+        /* SHOW PRINT NOTE ONLY IN PRINT */
+        .print-note {
+            display: block !important;
+            font-style: italic !important;
+            text-align: center !important;
+            margin: 10px 0 15px 0 !important;
+            padding: 8px !important;
+            font-size: 9pt !important;
+            color: #000 !important;
+            border-top: 1px solid #000 !important;
+            border-bottom: 1px solid #000 !important;
+            background: #f5f5f5 !important;
+            page-break-after: avoid !important;
+            page-break-before: avoid !important;
+        }
+        
+        /* FIXED: SUMMARY CARDS - COMPACT AND IMMEDIATE */
         .report-summary {
             display: grid !important;
             grid-template-columns: repeat(4, 1fr) !important;
             gap: 10px !important;
             margin: 15px 0 !important;
+            padding: 0 !important;
             page-break-after: avoid !important;
             page-break-before: avoid !important;
             width: 100% !important;
@@ -1237,8 +1475,8 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             padding: 12px 8px !important;
             text-align: center !important;
             background: #f9f9f9 !important;
-            border-radius: 5px !important;
-            height: 60px !important;
+            border-radius: 6px !important;
+            height: 70px !important;
             margin: 0 !important;
         }
         
@@ -1261,7 +1499,7 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             color: #000 !important;
             text-transform: uppercase !important;
             font-weight: bold !important;
-            letter-spacing: 0.5px !important;
+            letter-spacing: 0.3px !important;
         }
         
         .summary-info p {
@@ -1271,69 +1509,62 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             margin: 0 !important;
         }
         
-        /* COMPACT TEAM PERFORMANCE TABLE - SAME PAGE */
+        /* FIXED: TEAM PERFORMANCE TABLE - NO OVERFLOW */
         .card {
             display: block !important;
             border: 2px solid #000 !important;
-            margin: 15px 0 !important;
-            border-radius: 5px !important;
+            margin: 15px 0 25px 0 !important;
+            padding: 0 !important;
+            border-radius: 6px !important;
             background: #fff !important;
             page-break-inside: avoid !important;
             page-break-before: avoid !important;
             width: 100% !important;
         }
         
-        .card-header {
-            display: block !important;
-            background: #e0e0e0 !important;
-            border-bottom: 1px solid #000 !important;
-            padding: 8px !important;
-            text-align: center !important;
-        }
-        
-        .card-header h3 {
-            font-size: 11pt !important;
-            font-weight: bold !important;
-            color: #000 !important;
-            margin: 0 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.5px !important;
+        .card + .first-page-charts {
+            margin-top: 35px !important;
+            border-top: 2px solid #ccc !important;
+            padding-top: 15px !important;
         }
         
         .card-body {
-            display: block !important;
-            padding: 0 !important;
+            padding: 8px !important;
         }
         
-        /* COMPACT TABLE */
+        /* FIXED: TABLE WITH PROPER ALIGNMENT - ADJUSTED COLUMN WIDTHS AND FONT SIZES */
         .table-container {
             display: block !important;
             overflow: visible !important;
             width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
-        
+
         .table {
             display: table !important;
             width: 100% !important;
             border-collapse: collapse !important;
             margin: 0 !important;
             font-size: 8pt !important;
+            table-layout: fixed !important;
+            border-spacing: 0 !important;
         }
-        
+
         .table thead {
             display: table-header-group !important;
-            background: #d0d0d0 !important;
         }
-        
+
         .table tbody {
             display: table-row-group !important;
         }
-        
+
         .table tr {
             display: table-row !important;
             page-break-inside: avoid !important;
+            width: 100% !important;
         }
-        
+
         .table th {
             display: table-cell !important;
             background: #d0d0d0 !important;
@@ -1342,170 +1573,261 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             text-align: center !important;
             font-weight: bold !important;
             color: #000 !important;
-            font-size: 8pt !important;
+            font-size: 7pt !important;
             text-transform: uppercase !important;
-            letter-spacing: 0.3px !important;
+            letter-spacing: 0.2px !important;
             vertical-align: middle !important;
+            word-wrap: break-word !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
         }
-        
+
+        .table th:nth-child(1) { width: 20% !important; }
+        .table th:nth-child(2) { width: 16% !important; }
+        .table th:nth-child(3) { width: 16% !important; }
+        .table th:nth-child(4) { width: 16% !important; }
+        .table th:nth-child(5) { width: 16% !important; }
+        .table th:nth-child(6) { width: 16% !important; }
+
         .table td {
             display: table-cell !important;
             border: 1px solid #000 !important;
             padding: 6px 4px !important;
             text-align: center !important;
-            font-size: 8pt !important;
+            font-size: 7pt !important;
             vertical-align: middle !important;
             color: #000 !important;
+            word-wrap: break-word !important;
+            overflow: hidden !important;
+            line-height: 1.2 !important;
+            box-sizing: border-box !important;
         }
-        
+
+        .table td:nth-child(1) { 
+            width: 20% !important; 
+            text-align: left !important;
+            padding-left: 6px !important;
+        }
+        .table td:nth-child(2) { width: 16% !important; }
+        .table td:nth-child(3) { width: 16% !important; }
+        .table td:nth-child(4) { width: 16% !important; }
+        .table td:nth-child(5) { width: 16% !important; }
+        .table td:nth-child(6) { width: 16% !important; }
+
         .table tbody tr:nth-child(even) {
             background: #f8f8f8 !important;
         }
-        
+
         .table tbody tr:nth-child(odd) {
             background: #fff !important;
         }
-        
+
         .table td.name {
             text-align: left !important;
             font-weight: bold !important;
+            padding-left: 6px !important;
         }
-        
-        /* CHARTS SECTION - NEW PAGE BUT COMPACT WITH FIXED ASPECT RATIO */
-        .small-charts-grid {
-            page-break-before: always !important;
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 15px !important;
-            margin: 20px 0 !important;
-            width: 100% !important;
-        }
-        
-        .small-chart-container {
+
+        .table td small {
+            font-size: 6pt !important;
             display: block !important;
+            margin-top: 1px !important;
+            line-height: 1.1 !important;
+        }
+
+        .table td .metric-value {
+            display: block !important;
+            text-align: center !important;
+            color: #000 !important;
+            line-height: 1.1 !important;
             width: 100% !important;
-            height: 250px !important;
+        }
+
+        .table td .metric-value small {
+            font-size: 6pt !important;
+            color: #666 !important;
+            font-weight: normal !important;
+            display: block !important;
+            margin-top: 1px !important;
+        }
+
+        /* ENSURE PROPER TABLE STRUCTURE */
+        .card {
+            display: block !important;
             border: 2px solid #000 !important;
-            padding: 10px !important;
+            margin: 15px 0 25px 0 !important;
+            padding: 0 !important;
+            border-radius: 6px !important;
             background: #fff !important;
-            border-radius: 5px !important;
             page-break-inside: avoid !important;
-            position: relative !important;
-        }
-        
-        .report-charts {
-            page-break-before: always !important;
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 15px !important;
-            margin: 20px 0 !important;
+            page-break-before: avoid !important;
             width: 100% !important;
+            box-sizing: border-box !important;
         }
         
-        .chart-container {
+        /* FIXED: FIRST PAGE CIRCULAR CHARTS - PROPERLY CENTERED AND ALIGNED */
+        .first-page-charts {
             display: block !important;
+            page-break-before: avoid !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+            margin: 25px 0 15px 0 !important;
+            padding: 0 !important;
             width: 100% !important;
+        }
+
+        .circular-charts-row {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: flex-start !important;
+            gap: 20px !important;
+            margin: 0 !important;
+            page-break-inside: avoid !important;
+            width: 100% !important;
+        }
+
+        .first-page-charts .chart-container {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            width: 48% !important;
             height: 280px !important;
             border: 2px solid #000 !important;
             padding: 10px !important;
             background: #fff !important;
-            border-radius: 5px !important;
+            border-radius: 6px !important;
             page-break-inside: avoid !important;
             position: relative !important;
+            box-sizing: border-box !important;
         }
-        
-        .chart-header {
-            display: block !important;
-            text-align: center !important;
-            margin-bottom: 8px !important;
-            border-bottom: 1px solid #ccc !important;
-            padding-bottom: 5px !important;
-        }
-        
-        .chart-title {
+
+        .first-page-charts .chart-title {
             display: block !important;
             font-size: 9pt !important;
             font-weight: bold !important;
             color: #000 !important;
-            margin: 0 !important;
+            margin: 0 0 8px 0 !important;
             text-transform: uppercase !important;
+            text-align: center !important;
             letter-spacing: 0.5px !important;
-        }
-        
-        .chart-title i {
-            display: none !important;
-        }
-        
-        .chart-body {
-            display: block !important;
-            height: calc(100% - 30px) !important;
+            padding: 4px 0 !important;
+            border-bottom: 1px solid #ccc !important;
             width: 100% !important;
+        }
+
+        .first-page-charts .chart-body {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: calc(100% - 40px) !important;
+            flex: 1 !important;
             position: relative !important;
         }
-        
-        /* FIXED: CANVAS OPTIMIZATION FOR CIRCULAR CHARTS */
-        canvas {
+
+        /* FIXED: CIRCULAR CHARTS - PROPER SIZING AND CENTERING */
+        .first-page-charts #statusChart,
+        .first-page-charts #temperatureChart {
+            width: 180px !important;
+            height: 180px !important;
+            max-width: 180px !important;
+            max-height: 180px !important;
+            aspect-ratio: 1 / 1 !important;
+            object-fit: contain !important;
+            margin: 0 auto !important;
             display: block !important;
-            max-width: 100% !important;
-            max-height: 200px !important;
+        }
+
+        /* ENSURE CANVAS ELEMENTS ARE PROPERLY CONTAINED */
+        .first-page-charts canvas {
+            display: block !important;
+            width: 180px !important;
+            height: 180px !important;
+            max-width: 180px !important;
+            max-height: 180px !important;
             margin: 0 auto !important;
             visibility: visible !important;
             opacity: 1 !important;
-            /* CRITICAL FIX: Force aspect ratio for circular charts */
-            aspect-ratio: 1 / 1 !important;
-            object-fit: contain !important;
+            position: relative !important;
         }
         
-        /* SPECIFIC FIX FOR PIE AND DOUGHNUT CHARTS */
-        #statusChart,
-        #temperatureChart {
-            width: 180px !important;
-            height: 180px !important;
-            aspect-ratio: 1 / 1 !important;
-            object-fit: contain !important;
-            margin: 0 auto !important;
+        /* PAGE 2: REMAINING CHARTS */
+        .page-break-before {
+            page-break-before: always !important;
         }
         
-        /* ENSURE CHART CONTAINERS MAINTAIN SQUARE ASPECT FOR CIRCULAR CHARTS */
-        .small-chart-container:has(#statusChart),
-        .small-chart-container:has(#temperatureChart) {
+        .remaining-charts-grid {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 25px !important;
+            margin: 25px 0 !important;
+            padding: 0 !important;
+        }
+        
+        .remaining-charts-grid .chart-container {
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
-            justify-content: center !important;
+            justify-content: flex-start !important;
+            width: 100% !important;
+            height: 350px !important;
+            border: 2px solid #000 !important;
+            padding: 15px !important;
+            background: #fff !important;
+            border-radius: 6px !important;
+            page-break-inside: avoid !important;
+            position: relative !important;
         }
         
-        .small-chart-container:has(#statusChart) .chart-body,
-        .small-chart-container:has(#temperatureChart) .chart-body {
+        .remaining-charts-grid .chart-title {
+            display: block !important;
+            font-size: 11pt !important;
+            font-weight: bold !important;
+            color: #000 !important;
+            margin: 0 0 15px 0 !important;
+            text-transform: uppercase !important;
+            text-align: center !important;
+            letter-spacing: 0.5px !important;
+            padding: 8px 0 !important;
+            border-bottom: 2px solid #000 !important;
+            width: 100% !important;
+        }
+        
+        .remaining-charts-grid .chart-body {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             width: 100% !important;
-            height: calc(100% - 30px) !important;
+            height: calc(100% - 60px) !important;
+            flex: 1 !important;
         }
         
-        /* METRIC BADGES */
-        .metric-badge {
-            padding: 2px 5px !important;
-            border-radius: 3px !important;
-            font-size: 7pt !important;
-            font-weight: bold !important;
-            border: 1px solid #000 !important;
+        /* FIXED: ALL CANVAS ELEMENTS - PROPER SIZING */
+        canvas {
+            display: block !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
         
-        .metric-badge.high {
-            background: #e8f5e8 !important;
-            color: #000 !important;
+        /* SPECIFIC SIZING FOR DIFFERENT CHART TYPES */
+        #statusChart,
+        #temperatureChart {
+            width: 200px !important;
+            height: 200px !important;
+            aspect-ratio: 1 / 1 !important;
+            object-fit: contain !important;
         }
         
-        .metric-badge.medium {
-            background: #fff8e1 !important;
-            color: #000 !important;
-        }
-        
-        .metric-badge.low {
-            background: #ffebee !important;
-            color: #000 !important;
+        #projectsChart,
+        #modelsChart,
+        #sourcesChart,
+        #performanceChart {
+            width: 100% !important;
+            height: 250px !important;
+            max-width: 500px !important;
         }
         
         /* HIDE ALL ICONS */
@@ -1513,63 +1835,131 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
             display: none !important;
         }
         
-        /* METRIC VALUES */
+        /* METRIC BADGES WITH BLACK TEXT */
+        .metric-badge {
+            padding: 1px 3px !important;
+            border-radius: 2px !important;
+            font-size: 6pt !important;
+            font-weight: bold !important;
+            border: 1px solid #000 !important;
+            color: #000 !important;
+            background: #fff !important;
+        }
+        
         .metric-value {
             display: block !important;
             text-align: center !important;
+            color: #000 !important;
         }
         
         .d-flex {
             display: block !important;
         }
         
-        /* FORCE VISIBILITY AND COMPACT LAYOUT */
-        .print-order-wrapper {
+        /* FIXED: ENSURE CHART TITLES ARE VISIBLE IN PRINT */
+        .chart-title,
+        .first-page-charts .chart-title,
+        .remaining-charts-grid .chart-title {
+            display: block !important;
+            visibility: visible !important;
+            font-size: 11pt !important;
+            font-weight: bold !important;
+            color: #000 !important;
+            margin: 0 0 15px 0 !important;
+            text-transform: uppercase !important;
+            text-align: center !important;
+            letter-spacing: 0.5px !important;
+            padding: 8px 0 !important;
+            border-bottom: 2px solid #000 !important;
+            width: 100% !important;
+            background: #fff !important;
+            opacity: 1 !important;
+            height: auto !important;
+            overflow: visible !important;
+        }
+
+        /* FORCE CHART HEADER TO BE VISIBLE */
+        .chart-header,
+        .first-page-charts .chart-header,
+        .remaining-charts-grid .chart-header {
+            display: block !important;
+            visibility: visible !important;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+            opacity: 1 !important;
+            overflow: visible !important;
+        }
+
+        /* ENSURE CHART CONTAINERS SHOW TITLES */
+        .first-page-charts .chart-container,
+        .remaining-charts-grid .chart-container {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            justify-content: flex-start !important;
+            width: 100% !important;
+            border: 2px solid #000 !important;
+            padding: 15px !important;
+            background: #fff !important;
+            border-radius: 6px !important;
+            page-break-inside: avoid !important;
+            position: relative !important;
+        }
+        
+        /* OVERRIDE ANY HIDING RULES FOR CHART ELEMENTS */
+        .chart-title,
+        .chart-header,
+        h3.chart-title,
+        .first-page-charts h3,
+        .remaining-charts-grid h3 {
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
-            margin: 0 !important;
-            padding: 0 !important;
+            height: auto !important;
+            width: 100% !important;
+            margin: 0 0 10px 0 !important;
+            padding: 5px 0 !important;
+            color: #000 !important;
+            font-size: 10pt !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            text-transform: uppercase !important;
+            border-bottom: 1px solid #ccc !important;
+            background: #fff !important;
         }
-        
-        .print-order-wrapper > * {
-            page-break-before: avoid !important;
-            margin-top: 0 !important;
-        }
-        
-        /* ENSURE FIRST PAGE CONTENT */
-        .print-order-wrapper > .report-summary {
-            page-break-before: avoid !important;
-            page-break-after: avoid !important;
-        }
-        
-        .print-order-wrapper > .card:first-of-type {
-            page-break-before: avoid !important;
-        }
-        
-        /* PROFESSIONAL FOOTER */
-        .print-footer {
-            position: fixed;
-            bottom: 0.3in;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 8pt;
-            color: #666;
-            border-top: 1px solid #ccc;
-            padding-top: 5px;
-            background: #fff;
-        }
-        
-        /* REMOVE ALL UNNECESSARY SPACING */
-        * {
-            margin-top: 0 !important;
-        }
-        
-        .page-header + * {
-            margin-top: 0 !important;
-        }
+    
+    /* REMOVE SCROLL BAR IN PRINT */
+    
+    /* HIDE SCROLL BARS */
+    html, body {
+        overflow: hidden !important;
+        height: auto !important;
+        max-height: none !important;
     }
+    
+    /* ENSURE NO OVERFLOW ON CONTAINERS */
+    .container,
+    .main-content,
+    .reports-page {
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+    
+    /* HIDE ANY SCROLL BARS */
+    ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+    }
+    
+    * {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+}
 
     /* Animation for sorting */
     @keyframes rowSlideIn {
@@ -1589,22 +1979,29 @@ $monthsInQuarter = getMonthsInQuarter($quarter);
 </style>
 
 <script>
-// FIXED: Ensure chart data is properly passed and updated
-const reportData = {
-    status_distribution: <?php echo json_encode($reportData['status_distribution'] ?? []); ?>,
-    temperature_distribution: <?php echo json_encode($reportData['temperature_distribution'] ?? []); ?>,
-    top_projects: <?php echo json_encode($reportData['top_projects'] ?? []); ?>,
-    top_models: <?php echo json_encode($reportData['top_models'] ?? []); ?>,
-    top_sources: <?php echo json_encode($reportData['top_sources'] ?? []); ?>,
-    team_performance: <?php echo json_encode($reportData['team_performance'] ?? []); ?>
-};
+    // FIXED: Ensure chart data is properly passed and updated with percentages
+    const reportData = {
+        status_distribution: <?php echo json_encode($reportData['status_distribution'] ?? []); ?>,
+        temperature_distribution: <?php echo json_encode($reportData['temperature_distribution'] ?? []); ?>,
+        top_projects: <?php echo json_encode($reportData['top_projects'] ?? []); ?>,
+        top_models: <?php echo json_encode($reportData['top_models'] ?? []); ?>,
+        top_sources: <?php echo json_encode($reportData['top_sources'] ?? []); ?>,
+        team_performance: <?php echo json_encode($reportData['team_performance'] ?? []); ?>
+    };
 
-console.log('Report Data:', reportData);
+    // Chart data with percentages
+    const statusChartData = <?php echo json_encode($statusChartData); ?>;
+    const temperatureChartData = <?php echo json_encode($temperatureChartData); ?>;
+    const projectsChartData = <?php echo json_encode($projectsChartData); ?>;
+    const modelsChartData = <?php echo json_encode($modelsChartData); ?>;
+    const sourcesChartData = <?php echo json_encode($sourcesChartData); ?>;
 
-// FIXED: Add data validation to ensure charts only render with valid data
-function hasValidChartData(data) {
-    return data && Array.isArray(data) && data.length > 0;
-}
+    console.log('Report Data with Percentages:', reportData);
+
+    // FIXED: Add data validation to ensure charts only render with valid data
+    function hasValidChartData(data) {
+        return data && Array.isArray(data) && data.length > 0;
+    }
 </script>
 </head>
 <body>
@@ -1615,10 +2012,6 @@ function hasValidChartData(data) {
             <?php include 'includes/header.php'; ?>
             
             <div class="reports-page">
-                <div class="print-footer" style="display: none;">
-                    <strong>CONFIDENTIAL LEADS REPORT</strong> | Generated: <?php echo date('F j, Y \a\t g:i A'); ?> | <?php echo htmlspecialchars($team_name); ?>
-                </div>
-                
                 <div class="page-header">
                     <div>
                         <h1 class="page-title">
@@ -1647,6 +2040,11 @@ function hasValidChartData(data) {
                             - <?php echo date('F', mktime(0, 0, 0, $month, 1)); ?>
                         <?php endif; ?>
                     </div>
+                </div>
+                
+                <!-- ADD PRINT NOTE HERE -->
+                <div class="print-note">
+                    <em>This report analysis is exported from the Lead Management System (LMS). It provides a detailed summary of each individual or agent's performance, including the number of leads handled, follow-ups conducted, lead statuses, and overall conversion rates. The purpose of this report is to track productivity, identify strengths and weaknesses, and support better decision-making through data-driven insights.</em>
                 </div>
                 
                 <div class="report-filters">
@@ -1713,197 +2111,207 @@ function hasValidChartData(data) {
                 </div>
                 
                 <?php if ($hasData): ?>
-                <div class="print-order-wrapper">
-                    <!-- Executive Summary Cards -->
-                    <div class="report-summary">
-                        <div class="summary-card leads">
-                            <div class="summary-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="summary-info">
-                                <h3>Total Leads</h3>
-                                <p><?php echo number_format($reportData['total_leads']); ?></p>
-                            </div>
-                        </div>
-                        
-                        <div class="summary-card presentations">
-                            <div class="summary-icon">
-                                <i class="fas fa-handshake"></i>
-                            </div>
-                            <div class="summary-info">
-                                <h3>Presentations</h3>
-                                <p><?php echo number_format($reportData['presentations']); ?></p>
-                            </div>
-                        </div>
-                        
-                        <div class="summary-card closed">
-                            <div class="summary-icon">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                            <div class="summary-info">
-                                <h3>Closed Deals</h3>
-                                <p><?php echo number_format($reportData['closed_deals']); ?></p>
-                            </div>
-                        </div>
-                        
-                        <div class="summary-card rate">
-                            <div class="summary-icon">
-                                <i class="fas fa-percentage"></i>
-                            </div>
-                            <div class="summary-info">
-                                <h3>Conversion Rate</h3>
-                                <p><?php echo $reportData['conversion_rate']; ?>%</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <?php if (!empty($reportData['team_performance'])): ?>
-                    <!-- Team Performance Overview -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>
-                                <?php if ($user['role'] == 'admin' && $selected_team_id == 'all'): ?>
-                                    Team Performance Overview
-                                <?php else: ?>
-                                    Team Member Performance Details
-                                <?php endif; ?>
-                            </h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-container">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th data-column="name">Name</th>
-                                            <th data-column="total_leads">Total Leads</th>
-                                            <th data-column="presentations">Presentations</th>
-                                            <th data-column="closed_deals">Closed Deals</th>
-                                            <th data-column="conversion_rate">Conversion Rate</th>
-                                            <th data-column="total_value">Total Value (₱)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($reportData['team_performance'] as $performer): ?>
-                                        <tr data-name="<?php echo htmlspecialchars($performer['name']); ?>" 
-                                            data-leads="<?php echo $performer['total_leads']; ?>"
-                                            data-presentations="<?php echo $performer['presentations']; ?>"
-                                            data-closed="<?php echo $performer['closed_deals']; ?>"
-                                            data-rate="<?php echo $performer['conversion_rate']; ?>"
-                                            data-value="<?php echo $performer['total_value']; ?>">
-                                            <td class="name">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fas fa-user me-2 text-primary"></i>
-                                                    <?php echo htmlspecialchars($performer['name']); ?>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="metric-value">
-                                                    <i class="fas fa-users me-2 text-primary"></i>
-                                                    <?php echo number_format($performer['total_leads']); ?>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="metric-value">
-                                                    <i class="fas fa-handshake me-2 text-info"></i>
-                                                    <?php echo number_format($performer['presentations']); ?>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="metric-value">
-                                                    <i class="fas fa-check-circle me-2 text-success"></i>
-                                                    <?php echo number_format($performer['closed_deals']); ?>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="metric-value">
-                                                    <?php
-                                                    $rate = floatval($performer['conversion_rate']);
-                                                    $rateClass = $rate >= 50 ? 'high' : ($rate >= 25 ? 'medium' : 'low');
-                                                    $rateIcon = $rate >= 50 ? 'fas fa-arrow-up' : ($rate >= 25 ? 'fas fa-minus' : 'fas fa-arrow-down');
-                                                    ?>
-                                                    <i class="<?php echo $rateIcon; ?> me-2"></i>
-                                                    <span class="metric-badge <?php echo $rateClass; ?>">
-                                                        <?php echo number_format($rate, 1); ?>%
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="metric-value">
-                                                    <i class="fas fa-money-bill-wave me-2 text-warning"></i>
-                                                    <?php echo number_format($performer['total_value'], 2); ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($hasCharts): ?>
-                    <!-- Small Charts Grid (4 charts in 2x2) -->
-                    <div class="small-charts-grid">
-                        <div class="small-chart-container">
-                            <div class="chart-header">
-                                <h3 class="chart-title"><i class="fas fa-chart-pie"></i> Lead Status Distribution</h3>
-                            </div>
-                            <div class="chart-body">
-                                <canvas id="statusChart"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="small-chart-container">
-                            <div class="chart-header">
-                                <h3 class="chart-title"><i class="fas fa-thermometer-half"></i> Lead Temperature</h3>
-                            </div>
-                            <div class="chart-body">
-                                <canvas id="temperatureChart"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="small-chart-container">
-                            <div class="chart-header">
-                                <h3 class="chart-title"><i class="fas fa-building"></i> Top Projects</h3>
-                            </div>
-                            <div class="chart-body">
-                                <canvas id="projectsChart"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="small-chart-container">
-                            <div class="chart-header">
-                                <h3 class="chart-title"><i class="fas fa-home"></i> Top Models Inquired</h3>
-                            </div>
-                            <div class="chart-body">
-                                <canvas id="modelsChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
+<!-- PROPERLY ORDERED PRINT LAYOUT -->
+<div class="print-order-wrapper">
+    <!-- 1. EXECUTIVE SUMMARY CARDS - FIRST -->
+    <div class="report-summary">
+        <div class="summary-card leads">
+            <div class="summary-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="summary-info">
+                <h3>Total Leads</h3>
+                <p><?php echo number_format($reportData['total_leads']); ?></p>
+            </div>
+        </div>
+        
+        <div class="summary-card presentations">
+            <div class="summary-icon">
+                <i class="fas fa-handshake"></i>
+            </div>
+            <div class="summary-info">
+                <h3>Presentations</h3>
+                <p><?php echo number_format($reportData['presentations']); ?></p>
+            </div>
+        </div>
+        
+        <div class="summary-card closed">
+            <div class="summary-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="summary-info">
+                <h3>Closed Deals</h3>
+                <p><?php echo number_format($reportData['closed_deals']); ?></p>
+            </div>
+        </div>
+        
+        <div class="summary-card rate">
+            <div class="summary-icon">
+                <i class="fas fa-percentage"></i>
+            </div>
+            <div class="summary-info">
+                <h3>Conversion Rate</h3>
+                <p><?php echo $reportData['conversion_rate']; ?>%</p>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Large Charts Grid (2 charts side by side) -->
-                    <div class="report-charts">
-                        <div class="chart-container">
-                            <div class="chart-header">
-                                <h3 class="chart-title"><i class="fas fa-bullhorn"></i> Lead Sources Analysis</h3>
-                            </div>
-                            <div class="chart-body">
-                                <canvas id="sourcesChart"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="chart-container">
-                            <div class="chart-header">
-                                <h3 class="chart-title"><i class="fas fa-chart-bar"></i> Performance Overview</h3>
-                            </div>
-                            <div class="chart-body">
-                                <canvas id="performanceChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endif; ?>
+    <?php if (!empty($reportData['team_performance'])): ?>
+    <!-- 2. TEAM PERFORMANCE TABLE - SECOND -->
+    <div class="card">
+        <div class="card-header">
+            <h3>
+                <?php if ($user['role'] == 'admin' && $selected_team_id == 'all'): ?>
+                    Team Performance Overview
+                <?php else: ?>
+                    Team Member Performance Details
+                <?php endif; ?>
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th data-column="name">Name</th>
+                            <th data-column="total_leads">Total Leads (%)</th>
+                            <th data-column="presentations">Presentations (%)</th>
+                            <th data-column="closed_deals">Closed Deals (%)</th>
+                            <th data-column="conversion_rate">Conversion Rate</th>
+                            <th data-column="total_value">Total Value (₱)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($reportData['team_performance'] as $performer): ?>
+                        <tr data-name="<?php echo htmlspecialchars($performer['name']); ?>" 
+                            data-leads="<?php echo $performer['total_leads']; ?>"
+                            data-presentations="<?php echo $performer['presentations']; ?>"
+                            data-closed="<?php echo $performer['closed_deals']; ?>"
+                            data-rate="<?php echo $performer['conversion_rate']; ?>"
+                            data-value="<?php echo $performer['total_value']; ?>">
+                            <td class="name">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user me-2 text-primary"></i>
+                                    <?php echo htmlspecialchars($performer['name']); ?>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="metric-value">
+                                    <i class="fas fa-users me-2 text-primary"></i>
+                                    <?php echo number_format($performer['total_leads']); ?>
+                                    <small>(<?php echo $performer['leads_percentage']; ?>%)</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="metric-value">
+                                    <i class="fas fa-handshake me-2 text-info"></i>
+                                    <?php echo number_format($performer['presentations']); ?>
+                                    <small>(<?php echo $performer['presentations_percentage']; ?>%)</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="metric-value">
+                                    <i class="fas fa-check-circle me-2 text-success"></i>
+                                    <?php echo number_format($performer['closed_deals']); ?>
+                                    <small>(<?php echo $performer['closed_percentage']; ?>%)</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="metric-value">
+                                    <?php
+                                    $rate = floatval($performer['conversion_rate']);
+                                    $rateClass = $rate >= 50 ? 'high' : ($rate >= 25 ? 'medium' : 'low');
+                                    $rateIcon = $rate >= 50 ? 'fas fa-arrow-up' : ($rate >= 25 ? 'fas fa-minus' : 'fas fa-arrow-down');
+                                    ?>
+                                    <i class="<?php echo $rateIcon; ?> me-2"></i>
+                                    <span class="metric-badge <?php echo $rateClass; ?>">
+                                        <?php echo number_format($rate, 1); ?>%
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="metric-value">
+                                    <i class="fas fa-money-bill-wave me-2 text-warning"></i>
+                                    <?php echo number_format($performer['total_value'], 2); ?>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($hasCharts): ?>
+    <!-- 3. FIRST PAGE CIRCULAR CHARTS - THIRD -->
+    <div class="first-page-charts">
+        <div class="circular-charts-row">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">LEAD STATUS DISTRIBUTION</h3>
                 </div>
+                <div class="chart-body">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">LEAD TEMPERATURE</h3>
+                </div>
+                <div class="chart-body">
+                    <canvas id="temperatureChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+</div>
+
+<?php if ($hasCharts): ?>
+<!-- 4. PAGE 2: REMAINING CHARTS - FOURTH (SEPARATE PAGE) -->
+<div class="page-break-before">
+    <div class="remaining-charts-grid">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">TOP PROJECTS</h3>
+            </div>
+            <div class="chart-body">
+                <canvas id="projectsChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">TOP MODELS INQUIRED</h3>
+            </div>
+            <div class="chart-body">
+                <canvas id="modelsChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">LEAD SOURCES ANALYSIS</h3>
+            </div>
+            <div class="chart-body">
+                <canvas id="sourcesChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3 class="chart-title">PERFORMANCE OVERVIEW</h3>
+            </div>
+            <div class="chart-body">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
                 <?php else: ?>
                 <div class="no-data">
                     <i class="fas fa-chart-bar"></i>
@@ -1927,84 +2335,43 @@ function hasValidChartData(data) {
     </div>
 
     <script>
-    // OPTIMIZED PRINT FUNCTION - NO WASTED PAGES
+    // FIXED PRINT FUNCTION - PROPER CHART ORIENTATION AND BLACK TEXT
     function printReport() {
-        console.log('Preparing compact print layout...');
+        console.log('Preparing print layout with fixed chart orientation...');
         
-        // Force all content to be visible and compact before printing
-        const reportPage = document.querySelector('.reports-page');
-        const printWrapper = document.querySelector('.print-order-wrapper');
-        const pageHeader = document.querySelector('.page-header');
-        const reportSummary = document.querySelector('.report-summary');
-        const teamCard = document.querySelector('.card');
-        
-        // Force visibility and remove any spacing that causes page breaks
-        if (reportPage) {
-            reportPage.style.display = 'block';
-            reportPage.style.visibility = 'visible';
-            reportPage.style.opacity = '1';
-            reportPage.style.margin = '0';
-            reportPage.style.padding = '0';
-        }
-        
-        if (printWrapper) {
-            printWrapper.style.display = 'block';
-            printWrapper.style.visibility = 'visible';
-            printWrapper.style.opacity = '1';
-            printWrapper.style.margin = '0';
-            printWrapper.style.padding = '0';
-        }
-        
-        if (pageHeader) {
-            pageHeader.style.marginBottom = '10px';
-            pageHeader.style.paddingBottom = '5px';
-        }
-        
-        if (reportSummary) {
-            reportSummary.style.marginTop = '0';
-            reportSummary.style.marginBottom = '10px';
-            reportSummary.style.pageBreakBefore = 'avoid';
-            reportSummary.style.pageBreakAfter = 'avoid';
-        }
-        
-        if (teamCard) {
-            teamCard.style.marginTop = '0';
-            teamCard.style.pageBreakBefore = 'avoid';
-        }
-        
-        // FIXED: Set print-optimized chart configurations with proper aspect ratio
-        Chart.defaults.font.size = 8;
+        // Set print-optimized chart configurations
+        Chart.defaults.font.size = 10;
         Chart.defaults.plugins.legend.position = 'bottom';
-        Chart.defaults.plugins.legend.labels.boxWidth = 8;
-        Chart.defaults.plugins.legend.labels.padding = 3;
+        Chart.defaults.plugins.legend.labels.boxWidth = 12;
+        Chart.defaults.plugins.legend.labels.padding = 8;
         Chart.defaults.plugins.legend.labels.usePointStyle = true;
         Chart.defaults.plugins.legend.labels.font = {
-            size: 7,
-            weight: 'normal'
+            size: 10,
+            weight: 'bold'
         };
         
-        // CRITICAL FIX: Force chart resize with proper aspect ratio for circular charts
+        // Force chart resize for print with proper aspect ratio
         const charts = document.querySelectorAll('canvas');
         const chartPromises = [];
         
         charts.forEach((canvas, index) => {
             if (canvas.chart) {
-                // FIXED: Maintain aspect ratio for pie/doughnut charts
+                // FIXED: Proper sizing for circular charts
                 if (canvas.id === 'statusChart' || canvas.id === 'temperatureChart') {
-                    // Force square dimensions for circular charts
-                    canvas.chart.resize(180, 180);
+                    canvas.chart.resize(200, 200);
                     canvas.chart.options.maintainAspectRatio = true;
                     canvas.chart.options.aspectRatio = 1;
+                    canvas.chart.options.plugins.legend.labels.font.size = 8;
                 } else {
-                    // Regular resize for other charts
-                    canvas.chart.resize(300, 200);
+                    canvas.chart.resize(500, 250);
+                    canvas.chart.options.maintainAspectRatio = false;
                 }
                 
                 const promise = new Promise((resolve) => {
                     setTimeout(() => {
                         canvas.chart.update('none');
                         resolve();
-                    }, 100 * index);
+                    }, 200 * index);
                 });
                 chartPromises.push(promise);
             }
@@ -2013,7 +2380,7 @@ function hasValidChartData(data) {
         // Wait for charts to render, then print
         Promise.all(chartPromises).then(() => {
             setTimeout(() => {
-                console.log('Initiating compact print with fixed circular charts...');
+                console.log('Initiating print with fixed chart orientation and black text...');
                 window.print();
             }, 500);
         });
@@ -2120,7 +2487,7 @@ function hasValidChartData(data) {
         initializeCharts();
     });
 
-    // FIXED: Chart initialization function with proper aspect ratio for circular charts
+    // FIXED: Chart initialization function with proper percentages inside bars
     function initializeCharts() {
         // Chart color schemes
         const colorSchemes = {
@@ -2132,63 +2499,124 @@ function hasValidChartData(data) {
             sources: ['#2563eb', '#059669', '#d97706', '#dc2626', '#8b5cf6', '#06b6d4', '#84cc16', '#f59e0b']
         };
 
-        // FIXED: Initialize Status Chart with proper aspect ratio
+        // FIXED: Status Chart with black text for percentages
         if (hasValidChartData(reportData.status_distribution)) {
             const statusCtx = document.getElementById('statusChart');
             if (statusCtx) {
                 new Chart(statusCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: reportData.status_distribution.map(item => item.status),
+                        labels: statusChartData.labels,
                         datasets: [{
-                            data: reportData.status_distribution.map(item => item.count),
+                            data: statusChartData.data,
                             backgroundColor: colorSchemes.status,
-                            borderWidth: 2,
-                            borderColor: '#ffffff'
+                            borderWidth: 3,
+                            borderColor: '#ffffff',
+                            hoverBorderWidth: 4
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
                         aspectRatio: 1,
+                        cutout: '40%',
                         plugins: {
                             legend: {
                                 position: 'bottom',
                                 labels: {
-                                    padding: 10,
+                                    padding: 15,
                                     usePointStyle: true,
+                                    pointStyle: 'circle',
                                     font: {
-                                        size: 10,
+                                        size: 12,
                                         weight: '600'
+                                    },
+                                    boxWidth: 15,
+                                    boxHeight: 15,
+                                    generateLabels: function(chart) {
+                                        const data = chart.data;
+                                        if (data.labels.length && data.datasets.length) {
+                                            return data.labels.map((label, i) => {
+                                                const percentage = statusChartData.percentages[i];
+                                                return {
+                                                    text: `${label} (${percentage}%)`,
+                                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                                    strokeStyle: data.datasets[0].borderColor,
+                                                    lineWidth: data.datasets[0].borderWidth,
+                                                    hidden: false,
+                                                    index: i
+                                                };
+                                            });
+                                        }
+                                        return [];
                                     }
                                 }
                             },
                             tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
                                 titleColor: '#ffffff',
                                 bodyColor: '#ffffff',
                                 borderColor: '#2563eb',
-                                borderWidth: 1
+                                borderWidth: 2,
+                                titleFont: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
+                                    size: 13
+                                },
+                                callbacks: {
+                                    label: function(context) {
+                                        const percentage = statusChartData.percentages[context.dataIndex];
+                                        return `${context.label}: ${context.parsed} leads (${percentage}%)`;
+                                    }
+                                }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'centerText',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            
+                            chart.data.datasets.forEach((dataset, i) => {
+                                const meta = chart.getDatasetMeta(i);
+                                meta.data.forEach((element, index) => {
+                                    const percentage = statusChartData.percentages[index];
+                                    const position = element.tooltipPosition();
+                                    
+                                    // FIXED: Black text with white stroke for better visibility
+                                    ctx.fillStyle = '#000';
+                                    ctx.strokeStyle = '#fff';
+                                    ctx.lineWidth = 3;
+                                    ctx.font = 'bold 14px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    
+                                    ctx.strokeText(percentage + '%', position.x, position.y);
+                                    ctx.fillText(percentage + '%', position.x, position.y);
+                                });
+                            });
+                        }
+                    }]
                 });
             }
         }
 
-        // FIXED: Initialize Temperature Chart with proper aspect ratio
+        // FIXED: Temperature Chart with black text for percentages
         if (hasValidChartData(reportData.temperature_distribution)) {
             const tempCtx = document.getElementById('temperatureChart');
             if (tempCtx) {
                 new Chart(tempCtx, {
                     type: 'pie',
                     data: {
-                        labels: reportData.temperature_distribution.map(item => item.temperature),
+                        labels: temperatureChartData.labels,
                         datasets: [{
-                            data: reportData.temperature_distribution.map(item => item.count),
+                            data: temperatureChartData.data,
                             backgroundColor: colorSchemes.temperature,
-                            borderWidth: 2,
-                            borderColor: '#ffffff'
+                            borderWidth: 3,
+                            borderColor: '#ffffff',
+                            hoverBorderWidth: 4
                         }]
                     },
                     options: {
@@ -2199,38 +2627,96 @@ function hasValidChartData(data) {
                             legend: {
                                 position: 'bottom',
                                 labels: {
-                                    padding: 10,
+                                    padding: 15,
                                     usePointStyle: true,
+                                    pointStyle: 'circle',
                                     font: {
-                                        size: 10,
+                                        size: 12,
                                         weight: '600'
+                                    },
+                                    boxWidth: 15,
+                                    boxHeight: 15,
+                                    generateLabels: function(chart) {
+                                        const data = chart.data;
+                                        if (data.labels.length && data.datasets.length) {
+                                            return data.labels.map((label, i) => {
+                                                const percentage = temperatureChartData.percentages[i];
+                                                return {
+                                                    text: `${label} (${percentage}%)`,
+                                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                                    strokeStyle: data.datasets[0].borderColor,
+                                                    lineWidth: data.datasets[0].borderWidth,
+                                                    hidden: false,
+                                                    index: i
+                                                };
+                                            });
+                                        }
+                                        return [];
                                     }
                                 }
                             },
                             tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
                                 titleColor: '#ffffff',
                                 bodyColor: '#ffffff',
                                 borderColor: '#2563eb',
-                                borderWidth: 1
+                                borderWidth: 2,
+                                titleFont: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
+                                    size: 13
+                                },
+                                callbacks: {
+                                    label: function(context) {
+                                        const percentage = temperatureChartData.percentages[context.dataIndex];
+                                        return `${context.label}: ${context.parsed} leads (${percentage}%)`;
+                                    }
+                                }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'centerText',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            
+                            chart.data.datasets.forEach((dataset, i) => {
+                                const meta = chart.getDatasetMeta(i);
+                                meta.data.forEach((element, index) => {
+                                    const percentage = temperatureChartData.percentages[index];
+                                    const position = element.tooltipPosition();
+                                    
+                                    // FIXED: Black text with white stroke for better visibility
+                                    ctx.fillStyle = '#000';
+                                    ctx.strokeStyle = '#fff';
+                                    ctx.lineWidth = 3;
+                                    ctx.font = 'bold 14px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    
+                                    ctx.strokeText(percentage + '%', position.x, position.y);
+                                    ctx.fillText(percentage + '%', position.x, position.y);
+                                });
+                            });
+                        }
+                    }]
                 });
             }
         }
 
-        // FIXED: Initialize Projects Chart with data validation
+        // FIXED: Initialize Projects Chart with percentages INSIDE bars
         if (hasValidChartData(reportData.top_projects)) {
             const projectsCtx = document.getElementById('projectsChart');
             if (projectsCtx) {
                 new Chart(projectsCtx, {
                     type: 'bar',
                     data: {
-                        labels: reportData.top_projects.map(item => item.developer),
+                        labels: projectsChartData.labels,
                         datasets: [{
                             label: 'Leads',
-                            data: reportData.top_projects.map(item => item.count),
+                            data: projectsChartData.data,
                             backgroundColor: colorSchemes.projects,
                             borderColor: '#1d4ed8',
                             borderWidth: 1
@@ -2248,7 +2734,13 @@ function hasValidChartData(data) {
                                 titleColor: '#ffffff',
                                 bodyColor: '#ffffff',
                                 borderColor: '#2563eb',
-                                borderWidth: 1
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        const percentage = projectsChartData.percentages[context.dataIndex];
+                                        return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                    }
+                                }
                             }
                         },
                         scales: {
@@ -2259,7 +2751,7 @@ function hasValidChartData(data) {
                                 },
                                 ticks: {
                                     font: {
-                                        size: 9,
+                                        size: 11,
                                         weight: '500'
                                     }
                                 }
@@ -2270,28 +2762,60 @@ function hasValidChartData(data) {
                                 },
                                 ticks: {
                                     font: {
-                                        size: 9,
+                                        size: 11,
                                         weight: '500'
                                     }
                                 }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, i) => {
+                                const meta = chart.getDatasetMeta(i);
+                                meta.data.forEach((element, index) => {
+                                    const percentage = projectsChartData.percentages[index];
+                                    
+                                    // FIXED: Position percentage INSIDE the bar
+                                    const barHeight = element.height;
+                                    const barTop = element.y;
+                                    const barBottom = element.base;
+                                    const centerY = barTop + (barHeight / 2);
+                                    
+                                    // White text with black stroke for visibility inside colored bars
+                                    ctx.fillStyle = '#fff';
+                                    ctx.strokeStyle = '#000';
+                                    ctx.lineWidth = 2;
+                                    ctx.font = 'bold 12px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    
+                                    // Only show percentage if bar is tall enough
+                                    if (barHeight > 20) {
+                                        ctx.strokeText(percentage + '%', element.x, centerY);
+                                        ctx.fillText(percentage + '%', element.x, centerY);
+                                    }
+                                });
+                            });
+                        }
+                    }]
                 });
             }
         }
 
-        // FIXED: Initialize Models Chart with data validation
+        // FIXED: Initialize Models Chart with percentages INSIDE bars
         if (hasValidChartData(reportData.top_models)) {
             const modelsCtx = document.getElementById('modelsChart');
             if (modelsCtx) {
                 new Chart(modelsCtx, {
                     type: 'bar',
                     data: {
-                        labels: reportData.top_models.map(item => item.project_model),
+                        labels: modelsChartData.labels,
                         datasets: [{
                             label: 'Inquiries',
-                            data: reportData.top_models.map(item => item.count),
+                            data: modelsChartData.data,
                             backgroundColor: colorSchemes.models,
                             borderColor: '#047857',
                             borderWidth: 1
@@ -2309,7 +2833,13 @@ function hasValidChartData(data) {
                                 titleColor: '#ffffff',
                                 bodyColor: '#ffffff',
                                 borderColor: '#059669',
-                                borderWidth: 1
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        const percentage = modelsChartData.percentages[context.dataIndex];
+                                        return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                    }
+                                }
                             }
                         },
                         scales: {
@@ -2320,7 +2850,7 @@ function hasValidChartData(data) {
                                 },
                                 ticks: {
                                     font: {
-                                        size: 9,
+                                        size: 11,
                                         weight: '500'
                                     }
                                 }
@@ -2331,28 +2861,60 @@ function hasValidChartData(data) {
                                 },
                                 ticks: {
                                     font: {
-                                        size: 9,
+                                        size: 11,
                                         weight: '500'
                                     }
                                 }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, i) => {
+                                const meta = chart.getDatasetMeta(i);
+                                meta.data.forEach((element, index) => {
+                                    const percentage = modelsChartData.percentages[index];
+                                    
+                                    // FIXED: Position percentage INSIDE the bar
+                                    const barHeight = element.height;
+                                    const barTop = element.y;
+                                    const barBottom = element.base;
+                                    const centerY = barTop + (barHeight / 2);
+                                    
+                                    // White text with black stroke for visibility inside colored bars
+                                    ctx.fillStyle = '#fff';
+                                    ctx.strokeStyle = '#000';
+                                    ctx.lineWidth = 2;
+                                    ctx.font = 'bold 12px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    
+                                    // Only show percentage if bar is tall enough
+                                    if (barHeight > 20) {
+                                        ctx.strokeText(percentage + '%', element.x, centerY);
+                                        ctx.fillText(percentage + '%', element.x, centerY);
+                                    }
+                                });
+                            });
+                        }
+                    }]
                 });
             }
         }
 
-        // FIXED: Initialize Sources Chart with data validation
+        // FIXED: Initialize Sources Chart with percentages INSIDE bars
         if (hasValidChartData(reportData.top_sources)) {
             const sourcesCtx = document.getElementById('sourcesChart');
             if (sourcesCtx) {
                 new Chart(sourcesCtx, {
                     type: 'bar',
                     data: {
-                        labels: reportData.top_sources.map(item => item.source),
+                        labels: sourcesChartData.labels,
                         datasets: [{
                             label: 'Leads',
-                            data: reportData.top_sources.map(item => item.count),
+                            data: sourcesChartData.data,
                             backgroundColor: colorSchemes.sources,
                             borderColor: colorSchemes.sources.map(color => color.replace('0.8', '1')),
                             borderWidth: 1
@@ -2370,7 +2932,13 @@ function hasValidChartData(data) {
                                 titleColor: '#ffffff',
                                 bodyColor: '#ffffff',
                                 borderColor: '#2563eb',
-                                borderWidth: 1
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        const percentage = sourcesChartData.percentages[context.dataIndex];
+                                        return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                    }
+                                }
                             }
                         },
                         scales: {
@@ -2381,7 +2949,7 @@ function hasValidChartData(data) {
                                 },
                                 ticks: {
                                     font: {
-                                        size: 10,
+                                        size: 11,
                                         weight: '500'
                                     }
                                 }
@@ -2392,18 +2960,50 @@ function hasValidChartData(data) {
                                 },
                                 ticks: {
                                     font: {
-                                        size: 10,
+                                        size: 11,
                                         weight: '500'
                                     }
                                 }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, i) => {
+                                const meta = chart.getDatasetMeta(i);
+                                meta.data.forEach((element, index) => {
+                                    const percentage = sourcesChartData.percentages[index];
+                                    
+                                    // FIXED: Position percentage INSIDE the bar
+                                    const barHeight = element.height;
+                                    const barTop = element.y;
+                                    const barBottom = element.base;
+                                    const centerY = barTop + (barHeight / 2);
+                                    
+                                    // White text with black stroke for visibility inside colored bars
+                                    ctx.fillStyle = '#fff';
+                                    ctx.strokeStyle = '#000';
+                                    ctx.lineWidth = 2;
+                                    ctx.font = 'bold 12px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    
+                                    // Only show percentage if bar is tall enough
+                                    if (barHeight > 20) {
+                                        ctx.strokeText(percentage + '%', element.x, centerY);
+                                        ctx.fillText(percentage + '%', element.x, centerY);
+                                    }
+                                });
+                            });
+                        }
+                    }]
                 });
             }
         }
 
-        // FIXED: Initialize Performance Overview Chart with data validation
+        // FIXED: Initialize Performance Overview Chart with total leads count in blue bars and conversion rate percentages in green bars
         if (hasValidChartData(reportData.team_performance)) {
             const performanceCtx = document.getElementById('performanceChart');
             if (performanceCtx) {
@@ -2438,7 +3038,7 @@ function hasValidChartData(data) {
                                     padding: 10,
                                     usePointStyle: true,
                                     font: {
-                                        size: 10,
+                                        size: 11,
                                         weight: '600'
                                     }
                                 }
@@ -2448,7 +3048,18 @@ function hasValidChartData(data) {
                                 titleColor: '#ffffff',
                                 bodyColor: '#ffffff',
                                 borderColor: '#2563eb',
-                                borderWidth: 1
+                                borderWidth: 1,
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        const memberData = reportData.team_performance[context.dataIndex];
+                                        if (context.datasetIndex === 0) {
+                                            return `(${memberData.leads_percentage}% of total leads)`;
+                                        } else if (context.datasetIndex === 1) {
+                                            return `(${memberData.closed_percentage}% of total closed deals)`;
+                                        }
+                                        return '';
+                                    }
+                                }
                             }
                         },
                         scales: {
@@ -2459,7 +3070,7 @@ function hasValidChartData(data) {
                                 },
                                 ticks: {
                                     font: {
-                                        size: 10,
+                                        size: 11,
                                         weight: '500'
                                     }
                                 }
@@ -2470,18 +3081,60 @@ function hasValidChartData(data) {
                                 },
                                 ticks: {
                                     font: {
-                                        size: 10,
+                                        size: 11,
                                         weight: '500'
                                     }
                                 }
                             }
                         }
-                    }
+                    },
+                    plugins: [{
+                        id: 'datalabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                meta.data.forEach((element, index) => {
+                                    const memberData = reportData.team_performance[index];
+                                    
+                                    // FIXED: Position values INSIDE the bars
+                                    const barHeight = element.height;
+                                    const barTop = element.y;
+                                    const centerY = barTop + (barHeight / 2);
+                                    
+                                    // White text with black stroke for visibility inside colored bars
+                                    ctx.fillStyle = '#fff';
+                                    ctx.strokeStyle = '#000';
+                                    ctx.lineWidth = 2;
+                                    ctx.font = 'bold 11px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    
+                                    let displayText = '';
+                                    
+                                    // FIXED: Show total leads count in blue bars (dataset 0) and conversion rate percentage in green bars (dataset 1)
+                                    if (datasetIndex === 0) {
+                                        // Blue bars - show total leads count
+                                        displayText = memberData.total_leads.toString();
+                                    } else if (datasetIndex === 1) {
+                                        // Green bars - show conversion rate percentage
+                                        displayText = memberData.conversion_rate + '%';
+                                    }
+                                    
+                                    // Only show text if bar is tall enough
+                                    if (barHeight > 20 && displayText) {
+                                        ctx.strokeText(displayText, element.x, centerY);
+                                        ctx.fillText(displayText, element.x, centerY);
+                                    }
+                                });
+                            });
+                        }
+                    }]
                 });
             }
         }
 
-        console.log('All charts initialized successfully with fixed circular aspect ratios');
+        console.log('All charts initialized successfully with percentages inside bars');
     }
     </script>
 </body>

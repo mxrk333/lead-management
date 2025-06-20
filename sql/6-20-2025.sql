@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: lecain.pdx1-mysql-a7-6b.dreamhost.com
--- Generation Time: Jun 16, 2025 at 02:41 AM
+-- Generation Time: Jun 19, 2025 at 10:45 PM
 -- Server version: 8.0.28-0ubuntu0.20.04.3
 -- PHP Version: 8.1.2-1ubuntu2.21
 
@@ -163,7 +163,6 @@ CREATE TABLE `downpayment_tracker` (
 --
 
 INSERT INTO `downpayment_tracker` (`id`, `lead_id`, `reservation_date`, `requirements_complete`, `spot_dp`, `spot_dp_amount`, `dp_terms`, `monthly_dp_amount`, `current_dp_stage`, `total_dp_stages`, `total_dp_paid`, `remaining_dp_balance`, `pagibig_bank_approval`, `loan_amount`, `loan_takeout`, `loan_takeout_date`, `turnover`, `turnover_date`, `progress_rate`, `next_payment_date`, `created_at`, `updated_at`) VALUES
-(7, 25, NULL, 1, 1, 0.00, '6', 0.00, 1, 1, 0.00, 0.00, 1, 0.00, 1, NULL, 1, NULL, 100.00, NULL, '2025-06-06 09:25:10', '2025-06-06 09:26:03'),
 (8, 28, NULL, 1, 1, 0.00, '6', 0.00, 1, 1, 0.00, 0.00, 0, 0.00, 0, NULL, 0, NULL, 40.00, NULL, '2025-06-09 07:24:54', '2025-06-09 07:24:54'),
 (9, 29, NULL, 1, 0, 0.00, '6', 0.00, 6, 6, 0.00, 0.00, 1, 0.00, 1, NULL, 1, NULL, 100.00, NULL, '2025-06-13 02:34:43', '2025-06-13 02:35:34');
 
@@ -191,7 +190,7 @@ CREATE TABLE `handbooks` (
 
 INSERT INTO `handbooks` (`id`, `title`, `description`, `category`, `cover_image`, `pdf_file`, `created_by`, `created_at`, `updated_at`) VALUES
 (1, 'Handbook: Version 1', '', '', 'uploads/handbook_covers/1749801234_Screenshot 2025-06-13 154516.png', 'uploads/handbook_pdfs/1749801234_Copy of Blue and Gold Modern Simple Professional Employee Handbook Booklet.pdf', 54, '2025-06-13 07:53:54', '2025-06-13 07:53:54'),
-(2, 'From Zero to Hero:', 'A Rookie Agent''s 16-step Ultimate Playbook', '', 'uploads/handbook_covers/1750055656_Screenshot 2025-06-16 141054.png', 'uploads/handbook_pdfs/1750055656_Copy of HandBook_20250616_140352_0000 (1).pdf', 15, '2025-06-16 06:34:20', '2025-06-16 06:34:20');
+(2, 'From Zero to Hero:', 'A Rookie Agent’s\r\n\r\n16-step Ultimate Playbook', '', 'uploads/handbook_covers/1750055656_Screenshot 2025-06-16 141054.png', 'uploads/handbook_pdfs/1750055656_Copy of HandBook_20250616_140352_0000 (1).pdf', 15, '2025-06-16 06:34:20', '2025-06-16 06:34:20');
 
 -- --------------------------------------------------------
 
@@ -208,6 +207,40 @@ CREATE TABLE `handbook_pages` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `incentives`
+--
+
+CREATE TABLE `incentives` (
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `position` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `total_sales` decimal(15,2) DEFAULT '0.00',
+  `incentive_type` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `destination` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `incentives`
+--
+
+INSERT INTO `incentives` (`id`, `user_id`, `position`, `total_sales`, `incentive_type`, `destination`, `created_at`) VALUES
+(1, 8, 'Agent', 400000.00, 'International Tour', 'Malaysia/Indonesia', '2025-06-19 13:26:49'),
+(2, 8, 'Agent', 400000.00, 'International Tour', 'Singapore', '2025-06-19 13:26:49'),
+(3, 8, 'Agent', 400000.00, 'Local Tour', 'Baguio', '2025-06-19 13:26:49'),
+(4, 8, 'Agent', 400000.00, 'Local Tour', 'Boracay', '2025-06-19 13:26:49'),
+(5, 58, 'Agent', 100000.00, 'International Tour', 'Malaysia/Indonesia', '2025-06-19 13:27:19'),
+(6, 58, 'Agent', 100000.00, 'International Tour', 'Singapore', '2025-06-19 13:27:19'),
+(7, 58, 'Agent', 100000.00, 'Local Tour', 'Baguio', '2025-06-19 13:27:19'),
+(8, 58, 'Agent', 100000.00, 'Local Tour', 'Boracay', '2025-06-19 13:27:19'),
+(13, 56, 'Agent', 100.00, 'International Tour', 'Malaysia/Indonesia', '2025-06-20 03:05:00'),
+(14, 56, 'Agent', 100.00, 'International Tour', 'Singapore', '2025-06-20 03:05:00'),
+(15, 56, 'Agent', 100.00, 'Local Tour', 'Baguio', '2025-06-20 03:05:00'),
+(16, 56, 'Agent', 100.00, 'Local Tour', 'Boracay', '2025-06-20 03:05:00');
 
 -- --------------------------------------------------------
 
@@ -246,9 +279,7 @@ INSERT INTO `leads` (`id`, `user_id`, `client_name`, `phone`, `email`, `facebook
 (21, 25, 'Elena Villanueva', '09371234586', 'elena.villanueva@email.com', 'facebook.com/elena.villanueva', 'linkedin.com/in/elena-villanueva', '1717 Katipunan Ave, QC', 'Warm', 'Loan Takeout', 'LinkedIn', 'Liora Homes', 'Amora', 2750000.00, 0.03, 68750.00, 'This is not an accurate data; this is for testing only.', '2025-06-21', '2025-06-21 15:00:00', '2025-06-06 08:05:58'),
 (22, 26, 'Rafael Mendoza', '09471234587', 'rafael.mendoza@email.com', 'facebook.com/rafael.mendoza', 'linkedin.com/in/rafael-mendoza', '1818 España St, Manila', 'Cold', 'Loan Approval', 'Referral', 'Lancaster', 'Alice', 2900000.00, 0.03, 87000.00, 'This is not an accurate data; this is for testing only.', '2025-06-24', '2025-06-22 16:30:00', '2025-06-06 08:09:23'),
 (23, 27, 'Beatriz Santos', '09571234588', 'beatriz.santos@email.com', 'facebook.com/beatriz.santos', 'linkedin.com/in/beatriz-santos', '1919 Quezon Ave, QC', 'Hot', 'Negotiation', 'Facebook Ads', 'Anyana', 'Sydney', 3200000.00, 0.03, 96000.00, 'This is not an accurate data; this is for testing only.', '2025-06-23', '2025-06-23 17:15:00', '2025-06-06 08:05:15'),
-(24, 28, 'Carlos Diaz', '09671234589', 'carlos.diaz@email.com', 'facebook.com/carlos.diaz', 'linkedin.com/in/carlos-diaz', '2020 Magsaysay Blvd, Mandaluyong', 'Warm', 'Negotiation', 'Manning', 'Lancaster', 'Alice', 2600000.00, 0.03, 65000.00, 'This is not an accurate data; this is for testing only.', '2025-06-25', '2025-06-24 15:45:00', '2025-06-06 08:07:16'),
-(25, 29, 'Diana Lopez', '09771234590', 'diana.lopez@email.com', 'facebook.com/diana.lopez', 'linkedin.com/in/diana-lopez', '2121 Shaw Blvd, Mandaluyong', 'Cold', 'Downpayment Stage', 'Follow up', 'Minami Residence', 'Hana', 3100000.00, 0.03, 93000.00, 'This is not an accurate data; this is for testing only.', '2025-06-26', '2025-06-25 18:00:00', '2025-06-06 08:07:50'),
-(26, 56, 'Dyryyd', 'Yeueyr', 'jericho.innersparc@gmail.com', 'Dududu', 'Ueueueu', NULL, 'Warm', 'Site Tour', 'Facebook Ads', 'Avida', 'Way', 100000.00, 0.00, 0.00, 'Eurufufuf', NULL, '2025-06-09 03:28:39', '2025-06-09 03:28:39'),
+(24, 28, 'Carlos Diaz', '09671234589', 'carlos.diaz@email.com', 'facebook.com/carlos.diaz', 'linkedin.com/in/carlos-diaz', '2020 Magsaysay Blvd, Mandaluyong', 'Warm', 'Negotiation', 'Facebook Ads', 'Lancaster', 'Alice', 2600000.00, 0.03, 65000.00, 'This is not an accurate data; this is for testing only.', '2025-06-25', '2025-06-24 15:45:00', '2025-06-20 05:42:11'),
 (27, 58, 'Phoenix Zeta', '09171520934', 'ginine.innersparc@gmail.com', 'https://www.facebook.com/share/17sb12Bo2u/', '', NULL, 'Hot', 'Closed Deal', 'Facebook Groups', 'Pleasantfields', 'Kennedy', 3900000.00, 0.00, 0.00, 'Keri lang.', NULL, '2025-06-09 03:41:02', '2025-06-09 07:12:01'),
 (28, 58, 'seedd', '09171520934', 'ginineangelique9@gmail.com', '', '', NULL, 'Warm', 'Downpayment Stage', 'Google Ads', 'Avida', 'Way', 3900000.00, 0.00, 0.00, '', NULL, '2025-06-09 07:24:12', '2025-06-09 07:24:12'),
 (29, 15, 'Mark', '09191823388', 'iasdisj@gmail.com', '', '', NULL, 'Warm', 'Closed Deal', 'Organic Sharing', 'Pleasantfields', 'Kennedy', 19238388.22, 0.00, 0.00, '', NULL, '2025-06-13 02:32:27', '2025-06-13 02:36:01');
@@ -279,18 +310,15 @@ INSERT INTO `lead_activities` (`id`, `lead_id`, `user_id`, `activity_type`, `not
 (7, 23, 27, 'Lead Update', 'Lead details updated:\n- Changed developer from \'Greenfield Builders\' to \'Anyana\'\n- Changed project_model from \'Model C\' to \'Sydney\'\n', NULL, NULL, 0, '2025-06-06 08:05:15'),
 (8, 21, 25, 'Lead Update', 'Lead details updated:\n- Changed developer from \'Greenfield Builders\' to \'Liora Homes\'\n- Changed project_model from \'Model A\' to \'Amora\'\n', NULL, NULL, 0, '2025-06-06 08:05:58'),
 (9, 24, 28, 'Lead Update', 'Lead details updated:\n- Changed developer from \'Sunrise Dev\' to \'Lancaster\'\n- Changed project_model from \'Model A\' to \'Alice\'\n', NULL, NULL, 0, '2025-06-06 08:07:16'),
-(10, 25, 29, 'Lead Update', 'Lead details updated:\n- Changed developer from \'Greenfield Builders\' to \'Minami Residence\'\n- Changed project_model from \'Model B\' to \'Hana\'\n', NULL, NULL, 0, '2025-06-06 08:07:50'),
 (11, 22, 26, 'Lead Update', 'Lead details updated:\n- Changed developer from \'Sunrise Dev\' to \'Lancaster\'\n- Changed project_model from \'Model B\' to \'Alice\'\n', NULL, NULL, 0, '2025-06-06 08:09:23'),
-(12, 25, 8, 'Downpayment Tracker', 'Updated downpayment tracker information', NULL, NULL, 0, '2025-06-06 09:25:10'),
-(13, 25, 8, 'Downpayment Tracker', 'Updated downpayment tracker information', NULL, NULL, 0, '2025-06-06 09:25:37'),
-(14, 25, 8, 'Downpayment Tracker', 'Updated downpayment tracker information', NULL, NULL, 0, '2025-06-06 09:26:03'),
 (16, 27, 58, 'Lead Update', 'Lead details updated:\n- Changed status from \'Loan Takeout\' to \'Closed Deal\'\n', NULL, NULL, 0, '2025-06-09 07:12:01'),
 (17, 28, 58, 'Downpayment Tracker', 'Updated downpayment tracker information', NULL, NULL, 0, '2025-06-09 07:24:54'),
 (18, 29, 15, 'Lead Update', 'Lead details updated:\n- Changed status from \'Inquiry\' to \'Downpayment Stage\'\n', NULL, NULL, 0, '2025-06-13 02:33:21'),
 (19, 29, 15, 'Downpayment Tracker', 'Updated downpayment tracker information', NULL, NULL, 0, '2025-06-13 02:34:43'),
 (20, 29, 15, 'Downpayment Tracker', 'Updated downpayment tracker information', NULL, NULL, 0, '2025-06-13 02:35:20'),
 (21, 29, 15, 'Downpayment Tracker', 'Updated downpayment tracker information', NULL, NULL, 0, '2025-06-13 02:35:34'),
-(22, 29, 15, 'Lead Update', 'Lead details updated:\n- Changed status from \'Downpayment Stage\' to \'Closed Deal\'\n', NULL, NULL, 0, '2025-06-13 02:36:01');
+(22, 29, 15, 'Lead Update', 'Lead details updated:\n- Changed status from \'Downpayment Stage\' to \'Closed Deal\'\n', NULL, NULL, 0, '2025-06-13 02:36:01'),
+(26, 24, 28, 'Lead Update', 'Lead details updated:\n- Changed source from \'Manning\' to \'Facebook Ads\'\n', NULL, NULL, 0, '2025-06-20 05:42:11');
 
 -- --------------------------------------------------------
 
@@ -320,13 +348,12 @@ INSERT INTO `lead_modifications` (`id`, `lead_id`, `user_id`, `modification_type
 (4, 21, 25, 'project_model_change', 'Model A', 'Amora', 8, '2025-06-06 08:05:58'),
 (5, 24, 28, 'developer_change', 'Sunrise Dev', 'Lancaster', 9, '2025-06-06 08:07:16'),
 (6, 24, 28, 'project_model_change', 'Model A', 'Alice', 9, '2025-06-06 08:07:16'),
-(7, 25, 29, 'developer_change', 'Greenfield Builders', 'Minami Residence', 10, '2025-06-06 08:07:50'),
-(8, 25, 29, 'project_model_change', 'Model B', 'Hana', 10, '2025-06-06 08:07:50'),
 (9, 22, 26, 'developer_change', 'Sunrise Dev', 'Lancaster', 11, '2025-06-06 08:09:23'),
 (10, 22, 26, 'project_model_change', 'Model B', 'Alice', 11, '2025-06-06 08:09:23'),
 (11, 27, 58, 'status_change', 'Loan Takeout', 'Closed Deal', 16, '2025-06-09 07:12:01'),
 (12, 29, 15, 'status_change', 'Inquiry', 'Downpayment Stage', 18, '2025-06-13 02:33:21'),
-(13, 29, 15, 'status_change', 'Downpayment Stage', 'Closed Deal', 22, '2025-06-13 02:36:01');
+(13, 29, 15, 'status_change', 'Downpayment Stage', 'Closed Deal', 22, '2025-06-13 02:36:01'),
+(14, 24, 28, 'source_change', 'Manning', 'Facebook Ads', 26, '2025-06-20 05:42:11');
 
 -- --------------------------------------------------------
 
@@ -348,15 +375,14 @@ CREATE TABLE `memos` (
   `visible_to_all` tinyint(1) DEFAULT '1',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `memos`
 --
 
 INSERT INTO `memos` (`id`, `title`, `file_path`, `description`, `memo_when`, `memo_where`, `priority`, `is_active`, `created_by`, `team_id`, `visible_to_all`, `created_at`, `updated_at`) VALUES
-(2, 'Welcome Users!', 'uploads/memos/1749197573_Login Manual.pdf', 'The Lead Management System is now online at:\r\nhttps://leads.dreamhosters.com/\r\n\r\nTHIS IS FOR BETA TESTING ONLY!\r\n\r\nPlease note:\r\n\r\nNot all data or report results are accurate.\r\n\r\nThe current contents and leads are only sample data for admins, managers, supervisors, and agents.\r\n\r\nThis does not reflect your actual performance.\r\n', '2025-06-06 01:12:53', NULL, 'Medium', 1, 15, 13, 1, '2025-06-06 08:12:53', '2025-06-06 08:12:53'),
-(5, 'Savia Parkway: Incentives', 'uploads/memos/1750061548_ange.pdf', 'Incentives for new agent: CAR - honda', '2025-06-16 01:12:28', NULL, 'High', 1, 8, 8, 1, '2025-06-16 08:12:28', '2025-06-16 08:12:28');
+(7, 'REVISED COMMISSION RATES AND ADDITIONAL VAT DEDUCTION', 'uploads/memos/1750233308_MEMO  FOR ALL JUNE 18, 2025.docx', 'As discussed, and agreed during our meeting on June 16, 2025, please be informed of the new commission rates and additional deductions to be implemented effective immediately for all sales under partner developers where VAT invoices are issued.\r\n', '2025-06-18 00:55:08', NULL, 'Urgent', 1, 8, 8, 0, '2025-06-18 07:55:08', '2025-06-18 07:55:08');
 
 -- --------------------------------------------------------
 
@@ -375,6 +401,30 @@ CREATE TABLE `memo_images` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `memo_person_visibility`
+--
+
+CREATE TABLE `memo_person_visibility` (
+  `id` int NOT NULL,
+  `memo_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `memo_person_visibility`
+--
+
+INSERT INTO `memo_person_visibility` (`id`, `memo_id`, `user_id`, `created_at`) VALUES
+(1, 7, 8, '2025-06-18 07:55:08'),
+(2, 7, 20, '2025-06-18 07:55:08'),
+(3, 7, 19, '2025-06-18 07:55:08'),
+(4, 7, 7, '2025-06-18 07:55:08'),
+(5, 7, 3, '2025-06-18 07:55:08');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `memo_read_status`
 --
 
@@ -385,23 +435,15 @@ CREATE TABLE `memo_read_status` (
   `read_status` tinyint(1) NOT NULL DEFAULT '0',
   `read_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `memo_read_status`
 --
 
 INSERT INTO `memo_read_status` (`id`, `memo_id`, `employee_id`, `read_status`, `read_at`, `created_at`) VALUES
-(3, 2, 15, 1, '2025-06-06 20:13:04', '2025-06-06 08:12:56'),
-(5, 2, 8, 1, '2025-06-06 20:52:37', '2025-06-06 08:52:37'),
-(6, 2, 58, 1, '2025-06-08 17:26:36', '2025-06-09 05:26:36'),
-(7, 2, 40, 1, '2025-06-08 17:28:45', '2025-06-09 05:28:45'),
-(8, 2, 57, 1, '2025-06-08 17:30:52', '2025-06-09 05:30:52'),
-(9, 2, 53, 1, '2025-06-08 18:41:43', '2025-06-09 06:41:43'),
-(10, 2, 59, 1, '2025-06-08 18:59:53', '2025-06-09 06:59:53'),
-(11, 2, 55, 1, '2025-06-09 19:06:04', '2025-06-09 07:06:04'),
-(12, 2, 56, 1, '2025-06-09 19:10:14', '2025-06-09 07:10:14'),
-(13, 2, 39, 1, '2025-06-09 22:15:36', '2025-06-09 10:14:09');
+(17, 7, 7, 1, '2025-06-18 10:58:56', '2025-06-18 07:58:56'),
+(18, 7, 8, 1, '2025-06-18 08:04:28', '2025-06-18 08:04:28');
 
 -- --------------------------------------------------------
 
@@ -414,7 +456,7 @@ CREATE TABLE `memo_team_visibility` (
   `memo_id` int NOT NULL,
   `team_id` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -499,7 +541,7 @@ INSERT INTO `projects` (`id`, `name`, `description`, `house_model`, `status`, `d
 (32, 'Pagsibol Village', 'Townhouse', 'Santan, Aubergine, Turqoise', 'preselling', 'Raemulan', 1700000.00, 1900000.00, 2.50, 'low', 23, 11, 'Pagsibol 3, Dynamism St, Naic, Cavite', 'project_32_1_1750055909.jpg', 'project_32_2_1750055909.jpg', 'project_32_3_1750055909.jpg', NULL, '', '', '2025-06-16 05:42:12', '2025-06-16 06:40:18'),
 (34, 'Liora Homes', 'Townhouse', 'Amora', 'rfo', 'CitiHomes Builders', 2300000.00, 2700000.00, 3.00, 'high', 23, 11, 'Brgy. Malainen Bago, Naic, Cavite', 'project_34_1_1750055942.jpg', 'project_34_2_1750055942.jpg', 'project_34_3_1750055942.jpg', NULL, 'https://drive.google.com/drive/folders/1NtyOFRM8i8-kiQ9vkuestBr7xWO-0p8_?usp=sharing', '', '2025-06-16 05:59:38', '2025-06-16 06:40:57'),
 (35, 'Kaia Homes', 'Townhouse, Row House', 'Helena', 'rfo', 'KAIA Homes', 1400000.00, 2300000.00, 3.00, 'high', 23, 11, 'Brgy. Palangue 2 & 3, Naic, Cavite.', 'project_35_1_1750060644.jpg', 'project_35_2_1750055889.jpg', 'project_35_3_1750055889.jpg', 'project_35_4_1750055889.jpg', 'https://drive.google.com/drive/folders/1EbkVjmOzxSqckfp83xRFowuAZrUE9Q1j?usp=drive_link', '', '2025-06-16 06:01:09', '2025-06-16 07:57:24'),
-(36, 'Comelec VIllage', 'Single Attached, Detached, Townhouse', 'Chesca, Audrey, Felicity, Danna, Era', 'rfo', 'Masaito', 2700000.00, 6600000.00, 3.00, 'high', 24, 11, 'Advincula Road Brgy.Alapan 2A Imus ,Cavite', 'project_36_1_1750055861.jpg', 'project_36_2_1750055861.jpg', 'project_36_3_1750055861.jpg', 'project_36_4_1750059194.png', 'https://drive.google.com/drive/folders/1-82LBN7LaLOvCNWcvdJwh3WXXm4jnufj?usp=drive_link', '', '2025-06-16 06:03:44', '2025-06-16 07:33:14'),
+(36, 'Comelec VIllage', 'Single Attached, Detached, Townhouse', 'Chesca, Audrey, Felicity, Danna, Era', 'rfo', 'Masaito', 2700000.00, 6600000.00, 3.00, 'high', 24, 11, 'Advincula Road Brgy.Alapan 2A Imus ,Cavite', 'project_36_1_1750055861.jpg', 'project_36_2_1750055861.jpg', 'project_36_3_1750055861.jpg', NULL, 'https://drive.google.com/drive/folders/1-82LBN7LaLOvCNWcvdJwh3WXXm4jnufj?usp=drive_link', '', '2025-06-16 06:03:44', '2025-06-18 05:37:08'),
 (37, 'Lancaster New City', 'Single Attached, Detached, Townhouse, Condo', 'Chessa, Gabrielle, Margareth, Thea, Aira, Alice, Alexandra, Briana', 'rfo', 'ProFriends', 2700000.00, 8500000.00, 2.50, 'high', 19, 11, 'Advincula Avenue, Alapan II-B, Imus City Cavite', 'project_37_1_1750060697.jpg', 'project_37_2_1750055554.jpg', 'project_37_3_1750055554.jpg', 'project_37_4_1750055554.jpg', 'https://drive.google.com/drive/u/0/folders/18u7cwWbwON-PGZJBTiceAbpATc6OLTlz', '', '2025-06-16 06:05:32', '2025-06-16 07:58:17'),
 (38, 'Lanello Heights', 'Single Attached, Detached, Townhouse', 'Abbie, Brenda, Chelsea', 'rfo', 'Masaito', 3700000.00, 5300000.00, 3.00, 'low', 25, 11, 'Barangay Pasong Camachile II, General Trias, Cavite', 'project_38_1_1750059938.jpg', 'project_38_2_1750055533.jpg', 'project_38_3_1750055533.jpg', 'project_38_4_1750055533.jpg', 'https://drive.google.com/drive/mobile/folders/12JmMKDVdV8EjcrOdzDVEmwvEcgkciNhM', '', '2025-06-16 06:07:50', '2025-06-16 07:45:38'),
 (39, 'Minami Residences', 'Quadruplex', '', 'preselling', 'Pro Friends', 4300000.00, 4700000.00, 3.00, 'low', 25, 11, 'Barangay Santiago, General Trias, Cavite', 'project_39_1_1750059980.jpg', 'project_39_2_1750055499.jpg', 'project_39_3_1750055499.jpg', NULL, 'https://drive.google.com/drive/mobile/folders/12JmMKDVdV8EjcrOdzDVEmwvEcgkciNhM', '', '2025-06-16 06:10:12', '2025-06-16 07:46:20'),
@@ -509,6 +551,52 @@ INSERT INTO `projects` (`id`, `name`, `description`, `house_model`, `status`, `d
 (43, 'Elisa Homes', 'Single Attached, Townhouse', 'Sapphire, Pearl, Dahlia, Canalily', 'rfo', 'F&E De Castro', 10000000.00, 10000000.00, 3.00, 'medium', 18, 11, 'Molino Rd, Molino 4, Bacoor Cavite', 'project_43_1_1750056162.jpg', 'project_43_2_1750056162.jpg', 'project_43_3_1750056162.jpg', 'project_43_4_1750056162.jpg', '', '', '2025-06-16 06:24:55', '2025-06-16 06:42:42'),
 (44, 'LaVerne', 'Single Attached', 'Isabelle, Megan', 'ogc', '650 Homes', 7799999.00, 8500000.00, 3.00, 'medium', 18, 11, 'Habay 2, Bacoor, Cavite', 'project_44_1_1750060507.jpg', 'project_44_2_1750058945.jpg', 'project_44_3_1750058945.jpg', 'project_44_4_1750058945.jpg', 'https://docs.google.com/document/d/1ZLJbSblgKsWIaDE74qhOsUNH_1YtHwUcuA_SI7boD-U/edit?tab=t.0#heading=h.19hku0byct89', 'https://m.me/j/AbbyYHgjvFMCa_U3/', '2025-06-16 06:32:28', '2025-06-16 08:00:21'),
 (45, 'Kathleen Place 5', 'Townhouse', '', 'preselling', 'JKY', 5900000.00, 9000000.00, 2.50, 'medium', 18, 11, 'Gawaran Avenue Brgy. Molino 7, Bacoor, Cavite', 'project_45_1_1750060017.jpeg', 'project_45_2_1750060017.jpeg', 'project_45_3_1750056135.jpeg', 'project_45_4_1750056135.jpeg', 'https://drive.google.com/drive/folders/14lKiVhu0GIqE-itWkkHupejj49dTRK_Q', '', '2025-06-16 06:33:58', '2025-06-16 07:46:57');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `project_models`
+--
+
+CREATE TABLE `project_models` (
+  `id` int NOT NULL,
+  `developer_id` int NOT NULL,
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+  `base_price` decimal(12,2) DEFAULT '0.00',
+  `floor_area` decimal(8,2) DEFAULT NULL,
+  `lot_area` decimal(8,2) DEFAULT NULL,
+  `bedrooms` int DEFAULT NULL,
+  `bathrooms` int DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `project_models`
+--
+
+INSERT INTO `project_models` (`id`, `developer_id`, `name`, `description`, `base_price`, `floor_area`, `lot_area`, `bedrooms`, `bathrooms`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 1, 'Alice', 'Premium residential unit', 2900000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(2, 1, 'Alexandra', 'Luxury family home', 8500000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(3, 1, 'Briana', 'Modern townhouse', 2700000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(4, 2, 'Antipolo Heights Model A', 'Scenic hillside property', 3200000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(5, 3, 'Kennedy', 'Family-oriented townhouse', 2700000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(6, 3, 'Lincoln', 'Spacious family home', 3500000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(8, 4, 'Bellefort Estate Model A', 'Luxury gated community home', 4500000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(9, 6, 'Sapphire', 'Affordable housing solution', 10000000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(10, 6, 'Pearl', 'Family townhouse', 10000000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(11, 7, 'Hana', 'Japanese-inspired modern living', 3100000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(12, 8, 'Paris', 'Contemporary urban development', 8000000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(13, 8, 'Sydney', 'Modern city living', 12000000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(14, 8, 'Tokyo', 'Urban lifestyle home', 14000000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(15, 8, 'Florida', 'Spacious family residence', 16000000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(16, 9, 'Kathleen Place Model A', 'Mid-rise condominium', 5900000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(17, 10, 'Amora', 'Sustainable eco-friendly housing', 2300000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(18, 11, 'Way', 'Trusted quality development', 100000.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:18:08', '2025-06-18 07:18:08'),
+(19, 1, 'Thea', NULL, 0.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:25:03', '2025-06-18 07:25:03'),
+(20, 3, 'Nixon', NULL, 0.00, NULL, NULL, NULL, NULL, 1, '2025-06-18 07:25:19', '2025-06-18 07:25:19');
 
 -- --------------------------------------------------------
 
@@ -637,6 +725,32 @@ CREATE TABLE `team_performance_summary` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tour_targets`
+--
+
+CREATE TABLE `tour_targets` (
+  `id` int NOT NULL,
+  `tour_type` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `destination` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `agent_target` decimal(15,2) DEFAULT '500000.00',
+  `supervisor_target` decimal(15,2) DEFAULT '800000.00',
+  `manager_target` decimal(15,2) DEFAULT '1000000.00',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `tour_targets`
+--
+
+INSERT INTO `tour_targets` (`id`, `tour_type`, `destination`, `agent_target`, `supervisor_target`, `manager_target`, `created_at`) VALUES
+(1, 'Local Tour', 'Boracay', 500000.00, 800000.00, 1000000.00, '2025-06-19 12:04:15'),
+(2, 'Local Tour', 'Baguio', 400000.00, 600000.00, 800000.00, '2025-06-19 12:04:15'),
+(3, 'International Tour', 'Malaysia/Indonesia', 800000.00, 1200000.00, 1500000.00, '2025-06-19 12:04:15'),
+(4, 'International Tour', 'Singapore', 600000.00, 900000.00, 1200000.00, '2025-06-19 12:04:15');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
@@ -653,73 +767,73 @@ CREATE TABLE `users` (
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `last_login` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `position` varchar(50) COLLATE utf8mb4_general_ci DEFAULT 'Agent'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `team_id`, `username`, `password`, `name`, `email`, `phone`, `role`, `profile_picture`, `is_active`, `last_login`, `created_at`, `updated_at`) VALUES
-(1, 1, 'admin', '$2y$10$W5MMTTxFbaz/aT8Jc5pH8.NqiRgBvufr4MhDq5eMSTM4.vjE5259C', 'Administrator', 'innersparcservices@gmail.com', NULL, 'admin', NULL, 1, NULL, '2025-05-16 08:45:20', '2025-06-06 07:19:11'),
-(3, 8, 'shielamaefajutagana.accounting', '$2y$10$gbLWkM8Lc//nUt5oexmLXOkZSG6PVoIaSMntaSqlgqCB1mlLFRVeG', 'Sheila Mae Fontelo Fajutagana', 'francisheila05@gmail.com', '09151082974', 'agent', NULL, 1, NULL, '2025-05-16 08:45:21', '2025-06-06 07:36:59'),
-(4, 2, 'luzvimindalim.innersparc', '$2y$10$PUV7H0RlWs.dJZ6x8SqmvOFy3x9MlJIo0m7otynHJfAxHnktLhC4u', 'Luzviminda Labrado Lim', 'luz032069@gmail.com', '09062717602', 'supervisor', NULL, 1, NULL, '2025-05-16 08:45:21', '2025-06-04 22:01:31'),
-(5, 3, 'eduardalizatorres.innersparc', '$2y$10$vlTHTcCwPNcRnoG1NVMyO.FjL9e8rnpVuLsgmzZkr3iJriC8UHEw.', 'Eduardaliza Dulay Torres', 'edtorres797426@gmail.com', '09367465749', 'supervisor', NULL, 1, NULL, '2025-05-16 08:45:21', '2025-06-04 22:01:31'),
-(6, 1, 'mikegabrielescarilla.innersparc', '$2y$10$wQ4nzPYxWM.8smNno/0vIOfwSvYWxq3yphH3y8QCXxK68d3i8uSPG', 'Mike Gabriel Bedion Escarilla', 'escarilla.mikegabriel@gmail.com', '09269979145', 'agent', NULL, 1, NULL, '2025-05-16 08:45:21', '2025-06-06 07:00:52'),
-(7, 1, 'romeocorberta.itdept', '$2y$10$rRuVdtrMXPrd1x.ySHEY3.9Vvjxds.9Js5rCvRPgQG7ug3NzLmMZO', 'Romeo Cerna Cobreta Jr.', 'romxcob.innersparc@gmail.com', '09090326945', 'admin', NULL, 1, NULL, '2025-05-16 08:45:21', '2025-06-09 03:44:52'),
-(8, 8, 'charlenedellosa.opsman', '$2y$10$7BvBgpFnDmhhX3/zSVikjebJCWefKLpsg36RYdkM0KhZDmjE/Zmmu', 'Charlene Dellosa', 'dellosacharlene1317@gmail.com', '09169994124', 'manager', 'uploads/profile_pictures/user_8_1747501769.png', 1, NULL, '2019-05-16 08:45:23', '2025-06-06 07:31:50'),
-(9, 2, 'alvinllaneta.innersparc', '$2y$10$.w9.aPUWHSS5GifQHPn9Fu2.JKn817TupAc0xAEDSekCnwFDH1UiW', 'Alvin  Llaneta', 'alvinllaneta8@gmail.com', '09613825054', 'agent', NULL, 1, NULL, '2025-05-16 08:45:23', '2025-06-04 22:01:31'),
-(11, 2, 'clarencedanielleserdon.innersparc', '$2y$10$tRBIk1jyaXGFbpAveJE8gOqFpGW.O/hJInU3qJ/mnqr3k/RBneuQK', 'Clarence Danielle Lim Serdon', 'clarencedanielle98@gmail.com', '09996916107', 'agent', NULL, 1, NULL, '2025-05-16 08:45:23', '2025-06-04 22:01:31'),
-(12, 2, 'gabcyrosebenson.innersparc', '$2y$10$GnAbo83uu0hltK474fV1B.It7N5iLugZXtDFd.5vDRuFqso62qcXS', 'Gabcyrose Samsona Benson', 'gabcyrose@gmail.com', '09263939124', 'agent', NULL, 1, NULL, '2025-05-16 08:45:23', '2025-06-04 22:01:31'),
-(13, 1, 'lenizapasion.innersparc', '$2y$10$t/pbiM/TxOEK7suqW.8/ruSPdj77rekzZpzLTubXSytzBC5QDiPXa', 'Leniza Flores pasion', 'lenizapasion51@gmail.com', '09177179863', 'agent', NULL, 1, NULL, '2025-05-16 08:45:23', '2025-06-06 07:01:28'),
-(14, 1, 'perlitago.innersparc', '$2y$10$p4kmD3n.wjSirRlDZpwRaOz69x2uytmxIQcBsgRTPpJynvZ5o1I76', 'Perlita Santiago Go', 'gopearl43@yahoo.com', '09777261123', 'agent', NULL, 1, NULL, '2025-05-16 08:45:23', '2025-06-06 07:01:35'),
-(15, 13, 'markpatigayon.intern', '$2y$10$Tbq4hLp0VyDFdxogyElwm.A52Fh.OLnPqgayZTWrAlY4s.V7XCPdi', 'Mark Christian Patigayon', 'markpatigayon440@gmail.com', '09194620030', 'admin', 'uploads/profile_pictures/user_15_1747499626.jpg', 1, NULL, '2019-05-22 08:45:23', '2025-06-06 07:12:38'),
-(16, 1, 'verlynvesagas.innersparc', '$2y$10$PEX7IJamKPjc2Mg5859AZuLQjqB/anHrK9ty37.dejDgGTEVazAwy', 'Verlyn Bizconde Vesagas', 'vverlyn@gmail.com', '09915573606', 'agent', NULL, 1, NULL, '2025-05-19 08:08:49', '2025-06-06 07:00:25'),
-(17, 1, 'rizelagrimas.innersparc', '$2y$10$ipV2yK499HzPJRz4Bw8G0OMKotbJFfC37LzMtCn1qPimCph6f9Dmy', 'Rize OwogOwog Lagrimas', 'rizielagrimas18@gmail.com', '09202474501', 'agent', NULL, 1, NULL, '2025-05-19 08:09:39', '2025-06-06 07:13:53'),
-(18, 1, 'ireneblanca.innersparc', '$2y$10$aEQppVOJLQ3050pCQEKrwepJCT8rw3frtf.AqkgMPqw7TjisrYmli', 'Irene Noble Blanca', 'ireneblanca1909@gmail.com', '09943843721', 'agent', NULL, 1, NULL, '2025-05-19 08:10:13', '2025-06-04 22:01:31'),
-(19, 1, 'gabriellibacao.founder', '$2y$10$0A.MhdXz2UAcy4bUGR6EBOsQ82F9GtlZLgCw0a0n46KXTUuoM8t8a', 'Gabriel Jr. Villamor Libacao', 'libacaoga@gmail.com', '09178534875', 'admin', NULL, 1, NULL, '2025-05-19 08:10:58', '2025-06-06 07:31:02'),
-(20, 1, 'erwingonzales.cofounder', '$2y$10$/I4c/Yn7lWXRlraQvK0m2ueNwa2vgAfJ1NSKVG9wNfXJUu51fjoeq', 'Erwin Gonzales Baguioan', 'irwindgonzales6@gmail.com', '09669533188', 'manager', NULL, 1, NULL, '2025-05-19 08:11:50', '2025-06-06 07:40:01'),
-(21, 1, 'nelynortega.innersparc', '$2y$10$pPrIuezkcJ9THUg5IHmFMuo68tv5W5MhSeLarPb4HIFc2rt5Jj8u.', 'Nelyn Serad Ortega', 'orteganelyn18@gmail.com', '09650984075', 'supervisor', NULL, 1, NULL, '2025-05-19 08:12:41', '2025-06-04 22:01:31'),
-(22, 1, 'sarahlopez.innersparc', '$2y$10$HFq2/p7EOrkbn0gFTWoCJOC.0jkJX3rAZj0Rg65xuEfvqa7K3cw7K', 'Sarah Jean Lagatic Lopez', 'sarahjeanlopez07@gmail.com', '09329757344', 'supervisor', NULL, 1, NULL, '2025-05-19 08:13:10', '2025-06-04 22:01:31'),
-(23, 2, 'nephelepanganiban', '$2y$10$uZrVk47hzppnbZsFYK/SWOAhQ5e04n/rqm8ti4Hkp7FgvWjq9WrW6', 'Nephele Telmo Panganiban', 'nephelepanganiban@gmail.com', '09662974629', 'agent', NULL, 1, NULL, '2025-05-19 08:18:33', '2025-06-04 22:01:31'),
-(24, 2, 'joanbarceta.innersparc', '$2y$10$E.XU5PTwBNn6BryqVpHLTOGGmPOz9V1slWHXBZjzg4YeKC00K9o6K', 'Joan Mahinay Barceta', 'jobarceta22@gmail.com', '09649589052', 'manager', 'uploads/profile_pictures/user_24_1747622923.jpg', 1, NULL, '2025-05-19 08:19:01', '2025-06-04 22:01:31'),
-(25, 2, 'teresasandoval.innersparc', '$2y$10$WYxXqgw6uC.9r4ukTgt.SOApN.eDGquy0nbDiJpAkfUHGrMQd2bx2', 'Teresa Rosanto Sandoval', 'trscyl@yahoo.com', '09932967582', 'supervisor', NULL, 1, NULL, '2025-05-19 08:20:20', '2025-06-04 22:01:31'),
-(26, 2, 'ailyndetorres.innersparc', '$2y$10$lSuCUikZuhPTgOE3iChWz.ISA0/A91g7LZPbO0ts/CGhagzFId00e', 'Ailyn Llaneta De Torres', 'ailyndetorres8@gmail.com', '09501409792', 'agent', NULL, 1, NULL, '2025-05-19 08:21:11', '2025-06-06 08:09:08'),
-(27, 2, 'emilyncantuba.innersparc', '$2y$10$AL8RtPNTg4fhzeCoe8paGuFoFKQspNTe4WuvQmieLbw0BW06OyW/W', 'Emilyn Marcelo Cantuba', 'cantubaemhie@gmail.com', '09362898373', 'agent', NULL, 1, NULL, '2025-05-19 08:21:46', '2025-06-04 22:01:31'),
-(28, 2, 'novelitatabudlong.innersparc', '$2y$10$VzOywJiBE7vbcCCgyXyqOO8r5qMiKWJfqXZmINuqXCvyziXMjM3wi', 'Novelita  Letran Tabudlong', 'novzpretty@gmail.com', '09366512502', 'agent', NULL, 1, NULL, '2025-05-19 08:22:15', '2025-06-04 22:01:31'),
-(29, 8, 'leodellosa.innersparc', '$2y$10$Cv6hsi.jSxoikgaDi275KO6HQstKWsWIOLA.vIQUfBVCW8BJIX8.i', 'Leo Dellosa', 'leodellosa@example.com', '09169994124', 'agent', NULL, 1, NULL, '2025-05-19 08:22:59', '2025-06-04 22:01:31'),
-(30, 8, 'arleneumali.innersparc', '$2y$10$bnwqqAGYP9wCmWeFh6ykNO8Nn78VQ5w.7Owzuxy9ES7HTxAubjRQi', 'Arlene Umali', 'arleneumali@example.com', '09159293382', 'agent', 'uploads/profile_pictures/profile_684087a52d9e4.jpg', 1, NULL, '2025-05-19 08:24:33', '2025-06-05 00:51:33'),
-(31, 12, 'mannyviolenta.innersparc', '$2y$10$q4AysMNRb0HqK6DV.BSHV.rTaEl86RZI2d1SG/24Sgnkg/G7QUfBi', 'Manny Alberto Violenta', 'violentamanny@gmail.com', '09380326931', 'manager', NULL, 1, NULL, '2025-05-19 08:28:42', '2025-06-04 22:01:31'),
-(32, 12, 'annalynviolenta.innersparc', '$2y$10$V/Znwb0nP.g1kKNUqZdMyOhPNKu2Z7A2FEmCReSfVeUy5ogANgND2', 'Annalyn Salting Violenta', 'anniemazing2@gmail.com', '09084776982', 'agent', NULL, 1, NULL, '2025-05-19 08:30:01', '2025-06-04 22:01:31'),
-(33, 12, 'anelatabuyan.innersparc', '$2y$10$6ZN3s6dR/KaXtstCjmUpuO.4zc4pcfp9sXCCyelzuENqygUA4FxDa', 'Anela Dela Cruz Tabuyan', 'nela.tab5@gmail.com', '09356088954', 'agent', NULL, 1, NULL, '2025-05-19 08:30:31', '2025-06-04 22:01:31'),
-(34, 12, 'jocelynsantos.innersparc', '$2y$10$NiykEjnqVjwx5muaon0Jj.EeIC9shVUcnTvUJk.gk.OB3iEQEAdSO', 'Jocelyn Santos', 'jhoymsantos15@gmail.com', '09694569711', 'agent', NULL, 1, NULL, '2025-05-19 08:30:57', '2025-06-04 22:01:31'),
-(35, 12, 'lenilyntimajo.innersparc', '$2y$10$bEn5TV2cX/RhHX28meGlK.OY.XDhKJ2FKhQDCPyW8Urc9V4G2ciZm', 'Lenily  Rana Timajo', 'timajolenily@gmail.com', '09129988330', 'supervisor', NULL, 1, NULL, '2025-05-19 08:31:24', '2025-06-04 22:01:31'),
-(36, 12, 'jerusalinosantos.innersparc', '$2y$10$hYIses3VZ0VyVq9iFYUYeOrjIwkvzoeZlN9spuoOv6bgXHRZzDGwW', 'Jerusalino Tan Santos', 'jerometsantos28@gmail.com', '09516319674', 'supervisor', NULL, 1, NULL, '2025-05-19 08:32:16', '2025-06-04 22:01:31'),
-(37, 12, 'novelynbualat.innersparc', '$2y$10$9QLMoE7w01X5z81AVAx6Bu2DX/AmlL8oJM8d4IhN75ZB4LwTWXn0K', 'Novelyn Macalam  Bualat', 'novelynbualat01@gmail.com', '09281505191', 'agent', NULL, 1, NULL, '2025-05-19 08:33:04', '2025-06-04 22:01:31'),
-(38, 12, 'edenrosedemerin.innersparc', '$2y$10$H75lWP/UOgcRwFOWNafMqONdmHhER8ZmXIenG3PTgPrXJocXQYYya', 'Eden Rose Ramos Demerin', 'apostolerogalapino@gmail.com0', '09380196696', 'supervisor', NULL, 1, NULL, '2025-05-19 08:33:27', '2025-06-04 22:01:31'),
-(39, 13, 'markbacli.intern', '$2y$10$niHLEGNqlqxrDNGyWTow4eTlk1DoGKYIDvdzDQpjMrtjzivkE4jJC', 'Mark Vincent Bacli', 'markvincentbacli@gmail.com', '09953009113', 'admin', NULL, 1, NULL, '2025-06-02 04:31:33', '2025-06-06 07:10:33'),
-(40, 13, 'jeromebadua.intern', '$2y$10$SpXkbMJAeMxZzO3tBAhTcuD9aR1GsSgwtEu52ZU7JKcYfU2AxAhJa', 'Jerome Badua', 'jeromebadua@gmail.com', '09239203920', 'admin', 'uploads/profile_pictures/profile_68467168bda0c.jpg', 1, NULL, '2025-06-02 05:29:54', '2025-06-16 05:43:44'),
-(41, 3, 'charitopalonson.innersparc', '$2y$10$ReD4hQktqiS8J3Q1rPmh..jks5ESi/XHHldh6uWKLIAVFrQb9GCje', 'Charito Palonson', 'charitabasbas@gmail.com', '09664380890', 'agent', NULL, 1, NULL, '2025-06-02 05:43:02', '2025-06-04 22:01:31'),
-(42, 3, 'jesselieabayon.innersparc', '$2y$10$K9vFRytBXD2Obz7wrW3o0e3AHbqp/c01KlAkzXA/oIIsw.O9SZX3O', 'Jesselie Abayon', 'ajesselie44@gmail.com', '09398151934', 'agent', NULL, 1, NULL, '2025-06-02 05:46:27', '2025-06-04 22:01:31'),
-(43, 3, 'janaerrolretuya.innersparc', '$2y$10$JWUgo7SPSP7Z1HwIyw99XOxUxiosQTdoiXRyhTFYzuUUOUl0edOda', 'jan Aerrol Retuya', 'janaerrol14@gmail.com', '09062161114', 'agent', NULL, 1, NULL, '2025-06-02 05:49:20', '2025-06-04 22:01:31'),
-(44, 3, 'dennisalizano.innersparc', '$2y$10$gj1SxsNFSPmk4FC/fSvoEOjBCJpT3FpmrdWRCRjPEqccxQKW5w0HO', 'Dennisa Anne  Lizano', 'dennisaannelegaspi0721@gmail.com', '09705213040', 'agent', NULL, 1, NULL, '2025-06-02 05:50:45', '2025-06-04 22:01:31'),
-(45, 3, 'mercytubania.innersparc', '$2y$10$0i7ymO6rShlh0m4t8IJwnO0MvZcEpXnWXCnjR6LQ8kDMu4MNeb7/G', 'Mercy  Tubania', 'cyro19@yahoo.com', '09988511450', 'agent', NULL, 1, NULL, '2025-06-02 05:52:03', '2025-06-04 22:01:31'),
-(46, 3, 'myramagbagay.innersparc', '$2y$10$4.YXvOLH7qdnox0eF2gJOeHhiN5k0el80J92v/qK93GxILc5TjsLK', 'Myra  Magbagay', 'm56249180@gmail.com', '09285751285', 'supervisor', NULL, 1, NULL, '2025-06-02 05:52:59', '2025-06-04 22:01:31'),
-(47, 3, 'edselcaraballo.innersparc', '$2y$10$q3wvYP6M3K.DkUI01GWgw.OT9A/aQzqreIKbf.alAIEqNO.sCKIp6', 'Edsel  Caraballo', 'caraballoedsel1@gmail.com', '09816607650', 'agent', NULL, 1, NULL, '2025-06-02 05:55:08', '2025-06-04 22:01:31'),
-(48, 3, 'cynthiacaballes.innersparc', '$2y$10$Cj3wAqABaItBoju.lFcfIOfCdY7hIldynh25VyyC8qb30UaGw82t6', 'Cynthia Caballes', 'cynthia.p.caballes@gmail.com', '09177214309', 'manager', NULL, 1, NULL, '2025-06-02 05:56:55', '2025-06-16 08:57:07'),
-(49, 3, 'rebeccaresurreccion.innersparc', '$2y$10$Wjr0icOiBYuPWlveaj1Iiu603Zn5TcCHTD5De7bOXaHSTzRydzKMa', 'Rebecca   Resurreccion', 'omrehacceber@gmail.com', '09918715817', 'supervisor', NULL, 1, NULL, '2025-06-02 05:59:34', '2025-06-04 22:01:31'),
-(50, 3, 'johnpalonson.innersparc', '$2y$10$XQ16kAT7oCWuboHFAUZSXOXOWCV5BaBnNY6NfvonX.UuDiGq4BoM6', 'John   Palonson', 'mendrosjohn@gmail.com', '09696093699', 'agent', NULL, 1, NULL, '2025-06-02 06:01:56', '2025-06-04 22:01:31'),
-(51, 3, 'desireejacosalem.innersparc', '$2y$10$iQXCvPSSPbrPc.4PI7E2L.T51D6cmiPFfmFnP2rjzBa1GptDR7rYG', 'Desiree   Jacosalem', 'dhez_sanchez@yahoo.com', '09567857546', 'agent', NULL, 1, NULL, '2025-06-02 06:03:34', '2025-06-04 22:01:31'),
-(52, 3, 'marycorullo.innersparc', '$2y$10$oF2jZFQhw8XVTqCK9FkAu.erWDXuVln/xMtC8Tgc4HChCvSjKTiRW', 'Mary Angeli    Corullo', 'angelicorullo1@gmail.com', '09984721802', 'agent', NULL, 1, NULL, '2025-06-02 06:04:52', '2025-06-04 22:01:31'),
-(53, 13, 'yenzogervacio.intern', '$2y$10$MuVoIUcNqQzYT1QEZ2ixpOlF4mUzbo.NZ94ln0QL.ZvER6cFrP1b6', 'Yenzo Teo Gervacio', 'marverygervacio@gmail.com', '09128288333', 'admin', 'uploads/profile_pictures/profile_6846824f5b3d9.jpg', 1, NULL, '2025-06-06 07:03:48', '2025-06-09 06:42:23'),
-(54, 13, 'genesiscontreras.intern', '$2y$10$MMjHP.aYMF1IR30LhXIKvughT6jdx1h8JjG7zWNQz8FD9Rb9ZuVRy', 'Genesis Contreras', 'genesiscontreras@gmail.com', '09129382938', 'admin', NULL, 1, NULL, '2025-06-06 07:04:06', '2025-06-06 07:11:40'),
-(55, 13, 'angelicarubrico.intern', '$2y$10$K.8eonEZAPaE.SlESF36O./AQX1bCyy2dp04Mi3KxEYSkDt9AoW6K', 'Angelica Rubrico', 'angelica@gmail.com', '09189283283', 'admin', 'uploads/profile_pictures/profile_6846881844a1d.jpg', 1, NULL, '2025-06-06 07:04:25', '2025-06-09 07:07:04'),
-(56, 13, 'jerichosantiago.intern', '$2y$10$/ZFXTP37oQPnmQt72u7u8OVC7Or9CItyK99KlzmO1ErPu9CGYSWia', 'Jericho jericho', 'jericho@gmail.com', '09123829382', 'agent', NULL, 1, NULL, '2025-06-06 07:04:40', '2025-06-09 03:35:42'),
-(57, 13, 'leonardpistano.intern', '$2y$10$w81317xjdkeDDONYBsL3neTeH6RQgmQB8Bvcq7Ys/r..LN1eMZ3Xa', 'Leonard Pistano', 'leonardpistano@gmail.com', '09827328731', 'admin', 'uploads/profile_pictures/profile_684672216b847.jpg', 1, NULL, '2025-06-06 07:04:59', '2025-06-09 05:33:21'),
-(58, 13, 'ginineangelique.intern', '$2y$10$mU/Bxb/5gAq7FgdmcPvZ.u4jTvlF3U480IoSGIOB2d2f2w5TEGP3.', 'Ginine Angelique', 'ginine.innersparc@gmail.com', '09812398129', 'agent', 'uploads/profile_pictures/profile_6846559bbd931.png', 1, NULL, '2025-06-06 07:06:22', '2025-06-09 07:08:35'),
-(59, 13, 'danielpagilagan.intern', '$2y$10$cFm.oaARNgZRi60DQUJSp.juOikayA5WOSK1qd4J2sgODY8LJ3TLi', 'Daniel Pagilagan', 'daniel@gmail.com', '09122938298', 'admin', 'uploads/profile_pictures/profile_68468695826b4.jpg', 1, NULL, '2025-06-09 06:57:55', '2025-06-09 07:00:37'),
-(60, 1, '8aisdhasidhsajdh.innersparc', '$2y$10$01NJC.KtaEVQcPScHJHkjuReVaeTzjUynzt6b1PngtNgGPJL9jfxG', '8aisdhasidhsajdh', 'askdj@gmail.com', '09128383838', 'agent', NULL, 1, NULL, '2025-06-13 02:41:51', '2025-06-13 02:41:51'),
-(61, 8, 'juandelacruz.innersparc', '$2y$10$IcX.QpMAIA84BPCqcHjn7uIwOpGoLfoP00sUjck2nxDYkKTVWNl7.', 'juandelacruz', 'markkksjd@gmail.com', '09182382828', 'agent', NULL, 1, NULL, '2025-06-16 08:39:45', '2025-06-16 08:39:45');
+INSERT INTO `users` (`id`, `team_id`, `username`, `password`, `name`, `email`, `phone`, `role`, `profile_picture`, `is_active`, `last_login`, `created_at`, `updated_at`, `position`) VALUES
+(1, 1, 'admin', '$2y$10$W5MMTTxFbaz/aT8Jc5pH8.NqiRgBvufr4MhDq5eMSTM4.vjE5259C', 'Administrator', 'innersparcservices@gmail.com', NULL, 'admin', NULL, 1, NULL, '2025-05-16 08:45:20', '2025-06-06 07:19:11', 'Agent'),
+(3, 8, 'shielamaefajutagana.accounting', '$2y$10$gbLWkM8Lc//nUt5oexmLXOkZSG6PVoIaSMntaSqlgqCB1mlLFRVeG', 'Sheila Mae Fontelo Fajutagana', 'francisheila05@gmail.com', '09151082974', 'agent', NULL, 1, NULL, '2025-05-16 08:45:21', '2025-06-06 07:36:59', 'Agent'),
+(4, 2, 'luzvimindalim.innersparc', '$2y$10$PUV7H0RlWs.dJZ6x8SqmvOFy3x9MlJIo0m7otynHJfAxHnktLhC4u', 'Luzviminda Labrado Lim', 'luz032069@gmail.com', '09062717602', 'supervisor', NULL, 1, NULL, '2025-05-16 08:45:21', '2025-06-04 22:01:31', 'Agent'),
+(5, 3, 'eduardalizatorres.innersparc', '$2y$10$vlTHTcCwPNcRnoG1NVMyO.FjL9e8rnpVuLsgmzZkr3iJriC8UHEw.', 'Eduardaliza Dulay Torres', 'edtorres797426@gmail.com', '09367465749', 'agent', NULL, 1, NULL, '2025-05-16 08:45:21', '2025-06-17 07:25:19', 'Agent'),
+(6, 1, 'mikegabrielescarilla.innersparc', '$2y$10$wQ4nzPYxWM.8smNno/0vIOfwSvYWxq3yphH3y8QCXxK68d3i8uSPG', 'Mike Gabriel Bedion Escarilla', 'escarilla.mikegabriel@gmail.com', '09269979145', 'agent', NULL, 1, NULL, '2025-05-16 08:45:21', '2025-06-06 07:00:52', 'Agent'),
+(7, 1, 'romeocobreta.itdept', '$2y$10$3mHr7EgZpsGkqROQUT6QHOSbSeKcXsgzi/kcbm0yudmRebEfW5d26', 'Romeo Cerna Cobreta Jr.', 'romxcob.innersparc@gmail.com', '09090326945', 'admin', NULL, 1, NULL, '2025-05-16 08:45:21', '2025-06-18 07:01:57', 'Agent'),
+(8, 8, 'charlenedellosa.opsman', '$2y$10$7BvBgpFnDmhhX3/zSVikjebJCWefKLpsg36RYdkM0KhZDmjE/Zmmu', 'Charlene Dellosa', 'dellosacharlene1317@gmail.com', '09169994124', 'manager', 'uploads/profile_pictures/user_8_1747501769.png', 1, NULL, '2019-05-16 08:45:23', '2025-06-06 07:31:50', 'Agent'),
+(9, 2, 'alvinllaneta.innersparc', '$2y$10$.w9.aPUWHSS5GifQHPn9Fu2.JKn817TupAc0xAEDSekCnwFDH1UiW', 'Alvin  Llaneta', 'alvinllaneta8@gmail.com', '09613825054', 'agent', NULL, 1, NULL, '2025-05-16 08:45:23', '2025-06-04 22:01:31', 'Agent'),
+(11, 2, 'clarencedanielleserdon.innersparc', '$2y$10$tRBIk1jyaXGFbpAveJE8gOqFpGW.O/hJInU3qJ/mnqr3k/RBneuQK', 'Clarence Danielle Lim Serdon', 'clarencedanielle98@gmail.com', '09996916107', 'agent', NULL, 1, NULL, '2025-05-16 08:45:23', '2025-06-04 22:01:31', 'Agent'),
+(12, 2, 'gabcyrosebenson.innersparc', '$2y$10$GnAbo83uu0hltK474fV1B.It7N5iLugZXtDFd.5vDRuFqso62qcXS', 'Gabcyrose Samsona Benson', 'gabcyrose@gmail.com', '09263939124', 'agent', NULL, 1, NULL, '2025-05-16 08:45:23', '2025-06-04 22:01:31', 'Agent'),
+(13, 1, 'lenizapasion.innersparc', '$2y$10$t/pbiM/TxOEK7suqW.8/ruSPdj77rekzZpzLTubXSytzBC5QDiPXa', 'Leniza Flores pasion', 'lenizapasion51@gmail.com', '09177179863', 'agent', NULL, 1, NULL, '2025-05-16 08:45:23', '2025-06-06 07:01:28', 'Agent'),
+(14, 1, 'perlitago.innersparc', '$2y$10$p4kmD3n.wjSirRlDZpwRaOz69x2uytmxIQcBsgRTPpJynvZ5o1I76', 'Perlita Santiago Go', 'gopearl43@yahoo.com', '09777261123', 'agent', NULL, 1, NULL, '2025-05-16 08:45:23', '2025-06-06 07:01:35', 'Agent'),
+(15, 13, 'markpatigayon.intern', '$2y$10$Tbq4hLp0VyDFdxogyElwm.A52Fh.OLnPqgayZTWrAlY4s.V7XCPdi', 'Mark Christian Patigayon', 'markpatigayon440@gmail.com', '09194620030', 'admin', 'uploads/profile_pictures/user_15_1747499626.jpg', 1, NULL, '2019-05-22 08:45:23', '2025-06-06 07:12:38', 'Agent'),
+(16, 1, 'verlynvesagas.innersparc', '$2y$10$PEX7IJamKPjc2Mg5859AZuLQjqB/anHrK9ty37.dejDgGTEVazAwy', 'Verlyn Bizconde Vesagas', 'vverlyn@gmail.com', '09915573606', 'agent', NULL, 1, NULL, '2025-05-19 08:08:49', '2025-06-06 07:00:25', 'Agent'),
+(17, 1, 'rizelagrimas.innersparc', '$2y$10$ipV2yK499HzPJRz4Bw8G0OMKotbJFfC37LzMtCn1qPimCph6f9Dmy', 'Rize OwogOwog Lagrimas', 'rizielagrimas18@gmail.com', '09202474501', 'agent', NULL, 1, NULL, '2025-05-19 08:09:39', '2025-06-06 07:13:53', 'Agent'),
+(18, 1, 'ireneblanca.innersparc', '$2y$10$aEQppVOJLQ3050pCQEKrwepJCT8rw3frtf.AqkgMPqw7TjisrYmli', 'Irene Noble Blanca', 'ireneblanca1909@gmail.com', '09943843721', 'agent', NULL, 1, NULL, '2025-05-19 08:10:13', '2025-06-04 22:01:31', 'Agent'),
+(19, 1, 'gabriellibacao.founder', '$2y$10$0A.MhdXz2UAcy4bUGR6EBOsQ82F9GtlZLgCw0a0n46KXTUuoM8t8a', 'Gabriel Jr. Villamor Libacao', 'libacaoga@gmail.com', '09178534875', 'admin', NULL, 1, NULL, '2025-05-19 08:10:58', '2025-06-06 07:31:02', 'Agent'),
+(20, 1, 'erwingonzales.cofounder', '$2y$10$/I4c/Yn7lWXRlraQvK0m2ueNwa2vgAfJ1NSKVG9wNfXJUu51fjoeq', 'Erwin Gonzales Baguioan', 'irwindgonzales6@gmail.com', '09669533188', 'manager', NULL, 1, NULL, '2025-05-19 08:11:50', '2025-06-06 07:40:01', 'Agent'),
+(21, 1, 'nelynortega.innersparc', '$2y$10$pPrIuezkcJ9THUg5IHmFMuo68tv5W5MhSeLarPb4HIFc2rt5Jj8u.', 'Nelyn Serad Ortega', 'orteganelyn18@gmail.com', '09650984075', 'supervisor', NULL, 1, NULL, '2025-05-19 08:12:41', '2025-06-04 22:01:31', 'Agent'),
+(22, 1, 'sarahlopez.innersparc', '$2y$10$HFq2/p7EOrkbn0gFTWoCJOC.0jkJX3rAZj0Rg65xuEfvqa7K3cw7K', 'Sarah Jean Lagatic Lopez', 'sarahjeanlopez07@gmail.com', '09329757344', 'supervisor', NULL, 1, NULL, '2025-05-19 08:13:10', '2025-06-04 22:01:31', 'Agent'),
+(23, 2, 'nephelepanganiban', '$2y$10$uZrVk47hzppnbZsFYK/SWOAhQ5e04n/rqm8ti4Hkp7FgvWjq9WrW6', 'Nephele Telmo Panganiban', 'nephelepanganiban@gmail.com', '09662974629', 'agent', NULL, 1, NULL, '2025-05-19 08:18:33', '2025-06-04 22:01:31', 'Agent'),
+(24, 2, 'joanbarceta.innersparc', '$2y$10$E.XU5PTwBNn6BryqVpHLTOGGmPOz9V1slWHXBZjzg4YeKC00K9o6K', 'Joan Mahinay Barceta', 'jobarceta22@gmail.com', '09649589052', 'manager', 'uploads/profile_pictures/user_24_1747622923.jpg', 1, NULL, '2025-05-19 08:19:01', '2025-06-04 22:01:31', 'Agent'),
+(25, 2, 'teresasandoval.innersparc', '$2y$10$WYxXqgw6uC.9r4ukTgt.SOApN.eDGquy0nbDiJpAkfUHGrMQd2bx2', 'Teresa Rosanto Sandoval', 'trscyl@yahoo.com', '09932967582', 'supervisor', NULL, 1, NULL, '2025-05-19 08:20:20', '2025-06-04 22:01:31', 'Agent'),
+(26, 2, 'ailyndetorres.innersparc', '$2y$10$lSuCUikZuhPTgOE3iChWz.ISA0/A91g7LZPbO0ts/CGhagzFId00e', 'Ailyn Llaneta De Torres', 'ailyndetorres8@gmail.com', '09501409792', 'agent', NULL, 1, NULL, '2025-05-19 08:21:11', '2025-06-06 08:09:08', 'Agent'),
+(27, 2, 'emilyncantuba.innersparc', '$2y$10$AL8RtPNTg4fhzeCoe8paGuFoFKQspNTe4WuvQmieLbw0BW06OyW/W', 'Emilyn Marcelo Cantuba', 'cantubaemhie@gmail.com', '09362898373', 'agent', NULL, 1, NULL, '2025-05-19 08:21:46', '2025-06-04 22:01:31', 'Agent'),
+(28, 2, 'novelitatabudlong.innersparc', '$2y$10$VzOywJiBE7vbcCCgyXyqOO8r5qMiKWJfqXZmINuqXCvyziXMjM3wi', 'Novelita  Letran Tabudlong', 'novzpretty@gmail.com', '09366512502', 'agent', NULL, 1, NULL, '2025-05-19 08:22:15', '2025-06-04 22:01:31', 'Agent'),
+(29, 8, 'leodellosa.innersparc', '$2y$10$Cv6hsi.jSxoikgaDi275KO6HQstKWsWIOLA.vIQUfBVCW8BJIX8.i', 'Leonardo  Dellosa', 'kornkulz@gmail.com', '09605661999', 'agent', NULL, 1, NULL, '2025-05-19 08:22:59', '2025-06-18 06:02:47', 'Agent'),
+(30, 8, 'arleneumali.innersparc', '$2y$10$bnwqqAGYP9wCmWeFh6ykNO8Nn78VQ5w.7Owzuxy9ES7HTxAubjRQi', 'Arlene Umali', 'arleneumali@example.com', '09159293382', 'agent', NULL, 1, NULL, '2025-05-19 08:24:33', '2025-06-19 13:26:18', 'Agent'),
+(31, 12, 'mannyviolenta.innersparc', '$2y$10$q4AysMNRb0HqK6DV.BSHV.rTaEl86RZI2d1SG/24Sgnkg/G7QUfBi', 'Manny Alberto Violenta', 'violentamanny@gmail.com', '09380326931', 'manager', NULL, 1, NULL, '2025-05-19 08:28:42', '2025-06-04 22:01:31', 'Agent'),
+(32, 12, 'annalynviolenta.innersparc', '$2y$10$V/Znwb0nP.g1kKNUqZdMyOhPNKu2Z7A2FEmCReSfVeUy5ogANgND2', 'Annalyn Salting Violenta', 'anniemazing2@gmail.com', '09084776982', 'agent', NULL, 1, NULL, '2025-05-19 08:30:01', '2025-06-04 22:01:31', 'Agent'),
+(33, 12, 'anelatabuyan.innersparc', '$2y$10$6ZN3s6dR/KaXtstCjmUpuO.4zc4pcfp9sXCCyelzuENqygUA4FxDa', 'Anela Dela Cruz Tabuyan', 'nela.tab5@gmail.com', '09356088954', 'agent', NULL, 1, NULL, '2025-05-19 08:30:31', '2025-06-04 22:01:31', 'Agent'),
+(34, 12, 'jocelynsantos.innersparc', '$2y$10$NiykEjnqVjwx5muaon0Jj.EeIC9shVUcnTvUJk.gk.OB3iEQEAdSO', 'Jocelyn Santos', 'jhoymsantos15@gmail.com', '09694569711', 'agent', NULL, 1, NULL, '2025-05-19 08:30:57', '2025-06-04 22:01:31', 'Agent'),
+(35, 12, 'lenilyntimajo.innersparc', '$2y$10$bEn5TV2cX/RhHX28meGlK.OY.XDhKJ2FKhQDCPyW8Urc9V4G2ciZm', 'Lenily  Rana Timajo', 'timajolenily@gmail.com', '09129988330', 'supervisor', NULL, 1, NULL, '2025-05-19 08:31:24', '2025-06-04 22:01:31', 'Agent'),
+(36, 12, 'jerusalinosantos.innersparc', '$2y$10$hYIses3VZ0VyVq9iFYUYeOrjIwkvzoeZlN9spuoOv6bgXHRZzDGwW', 'Jerusalino Tan Santos', 'jerometsantos28@gmail.com', '09516319674', 'supervisor', NULL, 1, NULL, '2025-05-19 08:32:16', '2025-06-04 22:01:31', 'Agent'),
+(37, 12, 'novelynbualat.innersparc', '$2y$10$9QLMoE7w01X5z81AVAx6Bu2DX/AmlL8oJM8d4IhN75ZB4LwTWXn0K', 'Novelyn Macalam  Bualat', 'novelynbualat01@gmail.com', '09281505191', 'agent', NULL, 1, NULL, '2025-05-19 08:33:04', '2025-06-04 22:01:31', 'Agent'),
+(38, 12, 'edenrosedemerin.innersparc', '$2y$10$H75lWP/UOgcRwFOWNafMqONdmHhER8ZmXIenG3PTgPrXJocXQYYya', 'Eden Rose Ramos Demerin', 'apostolerogalapino@gmail.com0', '09380196696', 'supervisor', NULL, 1, NULL, '2025-05-19 08:33:27', '2025-06-04 22:01:31', 'Agent'),
+(39, 13, 'markbacli.intern', '$2y$10$niHLEGNqlqxrDNGyWTow4eTlk1DoGKYIDvdzDQpjMrtjzivkE4jJC', 'Mark Vincent Bacli', 'markvincentbacli@gmail.com', '09953009113', 'admin', NULL, 1, NULL, '2025-06-02 04:31:33', '2025-06-06 07:10:33', 'Agent'),
+(40, 13, 'jeromebadua.intern', '$2y$10$SpXkbMJAeMxZzO3tBAhTcuD9aR1GsSgwtEu52ZU7JKcYfU2AxAhJa', 'Jerome Badua', 'jeromebadua@gmail.com', '09239203920', 'admin', 'uploads/profile_pictures/profile_68467168bda0c.jpg', 1, NULL, '2025-06-02 05:29:54', '2025-06-16 05:43:44', 'Agent'),
+(41, 3, 'charitopalonson.innersparc', '$2y$10$ReD4hQktqiS8J3Q1rPmh..jks5ESi/XHHldh6uWKLIAVFrQb9GCje', 'Charito Palonson', 'charitabasbas@gmail.com', '09664380890', 'supervisor', NULL, 1, NULL, '2025-06-02 05:43:02', '2025-06-17 07:22:46', 'Agent'),
+(42, 3, 'jesselieabayon.innersparc', '$2y$10$K9vFRytBXD2Obz7wrW3o0e3AHbqp/c01KlAkzXA/oIIsw.O9SZX3O', 'Jesselie Abayon', 'ajesselie44@gmail.com', '09398151934', 'agent', NULL, 1, NULL, '2025-06-02 05:46:27', '2025-06-04 22:01:31', 'Agent'),
+(43, 3, 'janaerrolretuya.innersparc', '$2y$10$JWUgo7SPSP7Z1HwIyw99XOxUxiosQTdoiXRyhTFYzuUUOUl0edOda', 'jan Aerrol Retuya', 'janaerrol14@gmail.com', '09062161114', 'agent', NULL, 1, NULL, '2025-06-02 05:49:20', '2025-06-04 22:01:31', 'Agent'),
+(44, 3, 'dennisalizano.innersparc', '$2y$10$gj1SxsNFSPmk4FC/fSvoEOjBCJpT3FpmrdWRCRjPEqccxQKW5w0HO', 'Dennisa Anne  Lizano', 'dennisaannelegaspi0721@gmail.com', '09705213040', 'agent', NULL, 1, NULL, '2025-06-02 05:50:45', '2025-06-04 22:01:31', 'Agent'),
+(45, 3, 'mercytubania.innersparc', '$2y$10$0i7ymO6rShlh0m4t8IJwnO0MvZcEpXnWXCnjR6LQ8kDMu4MNeb7/G', 'Mercy  Tubania', 'cyro19@yahoo.com', '09988511450', 'agent', NULL, 1, NULL, '2025-06-02 05:52:03', '2025-06-04 22:01:31', 'Agent'),
+(46, 3, 'myramagbagay.innersparc', '$2y$10$4.YXvOLH7qdnox0eF2gJOeHhiN5k0el80J92v/qK93GxILc5TjsLK', 'Myra  Magbagay', 'm56249180@gmail.com', '09285751285', 'supervisor', NULL, 1, NULL, '2025-06-02 05:52:59', '2025-06-04 22:01:31', 'Agent'),
+(47, 3, 'edselcaraballo.innersparc', '$2y$10$q3wvYP6M3K.DkUI01GWgw.OT9A/aQzqreIKbf.alAIEqNO.sCKIp6', 'Edsel  Caraballo', 'caraballoedsel1@gmail.com', '09816607650', 'agent', NULL, 1, NULL, '2025-06-02 05:55:08', '2025-06-04 22:01:31', 'Agent'),
+(48, 3, 'cynthiacaballes.innersparc', '$2y$10$7.JJRwpWIQCThF7jFL2GIOKLqRsAbXTj6KAwljr7Sdd0lXM0JIPRe', 'Cynthia Caballes', 'cynthia.p.caballes@gmail.com', '09177214309', 'manager', NULL, 1, NULL, '2025-06-02 05:56:55', '2025-06-17 11:18:08', 'Agent'),
+(49, 3, 'rebeccaresurreccion.innersparc', '$2y$10$Wjr0icOiBYuPWlveaj1Iiu603Zn5TcCHTD5De7bOXaHSTzRydzKMa', 'Rebecca   Resurreccion', 'omrehacceber@gmail.com', '09918715817', 'supervisor', NULL, 1, NULL, '2025-06-02 05:59:34', '2025-06-04 22:01:31', 'Agent'),
+(50, 3, 'johnpalonson.innersparc', '$2y$10$XQ16kAT7oCWuboHFAUZSXOXOWCV5BaBnNY6NfvonX.UuDiGq4BoM6', 'John   Palonson', 'mendrosjohn@gmail.com', '09696093699', 'agent', NULL, 1, NULL, '2025-06-02 06:01:56', '2025-06-04 22:01:31', 'Agent'),
+(51, 3, 'desireejacosalem.innersparc', '$2y$10$iQXCvPSSPbrPc.4PI7E2L.T51D6cmiPFfmFnP2rjzBa1GptDR7rYG', 'Desiree   Jacosalem', 'dhez_sanchez@yahoo.com', '09567857546', 'agent', NULL, 1, NULL, '2025-06-02 06:03:34', '2025-06-04 22:01:31', 'Agent'),
+(52, 3, 'marycorullo.innersparc', '$2y$10$oF2jZFQhw8XVTqCK9FkAu.erWDXuVln/xMtC8Tgc4HChCvSjKTiRW', 'Mary Angeli    Corullo', 'angelicorullo1@gmail.com', '09984721802', 'agent', NULL, 1, NULL, '2025-06-02 06:04:52', '2025-06-04 22:01:31', 'Agent'),
+(53, 13, 'yenzogervacio.intern', '$2y$10$MuVoIUcNqQzYT1QEZ2ixpOlF4mUzbo.NZ94ln0QL.ZvER6cFrP1b6', 'Yenzo Teo Gervacio', 'marverygervacio@gmail.com', '09128288333', 'admin', 'uploads/profile_pictures/profile_6846824f5b3d9.jpg', 1, NULL, '2025-06-06 07:03:48', '2025-06-09 06:42:23', 'Agent'),
+(54, 13, 'genesiscontreras.intern', '$2y$10$MMjHP.aYMF1IR30LhXIKvughT6jdx1h8JjG7zWNQz8FD9Rb9ZuVRy', 'Genesis Contreras', 'genesiscontreras@gmail.com', '09129382938', 'admin', NULL, 1, NULL, '2025-06-06 07:04:06', '2025-06-06 07:11:40', 'Agent'),
+(55, 13, 'angelicarubrico.intern', '$2y$10$K.8eonEZAPaE.SlESF36O./AQX1bCyy2dp04Mi3KxEYSkDt9AoW6K', 'Angelica Rubrico', 'angelica@gmail.com', '09189283283', 'admin', 'uploads/profile_pictures/profile_6846881844a1d.jpg', 1, NULL, '2025-06-06 07:04:25', '2025-06-09 07:07:04', 'Agent'),
+(56, 13, 'jerichosantiago.intern', '$2y$10$/ZFXTP37oQPnmQt72u7u8OVC7Or9CItyK99KlzmO1ErPu9CGYSWia', 'Jericho jericho', 'jericho@gmail.com', '09123829382', 'agent', NULL, 1, NULL, '2025-06-06 07:04:40', '2025-06-09 03:35:42', 'Agent'),
+(57, 13, 'leonardpistano.intern', '$2y$10$w81317xjdkeDDONYBsL3neTeH6RQgmQB8Bvcq7Ys/r..LN1eMZ3Xa', 'Leonard Pistano', 'leonardpistano@gmail.com', '09827328731', 'admin', 'uploads/profile_pictures/profile_684672216b847.jpg', 1, NULL, '2025-06-06 07:04:59', '2025-06-09 05:33:21', 'Agent'),
+(58, 13, 'ginineangelique.intern', '$2y$10$mU/Bxb/5gAq7FgdmcPvZ.u4jTvlF3U480IoSGIOB2d2f2w5TEGP3.', 'Ginine Angelique', 'ginine.innersparc@gmail.com', '09812398129', 'agent', 'uploads/profile_pictures/profile_6846559bbd931.png', 1, NULL, '2025-06-06 07:06:22', '2025-06-09 07:08:35', 'Agent'),
+(59, 13, 'danielpagilagan.intern', '$2y$10$cFm.oaARNgZRi60DQUJSp.juOikayA5WOSK1qd4J2sgODY8LJ3TLi', 'Daniel Pagilagan', 'daniel@gmail.com', '09122938298', 'admin', 'uploads/profile_pictures/profile_68468695826b4.jpg', 1, NULL, '2025-06-09 06:57:55', '2025-06-09 07:00:37', 'Agent'),
+(61, 1, 'juandelacruz.innersparc', '$2y$10$IcX.QpMAIA84BPCqcHjn7uIwOpGoLfoP00sUjck2nxDYkKTVWNl7.', 'juandelacruz', 'markkksjd@gmail.com', '09182382828', 'agent', NULL, 1, NULL, '2025-06-16 08:39:45', '2025-06-19 12:04:15', 'Agent');
 
 --
 -- Indexes for dumped tables
@@ -774,6 +888,13 @@ ALTER TABLE `handbook_pages`
   ADD UNIQUE KEY `handbook_id` (`handbook_id`,`page_number`);
 
 --
+-- Indexes for table `incentives`
+--
+ALTER TABLE `incentives`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user_incentive` (`user_id`,`incentive_type`,`destination`);
+
+--
 -- Indexes for table `leads`
 --
 ALTER TABLE `leads`
@@ -824,6 +945,15 @@ ALTER TABLE `memo_images`
   ADD KEY `memo_id` (`memo_id`);
 
 --
+-- Indexes for table `memo_person_visibility`
+--
+ALTER TABLE `memo_person_visibility`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `memo_user_unique` (`memo_id`,`user_id`),
+  ADD KEY `memo_id` (`memo_id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
 -- Indexes for table `memo_read_status`
 --
 ALTER TABLE `memo_read_status`
@@ -860,6 +990,13 @@ ALTER TABLE `projects`
   ADD KEY `province_id` (`province_id`);
 
 --
+-- Indexes for table `project_models`
+--
+ALTER TABLE `project_models`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `developer_id` (`developer_id`);
+
+--
 -- Indexes for table `provinces`
 --
 ALTER TABLE `provinces`
@@ -878,6 +1015,13 @@ ALTER TABLE `settings`
 ALTER TABLE `teams`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `name` (`name`);
+
+--
+-- Indexes for table `tour_targets`
+--
+ALTER TABLE `tour_targets`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `tour_destination` (`tour_type`,`destination`);
 
 --
 -- Indexes for table `users`
@@ -931,6 +1075,12 @@ ALTER TABLE `handbook_pages`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `incentives`
+--
+ALTER TABLE `incentives`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
+--
 -- AUTO_INCREMENT for table `leads`
 --
 ALTER TABLE `leads`
@@ -940,19 +1090,19 @@ ALTER TABLE `leads`
 -- AUTO_INCREMENT for table `lead_activities`
 --
 ALTER TABLE `lead_activities`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `lead_modifications`
 --
 ALTER TABLE `lead_modifications`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `memos`
 --
 ALTER TABLE `memos`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `memo_images`
@@ -961,10 +1111,16 @@ ALTER TABLE `memo_images`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `memo_person_visibility`
+--
+ALTER TABLE `memo_person_visibility`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT for table `memo_read_status`
 --
 ALTER TABLE `memo_read_status`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `memo_team_visibility`
@@ -982,7 +1138,13 @@ ALTER TABLE `memo_visibility`
 -- AUTO_INCREMENT for table `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+
+--
+-- AUTO_INCREMENT for table `project_models`
+--
+ALTER TABLE `project_models`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `provinces`
@@ -1001,6 +1163,12 @@ ALTER TABLE `settings`
 --
 ALTER TABLE `teams`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+
+--
+-- AUTO_INCREMENT for table `tour_targets`
+--
+ALTER TABLE `tour_targets`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -1070,6 +1238,12 @@ ALTER TABLE `handbook_pages`
   ADD CONSTRAINT `handbook_pages_ibfk_1` FOREIGN KEY (`handbook_id`) REFERENCES `handbooks` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `incentives`
+--
+ALTER TABLE `incentives`
+  ADD CONSTRAINT `incentives_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `leads`
 --
 ALTER TABLE `leads`
@@ -1104,6 +1278,13 @@ ALTER TABLE `memo_images`
   ADD CONSTRAINT `memo_images_ibfk_1` FOREIGN KEY (`memo_id`) REFERENCES `memos` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `memo_person_visibility`
+--
+ALTER TABLE `memo_person_visibility`
+  ADD CONSTRAINT `memo_person_visibility_ibfk_1` FOREIGN KEY (`memo_id`) REFERENCES `memos` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `memo_person_visibility_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `memo_read_status`
 --
 ALTER TABLE `memo_read_status`
@@ -1129,6 +1310,12 @@ ALTER TABLE `memo_visibility`
 ALTER TABLE `projects`
   ADD CONSTRAINT `projects_city_id_foreign` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `projects_province_id_foreign` FOREIGN KEY (`province_id`) REFERENCES `provinces` (`id`) ON DELETE SET NULL;
+
+--
+-- Constraints for table `project_models`
+--
+ALTER TABLE `project_models`
+  ADD CONSTRAINT `project_models_ibfk_1` FOREIGN KEY (`developer_id`) REFERENCES `developers` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `users`
