@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: lecain.pdx1-mysql-a7-6b.dreamhost.com
--- Generation Time: Jun 19, 2025 at 10:45 PM
+-- Generation Time: Jun 22, 2025 at 11:53 PM
 -- Server version: 8.0.28-0ubuntu0.20.04.3
 -- PHP Version: 8.1.2-1ubuntu2.21
 
@@ -282,7 +282,14 @@ INSERT INTO `leads` (`id`, `user_id`, `client_name`, `phone`, `email`, `facebook
 (24, 28, 'Carlos Diaz', '09671234589', 'carlos.diaz@email.com', 'facebook.com/carlos.diaz', 'linkedin.com/in/carlos-diaz', '2020 Magsaysay Blvd, Mandaluyong', 'Warm', 'Negotiation', 'Facebook Ads', 'Lancaster', 'Alice', 2600000.00, 0.03, 65000.00, 'This is not an accurate data; this is for testing only.', '2025-06-25', '2025-06-24 15:45:00', '2025-06-20 05:42:11'),
 (27, 58, 'Phoenix Zeta', '09171520934', 'ginine.innersparc@gmail.com', 'https://www.facebook.com/share/17sb12Bo2u/', '', NULL, 'Hot', 'Closed Deal', 'Facebook Groups', 'Pleasantfields', 'Kennedy', 3900000.00, 0.00, 0.00, 'Keri lang.', NULL, '2025-06-09 03:41:02', '2025-06-09 07:12:01'),
 (28, 58, 'seedd', '09171520934', 'ginineangelique9@gmail.com', '', '', NULL, 'Warm', 'Downpayment Stage', 'Google Ads', 'Avida', 'Way', 3900000.00, 0.00, 0.00, '', NULL, '2025-06-09 07:24:12', '2025-06-09 07:24:12'),
-(29, 15, 'Mark', '09191823388', 'iasdisj@gmail.com', '', '', NULL, 'Warm', 'Closed Deal', 'Organic Sharing', 'Pleasantfields', 'Kennedy', 19238388.22, 0.00, 0.00, '', NULL, '2025-06-13 02:32:27', '2025-06-13 02:36:01');
+(29, 15, 'Mark', '09191823388', 'iasdisj@gmail.com', '', '', NULL, 'Warm', 'Closed Deal', 'Organic Sharing', 'Pleasantfields', 'Kennedy', 19238388.22, 0.00, 0.00, '', NULL, '2025-06-13 02:32:27', '2025-06-13 02:36:01'),
+(30, 8, 'Test', '09182828828', 'Test@gmail.com', '', '', NULL, 'Warm', 'Presentation Stage', 'Facebook Ads', 'Bellefort Estate', 'Bellefort Estate Model A', 1000000.00, 0.00, 0.00, '', NULL, '2025-06-20 05:58:22', '2025-06-20 05:58:22'),
+(31, 8, 'Test2', '09189193883', 'test2@gmail.com', '', '', NULL, 'Hot', 'Requirement Stage', 'Facebook Ads', 'Bellefort Estate', 'Bellefort Estate Model A', 1000000.00, 0.00, 0.00, '', NULL, '2025-06-20 05:58:58', '2025-06-20 05:58:58'),
+(32, 29, 'test3', '09183838381', 'test3@gmail.com', '', '', NULL, 'Hot', 'Presentation Stage', 'Referral', 'Anyana', 'Florida', 1000000.00, 0.00, 0.00, '', NULL, '2025-06-20 05:59:34', '2025-06-20 05:59:34'),
+(33, 3, 'test4', '09183838282', 'kasmd@gmail.com', '', '', NULL, 'Hot', 'Housing Loan Application', 'Facebook live', 'Lancaster', 'Alexandra', 1000000.00, 0.00, 0.00, '', NULL, '2025-06-20 06:00:12', '2025-06-20 06:00:12'),
+(34, 3, 'test5', '09182383838', 'test5@gmail.com', '', '', NULL, 'Warm', 'Housing Loan Application', 'Referral', 'Lancaster', 'Alexandra', 1000000.00, 0.00, 0.00, '', NULL, '2025-06-20 06:00:38', '2025-06-20 06:00:38'),
+(35, 30, 'test6', '09182812828', 'test6@gmail.com', '', '', NULL, 'Hot', 'Downpayment Stage', 'Referral', 'Liora Homes', 'Amora', 1000000.00, 0.00, 0.00, '', NULL, '2025-06-20 06:01:09', '2025-06-20 06:01:09'),
+(36, 19, 'test123', '09327465352', 'test123@gmail.com', '', '', NULL, 'Hot', 'Housing Loan Application', 'LinkedIn', 'Lancaster', 'Briana', 2000000.00, 0.00, 0.00, '123', NULL, '2025-06-23 01:55:12', '2025-06-23 01:55:12');
 
 -- --------------------------------------------------------
 
@@ -833,7 +840,9 @@ INSERT INTO `users` (`id`, `team_id`, `username`, `password`, `name`, `email`, `
 (57, 13, 'leonardpistano.intern', '$2y$10$w81317xjdkeDDONYBsL3neTeH6RQgmQB8Bvcq7Ys/r..LN1eMZ3Xa', 'Leonard Pistano', 'leonardpistano@gmail.com', '09827328731', 'admin', 'uploads/profile_pictures/profile_684672216b847.jpg', 1, NULL, '2025-06-06 07:04:59', '2025-06-09 05:33:21', 'Agent'),
 (58, 13, 'ginineangelique.intern', '$2y$10$mU/Bxb/5gAq7FgdmcPvZ.u4jTvlF3U480IoSGIOB2d2f2w5TEGP3.', 'Ginine Angelique', 'ginine.innersparc@gmail.com', '09812398129', 'agent', 'uploads/profile_pictures/profile_6846559bbd931.png', 1, NULL, '2025-06-06 07:06:22', '2025-06-09 07:08:35', 'Agent'),
 (59, 13, 'danielpagilagan.intern', '$2y$10$cFm.oaARNgZRi60DQUJSp.juOikayA5WOSK1qd4J2sgODY8LJ3TLi', 'Daniel Pagilagan', 'daniel@gmail.com', '09122938298', 'admin', 'uploads/profile_pictures/profile_68468695826b4.jpg', 1, NULL, '2025-06-09 06:57:55', '2025-06-09 07:00:37', 'Agent'),
-(61, 1, 'juandelacruz.innersparc', '$2y$10$IcX.QpMAIA84BPCqcHjn7uIwOpGoLfoP00sUjck2nxDYkKTVWNl7.', 'juandelacruz', 'markkksjd@gmail.com', '09182382828', 'agent', NULL, 1, NULL, '2025-06-16 08:39:45', '2025-06-19 12:04:15', 'Agent');
+(61, 1, 'juandelacruz.innersparc', '$2y$10$IcX.QpMAIA84BPCqcHjn7uIwOpGoLfoP00sUjck2nxDYkKTVWNl7.', 'juandelacruz', 'markkksjd@gmail.com', '09182382828', 'agent', NULL, 1, NULL, '2025-06-16 08:39:45', '2025-06-19 12:04:15', 'Agent'),
+(62, 13, 'gavrietalaboc.intern', '$2y$10$eomO.MnmsPQ0BWH0IA0w9OVFKPOyJeJivE6lHxtgXzSKf09eXxAHC', 'Yerik Yves Gavrie F. Talaboc', 'example@gmail.com', '00911111111', 'admin', NULL, 1, NULL, '2025-06-23 06:50:04', '2025-06-23 06:50:24', 'Agent'),
+(63, 13, 'davidcasil.intern', '$2y$10$i4t/t6koKLRYKzGTOZW3X.8frgiA3Fro6H/9KWVlrdzwM9rdPyyyu', 'David Casil', 'ex@gmail.com', '09111111111', 'admin', NULL, 1, NULL, '2025-06-23 06:51:33', '2025-06-23 06:51:45', 'Agent');
 
 --
 -- Indexes for dumped tables
@@ -1084,13 +1093,13 @@ ALTER TABLE `incentives`
 -- AUTO_INCREMENT for table `leads`
 --
 ALTER TABLE `leads`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT for table `lead_activities`
 --
 ALTER TABLE `lead_activities`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `lead_modifications`
@@ -1168,13 +1177,13 @@ ALTER TABLE `teams`
 -- AUTO_INCREMENT for table `tour_targets`
 --
 ALTER TABLE `tour_targets`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=134;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
 
 -- --------------------------------------------------------
 
