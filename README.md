@@ -73,7 +73,7 @@ A comprehensive web-based lead management system designed specifically for real 
 
 ### 1. Clone the Repository
 \`\`\`bash
-git clone https://github.com/mxrkrkk/innersparc-lead-management.git
+git clone https://github.com/mxrk333/lead-management.git
 cd innersparc-lead-management
 \`\`\`
 
