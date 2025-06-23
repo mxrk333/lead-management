@@ -5,7 +5,7 @@ This system is the proprietary asset of Inner SPARC Realty Corporation and the f
 - Mark Christian Patigayon (MAIN DEVLOPER)
 - Yenzo Teo Gervacio (MAIN DEVELOPER)
 
-# contact these developer if you have any question about the codebase.
+# Contact these developer if you have any question about the codebase.
 
 Unauthorized use, reproduction, redistribution, or inclusion of this system—whether in personal portfolios, commercial projects, or any other form—is strictly prohibited. Proper credit must always be given to the original developers listed above.
 
