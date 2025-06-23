@@ -9,7 +9,7 @@ if (!isset($conn) || !$conn) {
     // Fallback database connection if config/database.php doesn't provide $conn
     $host = "localhost";
     $username = "root";
-    $password = "";
+    $password = ""; 
     $database = "real_estate_leads";
     
     $conn = mysqli_connect($host, $username, $password, $database);
@@ -46,17 +46,14 @@ if (function_exists('getUserById')) {
     }
 }
 
-// Use the existing database connection from database.php
-// No need to create a new connection here
-
 // Pagination settings
 $leads_per_page = 10;
 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $current_page = max(1, $current_page);
 $offset = ($current_page - 1) * $leads_per_page;
 
-// Build query based on user role and permissions
-$whereClause = "WHERE l.status = 'Closed Deal'";
+// MODIFIED: Build query to include both Closed Deal and Lost leads
+$whereClause = "WHERE l.status IN ('Closed Deal', 'Lost')";
 
 // Check if search is active
 $search_active = false;
@@ -86,7 +83,7 @@ if (!function_exists('isSuperUser')) {
 }
 
 if (isSuperUser($user['username'])) {
-    // Superusers can see all closed deals - no additional WHERE clause needed
+    // Superusers can see all closed deals and lost deals - no additional WHERE clause needed
 } elseif ($user['role'] === 'agent') {
     $whereClause .= " AND l.user_id = $user_id";
 } elseif ($user['role'] === 'supervisor' || $user['role'] === 'manager') {
@@ -115,7 +112,7 @@ if ($total_pages > 0) {
     $current_page = min($current_page, $total_pages);
 }
 
-// Query to get closed deals with downpayment information
+// MODIFIED: Query to get both closed deals and lost deals with status information
 $query = "
     SELECT 
         l.id,
@@ -126,6 +123,7 @@ $query = "
         l.project_model,
         l.price,
         l.expected_commission,
+        l.status,
         l.created_at,
         l.updated_at,
         u.name as agent_name,
@@ -163,15 +161,17 @@ while ($row = mysqli_fetch_assoc($result)) {
     $leads[] = $row;
 }
 
-// Get summary statistics
+// MODIFIED: Get summary statistics for both closed and lost deals
 $stats_query = "
     SELECT 
-        COUNT(*) as total_closed,
-        COALESCE(SUM(l.price), 0) as total_sales,
-        COALESCE(SUM(l.expected_commission), 0) as total_commission,
-        COUNT(CASE WHEN dt.turnover = 1 THEN 1 END) as turned_over,
-        COUNT(CASE WHEN dt.loan_takeout = 1 THEN 1 END) as loan_takeouts,
-        COUNT(CASE WHEN dt.pagibig_bank_approval = 1 THEN 1 END) as bank_approved
+        COUNT(*) as total_deals,
+        COUNT(CASE WHEN l.status = 'Closed Deal' THEN 1 END) as total_closed,
+        COUNT(CASE WHEN l.status = 'Lost' THEN 1 END) as total_lost,
+        COALESCE(SUM(CASE WHEN l.status = 'Closed Deal' THEN l.price ELSE 0 END), 0) as total_sales,
+        COALESCE(SUM(CASE WHEN l.status = 'Closed Deal' THEN l.expected_commission ELSE 0 END), 0) as total_commission,
+        COUNT(CASE WHEN dt.turnover = 1 AND l.status = 'Closed Deal' THEN 1 END) as turned_over,
+        COUNT(CASE WHEN dt.loan_takeout = 1 AND l.status = 'Closed Deal' THEN 1 END) as loan_takeouts,
+        COUNT(CASE WHEN dt.pagibig_bank_approval = 1 AND l.status = 'Closed Deal' THEN 1 END) as bank_approved
     FROM leads l
     LEFT JOIN users u ON l.user_id = u.id
     LEFT JOIN downpayment_tracker dt ON l.id = dt.lead_id
@@ -552,6 +552,20 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
             background: var(--gray-50);
         }
 
+        /* NEW: Lost deal highlighting styles */
+        .leads-table tbody tr.lost-deal {
+            background-color: #fef2f2 !important;
+            border-left: 4px solid var(--danger);
+        }
+
+        .leads-table tbody tr.lost-deal:hover {
+            background-color: #fecaca !important;
+        }
+
+        .leads-table tbody tr.lost-deal td {
+            background-color: transparent;
+        }
+
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -577,6 +591,12 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
             color: var(--info);
         }
 
+        /* NEW: Lost status badge */
+        .status-badge.danger {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
         .progress-bar {
             width: 100%;
             height: 0.5rem;
@@ -595,6 +615,12 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
         .amount-text {
             font-weight: 600;
             color: var(--success);
+        }
+
+        /* NEW: Lost deal amount styling */
+        .lost-deal .amount-text {
+            color: var(--danger);
+            text-decoration: line-through;
         }
 
         .action-buttons {
@@ -777,7 +803,7 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
             
             <div class="leads-page">
                 <div class="page-header">
-                    <h2><i class="fas fa-handshake"></i> Lead Conversion - Closed Deals</h2>
+                    <h2><i class="fas fa-handshake"></i> Lead Conversion - Closed & Lost Deals</h2>
                     <div class="header-actions">
                         <a href="leads.php" class="btn-back">
                             <i class="fas fa-arrow-left"></i>
@@ -822,6 +848,16 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                             <p><?php echo number_format($stats['total_closed']); ?></p>
                         </div>
                     </div>
+                    <!-- NEW: Lost deals summary card -->
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: var(--danger-light); color: var(--danger);">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="summary-info">
+                            <h3>Lost Deals</h3>
+                            <p><?php echo number_format($stats['total_lost']); ?></p>
+                        </div>
+                    </div>
                     <div class="summary-card">
                         <div class="summary-icon" style="background: var(--primary-light); color: var(--primary);">
                             <i class="fas fa-peso-sign"></i>
@@ -855,29 +891,45 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                     <table class="leads-table">
                         <thead>
                             <tr>
+                                <th>Status</th>
                                 <th>Client</th>
                                 <th>Property</th>
                                 <th>Price</th>
                                 <th>Agent</th>
                                 <th>DP Progress</th>
                                 <th>Loan Status</th>
-                                <th>Closed Date</th>
+                                <th>Date</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($leads)): ?>
                             <tr>
-                                <td colspan="8">
+                                <td colspan="9">
                                     <div class="empty-state">
                                         <i class="fas fa-handshake"></i>
-                                        <p>No closed deals found<?php echo $search_active ? ' matching your search' : ''; ?></p>
+                                        <p>No deals found<?php echo $search_active ? ' matching your search' : ''; ?></p>
                                     </div>
                                 </td>
                             </tr>
                             <?php else: ?>
                                 <?php foreach ($leads as $lead): ?>
-                                <tr>
+                                <!-- MODIFIED: Add lost-deal class for lost deals -->
+                                <tr<?php echo ($lead['status'] === 'Lost') ? ' class="lost-deal"' : ''; ?>>
+                                    <!-- NEW: Status column -->
+                                    <td>
+                                        <?php if ($lead['status'] === 'Closed Deal'): ?>
+                                            <span class="status-badge success">
+                                                <i class="fas fa-check-circle"></i>
+                                                Closed
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="status-badge danger">
+                                                <i class="fas fa-times-circle"></i>
+                                                Lost
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
                                         <div>
                                             <div style="font-weight: 600;"><?php echo htmlspecialchars($lead['client_name']); ?></div>
@@ -896,7 +948,7 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                                     </td>
                                     <td>
                                         <div class="amount-text">₱<?php echo number_format($lead['price'], 0); ?></div>
-                                        <?php if ($lead['expected_commission'] > 0): ?>
+                                        <?php if ($lead['expected_commission'] > 0 && $lead['status'] === 'Closed Deal'): ?>
                                             <div style="font-size: 0.75rem; color: var(--gray-500);">
                                                 Comm: ₱<?php echo number_format($lead['expected_commission'], 0); ?>
                                             </div>
@@ -911,7 +963,12 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                                         </div>
                                     </td>
                                     <td>
-                                        <?php if ($lead['reservation_date']): ?>
+                                        <?php if ($lead['status'] === 'Lost'): ?>
+                                            <span class="status-badge danger">
+                                                <i class="fas fa-ban"></i>
+                                                N/A
+                                            </span>
+                                        <?php elseif ($lead['reservation_date']): ?>
                                             <div style="margin-bottom: 0.25rem;">
                                                 <span style="font-size: 0.75rem; color: var(--gray-500);">
                                                     <?php echo round($lead['progress_rate'] ?? 0); ?>% Complete
@@ -931,7 +988,12 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php if ($lead['loan_amount'] > 0): ?>
+                                        <?php if ($lead['status'] === 'Lost'): ?>
+                                            <span class="status-badge danger">
+                                                <i class="fas fa-ban"></i>
+                                                N/A
+                                            </span>
+                                        <?php elseif ($lead['loan_amount'] > 0): ?>
                                             <div style="margin-bottom: 0.25rem;">
                                                 <?php if ($lead['pagibig_bank_approval']): ?>
                                                     <span class="status-badge success">
@@ -960,7 +1022,7 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                                     </td>
                                     <td>
                                         <div><?php echo date('M j, Y', strtotime($lead['updated_at'])); ?></div>
-                                        <?php if ($lead['turnover']): ?>
+                                        <?php if ($lead['turnover'] && $lead['status'] === 'Closed Deal'): ?>
                                             <div style="font-size: 0.75rem; color: var(--success);">
                                                 <i class="fas fa-home"></i>
                                                 Turned Over
@@ -985,7 +1047,7 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                 <div class="pagination-info">
                     Showing <?php echo min(($current_page - 1) * $leads_per_page + 1, $total_leads); ?> to 
                     <?php echo min($current_page * $leads_per_page, $total_leads); ?> of 
-                    <?php echo $total_leads; ?> closed deals
+                    <?php echo $total_leads; ?> deals
                 </div>
                 <div class="pagination">
                     <?php if ($current_page > 1): ?>
