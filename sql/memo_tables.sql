@@ -1,7 +1,21 @@
-INSERT INTO `leads` (`id`, `user_id`, `client_name`, `phone`, `email`, `facebook`, `linkedin`, `temperature`, `status`, `source`, `developer`, `project_model`, `price`, `remarks`, `created_at`, `updated_at`) VALUES
-(6, 24, 'Leonard Pistano', '0919993939393', 'leoanrd10238983@gmail.com', '', '', 'Warm', 'Closed Deal', 'Facebook Groups', 'Antipolo Heights', 'Lot Only', 10000000.00, 'none', '2025-05-19 02:53:41', '2025-05-28 05:24:13'),
-(7, 15, 'Jerome Badua ', '09292992929', 'jerome@gmail.com', 'fb.com', 'linkedin.com', 'Cold', 'Downpayment Stage', 'Landing Page', 'Avida', 'Way', 0.00, '0.00', '2025-05-21 05:03:02', '2025-05-21 09:32:51'),
-(8, 15, 'Daniel Boni Pagilagan', '0919191919292', 'danielbonipagilagan@gmail.com', '', '', 'Hot', 'Downpayment Stage', 'Facebook Groups', 'Lancaster', 'Alice', 2000000.00, 'Follow up this client within the day. Pls thanks! ', '2025-05-21 09:37:48', '2025-05-21 09:40:17'),
-(9, 30, 'Marvey Yenzo', '09191919', 'yenz@gmail.com', '', '', 'Hot', 'Downpayment Stage', 'Facebook Groups', 'Elisa Homes', 'Dahlia', 2000000.00, 'yes yes yes ', '2025-05-22 15:12:55', '2025-05-28 05:27:10'),
-(10, 15, 'ajklsdjaskldj', '0912383838', 'aksdj@gmail.com', '', '', 'Warm', 'Downpayment Stage', 'Facebook Groups', 'Anyana', 'New York', 5000000.00, '2323123', '2025-05-28 03:34:27', '2025-05-28 03:34:36'),
-(11, 15, 'dasasdasd', '12312312312', '12qwd@gmail.com', '', '', 'Warm', 'Downpayment Stage', 'Facebook Groups', 'Liora Homes', 'Amora', 120000.00, 'asdasda', '2025-05-28 03:42:13', '2025-05-28 03:42:13');
+CREATE TABLE `memos` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL,
+  `file_path` varchar(255) DEFAULT NULL,
+  `description` text NOT NULL,
+  `memo_when` datetime NOT NULL,
+  `memo_where` varchar(255) DEFAULT NULL,
+  `priority` enum('Low','Medium','High','Urgent') DEFAULT 'Medium',
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_by` int NOT NULL,
+  `team_id` int NOT NULL,
+  `visible_to_all` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `created_by` (`created_by`),
+  KEY `team_id` (`team_id`),
+  KEY `memo_when` (`memo_when`),
+  KEY `priority` (`priority`),
+  KEY `is_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
