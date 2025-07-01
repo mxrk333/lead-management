@@ -149,6 +149,16 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
                             </a>
                         </li>
 
+<?php if (isset($user['role']) && in_array($user['role'], ['admin', 'manager'])): ?>
+                                <li class="nav-item">
+                                    <a href="accreditation.php"
+                                        class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
+                                        <i class="fas fa-cog fa-user-check nav-icon"></i>
+                                        <span class="nav-text">Accreditation</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+
                         <li class="nav-item has-submenu">
                             <button class="nav-link submenu-trigger <?php echo in_array(basename($_SERVER['PHP_SELF']), ['handbook.php', 'vast.php', 'links.php']) ? 'active' : ''; ?>" data-submenu="materials">
                                 <i class="fas fa-book-open nav-icon"></i>
