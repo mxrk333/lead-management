@@ -29,7 +29,7 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
         <div class="sidebar-user-section">
             <div class="user-avatar">
                 <?php if (!empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
-                    <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
+                    <img src="assets/images/avatar.png" alt="Profile Picture">
                 <?php else: ?>
                     <span class="avatar-text"><?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?></span>
                 <?php endif; ?>
@@ -133,31 +133,33 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
                             </a>
                         </li>
                         <?php endif; ?>
+
+                    
+
                         
                         <?php if (isset($user['role']) && in_array($user['role'], ['admin', 'manager', 'supervisor', 'agent'])): ?>
                         <li class="nav-item">
-                            <a href="" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == '' ? 'active' : ''; ?>">
+                            <a href="projectlisting.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == '' ? 'active' : ''; ?>">
                                 <i class="fas fa-house nav-icon"></i>
                                 <span class="nav-text">Project Listing</span>
                             </a>
                         </li>
 
                         <li class="nav-item">
+        <a href="accreditation.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
+            <i class="fas fa-user-check nav-icon"></i>
+            <span class="nav-text">Accreditation</span>
+        </a>
+    </li>
+    
+
+                       <li class="nav-item">
                             <a href="recruitment-dashboard.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'recruitment-dashboard.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-user-plus nav-icon"></i>
                                 <span class="nav-text">Recruitment</span>
                             </a>
                         </li>
 
-<?php if (isset($user['role']) && in_array($user['role'], ['admin', 'manager'])): ?>
-                                <li class="nav-item">
-                                    <a href="accreditation.php"
-                                        class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
-                                        <i class="fas fa-cog fa-user-check nav-icon"></i>
-                                        <span class="nav-text">Accreditation</span>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
 
                         <li class="nav-item has-submenu">
                             <button class="nav-link submenu-trigger <?php echo in_array(basename($_SERVER['PHP_SELF']), ['handbook.php', 'vast.php', 'links.php']) ? 'active' : ''; ?>" data-submenu="materials">
@@ -671,12 +673,12 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
 
 /* ======= DESKTOP ONLY STYLES ======= */
 @media (min-width: 769px) {
-    /* Desktop collapsed state */
-    .sidebar-provider.collapsed {
+    /* Desktop collapsed state - now reacts to body.sidebar-collapsed */
+    body.sidebar-collapsed .sidebar-provider {
         width: var(--sidebar-width-collapsed);
     }
     
-    .sidebar-provider.collapsed .logo-section {
+    body.sidebar-collapsed .logo-section {
         opacity: 0;
         max-width: 0;
         margin: 0;
@@ -684,48 +686,42 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
         visibility: hidden;
     }
     
-    .sidebar-provider.collapsed .sidebar-header {
+    body.sidebar-collapsed .sidebar-header {
         justify-content: center;
         padding: 1rem 0.5rem;
     }
     
-    .sidebar-provider.collapsed .user-info {
+    body.sidebar-collapsed .user-info {
         opacity: 0;
         max-width: 0;
         margin: 0;
         visibility: hidden;
     }
     
-    .sidebar-provider.collapsed .nav-text,
-    .sidebar-provider.collapsed .submenu-text {
+    body.sidebar-collapsed .nav-text,
+    body.sidebar-collapsed .submenu-text {
         opacity: 0;
         max-width: 0;
         margin: 0;
         visibility: hidden;
     }
     
-    .sidebar-provider.collapsed .nav-link {
+    body.sidebar-collapsed .nav-link {
         justify-content: center;
         padding: 1rem 0;
     }
     
-    .sidebar-provider.collapsed .nav-icon {
+    body.sidebar-collapsed .nav-icon {
         margin-right: 0;
         font-size: 1.125rem;
     }
     
-    .sidebar-provider.collapsed .submenu-arrow {
+    body.sidebar-collapsed .submenu-arrow {
         display: none;
     }
     
-    .sidebar-provider.collapsed .nav-submenu {
+    body.sidebar-collapsed .nav-submenu {
         display: none !important;
-    }
-    
-    .sidebar-provider.collapsed ~ .container .main-content,
-    .sidebar-provider.collapsed + .main-content {
-        margin-left: var(--sidebar-width-collapsed);
-        width: calc(100% - var(--sidebar-width-collapsed));
     }
 }
 
@@ -909,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else {
             // Desktop behavior - collapse/expand
-            sidebar.classList.toggle('collapsed');
+            document.body.classList.toggle('sidebar-collapsed'); // Toggle class on body
         }
     }
     
