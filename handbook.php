@@ -29,21 +29,21 @@ if ($is_admin && isset($_POST['action'])) {
         // Create new handbook
         $title = mysqli_real_escape_string($conn, $_POST['title']);
         $description = mysqli_real_escape_string($conn, isset($_POST['description']) ? $_POST['description'] : '');
-        
+
         // Fix for the category error - check if it exists and provide default if not
         $category = isset($_POST['category']) ? mysqli_real_escape_string($conn, $_POST['category']) : 'Uncategorized';
-        
+
         // Handle cover image upload
         $target_dir = "uploads/handbook_covers/";
         if (!file_exists($target_dir)) {
             mkdir($target_dir, 0777, true);
         }
-        
+
         $cover_image = '';
         if (isset($_FILES["cover_image"]) && $_FILES["cover_image"]["error"] == 0) {
             $file_name = time() . '_' . basename($_FILES["cover_image"]["name"]);
             $target_file = $target_dir . $file_name;
-            
+
             // Check if image file is a actual image
             $check = getimagesize($_FILES["cover_image"]["tmp_name"]);
             if ($check !== false) {
@@ -52,18 +52,18 @@ if ($is_admin && isset($_POST['action'])) {
                 }
             }
         }
-        
+
         // Handle PDF upload
         $target_pdf_dir = "uploads/handbook_pdfs/";
         if (!file_exists($target_pdf_dir)) {
             mkdir($target_pdf_dir, 0777, true);
         }
-        
+
         $pdf_file = '';
         if (isset($_FILES["pdf_file"]) && $_FILES["pdf_file"]["error"] == 0) {
             $pdf_name = time() . '_' . basename($_FILES["pdf_file"]["name"]);
             $target_pdf = $target_pdf_dir . $pdf_name;
-            
+
             // Check if file is a PDF
             $file_type = strtolower(pathinfo($target_pdf, PATHINFO_EXTENSION));
             if ($file_type == "pdf") {
@@ -72,11 +72,11 @@ if ($is_admin && isset($_POST['action'])) {
                 }
             }
         }
-        
+
         if (!empty($cover_image) && !empty($pdf_file)) {
             $query = "INSERT INTO handbooks (title, description, cover_image, pdf_file, category, created_by) 
                       VALUES ('$title', '$description', '$cover_image', '$pdf_file', '$category', $user_id)";
-            
+
             if (mysqli_query($conn, $query)) {
                 $message = "Handbook created successfully!";
                 $message_type = "success";
@@ -90,14 +90,14 @@ if ($is_admin && isset($_POST['action'])) {
         }
     } elseif ($_POST['action'] === 'delete_handbook') {
         // Delete handbook
-        $handbook_id = (int)$_POST['handbook_id'];
-        
+        $handbook_id = (int) $_POST['handbook_id'];
+
         // Get file paths before deleting
         $query = "SELECT cover_image, pdf_file FROM handbooks WHERE id = $handbook_id";
         $result = mysqli_query($conn, $query);
         if ($result && mysqli_num_rows($result) > 0) {
             $handbook = mysqli_fetch_assoc($result);
-            
+
             // Delete files from server
             if (file_exists($handbook['cover_image'])) {
                 unlink($handbook['cover_image']);
@@ -106,7 +106,7 @@ if ($is_admin && isset($_POST['action'])) {
                 unlink($handbook['pdf_file']);
             }
         }
-        
+
         // Delete from database
         $query = "DELETE FROM handbooks WHERE id = $handbook_id";
         if (mysqli_query($conn, $query)) {
@@ -118,11 +118,11 @@ if ($is_admin && isset($_POST['action'])) {
         }
     } elseif ($_POST['action'] === 'update_handbook') {
         // Update handbook details
-        $handbook_id = (int)$_POST['handbook_id'];
+        $handbook_id = (int) $_POST['handbook_id'];
         $title = mysqli_real_escape_string($conn, $_POST['title']);
         $description = mysqli_real_escape_string($conn, isset($_POST['description']) ? $_POST['description'] : '');
         $category = isset($_POST['category']) ? mysqli_real_escape_string($conn, $_POST['category']) : 'Uncategorized';
-        
+
         $query = "UPDATE handbooks SET title = '$title', description = '$description', category = '$category' WHERE id = $handbook_id";
         if (mysqli_query($conn, $query)) {
             $message = "Handbook updated successfully!";
@@ -133,12 +133,12 @@ if ($is_admin && isset($_POST['action'])) {
         }
     } elseif ($_POST['action'] === 'update_cover') {
         // Update cover image
-        $handbook_id = (int)$_POST['handbook_id'];
+        $handbook_id = (int) $_POST['handbook_id'];
         $target_dir = "uploads/handbook_covers/";
         if (!file_exists($target_dir)) {
             mkdir($target_dir, 0777, true);
         }
-        
+
         // Get old cover image path
         $query = "SELECT cover_image FROM handbooks WHERE id = $handbook_id";
         $result = mysqli_query($conn, $query);
@@ -147,18 +147,18 @@ if ($is_admin && isset($_POST['action'])) {
             $handbook = mysqli_fetch_assoc($result);
             $old_cover = $handbook['cover_image'];
         }
-        
+
         $cover_image = '';
         if (isset($_FILES["cover_image"]) && $_FILES["cover_image"]["error"] == 0) {
             $file_name = time() . '_' . basename($_FILES["cover_image"]["name"]);
             $target_file = $target_dir . $file_name;
-            
+
             // Check if image file is a actual image
             $check = getimagesize($_FILES["cover_image"]["tmp_name"]);
             if ($check !== false) {
                 if (move_uploaded_file($_FILES["cover_image"]["tmp_name"], $target_file)) {
                     $cover_image = $target_file;
-                    
+
                     // Delete old cover image
                     if (!empty($old_cover) && file_exists($old_cover)) {
                         unlink($old_cover);
@@ -166,7 +166,7 @@ if ($is_admin && isset($_POST['action'])) {
                 }
             }
         }
-        
+
         if (!empty($cover_image)) {
             $query = "UPDATE handbooks SET cover_image = '$cover_image' WHERE id = $handbook_id";
             if (mysqli_query($conn, $query)) {
@@ -182,12 +182,12 @@ if ($is_admin && isset($_POST['action'])) {
         }
     } elseif ($_POST['action'] === 'update_pdf') {
         // Update PDF file
-        $handbook_id = (int)$_POST['handbook_id'];
+        $handbook_id = (int) $_POST['handbook_id'];
         $target_dir = "uploads/handbook_pdfs/";
         if (!file_exists($target_dir)) {
             mkdir($target_dir, 0777, true);
         }
-        
+
         // Get old PDF path
         $query = "SELECT pdf_file FROM handbooks WHERE id = $handbook_id";
         $result = mysqli_query($conn, $query);
@@ -196,18 +196,18 @@ if ($is_admin && isset($_POST['action'])) {
             $handbook = mysqli_fetch_assoc($result);
             $old_pdf = $handbook['pdf_file'];
         }
-        
+
         $pdf_file = '';
         if (isset($_FILES["pdf_file"]) && $_FILES["pdf_file"]["error"] == 0) {
             $file_name = time() . '_' . basename($_FILES["pdf_file"]["name"]);
             $target_file = $target_dir . $file_name;
-            
+
             // Check if file is a PDF
             $file_type = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
             if ($file_type == "pdf") {
                 if (move_uploaded_file($_FILES["pdf_file"]["tmp_name"], $target_file)) {
                     $pdf_file = $target_file;
-                    
+
                     // Delete old PDF file
                     if (!empty($old_pdf) && file_exists($old_pdf)) {
                         unlink($old_pdf);
@@ -215,7 +215,7 @@ if ($is_admin && isset($_POST['action'])) {
                 }
             }
         }
-        
+
         if (!empty($pdf_file)) {
             $query = "UPDATE handbooks SET pdf_file = '$pdf_file' WHERE id = $handbook_id";
             if (mysqli_query($conn, $query)) {
@@ -238,8 +238,8 @@ $current_handbook = null;
 
 if (isset($_GET['edit']) && is_numeric($_GET['edit']) && $is_admin) {
     $edit_mode = true;
-    $handbook_id = (int)$_GET['edit'];
-    
+    $handbook_id = (int) $_GET['edit'];
+
     // Get handbook details
     $query = "SELECT * FROM handbooks WHERE id = $handbook_id";
     $result = mysqli_query($conn, $query);
@@ -282,6 +282,7 @@ $conn->close();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -290,6 +291,7 @@ $conn->close();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PDF.js for better PDF viewing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -386,8 +388,10 @@ $conn->close();
             transform-style: preserve-3d;
             transform: rotateY(-25deg);
             transition: transform 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer !important; /* Force cursor pointer */
-            z-index: 5; /* Ensure it's clickable */
+            cursor: pointer !important;
+            /* Force cursor pointer */
+            z-index: 5;
+            /* Ensure it's clickable */
         }
 
         .book-container:hover {
@@ -402,11 +406,12 @@ $conn->close();
             backface-visibility: hidden;
             transform-style: preserve-3d;
             border-radius: 4px;
-            box-shadow: 
+            box-shadow:
                 5px 5px 20px rgba(0, 0, 0, 0.3),
                 1px 1px 5px rgba(0, 0, 0, 0.2);
             overflow: hidden;
-            z-index: 10; /* Ensure it's above other elements */
+            z-index: 10;
+            /* Ensure it's above other elements */
         }
 
         .book-cover {
@@ -417,9 +422,12 @@ $conn->close();
             background-position: center;
             border-radius: 4px;
             overflow: hidden;
-            cursor: pointer !important; /* Force cursor pointer */
-            z-index: 15; /* Ensure it's above other elements */
-            pointer-events: none; /* Let clicks pass through to container */
+            cursor: pointer !important;
+            /* Force cursor pointer */
+            z-index: 15;
+            /* Ensure it's above other elements */
+            pointer-events: none;
+            /* Let clicks pass through to container */
         }
 
         .book-spine {
@@ -767,7 +775,8 @@ $conn->close();
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.9);
-            z-index: 10000; /* Ensure it's above everything */
+            z-index: 10000;
+            /* Ensure it's above everything */
             overflow: hidden;
         }
 
@@ -861,7 +870,8 @@ $conn->close();
             padding: 0.5rem 1rem;
             border-radius: 2rem;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            z-index: 10001; /* Ensure it's above other elements in the PDF viewer */
+            z-index: 10001;
+            /* Ensure it's above other elements in the PDF viewer */
         }
 
         .pdf-page-info {
@@ -981,6 +991,7 @@ $conn->close();
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -991,11 +1002,25 @@ $conn->close();
             animation: fadeIn 0.3s ease-out forwards;
         }
 
-        .book-wrapper:nth-child(1) { animation-delay: 0.1s; }
-        .book-wrapper:nth-child(2) { animation-delay: 0.2s; }
-        .book-wrapper:nth-child(3) { animation-delay: 0.3s; }
-        .book-wrapper:nth-child(4) { animation-delay: 0.4s; }
-        .book-wrapper:nth-child(5) { animation-delay: 0.5s; }
+        .book-wrapper:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .book-wrapper:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .book-wrapper:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .book-wrapper:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .book-wrapper:nth-child(5) {
+            animation-delay: 0.5s;
+        }
 
         /* Modal Styles */
         .modal {
@@ -1027,6 +1052,7 @@ $conn->close();
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -1115,7 +1141,7 @@ $conn->close();
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             .handbook-details {
                 flex-direction: column;
             }
@@ -1125,24 +1151,24 @@ $conn->close();
                 height: 225px;
                 margin: 0 auto 1.5rem;
             }
-            
+
             .handbook-actions {
                 flex-direction: column;
             }
-            
+
             .handbook-actions .btn {
                 width: 100%;
             }
-            
+
             .modal-content {
                 margin: 10px;
                 width: calc(100% - 20px);
             }
-            
+
             .form-actions {
                 flex-direction: column;
             }
-            
+
             .form-actions .btn {
                 width: 100%;
             }
@@ -1157,17 +1183,17 @@ $conn->close();
                 grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
                 gap: 1rem;
             }
-            
+
             .page-header {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 1rem;
             }
-            
+
             .page-actions {
                 width: 100%;
             }
-            
+
             .page-actions .btn {
                 width: 100%;
             }
@@ -1178,271 +1204,297 @@ $conn->close();
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <?php include 'includes/sidebar.php'; ?>
-        
+
         <div class="main-content">
             <?php include 'includes/header.php'; ?>
-            
+
             <div class="handbook-page">
                 <?php if ($edit_mode): ?>
-                <!-- EDIT MODE -->
-                <div class="page-header">
-                    <h1 class="page-title">
-                        <i class="fas fa-book-open"></i> Edit Handbook
-                    </h1>
-                    <div class="page-actions">
-                        <a href="handbook.php" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Handbooks
-                        </a>
-                    </div>
-                </div>
-                
-                <?php if (!empty($message)): ?>
-                <div class="alert alert-<?php echo $message_type; ?>">
-                    <?php echo $message; ?>
-                </div>
-                <?php endif; ?>
-                
-                <!-- Handbook Details -->
-                <div class="handbook-details">
-                    <div class="handbook-cover-preview">
-                        <img src="<?php echo htmlspecialchars($current_handbook['cover_image']); ?>" alt="<?php echo htmlspecialchars($current_handbook['title']); ?>">
-                    </div>
-                    <div class="handbook-info">
-                        <h2><?php echo htmlspecialchars($current_handbook['title']); ?></h2>
-                        <p><?php echo htmlspecialchars($current_handbook['description'] ?? 'No description provided.'); ?></p>
-                        <p><strong>Category:</strong> <?php echo htmlspecialchars($current_handbook['category'] ?? 'Uncategorized'); ?></p>
-                        <p><strong>Created:</strong> <?php echo date('F j, Y', strtotime($current_handbook['created_at'])); ?></p>
-                        <p><strong>PDF File:</strong> <?php echo basename($current_handbook['pdf_file']); ?></p>
-                        
-                        <div class="handbook-actions">
-                            <button class="btn btn-primary" id="editHandbookBtn">
-                                <i class="fas fa-edit"></i> Edit Handbook Details
-                            </button>
-                            <button class="btn btn-secondary" id="editCoverBtn">
-                                <i class="fas fa-image"></i> Change Cover Image
-                            </button>
-                            <button class="btn btn-secondary" id="editPdfBtn">
-                                <i class="fas fa-file-pdf"></i> Change PDF File
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Edit Handbook Form (Hidden by default) -->
-                <div class="admin-controls" id="editHandbookForm" style="display: none;">
-                    <h2>Edit Handbook Details</h2>
-                    <form action="handbook.php?edit=<?php echo $current_handbook['id']; ?>" method="post">
-                        <input type="hidden" name="action" value="update_handbook">
-                        <input type="hidden" name="handbook_id" value="<?php echo $current_handbook['id']; ?>">
-                        
-                        <div class="form-group">
-                            <label for="title">Handbook Title</label>
-                            <input type="text" id="title" name="title" class="form-control" value="<?php echo htmlspecialchars($current_handbook['title']); ?>" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="description">Description</label>
-                            <textarea id="description" name="description" class="form-control" rows="3"><?php echo htmlspecialchars($current_handbook['description'] ?? ''); ?></textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="category">Category</label>
-                            <input type="text" id="category" name="category" class="form-control" value="<?php echo htmlspecialchars($current_handbook['category'] ?? ''); ?>" list="category-list">
-                            <datalist id="category-list">
-                                <?php foreach ($categories as $category): ?>
-                                <option value="<?php echo htmlspecialchars($category); ?>">
-                                <?php endforeach; ?>
-                            </datalist>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Save Changes
-                            </button>
-                            <button type="button" class="btn btn-secondary" id="cancelEditBtn">
-                                <i class="fas fa-times"></i> Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Edit Cover Form (Hidden by default) -->
-                <div class="admin-controls" id="editCoverForm" style="display: none;">
-                    <h2>Change Cover Image</h2>
-                    <form action="handbook.php?edit=<?php echo $current_handbook['id']; ?>" method="post" enctype="multipart/form-data">
-                        <input type="hidden" name="action" value="update_cover">
-                        <input type="hidden" name="handbook_id" value="<?php echo $current_handbook['id']; ?>">
-                        
-                        <div class="form-group">
-                            <label for="cover_image">New Cover Image</label>
-                            <input type="file" id="cover_image" name="cover_image" class="form-control" accept="image/*" required>
-                            <small>Recommended size: 400x600 pixels</small>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Update Cover
-                            </button>
-                            <button type="button" class="btn btn-secondary" id="cancelCoverBtn">
-                                <i class="fas fa-times"></i> Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Edit PDF Form (Hidden by default) -->
-                <div class="admin-controls" id="editPdfForm" style="display: none;">
-                    <h2>Change PDF File</h2>
-                    <form action="handbook.php?edit=<?php echo $current_handbook['id']; ?>" method="post" enctype="multipart/form-data">
-                        <input type="hidden" name="action" value="update_pdf">
-                        <input type="hidden" name="handbook_id" value="<?php echo $current_handbook['id']; ?>">
-                        
-                        <div class="form-group">
-                            <label for="pdf_file">New PDF File</label>
-                            <input type="file" id="pdf_file" name="pdf_file" class="form-control" accept="application/pdf" required>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Update PDF
-                            </button>
-                            <button type="button" class="btn btn-secondary" id="cancelPdfBtn">
-                                <i class="fas fa-times"></i> Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                
-                <?php else: ?>
-                <!-- MAIN VIEW (Handbook List) -->
-                <div class="page-header">
-                    <h1 class="page-title">
-                        <i class="fas fa-book"></i> Handbooks
-                    </h1>
-                    <?php if ($is_admin): ?>
-                    <div class="page-actions">
-                        <button class="btn btn-primary" id="openCreateModalBtn">
-                            <i class="fas fa-plus"></i> Create New Handbook
-                        </button>
-                    </div>
-                    <?php endif; ?>
-                </div>
-                
-                <?php if (!empty($message)): ?>
-                <div class="alert alert-<?php echo $message_type; ?>">
-                    <?php echo $message; ?>
-                </div>
-                <?php endif; ?>
-                
-                <!-- Featured Handbook -->
-                <div class="featured-handbook">
-                    <div class="featured-content">
-                        <div class="featured-header">
-                            <div class="featured-icon">
-                                <i class="fas fa-book"></i>
-                            </div>
-                            <h2 class="featured-title">Welcome to Inner SPARC Realty Handbooks</h2>
-                        </div>
-                        <p class="featured-description">
-                            Access all the important handbooks and documentation you need for your work at Inner SPARC Realty. 
-                            Bookmark this page for quick access to all essential resources.
-                        </p>
-                        <div class="featured-actions">
-                            <a href="#all-handbooks" class="btn btn-primary">
-                                <i class="fas fa-book"></i> View All Handbooks
+                    <!-- EDIT MODE -->
+                    <div class="page-header">
+                        <h1 class="page-title">
+                            <i class="fas fa-book-open"></i> Edit Handbook
+                        </h1>
+                        <div class="page-actions">
+                            <a href="handbook.php" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Handbooks
                             </a>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Search -->
-                <div class="search-container">
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search for handbooks..." onkeyup="filterHandbooks()">
-                </div>
-                
-                <!-- Categories -->
-                <div class="category-tabs">
-                    <button class="category-tab active" onclick="filterCategory('all')">All</button>
-                    <?php foreach ($categories as $category): ?>
-                    <button class="category-tab" onclick="filterCategory('<?php echo htmlspecialchars($category); ?>')"><?php echo htmlspecialchars($category); ?></button>
-                    <?php endforeach; ?>
-                </div>
-                
-                <!-- Handbooks Grid -->
-                
-<div id="all-handbooks" class="handbook-grid">
-    <?php foreach ($handbooks as $handbook): ?>
-    <?php 
-        // Generate a random color for the handbook icon
-        $colors = ['#4361ee', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
-        $color = $colors[array_rand($colors)];
-    ?>
-    <div class="book-wrapper" data-category="<?php echo htmlspecialchars($handbook['category'] ?? ''); ?>">
-        <!-- Book 3D Effect with direct onclick -->
-        <div class="book-container" onclick="openPdfViewer('<?php echo htmlspecialchars($handbook['pdf_file']); ?>', '<?php echo htmlspecialchars($handbook['title']); ?>');">
-            <div class="book-front">
-                <div class="book-cover" style="background-image: url('<?php echo htmlspecialchars($handbook['cover_image']); ?>')"></div>
-            </div>
-            <div class="book-spine" style="background-color: <?php echo $color; ?>"></div>
-            <div class="book-side"></div>
-            <div class="book-pages"></div>
-        </div>
-        
-        <!-- Book Info -->
-        <div class="book-details">
-            <h3 class="book-title"><?php echo htmlspecialchars($handbook['title']); ?></h3>
-            <span class="book-category"><?php echo htmlspecialchars($handbook['category'] ?? 'Uncategorized'); ?></span>
-            <div class="book-actions">
-                <button onclick="openPdfViewer('<?php echo htmlspecialchars($handbook['pdf_file']); ?>', '<?php echo htmlspecialchars($handbook['title']); ?>')" class="btn btn-primary" style="background-color: <?php echo $color; ?>">
-                    <i class="fas fa-book-open"></i> Read
-                </button>
-            </div>
-        </div>
-        
-        <?php if ($is_admin): ?>
-        <div class="admin-actions">
-            <a href="handbook.php?edit=<?php echo $handbook['id']; ?>" class="btn btn-secondary btn-sm" title="Edit">
-                <i class="fas fa-edit"></i>
-            </a>
-            <form action="handbook.php" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this handbook?');">
-                <input type="hidden" name="action" value="delete_handbook">
-                <input type="hidden" name="handbook_id" value="<?php echo $handbook['id']; ?>">
-                <button type="submit" class="btn btn-danger btn-sm" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </form>
-        </div>
-        <?php endif; ?>
-    </div>
-    <?php endforeach; ?>
-    
-    <?php if (empty($handbooks)): ?>
-    <div id="noResults" class="no-results">
-        <i class="fas fa-book"></i>
-        <h3>No Handbooks Available</h3>
-        <p>No handbooks have been added yet.</p>
-        <?php if ($is_admin): ?>
-        <p>Click "Create New Handbook" to add your first handbook.</p>
-        <?php endif; ?>
-    </div>
-    <?php endif; ?>
-</div>
 
-                
-                <!-- No Results (hidden by default) -->
-                <div id="noResultsSearch" class="no-results" style="display: none;">
-                    <i class="fas fa-search"></i>
-                    <h3>No Handbooks Found</h3>
-                    <p>We couldn't find any handbooks matching your search. Try different keywords or clear your search.</p>
-                </div>
+                    <?php if (!empty($message)): ?>
+                        <div class="alert alert-<?php echo $message_type; ?>">
+                            <?php echo $message; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Handbook Details -->
+                    <div class="handbook-details">
+                        <div class="handbook-cover-preview">
+                            <img src="<?php echo htmlspecialchars($current_handbook['cover_image']); ?>"
+                                alt="<?php echo htmlspecialchars($current_handbook['title']); ?>">
+                        </div>
+                        <div class="handbook-info">
+                            <h2><?php echo htmlspecialchars($current_handbook['title']); ?></h2>
+                            <p><?php echo htmlspecialchars($current_handbook['description'] ?? 'No description provided.'); ?>
+                            </p>
+                            <p><strong>Category:</strong>
+                                <?php echo htmlspecialchars($current_handbook['category'] ?? 'Uncategorized'); ?></p>
+                            <p><strong>Created:</strong>
+                                <?php echo date('F j, Y', strtotime($current_handbook['created_at'])); ?></p>
+                            <p><strong>PDF File:</strong> <?php echo basename($current_handbook['pdf_file']); ?></p>
+
+                            <div class="handbook-actions">
+                                <button class="btn btn-primary" id="editHandbookBtn">
+                                    <i class="fas fa-edit"></i> Edit Handbook Details
+                                </button>
+                                <button class="btn btn-secondary" id="editCoverBtn">
+                                    <i class="fas fa-image"></i> Change Cover Image
+                                </button>
+                                <button class="btn btn-secondary" id="editPdfBtn">
+                                    <i class="fas fa-file-pdf"></i> Change PDF File
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edit Handbook Form (Hidden by default) -->
+                    <div class="admin-controls" id="editHandbookForm" style="display: none;">
+                        <h2>Edit Handbook Details</h2>
+                        <form action="handbook.php?edit=<?php echo $current_handbook['id']; ?>" method="post">
+                            <input type="hidden" name="action" value="update_handbook">
+                            <input type="hidden" name="handbook_id" value="<?php echo $current_handbook['id']; ?>">
+
+                            <div class="form-group">
+                                <label for="title">Handbook Title</label>
+                                <input type="text" id="title" name="title" class="form-control"
+                                    value="<?php echo htmlspecialchars($current_handbook['title']); ?>" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <textarea id="description" name="description" class="form-control"
+                                    rows="3"><?php echo htmlspecialchars($current_handbook['description'] ?? ''); ?></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="category">Category</label>
+                                <input type="text" id="category" name="category" class="form-control"
+                                    value="<?php echo htmlspecialchars($current_handbook['category'] ?? ''); ?>"
+                                    list="category-list">
+                                <datalist id="category-list">
+                                    <?php foreach ($categories as $category): ?>
+                                        <option value="<?php echo htmlspecialchars($category); ?>">
+                                        <?php endforeach; ?>
+                                </datalist>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="cancelEditBtn">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Edit Cover Form (Hidden by default) -->
+                    <div class="admin-controls" id="editCoverForm" style="display: none;">
+                        <h2>Change Cover Image</h2>
+                        <form action="handbook.php?edit=<?php echo $current_handbook['id']; ?>" method="post"
+                            enctype="multipart/form-data">
+                            <input type="hidden" name="action" value="update_cover">
+                            <input type="hidden" name="handbook_id" value="<?php echo $current_handbook['id']; ?>">
+
+                            <div class="form-group">
+                                <label for="cover_image">New Cover Image</label>
+                                <input type="file" id="cover_image" name="cover_image" class="form-control" accept="image/*"
+                                    required>
+                                <small>Recommended size: 400x600 pixels</small>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Update Cover
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="cancelCoverBtn">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Edit PDF Form (Hidden by default) -->
+                    <div class="admin-controls" id="editPdfForm" style="display: none;">
+                        <h2>Change PDF File</h2>
+                        <form action="handbook.php?edit=<?php echo $current_handbook['id']; ?>" method="post"
+                            enctype="multipart/form-data">
+                            <input type="hidden" name="action" value="update_pdf">
+                            <input type="hidden" name="handbook_id" value="<?php echo $current_handbook['id']; ?>">
+
+                            <div class="form-group">
+                                <label for="pdf_file">New PDF File</label>
+                                <input type="file" id="pdf_file" name="pdf_file" class="form-control"
+                                    accept="application/pdf" required>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Update PDF
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="cancelPdfBtn">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                <?php else: ?>
+                    <!-- MAIN VIEW (Handbook List) -->
+                    <div class="page-header">
+                        <h1 class="page-title">
+                            <i class="fas fa-book"></i> Handbooks
+                        </h1>
+                        <?php if ($is_admin): ?>
+                            <div class="page-actions">
+                                <button class="btn btn-primary" id="openCreateModalBtn">
+                                    <i class="fas fa-plus"></i> Create New Handbook
+                                </button>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (!empty($message)): ?>
+                        <div class="alert alert-<?php echo $message_type; ?>">
+                            <?php echo $message; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Featured Handbook -->
+                    <div class="featured-handbook">
+                        <div class="featured-content">
+                            <div class="featured-header">
+                                <div class="featured-icon">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                <h2 class="featured-title">Welcome to Inner SPARC Realty Handbooks</h2>
+                            </div>
+                            <p class="featured-description">
+                                Access all the important handbooks and documentation you need for your work at Inner SPARC
+                                Realty.
+                                Bookmark this page for quick access to all essential resources.
+                            </p>
+                            <div class="featured-actions">
+                                <a href="#all-handbooks" class="btn btn-primary">
+                                    <i class="fas fa-book"></i> View All Handbooks
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="search-container">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search for handbooks..."
+                            onkeyup="filterHandbooks()">
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="category-tabs">
+                        <button class="category-tab active" onclick="filterCategory('all')">All</button>
+                        <?php foreach ($categories as $category): ?>
+                            <button class="category-tab"
+                                onclick="filterCategory('<?php echo htmlspecialchars($category); ?>')"><?php echo htmlspecialchars($category); ?></button>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Handbooks Grid -->
+
+                    <div id="all-handbooks" class="handbook-grid">
+                        <?php foreach ($handbooks as $handbook): ?>
+                            <?php
+                            // Generate a random color for the handbook icon
+                            $colors = ['#4361ee', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+                            $color = $colors[array_rand($colors)];
+                            ?>
+                            <div class="book-wrapper"
+                                data-category="<?php echo htmlspecialchars($handbook['category'] ?? ''); ?>">
+                                <!-- Book 3D Effect with direct onclick -->
+                                <div class="book-container"
+                                    onclick="openPdfViewer('<?php echo htmlspecialchars($handbook['pdf_file']); ?>', '<?php echo htmlspecialchars($handbook['title']); ?>');">
+                                    <div class="book-front">
+                                        <div class="book-cover"
+                                            style="background-image: url('<?php echo htmlspecialchars($handbook['cover_image']); ?>')">
+                                        </div>
+                                    </div>
+                                    <div class="book-spine" style="background-color: <?php echo $color; ?>"></div>
+                                    <div class="book-side"></div>
+                                    <div class="book-pages"></div>
+                                </div>
+
+                                <!-- Book Info -->
+                                <div class="book-details">
+                                    <h3 class="book-title"><?php echo htmlspecialchars($handbook['title']); ?></h3>
+                                    <span
+                                        class="book-category"><?php echo htmlspecialchars($handbook['category'] ?? 'Uncategorized'); ?></span>
+                                    <div class="book-actions">
+                                        <button
+                                            onclick="openPdfViewer('<?php echo htmlspecialchars($handbook['pdf_file']); ?>', '<?php echo htmlspecialchars($handbook['title']); ?>')"
+                                            class="btn btn-primary" style="background-color: <?php echo $color; ?>">
+                                            <i class="fas fa-book-open"></i> Read
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <?php if ($is_admin): ?>
+                                    <div class="admin-actions">
+                                        <a href="handbook.php?edit=<?php echo $handbook['id']; ?>" class="btn btn-secondary btn-sm"
+                                            title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="handbook.php" method="post" style="display: inline;"
+                                            onsubmit="return confirm('Are you sure you want to delete this handbook?');">
+                                            <input type="hidden" name="action" value="delete_handbook">
+                                            <input type="hidden" name="handbook_id" value="<?php echo $handbook['id']; ?>">
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+
+                        <?php if (empty($handbooks)): ?>
+                            <div id="noResults" class="no-results">
+                                <i class="fas fa-book"></i>
+                                <h3>No Handbooks Available</h3>
+                                <p>No handbooks have been added yet.</p>
+                                <?php if ($is_admin): ?>
+                                    <p>Click "Create New Handbook" to add your first handbook.</p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+
+                    <!-- No Results (hidden by default) -->
+                    <div id="noResultsSearch" class="no-results" style="display: none;">
+                        <i class="fas fa-search"></i>
+                        <h3>No Handbooks Found</h3>
+                        <p>We couldn't find any handbooks matching your search. Try different keywords or clear your search.
+                        </p>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
-    
+
     <!-- Enhanced PDF Viewer Modal -->
     <div class="pdf-viewer" id="pdfViewer">
         <div class="pdf-container">
@@ -1465,7 +1517,7 @@ $conn->close();
             </div>
             <div class="pdf-viewer-content">
                 <div id="pdf-canvas-container"></div>
-                <div class="pdf-navigation">
+                <div class="pdf-navigation hidden">
                     <button class="pdf-nav-btn" id="prevPage" disabled>
                         <i class="fas fa-chevron-left"></i>
                     </button>
@@ -1477,65 +1529,67 @@ $conn->close();
             </div>
         </div>
     </div>
-    
+
     <!-- Create Handbook Modal -->
     <?php if ($is_admin): ?>
-    <div class="modal" id="createHandbookModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Create New Handbook</h2>
-                <button type="button" class="modal-close" id="closeCreateModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="createHandbookForm" action="handbook.php" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="action" value="create_handbook">
-                    
-                    <div class="form-group">
-                        <label for="title">Handbook Title</label>
-                        <input type="text" id="title" name="title" class="form-control" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="description">Description</label>
-                        <textarea id="description" name="description" class="form-control" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="category">Category</label>
-                        <input type="text" id="category" name="category" class="form-control" list="category-list">
-                        <datalist id="category-list">
-                            <?php foreach ($categories as $category): ?>
-                            <option value="<?php echo htmlspecialchars($category); ?>">
-                            <?php endforeach; ?>
-                        </datalist>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="cover_image">Cover Image</label>
-                        <input type="file" id="cover_image" name="cover_image" class="form-control" accept="image/*" required>
-                        <small>Recommended size: 400x600 pixels</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="pdf_file">PDF File</label>
-                        <input type="file" id="pdf_file" name="pdf_file" class="form-control" accept="application/pdf" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="cancelCreateBtn">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
-                <button type="button" class="btn btn-primary" id="submitCreateBtn">
-                    <i class="fas fa-save"></i> Create Handbook
-                </button>
+        <div class="modal" id="createHandbookModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Create New Handbook</h2>
+                    <button type="button" class="modal-close" id="closeCreateModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="createHandbookForm" action="handbook.php" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="create_handbook">
+
+                        <div class="form-group">
+                            <label for="title">Handbook Title</label>
+                            <input type="text" id="title" name="title" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <input type="text" id="category" name="category" class="form-control" list="category-list">
+                            <datalist id="category-list">
+                                <?php foreach ($categories as $category): ?>
+                                    <option value="<?php echo htmlspecialchars($category); ?>">
+                                    <?php endforeach; ?>
+                            </datalist>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cover_image">Cover Image</label>
+                            <input type="file" id="cover_image" name="cover_image" class="form-control" accept="image/*"
+                                required>
+                            <small>Recommended size: 400x600 pixels</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pdf_file">PDF File</label>
+                            <input type="file" id="pdf_file" name="pdf_file" class="form-control" accept="application/pdf"
+                                required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelCreateBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="submitCreateBtn">
+                        <i class="fas fa-save"></i> Create Handbook
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
     <?php endif; ?>
-    
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Modal functionality
             const createHandbookModal = document.getElementById('createHandbookModal');
             const openCreateModalBtn = document.getElementById('openCreateModalBtn');
@@ -1543,73 +1597,73 @@ $conn->close();
             const cancelCreateBtn = document.getElementById('cancelCreateBtn');
             const submitCreateBtn = document.getElementById('submitCreateBtn');
             const createHandbookForm = document.getElementById('createHandbookForm');
-            
+
             if (openCreateModalBtn) {
-                openCreateModalBtn.addEventListener('click', function() {
+                openCreateModalBtn.addEventListener('click', function () {
                     createHandbookModal.style.display = 'block';
                     document.body.style.overflow = 'hidden';
                 });
             }
-            
+
             if (closeCreateModal) {
-                closeCreateModal.addEventListener('click', function() {
+                closeCreateModal.addEventListener('click', function () {
                     createHandbookModal.style.display = 'none';
                     document.body.style.overflow = 'auto';
                 });
             }
-            
+
             if (cancelCreateBtn) {
-                cancelCreateBtn.addEventListener('click', function() {
+                cancelCreateBtn.addEventListener('click', function () {
                     createHandbookModal.style.display = 'none';
                     document.body.style.overflow = 'auto';
                 });
             }
-            
+
             if (submitCreateBtn) {
-                submitCreateBtn.addEventListener('click', function() {
+                submitCreateBtn.addEventListener('click', function () {
                     // Validate form
                     const titleInput = document.querySelector('#createHandbookForm #title');
                     const coverInput = document.querySelector('#createHandbookForm #cover_image');
                     const pdfInput = document.querySelector('#createHandbookForm #pdf_file');
-                    
+
                     if (!titleInput.value.trim()) {
                         alert('Please enter a handbook title.');
                         titleInput.focus();
                         return;
                     }
-                    
+
                     if (!coverInput.files.length) {
                         alert('Please select a cover image.');
                         coverInput.focus();
                         return;
                     }
-                    
+
                     if (!pdfInput.files.length) {
                         alert('Please select a PDF file.');
                         pdfInput.focus();
                         return;
                     }
-                    
+
                     // Submit the form
                     createHandbookForm.submit();
                 });
             }
-            
+
             // Close modal when clicking outside
-            window.addEventListener('click', function(event) {
+            window.addEventListener('click', function (event) {
                 if (event.target === createHandbookModal) {
                     createHandbookModal.style.display = 'none';
                     document.body.style.overflow = 'auto';
                 }
             });
-            
+
             // Edit Mode: Edit Handbook Form Toggle
             const editHandbookBtn = document.getElementById('editHandbookBtn');
             const editHandbookForm = document.getElementById('editHandbookForm');
             const cancelEditBtn = document.getElementById('cancelEditBtn');
-            
+
             if (editHandbookBtn) {
-                editHandbookBtn.addEventListener('click', function() {
+                editHandbookBtn.addEventListener('click', function () {
                     editHandbookForm.style.display = 'block';
                     editCoverForm.style.display = 'none';
                     editPdfForm.style.display = 'none';
@@ -1619,20 +1673,20 @@ $conn->close();
                     });
                 });
             }
-            
+
             if (cancelEditBtn) {
-                cancelEditBtn.addEventListener('click', function() {
+                cancelEditBtn.addEventListener('click', function () {
                     editHandbookForm.style.display = 'none';
                 });
             }
-            
+
             // Edit Mode: Edit Cover Form Toggle
             const editCoverBtn = document.getElementById('editCoverBtn');
             const editCoverForm = document.getElementById('editCoverForm');
             const cancelCoverBtn = document.getElementById('cancelCoverBtn');
-            
+
             if (editCoverBtn) {
-                editCoverBtn.addEventListener('click', function() {
+                editCoverBtn.addEventListener('click', function () {
                     editCoverForm.style.display = 'block';
                     editHandbookForm.style.display = 'none';
                     editPdfForm.style.display = 'none';
@@ -1642,20 +1696,20 @@ $conn->close();
                     });
                 });
             }
-            
+
             if (cancelCoverBtn) {
-                cancelCoverBtn.addEventListener('click', function() {
+                cancelCoverBtn.addEventListener('click', function () {
                     editCoverForm.style.display = 'none';
                 });
             }
-            
+
             // Edit Mode: Edit PDF Form Toggle
             const editPdfBtn = document.getElementById('editPdfBtn');
             const editPdfForm = document.getElementById('editPdfForm');
             const cancelPdfBtn = document.getElementById('cancelPdfBtn');
-            
+
             if (editPdfBtn) {
-                editPdfBtn.addEventListener('click', function() {
+                editPdfBtn.addEventListener('click', function () {
                     editPdfForm.style.display = 'block';
                     editHandbookForm.style.display = 'none';
                     editCoverForm.style.display = 'none';
@@ -1665,26 +1719,26 @@ $conn->close();
                     });
                 });
             }
-            
+
             if (cancelPdfBtn) {
-                cancelPdfBtn.addEventListener('click', function() {
+                cancelPdfBtn.addEventListener('click', function () {
                     editPdfForm.style.display = 'none';
                 });
             }
         });
-        
+
         // Function to filter handbooks based on search input
         function filterHandbooks() {
             const searchInput = document.getElementById('searchInput');
             const filter = searchInput.value.toLowerCase();
             const handbookCards = document.querySelectorAll('.book-wrapper');
             const noResults = document.getElementById('noResultsSearch');
-            
+
             let resultsFound = false;
-            
+
             handbookCards.forEach(card => {
                 const title = card.querySelector('.book-title').textContent.toLowerCase();
-                
+
                 if (title.includes(filter)) {
                     card.style.display = '';
                     resultsFound = true;
@@ -1692,11 +1746,11 @@ $conn->close();
                     card.style.display = 'none';
                 }
             });
-            
+
             // Show/hide no results message
             if (noResults) {
                 noResults.style.display = resultsFound ? 'none' : 'block';
-                
+
                 // Hide the default no results if we're showing the search no results
                 const defaultNoResults = document.getElementById('noResults');
                 if (defaultNoResults) {
@@ -1704,25 +1758,25 @@ $conn->close();
                 }
             }
         }
-        
+
         // Function to filter handbooks by category
         function filterCategory(category) {
             // Update active tab
             const tabs = document.querySelectorAll('.category-tab');
             tabs.forEach(tab => {
                 tab.classList.remove('active');
-                if (tab.textContent.toLowerCase() === category.toLowerCase() || 
+                if (tab.textContent.toLowerCase() === category.toLowerCase() ||
                     (category === 'all' && tab.textContent.toLowerCase() === 'all')) {
                     tab.classList.add('active');
                 }
             });
-            
+
             // Filter cards
             const handbookCards = document.querySelectorAll('.book-wrapper');
             const noResults = document.getElementById('noResultsSearch');
-            
+
             let resultsFound = false;
-            
+
             handbookCards.forEach(card => {
                 if (category === 'all' || card.dataset.category.toLowerCase() === category.toLowerCase()) {
                     card.style.display = '';
@@ -1731,18 +1785,18 @@ $conn->close();
                     card.style.display = 'none';
                 }
             });
-            
+
             // Show/hide no results message
             if (noResults) {
                 noResults.style.display = resultsFound ? 'none' : 'block';
-                
+
                 // Hide the default no results if we're showing the search no results
                 const defaultNoResults = document.getElementById('noResults');
                 if (defaultNoResults) {
                     defaultNoResults.style.display = 'none';
                 }
             }
-            
+
             // Clear search input
             document.getElementById('searchInput').value = '';
         }
@@ -1752,63 +1806,66 @@ $conn->close();
         if (typeof pdfjsLib === 'undefined') {
             console.error('PDF.js library not loaded!');
             // Fallback to simple iframe viewer if PDF.js is not available
-            window.openPdfViewer = function(pdfUrl, title) {
+            window.openPdfViewer = function (pdfUrl, title) {
                 const pdfViewer = document.getElementById('pdfViewer');
                 const pdfTitle = document.getElementById('pdfTitle');
-                
+
                 if (!pdfViewer || !pdfTitle) {
                     console.error("PDF viewer elements not found");
                     return;
                 }
-                
+
                 pdfTitle.textContent = title || 'Handbook';
-                
+
                 // Create iframe for fallback
                 const container = document.querySelector('.pdf-viewer-content');
-                container.innerHTML = `<iframe src="${pdfUrl}" style="width:100%;height:100%;border:none;" title="PDF Viewer"></iframe>`;
-                
+                container.innerHTML =
+                    `<iframe src="${pdfUrl}" style="width:100%;height:500px;border:none;" title="PDF Viewer"></iframe>`;
+
                 pdfViewer.style.display = 'block';
                 document.body.style.overflow = 'hidden';
             };
         } else {
             // Initialize PDF.js
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         }
 
         // Open PDF viewer with enhanced functionality
         function openPdfViewer(pdfUrl, title) {
             console.log("Opening PDF viewer:", pdfUrl, title); // Debug log
-            
+
             const pdfViewer = document.getElementById('pdfViewer');
             const pdfTitle = document.getElementById('pdfTitle');
             const canvasContainer = document.getElementById('pdf-canvas-container');
-            
+
             if (!pdfViewer || !pdfTitle || !canvasContainer) {
                 console.error("PDF viewer elements not found");
                 alert("Error: PDF viewer elements not found");
                 return;
             }
-            
+
             // Clear previous PDF
             canvasContainer.innerHTML = '';
-            
+
             // Set title and show viewer
             pdfTitle.textContent = title || 'Handbook';
             pdfViewer.style.display = 'block';
             document.body.style.overflow = 'hidden';
-            
+
             // Store current PDF URL for download
             window.currentPdfUrl = pdfUrl;
-            
+
             // Reset page number and scale
             window.pageNum = 1;
             window.scale = 1.0;
             window.pageRendering = false;
             window.pageNumPending = null;
-            
+
             // Simple fallback - just use iframe
-            canvasContainer.innerHTML = `<iframe src="${pdfUrl}" style="width:100%;height:100%;border:none;" title="PDF Viewer"></iframe>`;
-            
+            canvasContainer.innerHTML =
+                `<iframe src="${pdfUrl}" style="width:100%;height:500px;border:none;" title="PDF Viewer"></iframe>`;
+
             // Try to load with PDF.js if available
             if (typeof pdfjsLib !== 'undefined') {
                 try {
@@ -1823,15 +1880,15 @@ $conn->close();
         // Load PDF document
         function loadPdf(url) {
             try {
-                pdfjsLib.getDocument(url).promise.then(function(pdf) {
+                pdfjsLib.getDocument(url).promise.then(function (pdf) {
                     pdfDoc = pdf;
                     document.getElementById('pageInfo').textContent = `Page ${pageNum} of ${pdfDoc.numPages}`;
                     document.getElementById('prevPage').disabled = pageNum <= 1;
                     document.getElementById('nextPage').disabled = pageNum >= pdfDoc.numPages;
-                    
+
                     // Render first page
-                    renderPage(pageNum);
-                }).catch(function(error) {
+                    // renderPage(pageNum);
+                }).catch(function (error) {
                     console.error('Error loading PDF:', error);
                     const canvasContainer = document.getElementById('pdf-canvas-container');
                     canvasContainer.innerHTML = `
@@ -1851,115 +1908,121 @@ $conn->close();
             }
         }
 
-        // Render a specific page
-        function renderPage(num) {
-            pageRendering = true;
-            
-            try {
-                // Get the page
-                pdfDoc.getPage(num).then(function(page) {
-                    const viewport = page.getViewport({ scale: scale });
-                    
-                    // Create canvas for this page
-                    const canvas = document.createElement('canvas');
-                    canvas.className = 'pdf-canvas';
-                    canvas.id = `page-${num}`;
-                    const ctx = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    
-                    // Add canvas to container
-                    const canvasContainer = document.getElementById('pdf-canvas-container');
-                    
-                    // Clear container if we're re-rendering the current page
-                    if (document.getElementById(`page-${num}`)) {
-                        document.getElementById(`page-${num}`).remove();
-                    }
-                    
-                    canvasContainer.appendChild(canvas);
-                    
-                    // Render PDF page
-                    const renderContext = {
-                        canvasContext: ctx,
-                        viewport: viewport
-                    };
-                    
-                    const renderTask = page.render(renderContext);
-                    
-                    // Wait for rendering to finish
-                    renderTask.promise.then(function() {
-                        pageRendering = false;
-                        
-                        // Update page info
-                        document.getElementById('pageInfo').textContent = `Page ${num} of ${pdfDoc.numPages}`;
-                        document.getElementById('prevPage').disabled = num <= 1;
-                        document.getElementById('nextPage').disabled = num >= pdfDoc.numPages;
-                        
-                        // Scroll to the newly rendered page
-                        canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        
-                        // If another page rendering is pending, render that page
-                        if (pageNumPending !== null) {
-                            renderPage(pageNumPending);
-                            pageNumPending = null;
-                        }
-                    }).catch(function(error) {
-                        console.error('Error rendering page:', error);
-                        pageRendering = false;
-                    });
-                }).catch(function(error) {
-                    console.error('Error getting page:', error);
-                    pageRendering = false;
-                });
-            } catch (error) {
-                console.error('Error in renderPage function:', error);
-                pageRendering = false;
-            }
-        }
+        // // Render a specific page
+        // function renderPage(num) {
+        //     pageRendering = true;
 
-        // Go to previous page
-        function prevPage() {
-            if (pageNum <= 1) return;
-            pageNum--;
-            queueRenderPage(pageNum);
-        }
+        //     try {
+        //         // Get the page
+        //         pdfDoc.getPage(num).then(function (page) {
+        //             const viewport = page.getViewport({
+        //                 scale: scale
+        //             });
 
-        // Go to next page
-        function nextPage() {
-            if (pageNum >= pdfDoc.numPages) return;
-            pageNum++;
-            queueRenderPage(pageNum);
-        }
+        //             // Create canvas for this page
+        //             const canvas = document.createElement('canvas');
+        //             canvas.className = 'pdf-canvas';
+        //             canvas.id = `page-${num}`;
+        //             const ctx = canvas.getContext('2d');
+        //             canvas.height = viewport.height;
+        //             canvas.width = viewport.width;
 
-        // Queue rendering of a page
-        function queueRenderPage(num) {
-            if (pageRendering) {
-                pageNumPending = num;
-            } else {
-                renderPage(num);
-            }
-        }
+        //             // Add canvas to container
+        //             const canvasContainer = document.getElementById('pdf-canvas-container');
 
-        // Zoom in function
-        function zoomIn() {
-            if (scale >= 3.0) return; // Max zoom
-            scale += 0.25;
-            if (pdfDoc) {
-                renderPage(pageNum);
-            }
-        }
+        //             // Clear container if we're re-rendering the current page
+        //             if (document.getElementById(`page-${num}`)) {
+        //                 document.getElementById(`page-${num}`).remove();
+        //             }
 
-        // Zoom out function
-        function zoomOut() {
-            if (scale <= 0.5) return; // Min zoom
-            scale -= 0.25;
-            if (pdfDoc) {
-                renderPage(pageNum);
-            }
-        }
+        //             canvasContainer.appendChild(canvas);
+
+        //             // Render PDF page
+        //             const renderContext = {
+        //                 canvasContext: ctx,
+        //                 viewport: viewport
+        //             };
+
+        //             const renderTask = page.render(renderContext);
+
+        //             // Wait for rendering to finish
+        //             renderTask.promise.then(function () {
+        //                 pageRendering = false;
+
+        //                 // Update page info
+        //                 document.getElementById('pageInfo').textContent =
+        //                     `Page ${num} of ${pdfDoc.numPages}`;
+        //                 document.getElementById('prevPage').disabled = num <= 1;
+        //                 document.getElementById('nextPage').disabled = num >= pdfDoc.numPages;
+
+        //                 // Scroll to the newly rendered page
+        //                 canvas.scrollIntoView({
+        //                     behavior: 'smooth',
+        //                     block: 'start'
+        //                 });
+
+        //                 // If another page rendering is pending, render that page
+        //                 if (pageNumPending !== null) {
+        //                     renderPage(pageNumPending);
+        //                     pageNumPending = null;
+        //                 }
+        //             }).catch(function (error) {
+        //                 console.error('Error rendering page:', error);
+        //                 pageRendering = false;
+        //             });
+        //         }).catch(function (error) {
+        //             console.error('Error getting page:', error);
+        //             pageRendering = false;
+        //         });
+        //     } catch (error) {
+        //         console.error('Error in renderPage function:', error);
+        //         pageRendering = false;
+        //     }
+        // }
+
+        // // Go to previous page
+        // function prevPage() {
+        //     if (pageNum <= 1) return;
+        //     pageNum--;
+        //     queueRenderPage(pageNum);
+        // }
+
+        // // Go to next page
+        // function nextPage() {
+        //     if (pageNum >= pdfDoc.numPages) return;
+        //     pageNum++;
+        //     queueRenderPage(pageNum);
+        // }
+
+        // // Queue rendering of a page
+        // function queueRenderPage(num) {
+        //     if (pageRendering) {
+        //         pageNumPending = num;
+        //     } else {
+        //         renderPage(num);
+        //     }
+        // }
+
+        // // Zoom in function
+        // function zoomIn() {
+        //     if (scale >= 3.0) return; // Max zoom
+        //     scale += 0.25;
+        //     if (pdfDoc) {
+        //         renderPage(pageNum);
+        //     }
+        // }
+
+        // // Zoom out function
+        // function zoomOut() {
+        //     if (scale <= 0.5) return; // Min zoom
+        //     scale -= 0.25;
+        //     if (pdfDoc) {
+        //         renderPage(pageNum);
+        //     }
+        // }
 
         // Set up PDF viewer controls
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const pdfViewer = document.getElementById('pdfViewer');
             const closeViewer = document.getElementById('closeViewer');
             const prevPageBtn = document.getElementById('prevPage');
@@ -1967,43 +2030,43 @@ $conn->close();
             const zoomInBtn = document.getElementById('zoomInBtn');
             const zoomOutBtn = document.getElementById('zoomOutBtn');
             const downloadBtn = document.getElementById('downloadBtn');
-            
+
             // Close PDF viewer
             if (closeViewer) {
-                closeViewer.addEventListener('click', function() {
+                closeViewer.addEventListener('click', function () {
                     pdfViewer.style.display = 'none';
                     document.body.style.overflow = 'auto';
-                    
+
                     // Clear PDF document
                     pdfDoc = null;
                     const canvasContainer = document.getElementById('pdf-canvas-container');
                     canvasContainer.innerHTML = '';
                 });
             }
-            
+
             // Previous page button
             if (prevPageBtn) {
                 prevPageBtn.addEventListener('click', prevPage);
             }
-            
+
             // Next page button
             if (nextPageBtn) {
                 nextPageBtn.addEventListener('click', nextPage);
             }
-            
+
             // Zoom in button
             if (zoomInBtn) {
                 zoomInBtn.addEventListener('click', zoomIn);
             }
-            
+
             // Zoom out button
             if (zoomOutBtn) {
                 zoomOutBtn.addEventListener('click', zoomOut);
             }
-            
+
             // Download button
             if (downloadBtn) {
-                downloadBtn.addEventListener('click', function() {
+                downloadBtn.addEventListener('click', function () {
                     if (currentPdfUrl) {
                         const a = document.createElement('a');
                         a.href = currentPdfUrl;
@@ -2014,9 +2077,9 @@ $conn->close();
                     }
                 });
             }
-            
+
             // Keyboard navigation
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (pdfViewer.style.display === 'block') {
                     if (e.key === 'Escape') {
                         closeViewer.click();
@@ -2030,8 +2093,9 @@ $conn->close();
                         zoomOut();
                     }
                 }
-                
-                if (createHandbookModal && createHandbookModal.style.display === 'block' && e.key === 'Escape') {
+
+                if (createHandbookModal && createHandbookModal.style.display === 'block' && e.key ===
+                    'Escape') {
                     createHandbookModal.style.display = 'none';
                     document.body.style.overflow = 'auto';
                 }
@@ -2039,4 +2103,5 @@ $conn->close();
         });
     </script>
 </body>
+
 </html>
