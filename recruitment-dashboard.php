@@ -23,6 +23,9 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
   $user = getUserById($_SESSION['user_id']);
 }
 
+$current_user_id = $_SESSION['user_id'];
+$current_user = getUserById($current_user_id);
+
 // Check if user has permission to edit users
 if ($current_user['role'] != 'admin' && $current_user['role'] != 'manager') {
     header("Location: index.php");
