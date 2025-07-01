@@ -1831,3 +1831,189 @@ function getUniqueStatuses() {
     
     return $statuses;
 }
+
+/**
+ * Get recruitment leads
+ */
+function getRecruitmentLeads($filters = [], $sort_by = 'created_at', $sort_order = 'DESC', $limit = null, $offset = 0) {
+    global $pdo;
+    
+    if (!isset($pdo)) {
+        return [
+            'success' => false, 
+            'message' => 'Database connection not available'
+        ];
+    }
+    
+    try {
+        // Base query
+        $sql = "SELECT * FROM recruitment_leads WHERE 1=1";
+        $params = [];
+        
+        // Add filters
+        if (!empty($filters['status'])) {
+            $sql .= " AND status = :status";
+            $params[':status'] = $filters['status'];
+        }
+        
+        if (!empty($filters['interest_level'])) {
+            $sql .= " AND interest_level = :interest_level";
+            $params[':interest_level'] = $filters['interest_level'];
+        }
+        
+        if (!empty($filters['source'])) {
+            $sql .= " AND source = :source";
+            $params[':source'] = $filters['source'];
+        }
+        
+        if (!empty($filters['search'])) {
+            $sql .= " AND (full_name LIKE :search OR email LIKE :search OR contact_number LIKE :search)";
+            $params[':search'] = '%' . $filters['search'] . '%';
+        }
+        
+        // Add sorting
+        $allowed_sort_columns = ['id', 'full_name', 'contact_number', 'email', 'recruiter_name', 'interest_level', 'status', 'source', 'created_at'];
+        if (in_array($sort_by, $allowed_sort_columns)) {
+            $sort_order = strtoupper($sort_order) === 'DESC' ? 'DESC' : 'ASC';
+            $sql .= " ORDER BY {$sort_by} {$sort_order}";
+        }
+        
+        // Add limit and offset
+        if ($limit !== null) {
+            $sql .= " LIMIT :limit OFFSET :offset";
+        }
+        
+        $stmt = $pdo->prepare($sql);
+        
+        // Bind limit and offset separately as they need to be integers
+        if ($limit !== null) {
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+        }
+        
+        // Bind other parameters
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        
+        $stmt->execute();
+        $leads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return [
+            'success' => true,
+            'data' => $leads,
+            'total' => count($leads)
+        ];
+        
+    } catch (PDOException $e) {
+        error_log("Database error in getRecruitmentLeads: " . $e->getMessage());
+        return [
+            'success' => false, 
+            'message' => 'Database error: ' . $e->getMessage()
+        ];
+    }
+}
+
+function deleteRecruitmentLead($id) {
+    global $pdo;
+    
+    if (!isset($pdo)) {
+        return [
+            'success' => false, 
+            'message' => 'Database connection not available'
+        ];
+    }
+    
+    try {
+        // Validate ID
+        if (empty($id) || !is_numeric($id)) {
+            return [
+                'success' => false, 
+                'message' => 'Invalid ID provided'
+            ];
+        }
+        
+        // Check if record exists
+        $checkSql = "SELECT id FROM recruitment_leads WHERE id = :id";
+        $checkStmt = $pdo->prepare($checkSql);
+        $checkStmt->execute([':id' => $id]);
+        
+        if (!$checkStmt->fetch()) {
+            return [
+                'success' => false, 
+                'message' => 'Recruitment lead not found'
+            ];
+        }
+        
+        // Delete the record
+        $sql = "DELETE FROM recruitment_leads WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $result = $stmt->execute([':id' => $id]);
+        
+        if ($result) {
+            return [
+                'success' => true, 
+                'message' => 'Recruitment lead deleted successfully'
+            ];
+        } else {
+            return [
+                'success' => false, 
+                'message' => 'Failed to delete recruitment lead'
+            ];
+        }
+        
+    } catch (PDOException $e) {
+        error_log("Database error in deleteRecruitmentLead: " . $e->getMessage());
+        return [
+            'success' => false, 
+            'message' => 'Database error: ' . $e->getMessage()
+        ];
+    }
+}
+
+// AJAX Handler - This is crucial for the dashboard to work
+if (isset($_POST['action'])) {
+    // Enable error logging for AJAX requests
+    error_log("AJAX request received: " . $_POST['action']);
+    error_log("POST data: " . print_r($_POST, true));
+    
+    header('Content-Type: application/json');
+    
+    try {
+        switch ($_POST['action']) {
+            case 'add_recruitment_lead':
+                $result = addRecruitmentLead($_POST);
+                echo json_encode($result);
+                exit;
+                
+            case 'delete_recruitment_lead':
+                $result = deleteRecruitmentLead($_POST['id'] ?? null);
+                echo json_encode($result);
+                exit;
+                
+            case 'get_recruitment_leads':
+                $filters = isset($_POST['filters']) ? json_decode($_POST['filters'], true) : [];
+                $sort_by = $_POST['sort_by'] ?? 'created_at';
+                $sort_order = $_POST['sort_order'] ?? 'DESC';
+                $limit = isset($_POST['limit']) ? (int)$_POST['limit'] : null;
+                $offset = isset($_POST['offset']) ? (int)$_POST['offset'] : 0;
+                
+                $result = getRecruitmentLeads($filters, $sort_by, $sort_order, $limit, $offset);
+                echo json_encode($result);
+                exit;
+                
+            case 'get_recruitment_stats':
+                $result = getRecruitmentStats();
+                echo json_encode($result);
+                exit;
+                
+            default:
+                echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $_POST['action']]);
+                exit;
+        }
+    } catch (Exception $e) {
+        error_log("AJAX error: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+        exit;
+    }
+}
