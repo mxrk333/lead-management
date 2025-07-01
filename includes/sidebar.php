@@ -142,6 +142,13 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
                             </a>
                         </li>
 
+                        <li class="nav-item">
+                            <a href="recruitment-dashboard.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'recruitment-dashboard.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-user-plus nav-icon"></i>
+                                <span class="nav-text">Recruitment</span>
+                            </a>
+                        </li>
+
                         <li class="nav-item has-submenu">
                             <button class="nav-link submenu-trigger <?php echo in_array(basename($_SERVER['PHP_SELF']), ['handbook.php', 'vast.php', 'links.php']) ? 'active' : ''; ?>" data-submenu="materials">
                                 <i class="fas fa-book-open nav-icon"></i>
