@@ -14422,3 +14422,1317 @@ Stack trace:
 [23-Jun-2025 11:58:08 Europe/Berlin] Attempting database connection. DreamHost environment: false
 [23-Jun-2025 11:58:08 Europe/Berlin] Database connection successful to localhost/real_estate_leads
 [23-Jun-2025 11:58:08 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[30-Jun-2025 09:24:35 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[30-Jun-2025 09:24:35 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[30-Jun-2025 09:24:35 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[30-Jun-2025 09:24:35 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:57:29 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:57:29 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:57:29 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:57:29 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:57:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:57:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:57:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:57:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:57:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:57:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:57:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:57:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:57:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:57:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:57:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:57:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:57:37 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[01-Jul-2025 16:57:37 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[01-Jul-2025 16:57:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:57:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 10:57:41 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 10:57:41 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 10:57:41 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 10:57:41 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 10:57:41 America/New_York] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[01-Jul-2025 10:57:41 America/New_York] Header loaded - Total notifications: 0, Unread count: 0
+[01-Jul-2025 16:58:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:58:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:58:50 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:58:50 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:58:50 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:58:50 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:58:50 Europe/Berlin] Users fetched: 60
+[01-Jul-2025 16:58:50 Europe/Berlin] Users data: Array
+(
+    [1] => Array
+        (
+            [id] => 1
+            [name] => Administrator
+            [username] => admin
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [26] => Array
+        (
+            [id] => 26
+            [name] => Ailyn Llaneta De Torres
+            [username] => ailyndetorres.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [9] => Array
+        (
+            [id] => 9
+            [name] => Alvin  Llaneta
+            [username] => alvinllaneta.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [33] => Array
+        (
+            [id] => 33
+            [name] => Anela Dela Cruz Tabuyan
+            [username] => anelatabuyan.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [55] => Array
+        (
+            [id] => 55
+            [name] => Angelica Rubrico
+            [username] => angelicarubrico.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [32] => Array
+        (
+            [id] => 32
+            [name] => Annalyn Salting Violenta
+            [username] => annalynviolenta.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [30] => Array
+        (
+            [id] => 30
+            [name] => Arlene Umali
+            [username] => arleneumali.innersparc
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [41] => Array
+        (
+            [id] => 41
+            [name] => Charito Palonson
+            [username] => charitopalonson.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [8] => Array
+        (
+            [id] => 8
+            [name] => Charlene Dellosa
+            [username] => charlenedellosa.opsman
+            [role] => manager
+            [team_id] => 8
+        )
+
+    [11] => Array
+        (
+            [id] => 11
+            [name] => Clarence Danielle Lim Serdon
+            [username] => clarencedanielleserdon.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [48] => Array
+        (
+            [id] => 48
+            [name] => Cynthia Caballes
+            [username] => cynthiacaballes.innersparc
+            [role] => manager
+            [team_id] => 3
+        )
+
+    [59] => Array
+        (
+            [id] => 59
+            [name] => Daniel Pagilagan
+            [username] => danielpagilagan.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [63] => Array
+        (
+            [id] => 63
+            [name] => David Casil
+            [username] => davidcasil.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [44] => Array
+        (
+            [id] => 44
+            [name] => Dennisa Anne  Lizano
+            [username] => dennisalizano.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [51] => Array
+        (
+            [id] => 51
+            [name] => Desiree   Jacosalem
+            [username] => desireejacosalem.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [38] => Array
+        (
+            [id] => 38
+            [name] => Eden Rose Ramos Demerin
+            [username] => edenrosedemerin.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [47] => Array
+        (
+            [id] => 47
+            [name] => Edsel  Caraballo
+            [username] => edselcaraballo.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [5] => Array
+        (
+            [id] => 5
+            [name] => Eduardaliza Dulay Torres
+            [username] => eduardalizatorres.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [27] => Array
+        (
+            [id] => 27
+            [name] => Emilyn Marcelo Cantuba
+            [username] => emilyncantuba.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [20] => Array
+        (
+            [id] => 20
+            [name] => Erwin Gonzales Baguioan
+            [username] => erwingonzales.cofounder
+            [role] => manager
+            [team_id] => 1
+        )
+
+    [12] => Array
+        (
+            [id] => 12
+            [name] => Gabcyrose Samsona Benson
+            [username] => gabcyrosebenson.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [19] => Array
+        (
+            [id] => 19
+            [name] => Gabriel Jr. Villamor Libacao
+            [username] => gabriellibacao.founder
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [54] => Array
+        (
+            [id] => 54
+            [name] => Genesis Contreras
+            [username] => genesiscontreras.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [58] => Array
+        (
+            [id] => 58
+            [name] => Ginine Angelique
+            [username] => ginineangelique.intern
+            [role] => agent
+            [team_id] => 13
+        )
+
+    [18] => Array
+        (
+            [id] => 18
+            [name] => Irene Noble Blanca
+            [username] => ireneblanca.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [43] => Array
+        (
+            [id] => 43
+            [name] => jan Aerrol Retuya
+            [username] => janaerrolretuya.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [56] => Array
+        (
+            [id] => 56
+            [name] => Jericho jericho
+            [username] => jerichosantiago.intern
+            [role] => agent
+            [team_id] => 13
+        )
+
+    [40] => Array
+        (
+            [id] => 40
+            [name] => Jerome Badua
+            [username] => jeromebadua.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [36] => Array
+        (
+            [id] => 36
+            [name] => Jerusalino Tan Santos
+            [username] => jerusalinosantos.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [42] => Array
+        (
+            [id] => 42
+            [name] => Jesselie Abayon
+            [username] => jesselieabayon.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [24] => Array
+        (
+            [id] => 24
+            [name] => Joan Mahinay Barceta
+            [username] => joanbarceta.innersparc
+            [role] => manager
+            [team_id] => 2
+        )
+
+    [34] => Array
+        (
+            [id] => 34
+            [name] => Jocelyn Santos
+            [username] => jocelynsantos.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [50] => Array
+        (
+            [id] => 50
+            [name] => John   Palonson
+            [username] => johnpalonson.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [61] => Array
+        (
+            [id] => 61
+            [name] => juandelacruz
+            [username] => juandelacruz.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [35] => Array
+        (
+            [id] => 35
+            [name] => Lenily  Rana Timajo
+            [username] => lenilyntimajo.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [13] => Array
+        (
+            [id] => 13
+            [name] => Leniza Flores pasion
+            [username] => lenizapasion.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [57] => Array
+        (
+            [id] => 57
+            [name] => Leonard Pistano
+            [username] => leonardpistano.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [29] => Array
+        (
+            [id] => 29
+            [name] => Leonardo  Dellosa
+            [username] => leodellosa.innersparc
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [4] => Array
+        (
+            [id] => 4
+            [name] => Luzviminda Labrado Lim
+            [username] => luzvimindalim.innersparc
+            [role] => supervisor
+            [team_id] => 2
+        )
+
+    [31] => Array
+        (
+            [id] => 31
+            [name] => Manny Alberto Violenta
+            [username] => mannyviolenta.innersparc
+            [role] => manager
+            [team_id] => 12
+        )
+
+    [15] => Array
+        (
+            [id] => 15
+            [name] => Mark Christian Patigayon
+            [username] => markpatigayon.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [39] => Array
+        (
+            [id] => 39
+            [name] => Mark Vincent Bacli
+            [username] => markbacli.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [52] => Array
+        (
+            [id] => 52
+            [name] => Mary Angeli    Corullo
+            [username] => marycorullo.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [45] => Array
+        (
+            [id] => 45
+            [name] => Mercy  Tubania
+            [username] => mercytubania.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [6] => Array
+        (
+            [id] => 6
+            [name] => Mike Gabriel Bedion Escarilla
+            [username] => mikegabrielescarilla.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [46] => Array
+        (
+            [id] => 46
+            [name] => Myra  Magbagay
+            [username] => myramagbagay.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [21] => Array
+        (
+            [id] => 21
+            [name] => Nelyn Serad Ortega
+            [username] => nelynortega.innersparc
+            [role] => supervisor
+            [team_id] => 1
+        )
+
+    [23] => Array
+        (
+            [id] => 23
+            [name] => Nephele Telmo Panganiban
+            [username] => nephelepanganiban
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [28] => Array
+        (
+            [id] => 28
+            [name] => Novelita  Letran Tabudlong
+            [username] => novelitatabudlong.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [37] => Array
+        (
+            [id] => 37
+            [name] => Novelyn Macalam  Bualat
+            [username] => novelynbualat.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [14] => Array
+        (
+            [id] => 14
+            [name] => Perlita Santiago Go
+            [username] => perlitago.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [49] => Array
+        (
+            [id] => 49
+            [name] => Rebecca   Resurreccion
+            [username] => rebeccaresurreccion.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [17] => Array
+        (
+            [id] => 17
+            [name] => Rize OwogOwog Lagrimas
+            [username] => rizelagrimas.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [7] => Array
+        (
+            [id] => 7
+            [name] => Romeo Cerna Cobreta Jr.
+            [username] => romeocobreta.itdept
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [22] => Array
+        (
+            [id] => 22
+            [name] => Sarah Jean Lagatic Lopez
+            [username] => sarahlopez.innersparc
+            [role] => supervisor
+            [team_id] => 1
+        )
+
+    [3] => Array
+        (
+            [id] => 3
+            [name] => Sheila Mae Fontelo Fajutagana
+            [username] => shielamaefajutagana.accounting
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [25] => Array
+        (
+            [id] => 25
+            [name] => Teresa Rosanto Sandoval
+            [username] => teresasandoval.innersparc
+            [role] => supervisor
+            [team_id] => 2
+        )
+
+    [16] => Array
+        (
+            [id] => 16
+            [name] => Verlyn Bizconde Vesagas
+            [username] => verlynvesagas.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [53] => Array
+        (
+            [id] => 53
+            [name] => Yenzo Teo Gervacio
+            [username] => yenzogervacio.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [62] => Array
+        (
+            [id] => 62
+            [name] => Yerik Yves Gavrie F. Talaboc
+            [username] => gavrietalaboc.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+)
+
+[01-Jul-2025 16:58:50 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:58:50 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:58:50 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[01-Jul-2025 16:58:50 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[01-Jul-2025 16:58:54 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:58:54 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:58:54 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:58:54 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:58:54 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:58:54 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 16:58:54 Europe/Berlin] Users fetched: 60
+[01-Jul-2025 16:58:54 Europe/Berlin] Users data: Array
+(
+    [1] => Array
+        (
+            [id] => 1
+            [name] => Administrator
+            [username] => admin
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [26] => Array
+        (
+            [id] => 26
+            [name] => Ailyn Llaneta De Torres
+            [username] => ailyndetorres.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [9] => Array
+        (
+            [id] => 9
+            [name] => Alvin  Llaneta
+            [username] => alvinllaneta.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [33] => Array
+        (
+            [id] => 33
+            [name] => Anela Dela Cruz Tabuyan
+            [username] => anelatabuyan.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [55] => Array
+        (
+            [id] => 55
+            [name] => Angelica Rubrico
+            [username] => angelicarubrico.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [32] => Array
+        (
+            [id] => 32
+            [name] => Annalyn Salting Violenta
+            [username] => annalynviolenta.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [30] => Array
+        (
+            [id] => 30
+            [name] => Arlene Umali
+            [username] => arleneumali.innersparc
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [41] => Array
+        (
+            [id] => 41
+            [name] => Charito Palonson
+            [username] => charitopalonson.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [8] => Array
+        (
+            [id] => 8
+            [name] => Charlene Dellosa
+            [username] => charlenedellosa.opsman
+            [role] => manager
+            [team_id] => 8
+        )
+
+    [11] => Array
+        (
+            [id] => 11
+            [name] => Clarence Danielle Lim Serdon
+            [username] => clarencedanielleserdon.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [48] => Array
+        (
+            [id] => 48
+            [name] => Cynthia Caballes
+            [username] => cynthiacaballes.innersparc
+            [role] => manager
+            [team_id] => 3
+        )
+
+    [59] => Array
+        (
+            [id] => 59
+            [name] => Daniel Pagilagan
+            [username] => danielpagilagan.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [63] => Array
+        (
+            [id] => 63
+            [name] => David Casil
+            [username] => davidcasil.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [44] => Array
+        (
+            [id] => 44
+            [name] => Dennisa Anne  Lizano
+            [username] => dennisalizano.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [51] => Array
+        (
+            [id] => 51
+            [name] => Desiree   Jacosalem
+            [username] => desireejacosalem.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [38] => Array
+        (
+            [id] => 38
+            [name] => Eden Rose Ramos Demerin
+            [username] => edenrosedemerin.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [47] => Array
+        (
+            [id] => 47
+            [name] => Edsel  Caraballo
+            [username] => edselcaraballo.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [5] => Array
+        (
+            [id] => 5
+            [name] => Eduardaliza Dulay Torres
+            [username] => eduardalizatorres.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [27] => Array
+        (
+            [id] => 27
+            [name] => Emilyn Marcelo Cantuba
+            [username] => emilyncantuba.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [20] => Array
+        (
+            [id] => 20
+            [name] => Erwin Gonzales Baguioan
+            [username] => erwingonzales.cofounder
+            [role] => manager
+            [team_id] => 1
+        )
+
+    [12] => Array
+        (
+            [id] => 12
+            [name] => Gabcyrose Samsona Benson
+            [username] => gabcyrosebenson.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [19] => Array
+        (
+            [id] => 19
+            [name] => Gabriel Jr. Villamor Libacao
+            [username] => gabriellibacao.founder
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [54] => Array
+        (
+            [id] => 54
+            [name] => Genesis Contreras
+            [username] => genesiscontreras.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [58] => Array
+        (
+            [id] => 58
+            [name] => Ginine Angelique
+            [username] => ginineangelique.intern
+            [role] => agent
+            [team_id] => 13
+        )
+
+    [18] => Array
+        (
+            [id] => 18
+            [name] => Irene Noble Blanca
+            [username] => ireneblanca.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [43] => Array
+        (
+            [id] => 43
+            [name] => jan Aerrol Retuya
+            [username] => janaerrolretuya.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [56] => Array
+        (
+            [id] => 56
+            [name] => Jericho jericho
+            [username] => jerichosantiago.intern
+            [role] => agent
+            [team_id] => 13
+        )
+
+    [40] => Array
+        (
+            [id] => 40
+            [name] => Jerome Badua
+            [username] => jeromebadua.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [36] => Array
+        (
+            [id] => 36
+            [name] => Jerusalino Tan Santos
+            [username] => jerusalinosantos.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [42] => Array
+        (
+            [id] => 42
+            [name] => Jesselie Abayon
+            [username] => jesselieabayon.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [24] => Array
+        (
+            [id] => 24
+            [name] => Joan Mahinay Barceta
+            [username] => joanbarceta.innersparc
+            [role] => manager
+            [team_id] => 2
+        )
+
+    [34] => Array
+        (
+            [id] => 34
+            [name] => Jocelyn Santos
+            [username] => jocelynsantos.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [50] => Array
+        (
+            [id] => 50
+            [name] => John   Palonson
+            [username] => johnpalonson.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [61] => Array
+        (
+            [id] => 61
+            [name] => juandelacruz
+            [username] => juandelacruz.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [35] => Array
+        (
+            [id] => 35
+            [name] => Lenily  Rana Timajo
+            [username] => lenilyntimajo.innersparc
+            [role] => supervisor
+            [team_id] => 12
+        )
+
+    [13] => Array
+        (
+            [id] => 13
+            [name] => Leniza Flores pasion
+            [username] => lenizapasion.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [57] => Array
+        (
+            [id] => 57
+            [name] => Leonard Pistano
+            [username] => leonardpistano.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [29] => Array
+        (
+            [id] => 29
+            [name] => Leonardo  Dellosa
+            [username] => leodellosa.innersparc
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [4] => Array
+        (
+            [id] => 4
+            [name] => Luzviminda Labrado Lim
+            [username] => luzvimindalim.innersparc
+            [role] => supervisor
+            [team_id] => 2
+        )
+
+    [31] => Array
+        (
+            [id] => 31
+            [name] => Manny Alberto Violenta
+            [username] => mannyviolenta.innersparc
+            [role] => manager
+            [team_id] => 12
+        )
+
+    [15] => Array
+        (
+            [id] => 15
+            [name] => Mark Christian Patigayon
+            [username] => markpatigayon.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [39] => Array
+        (
+            [id] => 39
+            [name] => Mark Vincent Bacli
+            [username] => markbacli.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [52] => Array
+        (
+            [id] => 52
+            [name] => Mary Angeli    Corullo
+            [username] => marycorullo.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [45] => Array
+        (
+            [id] => 45
+            [name] => Mercy  Tubania
+            [username] => mercytubania.innersparc
+            [role] => agent
+            [team_id] => 3
+        )
+
+    [6] => Array
+        (
+            [id] => 6
+            [name] => Mike Gabriel Bedion Escarilla
+            [username] => mikegabrielescarilla.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [46] => Array
+        (
+            [id] => 46
+            [name] => Myra  Magbagay
+            [username] => myramagbagay.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [21] => Array
+        (
+            [id] => 21
+            [name] => Nelyn Serad Ortega
+            [username] => nelynortega.innersparc
+            [role] => supervisor
+            [team_id] => 1
+        )
+
+    [23] => Array
+        (
+            [id] => 23
+            [name] => Nephele Telmo Panganiban
+            [username] => nephelepanganiban
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [28] => Array
+        (
+            [id] => 28
+            [name] => Novelita  Letran Tabudlong
+            [username] => novelitatabudlong.innersparc
+            [role] => agent
+            [team_id] => 2
+        )
+
+    [37] => Array
+        (
+            [id] => 37
+            [name] => Novelyn Macalam  Bualat
+            [username] => novelynbualat.innersparc
+            [role] => agent
+            [team_id] => 12
+        )
+
+    [14] => Array
+        (
+            [id] => 14
+            [name] => Perlita Santiago Go
+            [username] => perlitago.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [49] => Array
+        (
+            [id] => 49
+            [name] => Rebecca   Resurreccion
+            [username] => rebeccaresurreccion.innersparc
+            [role] => supervisor
+            [team_id] => 3
+        )
+
+    [17] => Array
+        (
+            [id] => 17
+            [name] => Rize OwogOwog Lagrimas
+            [username] => rizelagrimas.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [7] => Array
+        (
+            [id] => 7
+            [name] => Romeo Cerna Cobreta Jr.
+            [username] => romeocobreta.itdept
+            [role] => admin
+            [team_id] => 1
+        )
+
+    [22] => Array
+        (
+            [id] => 22
+            [name] => Sarah Jean Lagatic Lopez
+            [username] => sarahlopez.innersparc
+            [role] => supervisor
+            [team_id] => 1
+        )
+
+    [3] => Array
+        (
+            [id] => 3
+            [name] => Sheila Mae Fontelo Fajutagana
+            [username] => shielamaefajutagana.accounting
+            [role] => agent
+            [team_id] => 8
+        )
+
+    [25] => Array
+        (
+            [id] => 25
+            [name] => Teresa Rosanto Sandoval
+            [username] => teresasandoval.innersparc
+            [role] => supervisor
+            [team_id] => 2
+        )
+
+    [16] => Array
+        (
+            [id] => 16
+            [name] => Verlyn Bizconde Vesagas
+            [username] => verlynvesagas.innersparc
+            [role] => agent
+            [team_id] => 1
+        )
+
+    [53] => Array
+        (
+            [id] => 53
+            [name] => Yenzo Teo Gervacio
+            [username] => yenzogervacio.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+    [62] => Array
+        (
+            [id] => 62
+            [name] => Yerik Yves Gavrie F. Talaboc
+            [username] => gavrietalaboc.intern
+            [role] => admin
+            [team_id] => 13
+        )
+
+)
+
+[01-Jul-2025 16:58:54 Europe/Berlin] Memo creation - Visibility type: all
+[01-Jul-2025 16:58:54 Europe/Berlin] Memo creation - POST data: Array
+(
+    [title] => asldm
+    [description] => a;lskdas;ld
+    [priority] => Medium
+    [visibility_type] => all
+    [team_ids] => Array
+        (
+            [0] => 13
+        )
+
+    [person_ids] => Array
+        (
+            [0] => 15
+        )
+
+)
+
+[01-Jul-2025 16:58:54 Europe/Berlin] Memo created with ID: 1
+[01-Jul-2025 16:58:54 Europe/Berlin] Memo creation completed successfully
+[01-Jul-2025 16:58:55 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 16:58:55 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 10:58:55 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 10:58:55 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 10:58:55 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 10:58:55 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 10:58:55 America/New_York] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[01-Jul-2025 10:58:55 America/New_York] Header loaded - Total notifications: 0, Unread count: 0
+[01-Jul-2025 17:05:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:05:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:05:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:05:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:05:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:05:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:05:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:05:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:05:58 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[01-Jul-2025 17:05:58 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[01-Jul-2025 17:06:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:01 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:01 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:01 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[01-Jul-2025 17:06:01 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[01-Jul-2025 17:06:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:02 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_stats"}
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_stats"
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: Stats loaded successfully - {"total_leads":6,"by_interest_level":[{"interest_level":"Hot","count":2},{"interest_level":"Warm","count":2},{"interest_level":"Cold","count":2}],"recent_leads":6}
+[01-Jul-2025 17:06:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:02 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{}","sort_by":"created_at","sort_order":"DESC"}
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: Filters received
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 ORDER BY created_at DESC"
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters
+[01-Jul-2025 17:06:02 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 6 leads"
+[01-Jul-2025 17:06:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:06 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:06 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[01-Jul-2025 17:06:06 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{\"id\":11}"}
+[01-Jul-2025 17:06:06 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[01-Jul-2025 17:06:06 Europe/Berlin] RECRUITMENT API DEBUG: Filters received - {"id":11}
+[01-Jul-2025 17:06:06 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called - {"id":11}
+[01-Jul-2025 17:06:06 Europe/Berlin] RECRUITMENT API DEBUG: Added ID filter - 11
+[01-Jul-2025 17:06:06 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 AND id = :id ORDER BY created_at DESC"
+[01-Jul-2025 17:06:06 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters - {":id":11}
+[01-Jul-2025 17:06:06 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 1 leads"
+[01-Jul-2025 17:06:51 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:51 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:06:51 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 11:06:51 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:06:51 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 11:06:51 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:06:51 America/New_York] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[01-Jul-2025 11:06:51 America/New_York] Header loaded - Total notifications: 0, Unread count: 0
+[01-Jul-2025 17:06:53 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:53 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:06:53 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 11:06:53 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:06:53 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 11:06:53 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:06:53 America/New_York] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[01-Jul-2025 11:06:53 America/New_York] Header loaded - Total notifications: 0, Unread count: 0
+[01-Jul-2025 17:06:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:06:56 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 11:06:56 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 17:06:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:06:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:06:56 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 11:06:56 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:06:56 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 11:06:56 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:06:56 America/New_York] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[01-Jul-2025 11:06:56 America/New_York] Header loaded - Total notifications: 0, Unread count: 0
+[01-Jul-2025 17:07:12 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:07:12 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:07:12 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 11:07:12 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:07:12 America/New_York] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 11:07:12 America/New_York] Database connection successful to localhost/real_estate_leads
+[01-Jul-2025 11:07:12 America/New_York] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[01-Jul-2025 11:07:12 America/New_York] Header loaded - Total notifications: 0, Unread count: 0
+[01-Jul-2025 17:07:15 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[01-Jul-2025 17:07:15 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 14:32:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 14:32:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 14:32:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 14:32:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 14:39:14 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 14:39:14 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 14:39:14 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 14:39:14 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 14:39:28 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 14:39:28 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 14:39:28 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 14:39:28 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 14:39:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 14:39:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 14:39:40 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 14:39:40 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 14:51:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 14:51:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 14:51:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 14:51:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:42:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:42:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:42:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:42:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:42:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:42:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:42:41 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:42:41 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:42:41 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[02-Jul-2025 15:42:41 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[02-Jul-2025 15:42:46 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:42:46 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:42:46 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:42:46 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:42:46 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[02-Jul-2025 15:52:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:52:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:53:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:53:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:53:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:53:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:53:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:53:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:53:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:53:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:53:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:53:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:53:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:53:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:53:03 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[02-Jul-2025 15:53:03 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[02-Jul-2025 15:59:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:59:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:59:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:59:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:59:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:59:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:59:44 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[02-Jul-2025 15:59:44 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[02-Jul-2025 15:59:44 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[02-Jul-2025 15:59:44 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
