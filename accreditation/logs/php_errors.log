@@ -1,0 +1,14 @@
+[30-Jun-2025 16:43:55 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function getDbConnection() in C:\xampp2\htdocs\lead-management\accreditation\page.php:22
+Stack trace:
+#0 {main}
+  thrown in C:\xampp2\htdocs\lead-management\accreditation\page.php on line 22
+[30-Jun-2025 16:44:21 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function getUserById() in C:\xampp2\htdocs\lead-management\includes\sidebar.php:4
+Stack trace:
+#0 C:\xampp2\htdocs\lead-management\accreditation\page.php(21): require_once()
+#1 {main}
+  thrown in C:\xampp2\htdocs\lead-management\includes\sidebar.php on line 4
+[30-Jun-2025 16:45:53 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to undefined function getUserById() in C:\xampp2\htdocs\lead-management\includes\sidebar.php:4
+Stack trace:
+#0 C:\xampp2\htdocs\lead-management\accreditation\page.php(21): require_once()
+#1 {main}
+  thrown in C:\xampp2\htdocs\lead-management\includes\sidebar.php on line 4
