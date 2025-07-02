@@ -145,20 +145,23 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
                             </a>
                         </li>
 
-                        <li class="nav-item">
-        <a href="accreditation.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
-            <i class="fas fa-user-check nav-icon"></i>
-            <span class="nav-text">Accreditation</span>
-        </a>
-    </li>
-    
+                        <?php if (in_array($user['role'], ['admin', 'manager'])): ?>
+                                <li class="nav-item">
+                                    <a href="accreditation.php"
+                                        class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
+                                        <i class="fas fa-user-check nav-icon"></i>
+                                        <span class="nav-text">Accreditation</span>
+                                    </a>
+                                </li>
 
-                       <li class="nav-item">
-                            <a href="recruitment-dashboard.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'recruitment-dashboard.php' ? 'active' : ''; ?>">
-                                <i class="fas fa-user-plus nav-icon"></i>
-                                <span class="nav-text">Recruitment</span>
-                            </a>
-                        </li>
+                                <li class="nav-item">
+                                    <a href="recruitment-dashboard.php"
+                                        class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'recruitment-dashboard.php' ? 'active' : ''; ?>">
+                                        <i class="fas fa-user-plus nav-icon"></i>
+                                        <span class="nav-text">Recruitment</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
 
 
                         <li class="nav-item has-submenu">
