@@ -1,0 +1,7 @@
+CREATE TABLE manual_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    datetime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    name VARCHAR(255) NOT NULL,
+    team VARCHAR(255) NOT NULL,
+    toggle ENUM('1', '0', '') NOT NULL
+);
