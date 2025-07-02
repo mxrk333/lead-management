@@ -29,7 +29,7 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
         <div class="sidebar-user-section">
             <div class="user-avatar">
                 <?php if (!empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
-                    <img src="assets/images/avatar.png" alt="Profile Picture">
+                    <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
                 <?php else: ?>
                     <span class="avatar-text"><?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?></span>
                 <?php endif; ?>
