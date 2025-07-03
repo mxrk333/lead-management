@@ -17721,3 +17721,35 @@ Stack trace:
 [03-Jul-2025 20:14:04 Europe/Berlin] Database connection successful to localhost/real_estate_leads
 [03-Jul-2025 20:14:04 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
 [03-Jul-2025 20:14:04 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[03-Jul-2025 20:19:48 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:19:48 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:19:48 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:19:48 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:19:48 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:19:48 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:19:48 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:19:48 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:19:48 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[03-Jul-2025 20:19:48 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[03-Jul-2025 20:19:50 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:19:50 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:19:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:19:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:20:03 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:20:03 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:20:23 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:20:23 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:20:29 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:20:29 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:20:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:20:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:21:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:21:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:21:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:21:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:21:20 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:21:20 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:22:02 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:22:02 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Jul-2025 20:22:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Jul-2025 20:22:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads

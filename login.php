@@ -459,7 +459,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 <div class="login-footer">
                     <p>Forgot your password? <a href="reset-password.php">Reset it here</a></p>
-                    <p><a href="helpguest.php"><i class="fas fa-question-circle"></i> Help & Support</a></p>
+                    <p><a href="helpguest.php"><i class="fas fa-question-circle"></i> Help & support</a></p>
+                </div>
+
+                <div class="report-problem">
+                      <p><a href="problem.php"><i class="fas fa-system"></i> Report a problem</a></p>
                 </div>
                 
                 <div class="secure-badge">
