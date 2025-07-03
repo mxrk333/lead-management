@@ -309,10 +309,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $validation_errors[] = "Phone number must be 11 digits";
         }
         
-        if (empty($email)) {
-            $validation_errors[] = "Email address is required";
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $validation_errors[] = "Invalid email address format";
+        if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+             $validation_errors[] = "Invalid email address format";
         }
         
         if (empty($temperature)) {
@@ -1047,7 +1045,7 @@ debugLog("Page rendering started");
                                     <option value="">Select Status</option>
                                     <?php 
                                     $statuses = [
-                                        'Inquiry', 'Presentation Stage', 'Negotiation', 'Closed', 'Lost', 'Site Tour',
+                                        'Inquiry', 'Presentation Stage', 'Negotiation', 'Lost', 'Site Tour',
                                         'Closed Deal', 'Requirement Stage', 'Downpayment Stage', 'Housing Loan Application',
                                         'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over'
                                     ];

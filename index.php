@@ -11,7 +11,7 @@ error_reporting(E_ALL);
 if (!function_exists('isSuperUser')) {
     function isSuperUser($username) {
         $superusers = [
-            'markpatigayon.intern',
+            'markpatigayon.itadmin',
             'gabriellibacao.founder', 
             'romeocorberta.itdept'
         ];
@@ -39,6 +39,19 @@ function canEditLead($lead, $current_user_id) {
     }
     
     // User can edit if they are the assigned agent
+    return ($lead['user_id'] == $current_user_id);
+}
+
+// Function to check if current user can see full lead info
+function canSeeFullLeadInfo($lead, $current_user_id) {
+    global $user; // Access the global user variable
+    
+    // Check if user is a superuser
+    if (isset($user['username']) && isSuperUser($user['username'])) {
+        return true;
+    }
+    
+    // User can see full info if they are the assigned agent
     return ($lead['user_id'] == $current_user_id);
 }
 
@@ -218,8 +231,6 @@ $isSuperUser = isSuperUser($user['username']);
         .superuser-badge i {
             margin-right: 0.25rem;
         }
-        
-        
         
         .stat-card {
             background: white;
@@ -682,7 +693,6 @@ $isSuperUser = isSuperUser($user['username']);
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <?php include 'includes/sidebar.php'; ?>
@@ -743,7 +753,6 @@ $isSuperUser = isSuperUser($user['username']);
                             <p><?php echo htmlspecialchars($dashboardData['closed_deal_rate']); ?>%</p>
                         </div>
                     </div>
-
                     <div class="stat-card">
                         <div class="stat-icon">
                             <i class="fas fa-coins"></i>
@@ -781,7 +790,22 @@ $isSuperUser = isSuperUser($user['username']);
                                 <?php if (!empty($dashboardData['recent_leads'])): ?>
                                     <?php foreach ($dashboardData['recent_leads'] as $lead): ?>
                                         <tr>
-                                            <td><?php echo htmlspecialchars($lead['client_name']); ?></td>
+                                            <td><?php
+                                                // Check if user can see full contact info (superuser or lead owner)
+                                                if (canSeeFullLeadInfo($lead, $user_id)) {
+                                                    echo htmlspecialchars($lead['client_name']);
+                                                } else {
+                                                    // Mask name for privacy
+                                                    $name = $lead['client_name'];
+                                                    $spacePos = strpos($name, ' ');
+                                                    if ($spacePos !== false && $spacePos > 2) {
+                                                        $maskedName = substr($name, 0, 2) . str_repeat('*', $spacePos - 2) . substr($name, $spacePos);
+                                                        echo htmlspecialchars($maskedName);
+                                                    } else {
+                                                        echo '******';
+                                                    }
+                                                }
+                                            ?></td>
                                             <td>
                                                 <span class="temperature <?php echo strtolower($lead['temperature']); ?>">
                                                     <?php echo htmlspecialchars($lead['temperature']); ?>
@@ -790,7 +814,16 @@ $isSuperUser = isSuperUser($user['username']);
                                             <td><?php echo htmlspecialchars($lead['status']); ?></td>
                                             <td class="hide-mobile"><?php echo htmlspecialchars($lead['developer']); ?></td>
                                             <td class="hide-mobile"><?php echo htmlspecialchars($lead['project_model']); ?></td>
-                                            <td class="hide-mobile"><?php echo number_format($lead['price']); ?> PHP</td>
+                                            <td class="hide-mobile">
+                                                <?php
+                                                // Check if user can see full pricing info (superuser or lead owner)
+                                                if (canSeeFullLeadInfo($lead, $user_id)) {
+                                                    echo number_format($lead['price']) . ' PHP';
+                                                } else {
+                                                    echo '***,*** PHP';
+                                                }
+                                                ?>
+                                            </td>
                                             <td>
                                                 <div class="action-buttons">
                                                     <a href="lead-details.php?id=<?php echo $lead['id']; ?>" class="btn-view" title="View">

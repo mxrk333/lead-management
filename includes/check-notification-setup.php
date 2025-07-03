@@ -39,11 +39,12 @@ try {
     echo "<p>Database connection: ❌ ERROR - " . $e->getMessage() . "</p>";
 }
 
-// Check session
+// Check session status
 echo "<h3>Session Check:</h3>";
 echo "<p>Session started: " . (session_status() === PHP_SESSION_ACTIVE ? "✅ YES" : "❌ NO") . "</p>";
 echo "<p>User logged in: " . (isset($_SESSION['user_id']) ? "✅ YES (ID: " . $_SESSION['user_id'] . ")" : "❌ NO") . "</p>";
-
+/// Check if notification functions are included
+echo "<h3>Function Check:</h3>";
 echo "<h3>Instructions:</h3>";
 echo "<ol>";
 echo "<li>Make sure all required files exist in the same directory as your header.php</li>";

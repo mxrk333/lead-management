@@ -7,7 +7,7 @@ require_once 'includes/functions.php';
 if (!function_exists('isSuperUser')) {
     function isSuperUser($username) {
         $superusers = [
-            'markpatigayon.intern',
+            'markpatigayon.itadmin',
             'gabriellibacao.founder', 
             'romeocorberta.itdept'
         ];
@@ -55,7 +55,6 @@ try {
         WHERE lm.lead_id = ?
         ORDER BY lm.created_at DESC
     ";
-
     $mod_stmt = $conn->prepare($modifications_query);
     if ($mod_stmt) {
         $mod_stmt->bind_param("i", $lead_id);
@@ -79,6 +78,7 @@ if ($isSuperUser || $isLeadOwner) {
 }
 
 // Store original values - superusers see everything unmasked
+$display_client_name = $lead['client_name'];
 $display_phone = $lead['phone'];
 $display_email = $lead['email'];
 $display_facebook = $lead['facebook'];
@@ -86,13 +86,24 @@ $display_linkedin = $lead['linkedin'];
 
 // Only mask for non-superusers who don't own the lead
 if (!$isSuperUser && !$isLeadOwner) {
+    // Mask client name
+    $name = $lead['client_name'];
+    $spacePos = strpos($name, ' ');
+    if ($spacePos !== false && $spacePos > 2) {
+        $display_client_name = substr($name, 0, 2) . str_repeat('*', $spacePos - 2) . substr($name, $spacePos);
+    } else {
+        $display_client_name = '******';
+    }
+    
     // Mask phone number
     $length = strlen($lead['phone']);
     if ($length > 6) {
-        $visible_start = substr($lead['phone'], 0, 4);
-        $visible_end = substr($lead['phone'], -2);
+        $visible_start = substr($lead['phone'], 0, 3);
+        $visible_end = substr($lead['phone'], -3);
         $masked = str_repeat('*', $length - 6);
         $display_phone = $visible_start . $masked . $visible_end;
+    } else {
+        $display_phone = '***-***';
     }
     
     // Mask email
@@ -100,8 +111,14 @@ if (!$isSuperUser && !$isLeadOwner) {
     if (count($parts) == 2) {
         $name = $parts[0];
         $domain = $parts[1];
-        $masked_name = substr($name, 0, 2) . str_repeat('*', strlen($name) - 2);
-        $display_email = $masked_name . '@' . $domain;
+        if (strlen($name) > 2) {
+            $masked_name = substr($name, 0, 2) . str_repeat('*', strlen($name) - 2);
+            $display_email = $masked_name . '@' . $domain;
+        } else {
+            $display_email = '***@' . $domain;
+        }
+    } else {
+        $display_email = '***@***';
     }
     
     // Hide social links
@@ -738,16 +755,16 @@ if (!$isSuperUser && !$isLeadOwner) {
                 
                 <?php if (!$canViewFullContact): ?>
                     <div class="alert-info">
-                        <i class="fas fa-info-circle"></i> For privacy reasons, contact information and social media links are only visible to the lead owner.
+                        <i class="fas fa-info-circle"></i> For privacy reasons, contact information and social media links are only visible to the lead owner and super admins.
                         <br>
-                        <i class="fas fa-lock"></i> Only the lead owner can edit details or add activities.
+                        <i class="fas fa-lock"></i> Only the lead owner and super admins can edit details or add activities.
                     </div>
                 <?php endif; ?>
                 
                 <div class="lead-details-container">
                     <div class="lead-info-card">
                         <div class="lead-header">
-                            <h3><?php echo htmlspecialchars($lead['client_name']); ?></h3>
+                            <h3><?php echo htmlspecialchars($display_client_name); ?></h3>
                             <span class="temperature <?php echo strtolower($lead['temperature']); ?>">
                                 <?php if ($lead['temperature'] == 'Hot'): ?>
                                     <i class="fas fa-fire"></i>
@@ -833,7 +850,16 @@ if (!$isSuperUser && !$isLeadOwner) {
                                 
                                 <div class="info-item">
                                     <span class="info-label"><i class="fas fa-tag"></i> Price:</span>
-                                    <span class="info-value"><?php echo number_format($lead['price']); ?> PHP</span>
+                                    <span class="info-value">
+                                        <?php 
+                                        // Show price info based on access level
+                                        if ($canViewFullContact) {
+                                            echo number_format($lead['price']) . ' PHP';
+                                        } else {
+                                            echo '***,*** PHP';
+                                        }
+                                        ?>
+                                    </span>
                                 </div>
                                 
                                 <div class="info-item">
@@ -846,7 +872,13 @@ if (!$isSuperUser && !$isLeadOwner) {
                         <div class="lead-info-section">
                             <h4>Remarks</h4>
                             <div class="remarks-content">
-                                <?php echo !empty($lead['remarks']) ? nl2br(htmlspecialchars($lead['remarks'])) : 'No remarks added.'; ?>
+                                <?php 
+                                if ($canViewFullContact) {
+                                    echo !empty($lead['remarks']) ? nl2br(htmlspecialchars($lead['remarks'])) : 'No remarks added.';
+                                } else {
+                                    echo 'Remarks are only visible to the lead owner and super admins.';
+                                }
+                                ?>
                             </div>
                         </div>
                         
@@ -882,7 +914,6 @@ if (!$isSuperUser && !$isLeadOwner) {
                                 <?php echo htmlspecialchars($_GET['error']); ?>
                             </div>
                         <?php endif; ?>
-
                         <?php if (isset($_GET['success'])): ?>
                             <div class="alert-success">
                                 <i class="fas fa-check-circle"></i>
@@ -1025,7 +1056,6 @@ if (!$isSuperUser && !$isLeadOwner) {
             });
         }, 5000);
     </script>
-
     <script src="assets/js/script.js"></script>
 </body>
 </html>
