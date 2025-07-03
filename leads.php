@@ -6,7 +6,7 @@ require_once 'includes/functions.php';
 // Add this function right after the includes and before the canEditLead function
 function isSuperUser($username) {
     $superusers = [
-        'markpatigayon.intern',
+        'markpatigayon.itadmin',
         'gabriellibacao.founder', 
         'romeocorberta.itdept'
     ];
@@ -430,6 +430,7 @@ $isSuperUser = isSuperUser($user['username']);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* CSS styles remain the same as in original file */
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
@@ -846,7 +847,8 @@ $isSuperUser = isSuperUser($user['username']);
 
         .btn-view,
         .btn-edit,
-        .btn-delete {
+        .btn-delete,
+        .btn-call {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -885,10 +887,161 @@ $isSuperUser = isSuperUser($user['username']);
             color: var(--danger);
         }
 
+        .btn-call {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .btn-call.disabled {
+            background-color: #d1d5db !important;
+            color: #6b7280 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            opacity: 1 !important;
+            border: 1px solid #9ca3af !important;
+        }
+
         .btn-view:hover,
         .btn-edit:hover:not(.disabled),
-        .btn-delete:hover {
+        .btn-delete:hover,
+        .btn-call:hover:not(.disabled) {
             transform: translateY(-1px);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            max-width: 400px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1.5rem 1.5rem 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--gray-400);
+            cursor: pointer;
+            padding: 0;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .call-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .call-option {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            color: var(--gray-700);
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .call-option:hover {
+            background: var(--gray-50);
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .call-option i {
+            font-size: 1.25rem;
+            margin-right: 1rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+
+        .call-option-content {
+            flex: 1;
+        }
+
+        .call-option-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .call-option-description {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+        }
+
+        .call-option.phone i {
+            color: var(--success);
+        }
+
+        .call-option.whatsapp i {
+            color: #25d366;
         }
 
         .pagination {
@@ -1091,6 +1244,19 @@ $isSuperUser = isSuperUser($user['username']);
                 width: 100%;
                 max-width: 280px;
             }
+
+            .modal-content {
+                width: 95%;
+                margin: 1rem;
+            }
+
+            .modal-header {
+                padding: 1rem;
+            }
+
+            .modal-body {
+                padding: 1rem;
+            }
         }
     </style>
 </head>
@@ -1256,7 +1422,22 @@ $isSuperUser = isSuperUser($user['username']);
                             <?php else: ?>
                                 <?php foreach ($leads as $lead): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($lead['client_name']); ?></td>
+                                    <td><?php
+                                        // Check if user can see full contact info (superuser or lead owner)
+                                        if (isSuperUser($user['username']) || $lead['user_id'] == $user_id) {
+                                            echo htmlspecialchars($lead['client_name']);
+                                        } else {
+                                            // Mask name for privacy
+                                            $name = $lead['client_name'];
+                                            $spacePos = strpos($name, ' ');
+                                            if ($spacePos !== false && $spacePos > 2) {
+                                                $maskedName = substr($name, 0, 2) . str_repeat('*', $spacePos - 2) . substr($name, $spacePos);
+                                                echo htmlspecialchars($maskedName);
+                                            } else {
+                                                echo '******';
+                                            }
+                                        }
+                                    ?></td>
                                     <td>
                                         <?php 
                                         // Check if user can see full contact info (superuser or lead owner)
@@ -1318,6 +1499,18 @@ $isSuperUser = isSuperUser($user['username']);
                                                 </button>
                                             <?php endif; ?>
                                             
+                                            <?php if (isSuperUser($user['username']) || $lead['user_id'] == $user_id): ?>
+                                                <button class="btn-call" onclick="openCallModal('<?php echo htmlspecialchars($lead['client_name']); ?>', '<?php echo htmlspecialchars($lead['phone']); ?>')" title="Call">
+                                                    <i class="fas fa-phone"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn-call disabled" 
+                                                        title="You can only call leads assigned to you" 
+                                                        disabled>
+                                                    <i class="fas fa-phone"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                            
                                             <button class="btn-delete" onclick="deleteLead(<?php echo $lead['id']; ?>)" title="Delete">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
@@ -1369,6 +1562,39 @@ $isSuperUser = isSuperUser($user['username']);
             </div>
         </div>
     </div>
+
+    <!-- Call Modal -->
+    <div id="callModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-phone"></i>
+                    Contact <span id="modalClientName"></span>
+                </h3>
+                <button class="modal-close" onclick="closeCallModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="call-options">
+                    <a href="#" id="phoneCallLink" class="call-option phone">
+                        <i class="fas fa-phone"></i>
+                        <div class="call-option-content">
+                            <div class="call-option-title">Phone Call</div>
+                            <div class="call-option-description">Make a regular phone call</div>
+                        </div>
+                    </a>
+                    <a href="#" id="whatsappLink" class="call-option whatsapp" target="_blank">
+                        <i class="fab fa-whatsapp"></i>
+                        <div class="call-option-content">
+                            <div class="call-option-title">WhatsApp</div>
+                            <div class="call-option-description">Send a WhatsApp message</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <script>
     function deleteLead(id) {
@@ -1390,8 +1616,49 @@ $isSuperUser = isSuperUser($user['username']);
             });
         }
     }
+
+    function openCallModal(clientName, phoneNumber) {
+        const modal = document.getElementById('callModal');
+        const modalClientName = document.getElementById('modalClientName');
+        const phoneCallLink = document.getElementById('phoneCallLink');
+        const whatsappLink = document.getElementById('whatsappLink');
+        
+        // Set client name
+        modalClientName.textContent = clientName;
+        
+        // Set phone call link
+        phoneCallLink.href = `tel:${phoneNumber}`;
+        
+        // Set WhatsApp link (remove all non-numeric characters)
+        const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+        whatsappLink.href = `https://wa.me/${cleanPhone}`;
+        
+        // Show modal
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeCallModal() {
+        const modal = document.getElementById('callModal');
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('callModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeCallModal();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeCallModal();
+        }
+    });
     </script>
     
     <script src="assets/js/script.js"></script>
 </body>
-</html>
+</html> 

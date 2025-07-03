@@ -3207,3 +3207,38 @@ Stack trace:
 #3 C:\xampp\htdocs\lead-management\login.php(3): require_once('C:\\xampp\\htdocs...')
 #4 {main}
   thrown in C:\xampp\htdocs\lead-management\config\database.php on line 111
+[04-Jul-2025 00:09:18 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:09:18 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:09:18 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:09:18 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:09:18 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:09:18 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:09:18 Asia/Manila] Header loaded - Total notifications: 0, Unread count: 0
+[04-Jul-2025 00:42:51 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:42:51 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:42:51 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:42:51 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:42:51 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:42:51 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:42:51 Asia/Manila] Header loaded - Total notifications: 0, Unread count: 0
+[04-Jul-2025 00:42:55 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:42:55 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:42:55 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:42:55 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:42:55 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:42:55 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:42:55 Asia/Manila] Header loaded - Total notifications: 0, Unread count: 0
+[04-Jul-2025 00:57:10 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:57:10 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:57:10 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:57:10 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:57:10 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:57:10 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:57:10 Asia/Manila] Header loaded - Total notifications: 0, Unread count: 0
+[04-Jul-2025 00:58:31 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:58:31 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:58:31 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:58:31 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:58:31 Asia/Manila] Attempting database connection. DreamHost environment: false
+[04-Jul-2025 00:58:31 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[04-Jul-2025 00:58:31 Asia/Manila] Header loaded - Total notifications: 0, Unread count: 0

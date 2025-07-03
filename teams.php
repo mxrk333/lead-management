@@ -126,13 +126,13 @@ if (isset($_GET['delete']) && $user['role'] == 'admin') {
     $check_stmt->close();
 }
 
-// Add user to team - Admin can add to any team, manager only to their team
+// Add user to team - Only admin can add users to teams
 if (isset($_POST['add_user_to_team'])) {
     $team_id = intval($_POST['team_id']);
     
-    // Check if manager has permission for this team
-    if ($user['role'] == 'manager' && $user['team_id'] != $team_id) {
-        $error_message = "You don't have permission to add members to this team.";
+    // Check if user has admin permission
+    if ($user['role'] != 'admin') {
+        $error_message = "You don't have permission to add members to teams.";
     } else {
         $user_ids = isset($_POST['user_ids']) ? $_POST['user_ids'] : [];
         
@@ -169,14 +169,14 @@ if (isset($_POST['add_user_to_team'])) {
     }
 }
 
-// Transfer user from team - Admin can transfer between any teams, manager only from their team
+// Transfer user from team - Only admin can transfer users
 if (isset($_POST['transfer_member'])) {
     $user_id_to_transfer = intval($_POST['user_id']);
     $current_team_id = intval($_POST['current_team_id']);
     
-    // Check if manager has permission for this team
-    if ($user['role'] == 'manager' && $user['team_id'] != $current_team_id) {
-        $error_message = "You don't have permission to transfer members from this team.";
+    // Check if user has admin permission
+    if ($user['role'] != 'admin') {
+        $error_message = "You don't have permission to transfer members.";
     } else {
         $new_team_id = !empty($_POST['new_team_id']) ? intval($_POST['new_team_id']) : NULL;
         
@@ -218,14 +218,14 @@ if (isset($_POST['transfer_member'])) {
     }
 }
 
-// Delete team member - Admin can delete from any team, manager only from their team
+// Delete team member - Only admin can delete from teams
 if (isset($_POST['delete_member'])) {
     $user_id_to_delete = intval($_POST['user_id']);
     $team_id = intval($_POST['team_id']);
     
-    // Check if manager has permission for this team
-    if ($user['role'] == 'manager' && $user['team_id'] != $team_id) {
-        $error_message = "You don't have permission to remove members from this team.";
+    // Check if user has admin permission
+    if ($user['role'] != 'admin') {
+        $error_message = "You don't have permission to remove members from teams.";
     } else {
         // Check if user exists and belongs to the team
         $check_stmt = $conn->prepare("SELECT id, name, role FROM users WHERE id = ? AND team_id = ?");
@@ -412,9 +412,9 @@ if (isset($_GET['view'])) {
     $members_stmt->close();
 }
 
-// Get available users (not in any team or in a different team)
+// Get available users (not in any team or in a different team) - Only for admin
 $available_users = [];
-if ($selected_team && ($user['role'] == 'admin' || $user['role'] == 'manager')) {
+if ($selected_team && $user['role'] == 'admin') {
     $users_stmt = $conn->prepare("SELECT id, name, email, role FROM users WHERE (team_id IS NULL OR team_id != ?) AND role != 'admin' ORDER BY name");
     $users_stmt->bind_param("i", $team_id);
     $users_stmt->execute();
@@ -1680,11 +1680,11 @@ if ($user['role'] == 'admin') {
                         <a href="teams.php" class="btn btn-primary">
                             <i class="fas fa-arrow-left"></i> Back to Teams
                         </a>
-                        <?php endif; ?>
-                        <?php if ($user['role'] == 'admin' || $user['role'] == 'manager'): ?>
                         <button class="btn btn-primary" onclick="openAddMembersModal()">
                             <i class="fas fa-user-plus"></i> Add Members
                         </button>
+                        <?php endif; ?>
+                        <?php if ($user['role'] == 'admin' || $user['role'] == 'manager'): ?>
                         <button class="btn btn-primary" onclick="openCreateUserModal()">
                             <i class="fas fa-user-plus"></i> Create New User
                         </button>
@@ -1741,16 +1741,18 @@ if ($user['role'] == 'admin') {
                             <i class="fas fa-user-friends"></i>
                             Team Members (<?php echo count($team_members); ?>)
                         </h3>
-                        <?php if (($user['role'] == 'admin' || $user['role'] == 'manager')): ?>
                         <div class="section-actions">
+                            <?php if ($user['role'] == 'admin'): ?>
                             <button class="btn btn-primary btn-sm" onclick="openAddMembersModal()">
                                 <i class="fas fa-user-plus"></i> Add Members
                             </button>
+                            <?php endif; ?>
+                            <?php if ($user['role'] == 'admin' || $user['role'] == 'manager'): ?>
                             <button class="btn btn-primary btn-sm" onclick="openCreateUserModal()">
                                 <i class="fas fa-user-plus"></i> Create New User
                             </button>
+                            <?php endif; ?>
                         </div>
-                        <?php endif; ?>
                     </div>
 
                     <?php if (count($team_members) > 0): ?>
@@ -1787,44 +1789,46 @@ if ($user['role'] == 'admin') {
                                             <a href="edit-user.php?id=<?php echo $member['id']; ?>" class="btn-icon" title="Edit User">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <button type="button" onclick="openTransferMemberModal(<?php echo $member['id']; ?>, '<?php echo htmlspecialchars(addslashes($member['name'])); ?>', <?php echo $selected_team['id']; ?>)" class="btn-transfer">
-                                                <i class="fas fa-exchange-alt"></i> Transfer
-                                            </button>
-                                            <?php if ($user['role'] == 'manager' || $user['role'] == 'admin'): ?>
-                                            <button type="button" onclick="deleteTeamMember(<?php echo $member['id']; ?>, '<?php echo htmlspecialchars(addslashes($member['name'])); ?>')" class="btn-delete" title="Remove from Team">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                                        <?php if ($user['role'] == 'admin'): ?>
+                                        <button type="button" onclick="openTransferMemberModal(<?php echo $member['id']; ?>, '<?php echo htmlspecialchars(addslashes($member['name'])); ?>', <?php echo $selected_team['id']; ?>)" class="btn-transfer">
+                                            <i class="fas fa-exchange-alt"></i> Transfer
+                                        </button>
+                                        <button type="button" onclick="deleteTeamMember(<?php echo $member['id']; ?>, '<?php echo htmlspecialchars(addslashes($member['name'])); ?>')" class="btn-delete" title="Remove from Team">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php else: ?>
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-users"></i>
                     </div>
-                    <?php else: ?>
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <p class="empty-state-text">No team members found</p>
+                    <p class="empty-state-text">No team members found</p>
+                    <div class="empty-state-actions">
+                        <?php if ($user['role'] == 'admin'): ?>
+                        <button class="btn btn-primary btn-sm" onclick="openAddMembersModal()">
+                            <i class="fas fa-user-plus"></i> Add Members
+                        </button>
+                        <?php endif; ?>
                         <?php if ($user['role'] == 'admin' || $user['role'] == 'manager'): ?>
-                        <div class="empty-state-actions">
-                            <button class="btn btn-primary btn-sm" onclick="openAddMembersModal()">
-                                <i class="fas fa-user-plus"></i> Add Members
-                            </button>
-                            <button class="btn btn-primary btn-sm" onclick="openCreateUserModal()">
-                                <i class="fas fa-user-plus"></i> Create New User
-                            </button>
-                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="openCreateUserModal()">
+                            <i class="fas fa-user-plus"></i> Create New User
+                        </button>
                         <?php endif; ?>
                     </div>
-                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
             </div>
-            <?php endif; ?>
         </div>
+        <?php endif; ?>
     </div>
+</div>
     
     <!-- Add Team Modal -->
     <div id="addTeamModal" class="modal" role="dialog" aria-labelledby="addTeamModalTitle" aria-hidden="true">
@@ -1872,7 +1876,7 @@ if ($user['role'] == 'admin') {
     </div>
     
     <!-- Add Members Modal -->
-    <?php if ($selected_team && ($user['role'] == 'admin' || $user['role'] == 'manager')): ?>
+    <?php if ($selected_team && $user['role'] == 'admin'): ?>
     <div id="addMembersModal" class="modal" role="dialog" aria-labelledby="addMembersModalTitle" aria-hidden="true">
         <div class="modal-content" style="width: 600px; max-width: 95%;">
             <div class="modal-header">
@@ -1921,7 +1925,7 @@ if ($user['role'] == 'admin') {
     <?php endif; ?>
     
     <!-- Transfer Member Modal -->
-    <?php if ($selected_team && ($user['role'] == 'admin' || $user['role'] == 'manager')): ?>
+    <?php if ($selected_team && $user['role'] == 'admin'): ?>
     <div id="transferMemberModal" class="modal" role="dialog" aria-labelledby="transferMemberModalTitle" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">

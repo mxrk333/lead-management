@@ -25,20 +25,34 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
                 <i class="fas fa-bars"></i>
             </button>
         </div>
+
         
-        <div class="sidebar-user-section">
-            <div class="user-avatar">
-                <?php if (!empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
-                    <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
-                <?php else: ?>
-                    <span class="avatar-text"><?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?></span>
-                <?php endif; ?>
-            </div>
-            <div class="user-info">
-                <div class="user-name" style="color: white;"><?php echo htmlspecialchars($user['name'] ?? 'User'); ?></div>
-                <div class="user-role" style="color: white;"><?php echo ucfirst(htmlspecialchars($user['role'] ?? 'user')); ?></div>
-            </div>
+<div class="sidebar-user-section">
+    <div class="user-avatar">
+        <?php if (!empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
+            <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
+        <?php else: ?>
+            <span class="avatar-text"><?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?></span>
+        <?php endif; ?>
+    </div>
+    <div class="user-info">
+        <div class="user-name" style="color: white;"><?php echo htmlspecialchars($user['name'] ?? 'User'); ?></div>
+        <div class="user-role" style="color: white;">
+            <?php
+                $username = $user['username'] ?? '';
+                
+                // Check for specific usernames and assign static roles
+                if ($username === 'markpatigayon.itadmin' || $username === 'romeocobreta.itdept') {
+                    echo 'IT Admin';
+                } elseif ($username === 'another.username') {
+                    echo 'Another Role';  // Add more conditions as needed
+                } else {
+                    echo htmlspecialchars($user['role'] ?? 'User');
+                }
+            ?>
         </div>
+    </div>
+</div>
         
         <nav class="sidebar-navigation">
             <div class="nav-group">
@@ -111,7 +125,7 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
                             </a>
                         </li>
 
-                            <li class="nav-item">
+                        <li class="nav-item">
                             <a href="incentives.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'incentives.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-coins nav-icon"></i>
                                 <span class="nav-text">Incentives</span>
@@ -134,35 +148,38 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
                         </li>
                         <?php endif; ?>
 
-                    
-
-                        
                         <?php if (isset($user['role']) && in_array($user['role'], ['admin', 'manager', 'supervisor', 'agent'])): ?>
                         <li class="nav-item">
-                            <a href="projectlisting.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == '' ? 'active' : ''; ?>">
+                            <a href="projectlisting.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'projectlisting.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-house nav-icon"></i>
                                 <span class="nav-text">Project Listing</span>
                             </a>
                         </li>
 
                         <?php if (in_array($user['role'], ['admin', 'manager'])): ?>
-                                <li class="nav-item">
-                                    <a href="accreditation.php"
-                                        class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
-                                        <i class="fas fa-user-check nav-icon"></i>
-                                        <span class="nav-text">Accreditation</span>
+                        <!-- FIXED: Workforce Management using consistent submenu pattern -->
+                        <li class="nav-item has-submenu">
+                            <button class="nav-link submenu-trigger <?php echo in_array(basename($_SERVER['PHP_SELF']), ['accreditation.php', 'recruitment-dashboard.php']) ? 'active' : ''; ?>" data-submenu="workforce">
+                                <i class="fas fa-users-cog nav-icon"></i>
+                                <span class="nav-text">Workforce Management</span>
+                                <i class="fas fa-chevron-down submenu-arrow"></i>
+                            </button>
+                            <ul class="nav-submenu" id="submenu-workforce">
+                                <li class="submenu-item">
+                                    <a href="accreditation.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
+                                        <i class="fas fa-user-check submenu-icon"></i>
+                                        <span class="submenu-text">Accreditation</span>
                                     </a>
                                 </li>
-
-                                <li class="nav-item">
-                                    <a href="recruitment-dashboard.php"
-                                        class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'recruitment-dashboard.php' ? 'active' : ''; ?>">
-                                        <i class="fas fa-user-plus nav-icon"></i>
-                                        <span class="nav-text">Recruitment</span>
+                                <li class="submenu-item">
+                                    <a href="recruitment-dashboard.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'recruitment-dashboard.php' ? 'active' : ''; ?>">
+                                        <i class="fas fa-user-plus submenu-icon"></i>
+                                        <span class="submenu-text">Recruitment</span>
                                     </a>
                                 </li>
-                            <?php endif; ?>
-
+                            </ul>
+                        </li>
+                        <?php endif; ?>
 
                         <li class="nav-item has-submenu">
                             <button class="nav-link submenu-trigger <?php echo in_array(basename($_SERVER['PHP_SELF']), ['handbook.php', 'vast.php', 'links.php']) ? 'active' : ''; ?>" data-submenu="materials">
@@ -177,12 +194,6 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
                                         <span class="submenu-text">Handbook</span>
                                     </a>
                                 </li>
-                               <!--<li class="submenu-item">
-                                    <a href="vast.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'vast.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
-                                        <i class="fas fa-chalkboard submenu-icon"></i>
-                                        <span class="submenu-text">Vast</span>
-                                    </a>
-                                </li> -->
                                 <li class="submenu-item">
                                     <a href="links.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'links.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
                                         <i class="fas fa-link submenu-icon"></i>
@@ -980,7 +991,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Auto-expand submenu if on specific pages
-        function autoExpandSubmenus() {
+    function autoExpandSubmenus() {
         const currentPage = window.location.pathname.split('/').pop();
         
         // Auto-expand leads submenu
@@ -999,6 +1010,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }   
         }
         
+        // FIXED: Auto-expand workforce submenu
+        if (['accreditation.php', 'recruitment-dashboard.php'].includes(currentPage)) {
+            const workforceSubmenu = document.querySelector('[data-submenu="workforce"]');
+            if (workforceSubmenu) {
+                workforceSubmenu.closest('.nav-item').classList.add('active');
+            }
+        }
+        
         // Auto-expand materials submenu
         if (['handbook.php', 'vast.php', 'links.php'].includes(currentPage)) {
             const materialsSubmenu = document.querySelector('[data-submenu="materials"]');
@@ -1007,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         console.log('Current page:', currentPage);
-        console.log('Materials submenu element:', document.querySelector('[data-submenu="materials"]'));
+        console.log('Workforce submenu element:', document.querySelector('[data-submenu="workforce"]'));
     }
     
     // Handle window resize
