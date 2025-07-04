@@ -43,8 +43,9 @@ try {
             <td class="p-0">
                 <select class="toggle-select w-full block bg-gray-100 rounded-lg px-3 py-2 focus:outline-none">
                     <option value="1" <?= $row['toggle'] === '1' ? 'selected' : '' ?>>Accredited</option>
-                    <option value="0" <?= $row['toggle'] === '0' ? 'selected' : '' ?>>Cancelled / No Response</option>
-                    <option value="" <?= $row['toggle'] === '' ? 'selected' : '' ?>>Left</option>
+                    <option value="0" <?= $row['toggle'] === '0' ? 'selected' : '' ?>>No Response</option>
+                    <option class="hidden" value="" <?= $row['toggle'] === '' ? 'selected' : '' ?>>Left</option>
+                    <option value="2" <?= $row['toggle'] === '2' ? 'selected' : '' ?>>Onboarding</option>
                 </select>
             </td>
             <td class="p-0">

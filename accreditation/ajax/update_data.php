@@ -22,7 +22,7 @@ try {
     $team = $_POST['team'];
     $toggle = $_POST['toggle'];
 
-    if (!in_array($toggle, ['1', '0', ''], true)) {
+    if (!in_array($toggle, ['1', '0', '', '2'], true)) {
         exit("❌ Invalid toggle value.");
     }
 

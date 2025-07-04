@@ -117,16 +117,16 @@ foreach ($dbResults as $row) {
 
     if (!isset($data[$year][$month][$team])) {
         $data[$year][$month][$team] = [
-            'Week 1' => ['1' => 0, '0' => 0, 'blank' => 0],
-            'Week 2' => ['1' => 0, '0' => 0, 'blank' => 0],
-            'Week 3' => ['1' => 0, '0' => 0, 'blank' => 0],
-            'Week 4' => ['1' => 0, '0' => 0, 'blank' => 0],
-            'Week 5' => ['1' => 0, '0' => 0, 'blank' => 0],
-            'Week 6' => ['1' => 0, '0' => 0, 'blank' => 0],
+            'Week 1' => ['1' => 0, '0' => 0, 'blank' => 0, '2' => 0],
+            'Week 2' => ['1' => 0, '0' => 0, 'blank' => 0, '2' => 0],
+            'Week 3' => ['1' => 0, '0' => 0, 'blank' => 0, '2' => 0],
+            'Week 4' => ['1' => 0, '0' => 0, 'blank' => 0, '2' => 0],
+            'Week 5' => ['1' => 0, '0' => 0, 'blank' => 0, '2' => 0],
+            'Week 6' => ['1' => 0, '0' => 0, 'blank' => 0, '2' => 0],
         ];
     }
 
-    $key = ($toggle === '1' || $toggle === '0') ? $toggle : 'blank';
+    $key = ($toggle === '1' || $toggle === '0' || $toggle === '2') ? $toggle : 'blank';
     $data[$year][$month][$team][$quarter][$key]++;
 }
 
@@ -144,6 +144,10 @@ $svg = [
                                                         clip-rule="evenodd" />',
     'signal_lost' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 text-yellow-500">
   <path fill-rule="evenodd" d="M2.47 2.47a.75.75 0 0 1 1.06 0l8.407 8.407a1.125 1.125 0 0 1 1.186 1.186l1.462 1.461a3.001 3.001 0 0 0-.464-3.645.75.75 0 1 1 1.061-1.061 4.501 4.501 0 0 1 .486 5.79l1.072 1.072a6.001 6.001 0 0 0-.497-7.923.75.75 0 0 1 1.06-1.06 7.501 7.501 0 0 1 .505 10.05l1.064 1.065a9 9 0 0 0-.508-12.176.75.75 0 0 1 1.06-1.06c3.923 3.922 4.093 10.175.512 14.3l1.594 1.594a.75.75 0 1 1-1.06 1.06l-2.106-2.105-2.121-2.122h-.001l-4.705-4.706a.747.747 0 0 1-.127-.126L2.47 3.53a.75.75 0 0 1 0-1.061Zm1.189 4.422a.75.75 0 0 1 .326 1.01 9.004 9.004 0 0 0 1.651 10.462.75.75 0 1 1-1.06 1.06C1.27 16.12.63 11.165 2.648 7.219a.75.75 0 0 1 1.01-.326ZM5.84 9.134a.75.75 0 0 1 .472.95 6 6 0 0 0 1.444 6.159.75.75 0 0 1-1.06 1.06A7.5 7.5 0 0 1 4.89 9.606a.75.75 0 0 1 .95-.472Zm2.341 2.653a.75.75 0 0 1 .848.638c.088.62.37 1.218.849 1.696a.75.75 0 0 1-1.061 1.061 4.483 4.483 0 0 1-1.273-2.546.75.75 0 0 1 .637-.848Z" clip-rule="evenodd" />
+</svg>
+',
+    'onboarding' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 text-blue-500">
+  <path fill-rule="evenodd" d="M9 4.5a.75.75 0 0 1 .721.544l.813 2.846a3.75 3.75 0 0 0 2.576 2.576l2.846.813a.75.75 0 0 1 0 1.442l-2.846.813a3.75 3.75 0 0 0-2.576 2.576l-.813 2.846a.75.75 0 0 1-1.442 0l-.813-2.846a3.75 3.75 0 0 0-2.576-2.576l-2.846-.813a.75.75 0 0 1 0-1.442l2.846-.813A3.75 3.75 0 0 0 7.466 7.89l.813-2.846A.75.75 0 0 1 9 4.5ZM18 1.5a.75.75 0 0 1 .728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 0 1 0 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 0 1-1.456 0l-.258-1.036a2.625 2.625 0 0 0-1.91-1.91l-1.036-.258a.75.75 0 0 1 0-1.456l1.036-.258a2.625 2.625 0 0 0 1.91-1.91l.258-1.036A.75.75 0 0 1 18 1.5ZM16.5 15a.75.75 0 0 1 .712.513l.394 1.183c.15.447.5.799.948.948l1.183.395a.75.75 0 0 1 0 1.422l-1.183.395c-.447.15-.799.5-.948.948l-.395 1.183a.75.75 0 0 1-1.422 0l-.395-1.183a1.5 1.5 0 0 0-.948-.948l-1.183-.395a.75.75 0 0 1 0-1.422l1.183-.395c.447-.15.799-.5.948-.948l.395-1.183A.75.75 0 0 1 16.5 15Z" clip-rule="evenodd" />
 </svg>
 '
 ];
@@ -181,6 +185,9 @@ $toggleLabels = [
     '' => '<div class="flex pt-2 items-center gap-2 md:gap-1 text-yellow-600 font-semibold md:text-lg text-[14px]">'
         . $svg['signal_lost'] . '<span>Former Agents <span class="text-sm opacity-50 text-gray-700">(Resigned or
                                 withdrawn)</span></span></div>',
+
+    '2' => '<div class="flex pt-2 items-center gap-2 md:gap-1 text-blue-500 font-semibold md:text-lg text-[14px]">'
+        . $svg['onboarding'] . '<span>Onboarding <span class="text-sm opacity-50 text-gray-700">(New agents in onboarding)</span></span></div>',
 ];
 
 $monthsIndex = [
@@ -214,6 +221,15 @@ try {
 } catch (Exception $e) {
     die("Connection failed: " . $e->getMessage());
 }
+
+$staticOptions = [
+    "Blazing SPARCS",
+    "Feisty Heroine",
+    "Fiery Achievers",
+    "Flameborn Champions",
+    "Shining Phoenix"
+];
+$allTeamOptions = array_unique(array_merge($teamOptions, $staticOptions));
 
 ?>
 
@@ -531,7 +547,7 @@ try {
 
                                 <!-- FIRST DIV -->
                                 <div class="text-center">
-                                    <h1 class="font-bold text-2xl text-blue-<?= $default_blue_number; ?>">Agent
+                                    <h1 class="font-bold text-[32px] text-blue-<?= $default_blue_number; ?>">Agent
                                         Accreditation</h1>
                                 </div>
 
@@ -543,10 +559,10 @@ try {
                                     <!-- SECOND DIV -->
 
                                     <?php
-                        $labelDesign = "text-blue-" . $default_blue_number . " font-semibold";
-                        $sharedInputStyles = "mt-1 w-full px-3 py-2 rounded-md border border-blue-$default_blue_number focus:outline-none focus:border-blue-$default_blue_number bg-transparent appearance-none cursor-pointer";
-                        $importantIcon = "text-red-500";
-                        ?>
+                                    $labelDesign = "text-blue-" . $default_blue_number . " font-semibold";
+                                    $sharedInputStyles = "mt-1 w-full px-3 py-2 rounded-md border border-blue-$default_blue_number focus:outline-none focus:border-blue-$default_blue_number bg-transparent appearance-none cursor-pointer";
+                                    $importantIcon = "text-red-500";
+                                    ?>
 
                                     <label for="name">
                                         <span class="<?= $labelDesign ?>">Agent Name <span
@@ -577,7 +593,9 @@ try {
                                                 class="<?= $importantIcon; ?>">*</span></span>
                                         <select name="toggle" class="<?= $sharedInputStyles ?>" required>
                                             <option value="1">Accredited</option>
-                                            <option value="0">Cancelled / No Response</option>
+                                            <option value="0">No Response</option>
+                                            <option class="hidden" value="null">Left</option>
+                                            <option value="2">Onboarding</option>
                                         </select>
                                     </label>
 
@@ -587,9 +605,9 @@ try {
 
                                 <?php
 
-                    $hover_blue_number = $default_blue_number + 100;
+                                $hover_blue_number = $default_blue_number + 100;
 
-                    ?>
+                                ?>
 
                                 <!-- FOURTH DIV -->
                                 <button type="submit" name="insertData"
@@ -602,24 +620,24 @@ try {
                     </div>
                 </section>
 
-                <div class="flex flex-wrap items-center text-gray-700 gap-4 mb-4 py-3">
+                <div class="flex flex-wrap items-center text-gray-700 gap-4 mb-4 py-3 hidden">
                     <span class="text-lg font-bold">Team</span>
                     <?php
-        $printedTeams = [];
-        foreach ($data as $year => $months):
-            foreach ($months as $month => $teams):
-                foreach ($teams as $team => $quarters):
-                    if (in_array($team, $printedTeams))
-                        continue;
-                    $printedTeams[] = $team;
-                    ?>
+                    $printedTeams = [];
+                    foreach ($data as $year => $months):
+                        foreach ($months as $month => $teams):
+                            foreach ($teams as $team => $quarters):
+                                if (in_array($team, $printedTeams))
+                                    continue;
+                                $printedTeams[] = $team;
+                                ?>
                     <span
                         class="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg shadow-sm hover:-translate-y-1 transition-all ease-in-out"><?= htmlspecialchars($team) ?></span>
                     <?php
-                endforeach;
-            endforeach;
-        endforeach;
-        ?>
+                            endforeach;
+                        endforeach;
+                    endforeach;
+                    ?>
                 </div>
 
 
@@ -633,8 +651,8 @@ try {
 
                         <!-- tailwind css for filters -->
                         <?php
-            $filterClass = "bg-gray-100 rounded-xl pl-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-800 w-full sm:w-auto flex-1 min-w-[150px]";
-            ?>
+                        $filterClass = "bg-gray-100 rounded-xl pl-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-800 w-full sm:w-auto flex-1 min-w-[150px]";
+                        ?>
 
                         <input type="text" id="search-name" placeholder="Search by name" class="<?= $filterClass ?>" />
 
@@ -648,8 +666,9 @@ try {
                         <select id="filter-toggle" class="<?= $filterClass ?>">
                             <option value="">All Status</option>
                             <option value="1">Finished</option>
-                            <option value="0">Cancelled / No Response</option>
-                            <option value="null">Left</option>
+                            <option value="0">No Response</option>
+                            <option class="hidden" value="null">Left</option>
+                            <option value="2">Onboarding</option>
                         </select>
 
                         <select id="filter-month" class="<?= $filterClass ?>">
@@ -710,13 +729,14 @@ try {
                                     <td class="p-0">
                                         <select
                                             class="team-select w-full block bg-gray-100 rounded-lg px-3 py-2 focus:outline-none">
-                                            <?php foreach ($teamOptions as $teamOption): ?>
-                                            <option value="<?= $teamOption ?>"
+                                            <?php foreach ($allTeamOptions as $teamOption): ?>
+                                            <option value="<?= htmlspecialchars($teamOption) ?>"
                                                 <?= $row['team'] === $teamOption ? 'selected' : '' ?>>
                                                 <?= htmlspecialchars($teamOption) ?>
                                             </option>
                                             <?php endforeach; ?>
                                         </select>
+
                                     </td>
 
 
@@ -726,10 +746,12 @@ try {
                                             class="toggle-select w-full block bg-gray-100 rounded-lg px-3 py-2 focus:outline-none">
                                             <option value="1" <?= $row['toggle'] === '1' ? 'selected' : '' ?>>Accredited
                                             </option>
-                                            <option value="0" <?= $row['toggle'] === '0' ? 'selected' : '' ?>>Cancelled
-                                                / No
+                                            <option value="0" <?= $row['toggle'] === '0' ? 'selected' : '' ?>>No
                                                 Response</option>
-                                            <option value="" <?= $row['toggle'] === '' ? 'selected' : '' ?>>Left
+                                            <option class="hidden" value=""
+                                                <?= $row['toggle'] === '' ? 'selected' : '' ?>>Left
+                                            </option>
+                                            <option value="2" <?= $row['toggle'] === '2' ? 'selected' : '' ?>>Onboarding
                                             </option>
                                         </select>
                                     </td>
@@ -737,8 +759,15 @@ try {
                                     <!-- Delete Button -->
                                     <td class="p-0">
                                         <button
-                                            class="delete-btn w-full block bg-red-400 text-white rounded-lg px-3 py-2 hover:bg-red-600 transition">
-                                            Delete
+                                            class="delete-btn w-full block bg-red-400 text-white rounded-lg px-3 py-2 hover:bg-red-600 transition flex items-center justify-center"
+                                            title="Delete">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                                fill="currentColor" class="size-4 text-white">
+                                                <path fill-rule="evenodd"
+                                                    d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Zm-.355 5.945a.75.75 0 1 0-1.5.058l.347 9a.75.75 0 1 0 1.499-.058l-.346-9Zm5.48.058a.75.75 0 1 0-1.498-.058l-.347 9a.75.75 0 0 0 1.5.058l.345-9Z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+
                                         </button>
                                     </td>
 
@@ -778,9 +807,9 @@ try {
                         </div>
 
                         <div>
-                            <form method="post" action="core/sync_sheets.php">
+                            <form method="post" action="accreditation/core/sync_sheets.php">
                                 <button type="submit"
-                                    class="py-2 px-4 border border-blue-<?= $default_blue_number; ?> text-blue-<?= $default_blue_number; ?> hover:bg-blue-<?= $default_blue_number; ?> w-full hover:text-white rounded-lg hover:bg-blue-<?= $default_blue_number; ?> hover:shadow-mg transition-all ease-in-out">Re-Sync
+                                    class="py-2 px-4 border border-blue-<?= $default_blue_number; ?> text-blue-<?= $default_blue_number; ?> hover:bg-blue-<?= $default_blue_number; ?> w-full hover:text-white rounded-lg hover:bg-blue-<?= $default_blue_number; ?> hover:shadow-mg transition-all ease-in-out hidden1">Re-Sync
                                     from Google
                                     Sheet</button>
                             </form>
@@ -810,24 +839,30 @@ try {
                         <hr>
                         <div class="flex flex-col justify-center items-center gap-4 my-4 md:flex-row sm:gap-4">
                             <div class="flex flex-col justify-center items-center font-semibold border rounded-xl p-2 py-4 text-center gap-1"
-                                title="Finished Accreditation">
+                                title="Accredited Agents">
                                 <?= $svg['check'] ?>
                                 <span class="ml-2">Accredited Agents<br><span class="text-sm opacity-50">(Active
                                         agents)</span></span>
                             </div>
                             <div class="flex flex-col justify-center items-center font-semibold border rounded-xl p-2 py-4 text-center gap-1"
-                                title="Cancelled Accreditation">
+                                title="Unresponsive">
                                 <?= $svg['x_mark'] ?>
-                                <span class="ml-2">Cancelled / Unresponsive<br><span class="text-sm opacity-50">(No
-                                        response or
-                                        cancelled applications)</span></span>
+                                <span class="ml-2">Unresponsive<br><span class="text-sm opacity-50">(No
+                                        response from agents)</span></span>
+                            </div>
+                            <div class="flex flex-col justify-center items-center font-semibold border rounded-xl p-2 py-4 text-center gap-1 hidden"
+                                title="Former Agents">
+                                <?php echo str_replace('bg-red-500', 'text-gray-500', $svg['signal_lost']);
+                                    ?>
+                                <span class="ml-2">Former Agents <br><span class="text-sm opacity-50">(Resigned
+                                        or
+                                        withdrawn)</span></span>
                             </div>
                             <div class="flex flex-col justify-center items-center font-semibold border rounded-xl p-2 py-4 text-center gap-1"
-                                title="No response from Agent">
-                                <?php echo str_replace('bg-red-500', 'text-gray-500', $svg['signal_lost']);
-                        ?>
-                                <span class="ml-2">Former Agents <br><span class="text-sm opacity-50">(Resigned or
-                                        withdrawn)</span></span>
+                                title="Onboarding">
+                                <?= $svg['onboarding'] ?>
+                                <span class="ml-2">Onboarding<br><span class="text-sm opacity-50">(Agents in
+                                        Progress)</span></span>
                             </div>
                         </div>
                     </div>
@@ -835,17 +870,17 @@ try {
                     <div class="bg-white rounded-2xl shadow pt-2 pb-1 px-4 mb-6">
 
                         <?php
-                // Get data for current year
-                $yearData = $dataTeamPerMonth[$year] ?? [];
-                foreach ($yearData as $toggle => $team_s):
-                    ?>
+                            // Get data for current year
+                            $yearData = $dataTeamPerMonth[$year] ?? [];
+                            foreach ($yearData as $toggle => $team_s):
+                                ?>
 
                         <!-- DISPLAY THE MARK LABELS (FROM LEGEND) -->
                         <div class="mb-2">
                             <div class="flex flex-row justify-between items-end">
 
                                 <h2 class="text-xl font-bold">
-                                    <?= $toggleLabels[$toggle] ?? 'Unknown' ?>
+                                    <?= $toggleLabels[$toggle] ?? 'Unknown!' ?>
                                 </h2>
                                 <h2 class="text-2xl font-semibold text-gray-700">
                                     <?= $year ?>
@@ -882,11 +917,11 @@ try {
                                             class="bg-gray-50 border rounded-xl p-2 text-center flex flex-col justify-evenly items-center gap-4">
                                             <div class="font-bold"><?= $monthsIndex[$m] ?></div>
                                             <?php
-                                            $monthTotal = 0;
-                                            foreach ($team_s as $team => $count_s):
-                                                $count = $count_s[$m] ?? 0;
-                                                $monthTotal += $count;
-                                                ?>
+                                                        $monthTotal = 0;
+                                                        foreach ($team_s as $team => $count_s):
+                                                            $count = $count_s[$m] ?? 0;
+                                                            $monthTotal += $count;
+                                                            ?>
                                             <p class=""><?= $count ?></p>
                                             <?php endforeach; ?>
                                         </div>
@@ -923,9 +958,9 @@ try {
 
                     <?php foreach ($months as $month => $teams): ?>
                     <?php
-                $monthNumber = array_search($month, $monthsIndex);
-                $currentMonthKey = sprintf('%04d-%02d', $year, $monthNumber);
-                ?>
+                            $monthNumber = array_search($month, $monthsIndex);
+                            $currentMonthKey = sprintf('%04d-%02d', $year, $monthNumber);
+                            ?>
                     <div class="month-section" data-month="<?= htmlspecialchars($month) ?>"
                         data-monthkey="<?= $currentMonthKey ?>">
 
@@ -944,17 +979,19 @@ try {
                             <h3
                                 class="text-xl md:text-2xl font-semibold my-2 flex justify-between items-center md:flex-row flex-col">
                                 <p class="text-blue-<?= $default_blue_number; ?> font-semibold">
-                                    <?= htmlspecialchars($team) ?> </p>
+                                    <?= htmlspecialchars($team) ?>
+                                </p>
                                 <p class="hidden md:block"><?= htmlspecialchars($month) ?></p>
                             </h3>
                             <hr class="hidden md:block">
                             <?php
-                            $hasWeek6 = isset($quarters['Week 6']) && (
-                                ($quarters['Week 6']['1'] ?? 0) > 0 ||
-                                ($quarters['Week 6']['0'] ?? 0) > 0 ||
-                                ($quarters['Week 6']['blank'] ?? 0) > 0
-                            );
-                            ?>
+                                        $hasWeek6 = isset($quarters['Week 6']) && (
+                                            ($quarters['Week 6']['1'] ?? 0) > 0 ||
+                                            ($quarters['Week 6']['0'] ?? 0) > 0 ||
+                                            ($quarters['Week 6']['blank'] ?? 0) > 0 ||
+                                            ($quarters['Week 6']['2'] ?? 0) > 0
+                                        );
+                                        ?>
 
                             <div
                                 class="grid <?= $hasWeek6 ? 'grid-cols-[80px_repeat(7,_1fr)]' : 'grid-cols-[80px_repeat(6,_1fr)]' ?> gap-4 py-4 hidden md:grid">
@@ -963,32 +1000,38 @@ try {
                                     <div class="font-bold">Marks</div>
                                     <div class="flex justify-center items-center gap-2">
                                         <button class="flex justify-center items-center font-bold"
-                                            title="Finished Accreditation">
+                                            title="Accredited Agents">
                                             <?= $svg['check'] ?>
                                         </button>
                                     </div>
                                     <div class="flex justify-center items-center gap-2">
                                         <button class="flex justify-center items-center font-bold"
-                                            title="Cancelled Accreditation">
+                                            title="Unresponsive Agents">
                                             <?= $svg['x_mark'] ?>
+                                        </button>
+                                    </div>
+                                    <div class="flex justify-center items-center gap-2 hidden">
+                                        <button class="flex justify-center items-center font-bold"
+                                            title="Former Agents">
+                                            <?= $svg['signal_lost'] ?>
                                         </button>
                                     </div>
                                     <div class="flex justify-center items-center gap-2">
                                         <button class="flex justify-center items-center font-bold"
-                                            title="No Response from Agent">
-                                            <?= $svg['signal_lost'] ?>
+                                            title="Onboarding Progress">
+                                            <?= $svg['onboarding'] ?>
                                         </button>
                                     </div>
                                 </div>
 
 
                                 <?php
-                                $weekLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'];
-                                if ($hasWeek6) {
-                                    $weekLabels[] = 'Week 6';
-                                }
-                                foreach ($weekLabels as $q):
-                                    ?>
+                                            $weekLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'];
+                                            if ($hasWeek6) {
+                                                $weekLabels[] = 'Week 6';
+                                            }
+                                            foreach ($weekLabels as $q):
+                                                ?>
 
                                 <!-- PRINTS THE WEEKS -->
                                 <div class="border rounded-xl p-2 text-center bg-gray-50 flex flex-col gap-4 ">
@@ -1000,7 +1043,8 @@ try {
 
                                     <div class=""><?= $quarters[$q]['1'] ?? 0 ?></div>
                                     <div class=""><?= $quarters[$q]['0'] ?? 0 ?></div>
-                                    <div class=""><?= $quarters[$q]['blank'] ?? 0 ?></div>
+                                    <div class="hidden"><?= $quarters[$q]['blank'] ?? 0 ?></div>
+                                    <div class=""><?= $quarters[$q]['2'] ?? 0 ?></div>
                                 </div>
                                 <?php endforeach; ?>
                                 <!-- this will show TOTAL per marks -->
@@ -1013,30 +1057,28 @@ try {
 
 
                                     <?php
-                                    $totals_by_quarter = [];
-                                    foreach ($weekLabels as $label) {
-                                        $totals_by_quarter[$label] = 0;
-                                    }
-
-                                    $total_check = 0;
-                                    $total_x = 0;
-                                    $total_blank = 0;
-
-                                    // Only process quarters that are in our weekLabels array
-                                    foreach ($quarters as $quarter_name => $counts) {
-                                        // Only process if this quarter is in our weekLabels
-                                        if (in_array($quarter_name, $weekLabels)) {
-                                            $total_check += $counts['1'] ?? 0;
-                                            $total_x += $counts['0'] ?? 0;
-                                            $total_blank += $counts['blank'] ?? 0;
-
-                                            $totals_by_quarter[$quarter_name] += ($counts['1'] ?? 0) + ($counts['0'] ?? 0) + ($counts['blank'] ?? 0);
-                                        }
-                                    }
-
-                                    // Grand total (sum of all marks)
-                                    $grand_total = $total_check + $total_x + $total_blank;
-                                    ?>
+                                                $totals_by_quarter = [];
+                                                foreach ($weekLabels as $label) {
+                                                    $totals_by_quarter[$label] = 0;
+                                                }
+                                                $total_check = 0;
+                                                $total_x = 0;
+                                                $total_blank = 0;
+                                                $total_onboarding = 0;
+                                                // Only process quarters that are in our weekLabels array
+                                                foreach ($quarters as $quarter_name => $counts) {
+                                                    // Only process if this quarter is in our weekLabels
+                                                    if (in_array($quarter_name, $weekLabels)) {
+                                                        $total_check += $counts['1'] ?? 0;
+                                                        $total_x += $counts['0'] ?? 0;
+                                                        $total_blank += $counts['blank'] ?? 0;
+                                                        $total_onboarding += $counts['2'] ?? 0;
+                                                        $totals_by_quarter[$quarter_name] += ($counts['1'] ?? 0) + ($counts['0'] ?? 0) + ($counts['blank'] ?? 0) + ($counts['2'] ?? 0);
+                                                    }
+                                                }
+                                                // Grand total (sum of all marks)
+                                                $grand_total = $total_check + $total_x + $total_blank + $total_onboarding;
+                                                ?>
 
                                     <div class="hover:bg-white group">
                                         <span
@@ -1050,10 +1092,16 @@ try {
                                             <?= $total_x ?>
                                         </span>
                                     </div>
-                                    <div class="hover:bg-white group">
+                                    <div class="hover:bg-white group hidden">
                                         <span
                                             class="font-semibold flex justify-center items-center group-hover:text-blue-<?= $default_blue_number; ?>">
                                             <?= $total_blank ?>
+                                        </span>
+                                    </div>
+                                    <div class="hover:bg-white group">
+                                        <span
+                                            class="font-semibold flex justify-center items-center group-hover:text-blue-<?= $default_blue_number; ?>">
+                                            <?= $total_onboarding ?>
                                         </span>
                                     </div>
                                 </div>
@@ -1065,7 +1113,7 @@ try {
 
                                 <?php foreach ($weekLabels as $week): ?>
                                 <div class="border font-semibold rounded-xl p-2 text-center">
-                                    <?= $totals_by_quarter[$week]; ?>
+                                    <?= ($quarters[$week]['1'] ?? 0) + ($quarters[$week]['0'] ?? 0) + ($quarters[$week]['blank'] ?? 0) + ($quarters[$week]['2'] ?? 0); ?>
                                 </div>
                                 <?php endforeach; ?>
 
@@ -1082,9 +1130,9 @@ try {
                         <div class="bg-white rounded-2xl shadow pt-2 pb-4 px-4 mb-6">
 
                             <?php
-                        // Always render the chart canvas for every month-section
-                        if (isset($monthlyData[$currentMonthKey])):
-                            ?>
+                                    // Always render the chart canvas for every month-section
+                                    if (isset($monthlyData[$currentMonthKey])):
+                                        ?>
                             <h3
                                 class="text-xl md:text-2xl font-semibold my-2 flex justify-between items-center md:flex-row flex-col">
                                 <p class="text-blue-<?= $default_blue_number; ?> font-semibold">
