@@ -225,7 +225,7 @@ class NotificationManager {
         console.log("Server response:", data)
 
         if (data.success) {
-          // Hide the mark all as read button
+    
           const markAllBtn = document.querySelector(".mark-all-read")
           if (markAllBtn) {
             markAllBtn.style.display = "none"
@@ -240,7 +240,7 @@ class NotificationManager {
         console.error("Error:", error)
         this.showErrorMessage("Failed to mark notifications as read: " + error.message)
 
-        // Revert UI changes on error
+     
         unreadItems.forEach((item) => {
           item.classList.add("unread")
           item.classList.remove("read")

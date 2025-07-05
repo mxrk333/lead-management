@@ -15,14 +15,14 @@ if (!$conn) {
     die("Database connection failed.");
 }
 
-// Get parameters
+
 $year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 $quarter = isset($_GET['quarter']) ? intval($_GET['quarter']) : ceil(date('n') / 3);
 $month = isset($_GET['month']) ? intval($_GET['month']) : 0;
 $team_id = isset($_GET['team_id']) ? $_GET['team_id'] : 'all';
 $team_member = isset($_GET['team_member']) ? $_GET['team_member'] : null;
 
-// Calculate date range
+
 if ($month > 0) {
     $start_date = "$year-" . str_pad($month, 2, '0', STR_PAD_LEFT) . "-01";
     $end_date = "$year-" . str_pad($month, 2, '0', STR_PAD_LEFT) . "-" . date('t', strtotime("$year-$month-01"));
@@ -60,7 +60,7 @@ if ($team_member) {
 
 $query .= " GROUP BY u.id, u.name ORDER BY u.name";
 
-// Prepare and execute query
+
 $stmt = $conn->prepare($query);
 
 if ($team_id != 'all' && $team_member) {
