@@ -31,9 +31,7 @@ $user_id = $_SESSION['user_id'];
 try {
     // Get database connection
     $conn = getDbConnection();
-    
-    // Get user information with team name
-    $user_query = "SELECT u.*, t.name as team_name FROM users u LEFT JOIN teams t ON u.team_id = t.id WHERE u.id = ?";
+    $user_query = "SELECT u.*, u.profile_picture, t.name as team_name FROM users u LEFT JOIN teams t ON u.team_id = t.id WHERE u.id = ?";
     $user_stmt = $conn->prepare($user_query);
     
     if (!$user_stmt) {
@@ -381,26 +379,10 @@ if (!empty($memos)) {
 </head>
 <body>
     <div class="container">
-        <?php 
-        // Include sidebar with error handling
-        $sidebar_path = $base_path . '/includes/sidebar.php';
-        if (file_exists($sidebar_path)) {
-            include $sidebar_path;
-        } else {
-            echo '<div style="width: 250px; background: #f3f4f6; padding: 1rem;">Sidebar not found</div>';
-        }
-        ?>
+        <?php include $base_path . '/includes/sidebar.php'; ?>
         
         <div class="main-content">
-            <?php 
-            // Include header with error handling
-            $header_path = $base_path . '/includes/header.php';
-            if (file_exists($header_path)) {
-                include $header_path;
-            } else {
-                echo '<div style="height: 60px; background: white; border-bottom: 1px solid #e5e7eb; padding: 1rem;">Header not found</div>';
-            }
-            ?>
+            <?php include $base_path . '/includes/header.php'; ?>
             
             <div class="memos-page">
                 <!-- Visibility notice based on role -->

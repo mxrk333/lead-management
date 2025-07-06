@@ -268,26 +268,10 @@ function isPDF($file_path) {
 </head>
 <body>
     <div class="container">
-        <?php 
-        // Include sidebar with error handling
-        $sidebar_path = $base_path . '/includes/sidebar.php';
-        if (file_exists($sidebar_path)) {
-            include $sidebar_path;
-        } else {
-            echo '<div style="width: 250px; background: #f3f4f6; padding: 1rem;">Sidebar not found</div>';
-        }
-        ?>
+        <?php include $base_path . '/includes/sidebar.php'; ?>
         
         <div class="main-content">
-            <?php 
-            // Include header with error handling
-            $header_path = $base_path . '/includes/header.php';
-            if (file_exists($header_path)) {
-                include $header_path;
-            } else {
-                echo '<div style="height: 60px; background: white; border-bottom: 1px solid #e5e7eb; padding: 1rem;">Header not found</div>';
-            }
-            ?>
+            <?php include $base_path . '/includes/header.php'; ?>
             
             <div class="memo-details-page">
                 <!-- Access notice based on role -->
