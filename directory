@@ -6,29 +6,23 @@ C:.
 ª   accreditation.php
 ª   add-activity.php
 ª   add-lead.php
-ª   add-memo.php
 ª   add_position_column.php
 ª   admin-reset.php
 ª   check-files.php
-ª   check_db.php
 ª   components.json
 ª   config-test.php
 ª   create_incentives_table.php
-ª   create_memo_files.php
 ª   create_project_models.sql
-ª   create_table.php
 ª   create_tour_targets.php
 ª   database-report-schema.sql
 ª   database.sql
 ª   db-test.php
 ª   db_errors.log
-ª   debug-memo-visibility.php
-ª   debug-superuser.php
 ª   delete-lead.php
 ª   delete-team-member-leads.php
 ª   deploy_project_models.php
 ª   directory
-ª   directory.txt
+ª   directory.txy
 ª   dp-stage.php
 ª   edit-lead.php
 ª   edit-user.php
@@ -53,36 +47,20 @@ C:.
 ª   logout.php
 ª   maintenance.php
 ª   mark-notification-read.php
-ª   next.config.mjs
 ª   notification-status.php
-ª   package.json
-ª   phptest.php
 ª   php_errors.log
-ª   pnpm-lock.yaml
-ª   postcss.config.mjs
 ª   process-report.php
 ª   profile-settings.php
 ª   profile.php
-ª   query
 ª   README.md
-ª   recreate_project_models.sql
 ª   recruitment-api-debug.php
 ª   recruitment-api-fixed.php
 ª   recruitment-dashboard.php
 ª   reports.php
 ª   reset-password.php
 ª   settings.php
-ª   setup_memo_visibility.php
 ª   status-checker.php
-ª   tailwind.config.ts
 ª   teams.php
-ª   test-index.php
-ª   test-mark-read.php
-ª   test-notification.php
-ª   test-visibility.php
-ª   test.php
-ª   test_users.php
-ª   tsconfig.json
 ª   user-details.php
 ª   users.php
 ª   vast.php
@@ -113,7 +91,6 @@ C:.
 ª   +---logs
 ª           php_errors.log
 ª           
-+---admin
 +---api
 ª   ª   get-tracker.php
 ª   ª   update-goal-progress.php
@@ -170,15 +147,10 @@ C:.
 ª       memo.js
 ª       recruitment-dashboard.js
 ª       
-+---lib
-ª       utils.ts
-ª       
 +---logs
 ª       db_errors.log
+ª       php_errors copy.log
 ª       php_errors.log
-ª       
-+---report-problem
-ª       process-report.php
 ª       
 +---sql
 ª       data-backup.sql
@@ -189,6 +161,7 @@ C:.
 ª       datingdatabase.sql
 ª       insertdata.sql
 ª       memo_tables.sql
+ª       recreate_project_models.sql
 ª       Updated2025.sql
 ª       
 +---styles
@@ -257,24 +230,52 @@ C:.
 ª           user_8_1747501769.png
 ª           
 +---users
-ª   +---assets
-ª   ª   +---images
-ª   ª   ª       leads.php
-ª   ª   ª       
-ª   ª   +---scripts
-ª   ª   +---styles
-ª   ª           add-memo.css
-ª   ª           style-memo.css
-ª   ª           
-ª   +---memo
-ª           memo-details.php
-ª           memo-improved.php
-ª           memo-layout-fix.php
-ª           memo-tabs-fix.php
-ª           memo.php
-ª           memo.php.bak
-ª           memo_status.php
-ª           
-+---views
-        memo_view.php
-        
+    +---assets
+    ª   +---images
+    ª   ª       leads.php
+    ª   ª       
+    ª   +---scripts
+    ª   ª       add-memo.js
+    ª   ª       memo-details.js
+    ª   ª       
+    ª   +---styles
+    ª           add-memo.css
+    ª           main-memo.css
+    ª           memo-details.css
+    ª           
+    +---debugs
+    ª       check_db.php
+    ª       debug-memo-visibility.php
+    ª       debug-superuser.php
+    ª       
+    +---handbook
+    +---incentives
+    +---leads
+    +---memo
+    ª   ª   add-memo.php
+    ª   ª   create_memo_files.php
+    ª   ª   create_table.php
+    ª   ª   memo-details.php
+    ª   ª   memo.php
+    ª   ª   memo_status.php
+    ª   ª   memo_view.php
+    ª   ª   setup_memo_visibility.php
+    ª   ª   
+    ª   +---uploads
+    ª       +---memos
+    ª               1751738484_hd logo white bg (1).png
+    ª               
+    +---project-listing
+    +---report-problem
+    ª       process-report.php
+    ª       
+    +---reports
+    +---tests
+            phptest.php
+            test-index.php
+            test-mark-read.php
+            test-notification.php
+            test-visibility.php
+            test.php
+            test_users.php
+            

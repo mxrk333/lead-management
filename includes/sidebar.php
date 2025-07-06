@@ -48,12 +48,17 @@ if (strpos($current_path, '/users/memo/') !== false) {
         
         <div class="sidebar-user-section">
             <div class="user-avatar">
-                <?php if (!empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
-                    <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
-                <?php else: ?>
-                    <span class="avatar-text"><?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?></span>
-                <?php endif; ?>
+    <?php
+    // Always use the correct path for the image
+    if (!empty($user['profile_picture'])): ?>
+        <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
+    <?php elseif (!empty($user['avatar'])): ?>
+        <img src="<?php echo htmlspecialchars($user['avatar']); ?>" alt="Profile Picture">
+    <?php else: ?>
+        <span class="avatar-text"><?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?></span>
+    <?php endif; ?>
             </div>
+            
             <div class="user-info">
                 <div class="user-name" style="color: white;"><?php echo htmlspecialchars($user['name'] ?? 'User'); ?></div>
                 <div class="user-role" style="color: white;">
@@ -63,8 +68,8 @@ if (strpos($current_path, '/users/memo/') !== false) {
                     // Check for specific usernames and assign static roles
                     if ($username === 'markpatigayon.itadmin' || $username === 'romeocobreta.itdept') {
                         echo 'IT Admin';
-                    } elseif ($username === 'another.username') {
-                        echo 'Another Role';  // Add more conditions as needed
+                    } elseif ($username === 'gabriellibacao.founder') {
+                        echo 'Founder';  // Add more conditions as needed
                     } else {
                         echo htmlspecialchars($user['role'] ?? 'User');
                     }
