@@ -22019,3 +22019,38 @@ Stack trace:
 [06-Jul-2025 16:47:59 Asia/Manila] Database connection successful to localhost/real_estate_leads
 [06-Jul-2025 16:47:59 Asia/Manila] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
 [06-Jul-2025 16:47:59 Asia/Manila] Header loaded - Total notifications: 0, Unread count: 0
+[08-Jul-2025 04:04:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[08-Jul-2025 04:04:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[08-Jul-2025 04:04:05 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[08-Jul-2025 04:04:05 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[08-Jul-2025 04:04:05 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[08-Jul-2025 04:06:53 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[08-Jul-2025 04:06:53 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[08-Jul-2025 04:06:53 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[08-Jul-2025 04:06:53 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[08-Jul-2025 04:06:53 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[08-Jul-2025 04:06:53 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[08-Jul-2025 04:06:53 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[08-Jul-2025 04:06:53 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[08-Jul-2025 04:06:53 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[08-Jul-2025 04:06:53 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[08-Jul-2025 04:06:53 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[08-Jul-2025 04:06:53 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[08-Jul-2025 04:06:53 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_stats"}
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_stats"
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: Stats error - "SQLSTATE[42S22]: Column not found: 1054 Unknown column 'interest_level' in 'field list'"
+[08-Jul-2025 04:06:53 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[08-Jul-2025 04:06:53 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[08-Jul-2025 04:06:53 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{}","sort_by":"created_at","sort_order":"DESC"}
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: Filters received
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 ORDER BY created_at DESC"
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters
+[08-Jul-2025 04:06:53 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 1 leads"
+[08-Jul-2025 04:09:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[08-Jul-2025 04:09:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
