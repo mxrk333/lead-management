@@ -222,8 +222,8 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
             <div class="header-search">
                 <form action="leads.php" method="GET" class="search-form">
                     <div class="search-input-wrapper">
+                        <input type="text" name="search" placeholder="Search leads only" class="search-input" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="search" placeholder="Search leads, clients, or projects..." class="search-input" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                         <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
                             <button type="button" class="clear-search" onclick="clearSearch()">
                                 <i class="fas fa-times"></i>
@@ -379,9 +379,8 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
     </div>
 </header>
 
-<!-- Include the CSS and JavaScript inline to ensure they work -->
 <style>
-/* Your existing CSS styles here - keeping them the same */
+/* Reset and Base Styles */
 html, body {
     margin: 0 !important;
     padding: 0 !important;
@@ -396,10 +395,17 @@ html, body {
     box-sizing: border-box;
 }
 
+/* CRITICAL: Remove all top margins and padding */
 body > *:first-child,
 .main-header {
     margin-top: 0 !important;
     padding-top: 0 !important;
+}
+
+/* CRITICAL: Ensure main content doesn't have excessive top padding */
+.main-content {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
 }
 
 .main-header {
@@ -414,6 +420,9 @@ body > *:first-child,
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     display: block;
     width: 100%;
+    /* CRITICAL: Set explicit height to prevent expansion */
+    height: auto;
+    min-height: 60px;
 }
 
 .header-container {
@@ -425,6 +434,9 @@ body > *:first-child,
     gap: 1rem;
     width: 100%;
     margin: 0;
+    /* CRITICAL: Prevent container from expanding */
+    min-height: 60px;
+    height: auto;
 }
 
 .header-left {
@@ -484,7 +496,7 @@ body > *:first-child,
 
 .search-icon {
     position: absolute;
-    left: 1rem;
+    right: 1rem;
     color: #6b7280;
     z-index: 2;
     font-size: 0.9rem;
@@ -492,7 +504,7 @@ body > *:first-child,
 
 .search-input {
     width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
     border: 1px solid #e5e7eb;
     border-radius: 2rem;
     background: #f9fafb;
@@ -514,7 +526,7 @@ body > *:first-child,
 
 .clear-search {
     position: absolute;
-    right: 1rem;
+    right: 2.5rem;
     background: none;
     border: none;
     color: #6b7280;
@@ -924,6 +936,9 @@ body > *:first-child,
     text-decoration: none;
     transition: all 0.2s ease;
     font-size: 0.875rem;
+    /* CRITICAL: Ensure menu items are clickable */
+    position: relative;
+    z-index: 1003;
 }
 
 .menu-item:hover {
@@ -990,6 +1005,30 @@ body > *:first-child,
     opacity: 1;
 }
 
+/* Mobile Close Button */
+.mobile-close {
+    display: none;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 1.2rem;
+    z-index: 1004;
+    transition: all 0.2s ease;
+}
+
+.mobile-close:hover {
+    background: #e5e7eb;
+}
+
 @media (max-width: 1200px) {
     .action-text {
         display: none;
@@ -1002,32 +1041,162 @@ body > *:first-child,
     }
 }
 
+/* CRITICAL: Mobile Responsive Styles - Icon-only search */
 @media (max-width: 768px) {
     .mobile-toggle {
         display: block;
     }
     
+    /* CRITICAL: Minimal mobile padding to eliminate white space */
+    .main-header {
+        min-height: 50px; /* Reduced height */
+    }
+    
     .header-container {
-        padding: 0.75rem 1rem;
+        padding: 0.25rem 0.5rem; /* Drastically reduced padding */
+        gap: 0.5rem;
+        min-height: 50px; /* Match header height */
     }
     
+    /* CRITICAL: Make search bar icon-only on mobile */
     .header-search {
-        max-width: none;
-        flex: 1;
+        flex: 0 0 auto; /* Don't grow, fixed size */
+        width: 40px; /* Same width as other buttons */
     }
     
+    .search-form {
+        width: 40px;
+        height: 40px;
+        position: relative;
+    }
+    
+    .search-input-wrapper {
+        width: 40px;
+        height: 40px;
+        position: relative;
+    }
+    
+    .search-input {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 0.5rem; /* Square-ish like other buttons */
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        text-indent: -9999px; /* Hide text */
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .search-input:focus {
+        /* When focused, expand to full width */
+        position: fixed;
+        top: 0.25rem;
+        left: 0.5rem;
+        right: 0.5rem;
+        width: calc(100% - 1rem);
+        height: 40px;
+        z-index: 1010;
+        text-indent: 0;
+        padding: 0.5rem 2.5rem 0.5rem 1rem;
+        border-radius: 2rem;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .search-input:focus::placeholder {
+        color: #9ca3af;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        color: #6b7280;
+        font-size: 0.9rem;
+        pointer-events: none;
+        z-index: 2;
+        transition: all 0.2s ease;
+    }
+    
+    .search-input:focus + .search-icon {
+        left: auto;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    
+    .clear-search {
+        display: none; /* Hide on mobile unless focused */
+    }
+    
+    .search-input:focus ~ .clear-search {
+        display: block;
+        position: absolute;
+        right: 2.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 3;
+    }
+    
+    /* CRITICAL: Ensure no extra spacing around elements */
+    .header-left {
+        flex: 1;
+        min-width: 0;
+        gap: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Hide user info text on mobile but keep avatar clickable */
     .user-info {
         display: none;
     }
     
+    .dropdown-arrow {
+        display: none;
+    }
+    
+    /* Better mobile header actions alignment */
     .header-actions {
         gap: 0.5rem;
+        align-items: center;
+        display: flex;
     }
     
     .quick-actions {
         display: none;
     }
     
+    /* Mobile user menu trigger - make it more clickable */
+    .user-menu-trigger {
+        padding: 0.5rem;
+        min-width: 40px;
+        min-height: 40px;
+        justify-content: center;
+    }
+    
+    .user-avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 0.75rem;
+    }
+    
+    /* Mobile notification button */
+    .notification-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0.5rem;
+    }
+    
+    /* CRITICAL: Ensure main content doesn't have excessive top margin */
+    .main-content {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    /* CRITICAL: Mobile dropdown positioning and interaction fixes */
     .notification-dropdown,
     .user-menu-dropdown {
         position: fixed !important;
@@ -1038,12 +1207,13 @@ body > *:first-child,
         width: 100% !important;
         max-width: 100% !important;
         min-width: auto !important;
-        max-height: 80vh !important;
+        max-height: 90vh !important;
         border-radius: 1rem 1rem 0 0 !important;
         z-index: 1600 !important;
         transform: translateY(100%);
         transition: transform 0.3s ease;
         box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.15) !important;
+        margin: 0 !important;
     }
     
     .notification-dropdown.active,
@@ -1053,46 +1223,61 @@ body > *:first-child,
         animation: slideUp 0.3s ease;
     }
     
+    /* Mobile dropdown content scrolling */
     .notification-list {
-        max-height: calc(80vh - 120px) !important;
+        max-height: calc(90vh - 120px) !important;
         -webkit-overflow-scrolling: touch;
+        overflow-y: auto;
     }
     
     .dropdown-menu {
-        max-height: calc(80vh - 120px) !important;
+        max-height: calc(90vh - 120px) !important;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        padding: 0.75rem 0;
     }
     
+    /* Show mobile close button */
     .mobile-close {
-        display: block;
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: #f3f4f6;
-        border: none;
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: #6b7280;
-        font-size: 1.2rem;
-        z-index: 10;
+        display: flex !important;
     }
     
-    .mobile-close:hover {
-        background: #e5e7eb;
-    }
-    
+    /* Adjust header padding for mobile close button */
     .notification-header,
     .dropdown-header {
-        padding-right: 3rem !important;
+        padding-right: 3.5rem !important;
+        position: relative;
+    }
+    
+    /* CRITICAL: Better mobile menu item touch targets and clickability */
+    .menu-item {
+        padding: 1rem 1.25rem;
+        font-size: 0.9rem;
+        min-height: 52px; /* Larger touch target */
+        display: flex;
+        align-items: center;
+        /* CRITICAL: Ensure proper z-index and pointer events */
+        position: relative;
+        z-index: 1005;
+        pointer-events: auto;
+        cursor: pointer;
+    }
+    
+    /* CRITICAL: Ensure logout link is fully clickable */
+    .menu-item.logout {
+        /* Override any conflicting styles */
+        pointer-events: auto !important;
+        cursor: pointer !important;
+        z-index: 1006 !important;
+    }
+    
+    .notification-item {
+        padding: 1rem 1.25rem;
+        min-height: 60px;
     }
 }
 
+/* Slide up animation for mobile */
 @keyframes slideUp {
     from {
         opacity: 0;
@@ -1103,11 +1288,52 @@ body > *:first-child,
         transform: translateY(0);
     }
 }
+
+/* Extra small devices */
+@media (max-width: 480px) {
+    .header-container {
+        padding: 0.2rem 0.4rem; /* Even more reduced for very small screens */
+        gap: 0.4rem;
+    }
+    
+    /* Keep search icon-only styling */
+    .search-input:focus {
+        left: 0.4rem;
+        right: 0.4rem;
+        width: calc(100% - 0.8rem);
+    }
+    
+    .user-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+    }
+    
+    .notification-btn {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .user-menu-trigger {
+        min-width: 36px;
+        min-height: 36px;
+        padding: 0.4rem;
+    }
+    
+    .search-form,
+    .search-input-wrapper,
+    .search-input {
+        width: 36px;
+        height: 36px;
+    }
+}
 </style>
 
 <script>
 // Enhanced JavaScript for notification handling
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Header script initializing...');
+    
     // Create mobile overlay element
     const mobileOverlay = document.createElement('div');
     mobileOverlay.className = 'mobile-overlay';
@@ -1122,7 +1348,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const notificationCloseBtn = document.createElement('button');
         notificationCloseBtn.className = 'mobile-close';
         notificationCloseBtn.innerHTML = '<i class="fas fa-times"></i>';
-        notificationCloseBtn.style.display = 'none';
         notificationDropdown.appendChild(notificationCloseBtn);
         
         notificationBtn.addEventListener('click', function(e) {
@@ -1134,7 +1359,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const userMenuTrigger = document.querySelector('.user-menu-trigger');
             if (userMenuDropdown) {
                 userMenuDropdown.classList.remove('active');
-                mobileOverlay.classList.remove('active');
             }
             if (userMenuTrigger) {
                 userMenuTrigger.classList.remove('active');
@@ -1144,10 +1368,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const isActive = notificationDropdown.classList.contains('active');
             notificationDropdown.classList.toggle('active');
             
-            // Handle mobile overlay and close button
+            // Handle mobile overlay
             if (window.innerWidth <= 768) {
                 mobileOverlay.classList.toggle('active');
-                notificationCloseBtn.style.display = isActive ? 'none' : 'flex';
                 document.body.style.overflow = isActive ? 'auto' : 'hidden';
             }
         });
@@ -1157,7 +1380,6 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             notificationDropdown.classList.remove('active');
             mobileOverlay.classList.remove('active');
-            notificationCloseBtn.style.display = 'none';
             document.body.style.overflow = 'auto';
         });
     }
@@ -1167,24 +1389,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const userMenuDropdown = document.querySelector('.user-menu-dropdown');
     
     if (userMenuTrigger && userMenuDropdown) {
+        console.log('User menu elements found, setting up event listeners...');
+        
         // Add mobile close button
         const userCloseBtn = document.createElement('button');
         userCloseBtn.className = 'mobile-close';
         userCloseBtn.innerHTML = '<i class="fas fa-times"></i>';
-        userCloseBtn.style.display = 'none';
         userMenuDropdown.appendChild(userCloseBtn);
         
         userMenuTrigger.addEventListener('click', function(e) {
             e.stopPropagation();
             e.preventDefault();
+            console.log('User menu trigger clicked');
             
             // Close notification dropdown if open
             if (notificationDropdown) {
                 notificationDropdown.classList.remove('active');
-                const notificationCloseBtn = notificationDropdown.querySelector('.mobile-close');
-                if (notificationCloseBtn) {
-                    notificationCloseBtn.style.display = 'none';
-                }
             }
             
             // Toggle user menu
@@ -1192,10 +1412,11 @@ document.addEventListener('DOMContentLoaded', function() {
             userMenuDropdown.classList.toggle('active');
             userMenuTrigger.classList.toggle('active');
             
-            // Handle mobile overlay and close button
+            console.log('User menu active state:', !isActive);
+            
+            // Handle mobile overlay
             if (window.innerWidth <= 768) {
                 mobileOverlay.classList.toggle('active');
-                userCloseBtn.style.display = isActive ? 'none' : 'flex';
                 document.body.style.overflow = isActive ? 'auto' : 'hidden';
             }
         });
@@ -1206,27 +1427,71 @@ document.addEventListener('DOMContentLoaded', function() {
             userMenuDropdown.classList.remove('active');
             userMenuTrigger.classList.remove('active');
             mobileOverlay.classList.remove('active');
-            userCloseBtn.style.display = 'none';
             document.body.style.overflow = 'auto';
         });
+        
+        // CRITICAL: Handle menu item clicks properly - especially logout
+        const menuItems = userMenuDropdown.querySelectorAll('.menu-item');
+        console.log('Found menu items:', menuItems.length);
+        
+        menuItems.forEach((item, index) => {
+            console.log('Setting up menu item', index, ':', item.textContent.trim());
+            
+            // Remove any existing event listeners that might interfere
+            item.style.pointerEvents = 'auto';
+            item.style.cursor = 'pointer';
+            
+            item.addEventListener('click', function(e) {
+                console.log('Menu item clicked:', this.textContent.trim());
+                
+                // Don't prevent default - let the link work
+                // Don't stop propagation - let it bubble up
+                
+                // For mobile, close the dropdown after a very short delay
+                if (window.innerWidth <= 768) {
+                    setTimeout(() => {
+                        userMenuDropdown.classList.remove('active');
+                        userMenuTrigger.classList.remove('active');
+                        mobileOverlay.classList.remove('active');
+                        document.body.style.overflow = 'auto';
+                    }, 50); // Very short delay to allow navigation
+                } else {
+                    // For desktop, close immediately
+                    userMenuDropdown.classList.remove('active');
+                    userMenuTrigger.classList.remove('active');
+                }
+            });
+            
+            // Special handling for logout link
+            if (item.classList.contains('logout')) {
+                console.log('Setting up logout link specifically');
+                item.addEventListener('touchstart', function(e) {
+                    console.log('Logout touched');
+                    // Ensure the touch event works
+                    this.style.backgroundColor = '#fef2f2';
+                });
+                
+                item.addEventListener('touchend', function(e) {
+                    console.log('Logout touch ended');
+                    this.style.backgroundColor = '';
+                    // Navigate immediately
+                    window.location.href = this.href;
+                });
+            }
+        });
+    } else {
+        console.log('User menu elements not found');
     }
     
     // Close dropdowns when clicking overlay
     mobileOverlay.addEventListener('click', function() {
+        console.log('Mobile overlay clicked');
         if (notificationDropdown) {
             notificationDropdown.classList.remove('active');
-            const notificationCloseBtn = notificationDropdown.querySelector('.mobile-close');
-            if (notificationCloseBtn) {
-                notificationCloseBtn.style.display = 'none';
-            }
         }
         if (userMenuDropdown) {
             userMenuDropdown.classList.remove('active');
             userMenuTrigger.classList.remove('active');
-            const userCloseBtn = userMenuDropdown.querySelector('.mobile-close');
-            if (userCloseBtn) {
-                userCloseBtn.style.display = 'none';
-            }
         }
         mobileOverlay.classList.remove('active');
         document.body.style.overflow = 'auto';
@@ -1252,53 +1517,77 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = 'auto';
         mobileOverlay.classList.remove('active');
         
-        if (notificationDropdown) {
-            const notificationCloseBtn = notificationDropdown.querySelector('.mobile-close');
-            if (window.innerWidth > 768) {
-                if (notificationCloseBtn) notificationCloseBtn.style.display = 'none';
+        if (window.innerWidth > 768) {
+            if (notificationDropdown) {
+                notificationDropdown.classList.remove('active');
             }
-        }
-        
-        if (userMenuDropdown) {
-            const userCloseBtn = userMenuDropdown.querySelector('.mobile-close');
-            if (window.innerWidth > 768) {
+            if (userMenuDropdown) {
                 userMenuDropdown.classList.remove('active');
                 userMenuTrigger.classList.remove('active');
-                if (userCloseBtn) userCloseBtn.style.display = 'none';
             }
         }
     });
     
-    // Mobile sidebar toggle
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            document.body.classList.toggle('sidebar-open');
-        });
-        
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(e) {
-            const sidebar = document.querySelector('.sidebar');
-            if (window.innerWidth <= 768 && 
-                sidebar && 
-                !sidebar.contains(e.target) && 
-                !sidebarToggle.contains(e.target) &&
-                document.body.classList.contains('sidebar-open')) {
-                document.body.classList.remove('sidebar-open');
-            }
-        });
-    }
-    
-    // Search functionality
+    // Enhanced mobile search functionality
     const searchInput = document.querySelector('.search-input');
     if (searchInput) {
+        // Handle search input focus on mobile
+        searchInput.addEventListener('focus', function() {
+            if (window.innerWidth <= 768) {
+                // Create backdrop
+                const backdrop = document.createElement('div');
+                backdrop.className = 'search-backdrop';
+                backdrop.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.3);
+                    z-index: 1009;
+                    opacity: 0;
+                    transition: opacity 0.2s ease;
+                `;
+                document.body.appendChild(backdrop);
+                
+                // Fade in backdrop
+                setTimeout(() => {
+                    backdrop.style.opacity = '1';
+                }, 10);
+                
+                // Close search when clicking backdrop
+                backdrop.addEventListener('click', function() {
+                    searchInput.blur();
+                    document.body.removeChild(backdrop);
+                });
+            }
+        });
+        
+        searchInput.addEventListener('blur', function() {
+            if (window.innerWidth <= 768) {
+                const backdrop = document.querySelector('.search-backdrop');
+                if (backdrop) {
+                    backdrop.style.opacity = '0';
+                    setTimeout(() => {
+                        if (backdrop.parentNode) {
+                            backdrop.parentNode.removeChild(backdrop);
+                        }
+                    }, 200);
+                }
+            }
+        });
+        
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 this.closest('form').submit();
             }
+            if (e.key === 'Escape') {
+                this.blur();
+            }
         });
     }
+    
+    console.log('Header script initialization complete');
 });
 
 // Clear search function
@@ -1360,7 +1649,7 @@ function updateNotificationBadge() {
     }
 }
 
-// Mark all notifications as read - this is our main function
+// Mark all notifications as read
 function markAllNotificationsAsRead() {
     console.log('markAllNotificationsAsRead called');
     
@@ -1381,7 +1670,7 @@ function markAllNotificationsAsRead() {
     // Update badge count
     updateNotificationBadge();
     
-    // Send AJAX request to your existing mark-notification-read.php file
+    // Send AJAX request
     const xhr = new XMLHttpRequest();
     xhr.open('POST', 'mark-notification-read.php', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -1401,15 +1690,11 @@ function markAllNotificationsAsRead() {
                     
                     if (response.success) {
                         console.log('Notifications marked as read in database');
-                        // Hide the mark all as read button
                         const markAllBtn = document.querySelector('.mark-all-read');
                         if (markAllBtn) {
                             markAllBtn.style.display = 'none';
                         }
-                        
-                        // Show success message briefly
                         showNotificationMessage('All notifications marked as read!', 'success');
-                        
                     } else {
                         console.error('Server returned error:', response.error);
                         showNotificationMessage('Error: ' + response.error, 'error');
@@ -1447,13 +1732,11 @@ function markAllNotificationsAsRead() {
     };
     xhr.send('action=mark_all_read');
     
-    // Return false to prevent any further event handling
     return false;
 }
 
 // Show notification message
 function showNotificationMessage(message, type = 'success') {
-    // Remove any existing message
     const existingMsg = document.querySelector('.notification-message');
     if (existingMsg) {
         existingMsg.remove();

@@ -876,20 +876,20 @@ function getLeadById($leadId, $userId, $userRole) {
     return false;
 }
 
-function addLead($userId, $clientName, $phone, $email, $facebook, $linkedin, 
-                $temperature, $status, $source, $developer, $projectModel, $price, $remarks) {
+function addLead($user_id, $client_name, $phone, $email, $facebook, $linkedin, $temperature, $status, $source, $developer, $project_model, $price, $remarks) {
     $conn = getDbConnection();
     
-    $stmt = $conn->prepare("INSERT INTO leads (user_id, client_name, phone, email, facebook, linkedin, 
-                           temperature, status, source, developer, project_model, price, remarks) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("issssssssssds", $userId, $clientName, $phone, $email, $facebook, $linkedin, 
-                     $temperature, $status, $source, $developer, $projectModel, $price, $remarks);
+    $stmt = $conn->prepare("INSERT INTO leads (user_id, client_name, phone, email, facebook, linkedin, temperature, status, source, developer, project_model, price, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    
+    $stmt->bind_param("issssssssssds", $user_id, $client_name, $phone, $email, $facebook, $linkedin, $temperature, $status, $source, $developer, $project_model, $price, $remarks);
+    
     $result = $stmt->execute();
+    $insert_id = $conn->insert_id;
     
     $stmt->close();
     $conn->close();
-    return $result;
+    
+    return $result ? $insert_id : false;
 }
 
 function updateLead($leadId, $clientName, $phone, $email, $facebook, $linkedin, 
