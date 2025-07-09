@@ -14,7 +14,6 @@ require_once __DIR__ . '/includes/header.php';
 // Get project ID from URL
 $projectId = $_GET['id'] ?? null;
 if (!$projectId) {
-    // Redirect to project listing with an error if no ID is provided
     $_SESSION['error_message'] = 'No project ID provided.';
     header('Location: projectlisting.php');
     exit();
@@ -22,7 +21,6 @@ if (!$projectId) {
 
 $conn = getDbConnection();
 if (!$conn) {
-    // Handle database connection failure gracefully
     $_SESSION['error_message'] = 'Database connection failed. Please try again later.';
     header('Location: projectlisting.php');
     exit();
@@ -40,7 +38,6 @@ $result = $stmt->get_result();
 $project = $result->fetch_assoc();
 
 if (!$project) {
-    // Redirect to project listing with an error if project is not found
     $_SESSION['error_message'] = 'Project not found.';
     header('Location: projectlisting.php');
     exit();
@@ -52,15 +49,11 @@ $provincesStmt->execute();
 $provinces = $provincesStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $provincesStmt->close();
 
-// Fetch cities for the currently selected province (for initial load)
-$cities = [];
-if ($project['province_id']) {
-    $citiesStmt = $conn->prepare("SELECT id, name FROM cities WHERE province_id = ? ORDER BY name");
-    $citiesStmt->bind_param("i", $project['province_id']);
-    $citiesStmt->execute();
-    $cities = $citiesStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $citiesStmt->close();
-}
+// Fetch all cities for the dropdown
+$citiesStmt = $conn->prepare("SELECT c.id, c.name, c.province_id, p.name as province_name FROM cities c LEFT JOIN provinces p ON c.province_id = p.id ORDER BY c.name");
+$citiesStmt->execute();
+$cities = $citiesStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$citiesStmt->close();
 
 $stmt->close();
 $conn->close();
@@ -73,449 +66,495 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Project - <?php echo htmlspecialchars($project['name']); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Custom Tailwind Colors (if not already in tailwind.config.js) */
         :root {
-            --color-blue-primary: #3B82F6; /* A vibrant blue */
-            --color-blue-dark: #2563EB;   /* A darker blue for hover */
-            --color-gray-extra-light: #F9FAFB; /* Lighter gray for backgrounds */
+            --sidebar-width: 250px;
+            --sidebar-collapsed-width: 80px;
+            --primary-color: #1d4ed8;
+            --primary-hover: #1e40af;
+            --error-color: #ef4444;
+            --success-color: #10b981;
         }
-        .text-blue-primary { color: var(--color-blue-primary); }
-        .hover\:text-blue-dark:hover { color: var(--color-blue-dark); }
-        .focus\:ring-blue-primary:focus { --tw-ring-color: var(--color-blue-primary); }
-        .focus\:border-blue-primary:focus { border-color: var(--color-blue-primary); }
-        .bg-blue-primary { background-color: var(--color-blue-primary); }
-        .hover\:bg-blue-dark:hover { background-color: var(--color-blue-dark); }
-        .border-blue-primary { border-color: var(--color-blue-primary); }
-
-        .form-input {
-            @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-primary focus:border-transparent transition-all duration-200;
+        body {
+            min-height: 100vh;
+            background-color: #f8fafc;
         }
-
-        /* Styles for the loading overlay and notification toasts */
-        .notification {
-            position: fixed;
-            top: 1.5rem;
-            right: 1.5rem;
-            padding: 1rem 1.5rem;
+        .container {
+            width: 100%;
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s ease;
+            padding: 1.5rem;
+            max-width: calc(100vw - var(--sidebar-width));
+        }
+        .sidebar-collapsed .container {
+            margin-left: var(--sidebar-collapsed-width);
+            max-width: calc(100vw - var(--sidebar-collapsed-width));
+            padding: 1.5rem;
+        }
+        @media (max-width: 1024px) {
+            .container {
+                width: 100%;
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
+        .form-section {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-section h2 {
+            color: #1e293b;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
-            color: white;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            display: flex;
+            font-size: 0.9375rem;
+            transition: all 0.2s ease;
+            background-color: #fff;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+            outline: none;
+        }
+        .btn {
+            display: inline-flex;
             align-items: center;
-            gap: 0.75rem;
-            animation: slideIn 0.3s ease-out forwards;
+            justify-content: center;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
         }
-        .notification.success {
-            background-color: #10B981; /* green-500 */
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
         }
-        .notification.error {
-            background-color: #EF4444; /* red-500 */
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
         }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid #cbd5e1;
+            color: #64748b;
+        }
+        .btn-outline:hover {
+            background-color: #f8fafc;
+            border-color: #94a3b8;
+        }
+        .error-message, .success-message {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9375rem;
+        }
+        .error-message {
+            background-color: #fef2f2;
+            border-left: 4px solid var(--error-color);
+            color: #991b1b;
+            display: block;
+        }
+        .success-message {
+            background-color: #ecfdf5;
+            border-left: 4px solid var(--success-color);
+            color: #065f46;
+            display: block;
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans antialiased">
-    <div class="flex min-h-screen">
-        <?php include_once __DIR__ . '/includes/sidebar.php'; ?>
 
-        <div class="flex-1 p-8">
-            <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-8">
-                <div class="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
-                    <div>
-                        <h1 class="text-3xl font-extrabold text-gray-800">Edit Project</h1>
-                        <p class="text-gray-600 mt-1">Update details for project: <strong class="text-blue-primary"><?php echo htmlspecialchars($project['name']); ?></strong></p>
-                    </div>
-                    <a href="projectlisting.php" class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium">
-                        <i class="fas fa-arrow-left mr-2"></i>Back to Projects
-                    </a>
-                </div>
+<body class="bg-gray-50">
+<div class="container">
+<div class="max-w-5xl mx-auto">
 
-                <form id="editProjectForm" enctype="multipart/form-data" class="space-y-8">
-                    <input type="hidden" name="project_id" value="<?php echo $project['id']; ?>">
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <fieldset class="border border-gray-200 rounded-lg p-6 shadow-sm">
-                            <legend class="text-lg font-semibold text-gray-700 px-2">Project Details</legend>
-                            
-                            <div class="mb-5">
-                                <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Project Name <span class="text-red-500">*</span></label>
-                                <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($project['name']); ?>" 
-                                       class="form-input" required>
-                            </div>
+<!-- Show error/success messages prominently -->
+<?php if (isset($_SESSION['error_message'])): ?>
+    <div class="error-message">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        <strong>Error:</strong> <?php echo htmlspecialchars($_SESSION['error_message']); ?>
+    </div>
+    <?php unset($_SESSION['error_message']); ?>
+<?php endif; ?>
 
-                            <div class="mb-5">
-                                <label for="developer" class="block text-sm font-medium text-gray-700 mb-2">Developer <span class="text-red-500">*</span></label>
-                                <input type="text" id="developer" name="developer" value="<?php echo htmlspecialchars($project['developer']); ?>" 
-                                       class="form-input" required>
-                            </div>
-                            
-                            <div class="mb-5">
-                                <label for="house_model" class="block text-sm font-medium text-gray-700 mb-2">House Model</label>
-                                <input type="text" id="house_model" name="house_model" value="<?php echo htmlspecialchars($project['house_model']); ?>" 
-                                       placeholder="e.g., Lincoln, Kennedy" class="form-input">
-                            </div>
+<?php if (isset($_SESSION['success_message'])): ?>
+    <div class="success-message">
+        <i class="fas fa-check-circle mr-2"></i>
+        <strong>Success:</strong> <?php echo htmlspecialchars($_SESSION['success_message']); ?>
+    </div>
+    <?php unset($_SESSION['success_message']); ?>
+<?php endif; ?>
 
-                            <div class="mb-5">
-                                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">House Type</label>
-                                <textarea id="description" name="description" rows="4" 
-                                          placeholder="e.g., Single Detached, Twinhome" 
-                                          class="form-input resize-y"><?php echo htmlspecialchars($project['description']); ?></textarea>
-                            </div>
-                        </fieldset>
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+<div>
+<h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Edit Project</h1>
+<p class="text-sm text-gray-500 mt-1">Update details for: <?php echo htmlspecialchars($project['name']); ?></p>
+</div>
+<a href="projectlisting.php" class="btn btn-outline flex items-center text-sm sm:text-base">
+<i class="fas fa-arrow-left mr-2"></i>Back to Projects
+</a>
+</div>
 
-                        <div>
-                            <fieldset class="border border-gray-200 rounded-lg p-6 shadow-sm mb-8">
-                                <legend class="text-lg font-semibold text-gray-700 px-2">Location Information</legend>
-                                <div class="mb-5">
-                                    <label for="province_id" class="block text-sm font-medium text-gray-700 mb-2">Province <span class="text-red-500">*</span></label>
-                                    <select id="province_id" name="province_id" required class="form-input">
-                                        <option value="">Select Province</option>
-                                        <?php foreach ($provinces as $province): ?>
-                                            <option value="<?php echo $province['id']; ?>" 
-                                                    <?php echo ($project['province_id'] == $province['id']) ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($province['name']); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
+<form id="editProjectForm" action="api/update_project.php" method="POST" enctype="multipart/form-data">
+<input type="hidden" name="project_id" value="<?php echo $project['id']; ?>">
 
-                                <div class="mb-5">
-                                    <label for="city_id" class="block text-sm font-medium text-gray-700 mb-2">City <span class="text-red-500">*</span></label>
-                                    <select id="city_id" name="city_id" required class="form-input">
-                                        <option value="">Select City</option>
-                                        <?php foreach ($cities as $city): // Only cities for the currently selected province ?>
-                                            <option value="<?php echo $city['id']; ?>" 
-                                                    <?php echo ($project['city_id'] == $city['id']) ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($city['name']); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label for="exact_location" class="block text-sm font-medium text-gray-700 mb-2">Exact Location</label>
-                                    <input type="text" id="exact_location" name="exact_location" 
-                                           value="<?php echo htmlspecialchars($project['exact_location']); ?>" 
-                                           placeholder="Street address, building name, etc." 
-                                           class="form-input">
-                                </div>
-                            </fieldset>
-
-                            <fieldset class="border border-gray-200 rounded-lg p-6 shadow-sm mb-8">
-                                <legend class="text-lg font-semibold text-gray-700 px-2">Pricing & Priority</legend>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div class="mb-5">
-                                        <label for="price_min" class="block text-sm font-medium text-gray-700 mb-2">Minimum Price <span class="text-red-500">*</span></label>
-                                        <input type="number" id="price_min" name="price_min" step="0.01" 
-                                               value="<?php echo htmlspecialchars($project['price_min']); ?>"
-                                               class="form-input" required>
-                                    </div>
-                                    <div class="mb-5">
-                                        <label for="price_max" class="block text-sm font-medium text-gray-700 mb-2">Maximum Price <span class="text-red-500">*</span></label>
-                                        <input type="number" id="price_max" name="price_max" step="0.01" 
-                                               value="<?php echo htmlspecialchars($project['price_max']); ?>"
-                                               class="form-input" required>
-                                    </div>
-                                    <div class="mb-5">
-                                        <label for="commission" class="block text-sm font-medium text-gray-700 mb-2">Commission (%) <span class="text-red-500">*</span></label>
-                                        <input type="number" id="commission" name="commission" step="0.01" 
-                                               value="<?php echo htmlspecialchars($project['commission']); ?>"
-                                               class="form-input" required>
-                                    </div>
-                                    <div class="mb-5">
-                                        <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-                                        <select name="priority" id="priority" required>
-  <option value="low">Low</option>
-  <option value="medium">Medium</option>
-  <option value="high">High</option>
+<!-- Basic Information -->
+<div class="form-section">
+<h2>Basic Information</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+<div class="space-y-4">
+<div>
+<label for="name" class="block text-sm font-medium text-gray-700 mb-2">Project Name*</label>
+<input type="text" id="name" name="name" required
+class="form-input"
+value="<?php echo htmlspecialchars($project['name']); ?>"
+placeholder="Enter project name">
+</div>
+<div>
+<label for="house_model" class="block text-sm font-medium text-gray-700 mb-2">House Model</label>
+<input type="text" id="house_model" name="house_model" 
+class="form-input"
+value="<?php echo htmlspecialchars($project['house_model']); ?>"
+placeholder="ex. Lincoln, Kennedy">
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<label for="developer" class="block text-sm font-medium text-gray-700 mb-2">Developer*</label>
+<input type="text" id="developer" name="developer" required
+class="form-input"
+value="<?php echo htmlspecialchars($project['developer']); ?>"
+placeholder="Enter developer name">
+</div>
+<div>
+<label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status*</label>
+<select id="status" name="status" required class="form-select">
+<option value="">Select Status</option>
+<option value="rfo" <?php echo ($project['status'] == 'rfo') ? 'selected' : ''; ?>>RFO (Ready For Occupancy)</option>
+<option value="preselling" <?php echo ($project['status'] == 'preselling') ? 'selected' : ''; ?>>Preselling</option>
+<option value="ogc" <?php echo ($project['status'] == 'ogc') ? 'selected' : ''; ?>>OGC (On Going Construction)</option>
+<option value="rfo_preselling" <?php echo ($project['status'] == 'rfo_preselling') ? 'selected' : ''; ?>>RFO/Preselling</option>
+<option value="preselling_ogc" <?php echo ($project['status'] == 'preselling_ogc') ? 'selected' : ''; ?>>Preselling/OGC</option>
 </select>
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Project Status <span class="text-red-500">*</span></label>
-                                        <select id="status" name="status" required class="form-input">
-                                            <option value="rfo" <?php echo ($project['status'] == 'rfo') ? 'selected' : ''; ?>>RFO (Ready For Occupancy)</option>
-                                            <option value="preselling" <?php echo ($project['status'] == 'preselling') ? 'selected' : ''; ?>>Preselling</option>
-                                            <option value="ogc" <?php echo ($project['status'] == 'ogc') ? 'selected' : ''; ?>>OGC (On Going Construction)</option>
-                                            <option value="rfo_preselling" <?php echo ($project['status'] == 'rfo_preselling') ? 'selected' : ''; ?>>RFO/Preselling</option>
-                                            <option value="preselling_ogc" <?php echo ($project['status'] == 'preselling_ogc') ? 'selected' : ''; ?>>Preselling/OGC</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </fieldset>
+</div>
+</div>
+</div>
 
-                            <fieldset class="border border-gray-200 rounded-lg p-6 shadow-sm">
-                                <legend class="text-lg font-semibold text-gray-700 px-2">Additional Links</legend>
-                                <div class="mb-5">
-                                    <label for="drive_link" class="block text-sm font-medium text-gray-700 mb-2">Google Drive Link</label>
-                                    <input type="url" id="drive_link" name="drive_link" 
-                                           value="<?php echo htmlspecialchars($project['drive_link']); ?>"
-                                           placeholder="https://drive.google.com/..."
-                                           class="form-input">
-                                </div>
-                                <div>
-                                    <label for="messenger_link" class="block text-sm font-medium text-gray-700 mb-2">Messenger Link</label>
-                                    <input type="url" id="messenger_link" name="messenger_link" 
-                                           value="<?php echo htmlspecialchars($project['messenger_link']); ?>"
-                                           placeholder="https://m.me/..."
-                                           class="form-input">
-                                </div>
-                            </fieldset>
-                        </div>
-                    </div>
+<!-- Description -->
+<div class="form-section">
+<div class="space-y-2">
+<label for="description" class="block text-sm font-medium text-gray-700 mb-2">House Type</label>
+<textarea id="description" name="description" rows="3" 
+placeholder="ex. Single Detached, Twinhome"
+class="form-textarea"><?php echo htmlspecialchars($project['description']); ?></textarea>
+</div>
+</div>  
 
-                    <fieldset class="border border-gray-200 rounded-lg p-6 shadow-sm mt-8">
-                        <legend class="text-lg font-semibold text-gray-700 px-2">Project Media</legend>
-                        
-                        <div class="mb-6">
-                            <h3 class="text-md font-medium text-gray-700 mb-4">Current Images</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                <?php for ($i = 1; $i <= 4; $i++): ?>
-                                    <?php $imageField = "image$i"; ?>
-                                    <div class="relative group" id="imageContainer<?php echo $i; ?>">
-                                        <?php if (!empty($project[$imageField])): ?>
-                                            <img src="uploads/projects/<?php echo htmlspecialchars($project[$imageField]); ?>" 
-                                                 alt="Project Image <?php echo $i; ?>" 
-                                                 class="w-full h-32 object-cover rounded-lg border border-gray-300 shadow-sm transition-transform duration-200 group-hover:scale-105">
-                                            <button type="button" onclick="removeImage(<?php echo $i; ?>)" 
-                                                    class="absolute -top-2 -right-2 w-7 h-7 bg-red-600 text-white rounded-full text-sm hover:bg-red-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75" 
-                                                    title="Remove Image">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                            <input type="hidden" name="existing_image<?php echo $i; ?>" value="<?php echo htmlspecialchars($project[$imageField]); ?>">
-                                        <?php else: ?>
-                                            <div class="w-full h-32 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 text-center text-sm p-2">
-                                                <i class="fas fa-image text-3xl mb-2"></i>
-                                                <span>No image uploaded</span>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endfor; ?>
-                            </div>
-                        </div>
+<!-- Location -->
+<div class="form-section">
+<h2>Location</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label for="province_id" class="block text-sm font-medium text-gray-700 mb-1">Province*</label>
+<select id="province_id" name="province_id" required class="form-select">
+<option value="">Select Province</option>
+<?php foreach ($provinces as $province): ?>
+<option value="<?php echo $province['id']; ?>" <?php echo ($project['province_id'] == $province['id']) ? 'selected' : ''; ?>>
+<?php echo htmlspecialchars($province['name']); ?>
+</option>
+<?php endforeach; ?>
+</select>
+</div>
+<div>
+<label for="city_id" class="block text-sm font-medium text-gray-700 mb-1">City*</label>
+<select id="city_id" name="city_id" required class="form-select">
+<option value="">Select City</option>                                
+<?php foreach ($cities as $city): ?>
+<option value="<?php echo $city['id']; ?>" 
+data-province="<?php echo $city['province_id']; ?>" 
+<?php echo ($project['city_id'] == $city['id']) ? 'selected' : ''; ?>
+style="<?php echo ($project['province_id'] != $city['province_id']) ? 'display: none;' : ''; ?>">
+<?php echo htmlspecialchars($city['name']); ?> (<?php echo htmlspecialchars($city['province_name']); ?>)
+</option>
+<?php endforeach; ?>
+</select>
+</div>
+<div class="md:col-span-2">
+<label for="exact_location" class="block text-sm font-medium text-gray-700 mb-1">Exact Location</label>
+<input type="text" id="exact_location" name="exact_location"
+class="form-input"
+value="<?php echo htmlspecialchars($project['exact_location']); ?>">
+</div>
+</div>
+</div>
 
-                        <div class="mb-6">
-                            <h3 class="text-md font-medium text-gray-700 mb-4">Upload New Images (Optional)</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <?php for ($i = 1; $i <= 4; $i++): ?>
-                                    <div>
-                                        <label for="image<?php echo $i; ?>" class="block text-sm text-gray-600 mb-2">Image <?php echo $i; ?></label>
-                                        <input type="file" id="image<?php echo $i; ?>" name="image<?php echo $i; ?>" accept="image/*" 
-                                               class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 
-                                                      focus:outline-none file:mr-4 file:py-2 file:px-4 
-                                                      file:rounded-lg file:border-0 file:text-sm file:font-semibold 
-                                                      file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all duration-200">
-                                    </div>
-                                <?php endfor; ?>
-                            </div>
-                            <p class="text-sm text-gray-500 mt-3">Accepted formats: JPG, PNG, GIF. Maximum size: 5MB per image. New uploads will replace existing ones.</p>
-                        </div>
-                    </fieldset>
+<!-- Pricing -->
+<div class="form-section">
+<h2>Pricing</h2>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div>
+<label for="price_min" class="block text-sm font-medium text-gray-700 mb-1">Minimum Price*</label>
+<input type="number" id="price_min" name="price_min" required step="0.01"
+class="form-input"
+value="<?php echo htmlspecialchars($project['price_min']); ?>">
+</div>
+<div>
+<label for="price_max" class="block text-sm font-medium text-gray-700 mb-1">Maximum Price*</label>
+<input type="number" id="price_max" name="price_max" required step="0.01"
+class="form-input"
+value="<?php echo htmlspecialchars($project['price_max']); ?>">
+</div>
+<div>
+<label for="commission" class="block text-sm font-medium text-gray-700 mb-1">Commission (%)*</label>
+<input type="number" id="commission" name="commission" required step="0.01"
+class="form-input"
+value="<?php echo htmlspecialchars($project['commission']); ?>">
+</div>
+<div>
+<label for="priority" class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+<select id="priority" name="priority" class="form-select">
+<option value="high" <?php echo ($project['priority'] == 'high') ? 'selected' : ''; ?>>High</option>
+<option value="medium" <?php echo ($project['priority'] == 'medium') ? 'selected' : ''; ?>>Medium</option>
+<option value="low" <?php echo ($project['priority'] == 'low') ? 'selected' : ''; ?>>Low</option>
+</select>
+</div>
+</div>
+</div>
 
-                    <div class="flex justify-end gap-4 pt-6 border-t border-gray-200">
-                        <button type="submit" class="inline-flex items-center px-6 py-3 bg-blue-primary text-white rounded-lg font-semibold hover:bg-blue-dark transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-primary focus:ring-opacity-75">
-                            <i class="fas fa-save mr-2"></i>
-                            Update Project
-                        </button>
-                        <a href="projectlisting.php" class="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75">
-                            <i class="fas fa-ban mr-2"></i>
-                            Cancel
-                        </a>
-                    </div>
-                </form>
+<!-- Financial Details -->
+<div class="form-section">
+    <h2>Financial Details</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label for="total_contract_price" class="block text-sm font-medium text-gray-700 mb-2">Total Contract Price</label>
+            <input type="number" id="total_contract_price" name="total_contract_price" step="0.01"
+                   class="form-input" placeholder="Enter total contract price"
+                   value="<?php echo htmlspecialchars($project['total_contract_price'] ?? ''); ?>">
+        </div>
+        <div>
+            <label for="reservation_fee" class="block text-sm font-medium text-gray-700 mb-2">Reservation Fee</label>
+            <input type="number" id="reservation_fee" name="reservation_fee" step="0.01"
+                   class="form-input" placeholder="Enter reservation fee"
+                   value="<?php echo htmlspecialchars($project['reservation_fee'] ?? ''); ?>">
+        </div>
+        <div>
+            <label for="bank_amortization" class="block text-sm font-medium text-gray-700 mb-2">Bank Amortization</label>
+            <input type="number" id="bank_amortization" name="bank_amortization" step="0.01"
+                   class="form-input" placeholder="Enter bank amortization"
+                   value="<?php echo htmlspecialchars($project['bank_amortization'] ?? ''); ?>">
+        </div>
+        <div>
+            <label for="required_salary" class="block text-sm font-medium text-gray-700 mb-2">Required Salary</label>
+            <input type="number" id="required_salary" name="required_salary" step="0.01"
+                   class="form-input" placeholder="Enter required salary"
+                   value="<?php echo htmlspecialchars($project['required_salary'] ?? ''); ?>">
+        </div>
+        <div>
+            <label for="downpayment_percentage" class="block text-sm font-medium text-gray-700 mb-2">Downpayment %</label>
+            <input type="number" id="downpayment_percentage" name="downpayment_percentage" step="0.01" max="100"
+                   class="form-input" placeholder="Enter downpayment percentage"
+                   value="<?php echo htmlspecialchars($project['downpayment_percentage'] ?? ''); ?>">
+        </div>
+    </div>
+    
+    <div class="mt-6">
+        <h3 class="text-lg font-medium text-gray-700 mb-4">Monthly Downpayment Options</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label for="monthly_downpayment_3mos" class="block text-sm font-medium text-gray-700 mb-2">3 Months</label>
+                <input type="number" id="monthly_downpayment_3mos" name="monthly_downpayment_3mos" step="0.01"
+                       class="form-input" placeholder="3 months payment"
+                       value="<?php echo htmlspecialchars($project['monthly_downpayment_3mos'] ?? ''); ?>">
+            </div>
+            <div>
+                <label for="monthly_downpayment_6mos" class="block text-sm font-medium text-gray-700 mb-2">6 Months</label>
+                <input type="number" id="monthly_downpayment_6mos" name="monthly_downpayment_6mos" step="0.01"
+                       class="form-input" placeholder="6 months payment"
+                       value="<?php echo htmlspecialchars($project['monthly_downpayment_6mos'] ?? ''); ?>">
+            </div>
+            <div>
+                <label for="monthly_downpayment_12mos" class="block text-sm font-medium text-gray-700 mb-2">12 Months</label>
+                <input type="number" id="monthly_downpayment_12mos" name="monthly_downpayment_12mos" step="0.01"
+                       class="form-input" placeholder="12 months payment"
+                       value="<?php echo htmlspecialchars($project['monthly_downpayment_12mos'] ?? ''); ?>">
+            </div>
+            <div>
+                <label for="monthly_downpayment_18mos" class="block text-sm font-medium text-gray-700 mb-2">18 Months</label>
+                <input type="number" id="monthly_downpayment_18mos" name="monthly_downpayment_18mos" step="0.01"
+                       class="form-input" placeholder="18 months payment"
+                       value="<?php echo htmlspecialchars($project['monthly_downpayment_18mos'] ?? ''); ?>">
             </div>
         </div>
     </div>
+</div>
 
-    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg p-6 flex items-center gap-4 shadow-xl">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span class="text-lg font-medium text-gray-700">Updating project...</span>
-        </div>
-    </div>
+<!-- Images -->
+<div class="form-section">
+<h2>Images</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<?php for ($i = 1; $i <= 4; $i++): ?>
+<div>
+<label for="image<?php echo $i; ?>" class="block text-sm font-medium text-gray-700 mb-1">
+<?php echo $i == 1 ? 'Main Image' : 'Additional Image ' . ($i - 1); ?>
+</label>
+<?php if (!empty($project["image$i"])): ?>
+<div class="mb-2">
+<img src="uploads/projects/<?php echo htmlspecialchars($project["image$i"]); ?>" 
+alt="Current Image <?php echo $i; ?>" 
+class="w-32 h-32 object-cover rounded border">
+<p class="text-sm text-gray-500 mt-1">Current image</p>
+</div>
+<?php endif; ?>
+<input type="file" id="image<?php echo $i; ?>" name="image<?php echo $i; ?>" accept="image/*"
+class="form-input">
+<?php if (!empty($project["image$i"])): ?>
+<label class="flex items-center mt-2">
+<input type="checkbox" name="delete_image<?php echo $i; ?>" value="1" class="mr-2">
+<span class="text-sm text-red-600">Delete current image</span>
+</label>
+<?php endif; ?>
+</div>
+<?php endfor; ?>
+</div>
+</div>
 
-    <script>
-        // Function to show notification toasts
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = `
-                ${type === 'success' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-triangle"></i>'}
-                <span>${message}</span>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 5 seconds
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        }
+<!-- Links -->
+<div class="form-section">
+<h2>Additional Information</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label for="drive_link" class="block text-sm font-medium text-gray-700 mb-1">Drive Link</label>
+<input type="url" id="drive_link" name="drive_link"
+class="form-input"
+value="<?php echo htmlspecialchars($project['drive_link']); ?>">
+</div>
+<div>
+<label for="messenger_link" class="block text-sm font-medium text-gray-700 mb-1">Messenger Link</label>
+<input type="url" id="messenger_link" name="messenger_link"
+class="form-input"
+value="<?php echo htmlspecialchars($project['messenger_link']); ?>">
+</div>
+</div>
+</div>
 
-        // Province change handler to dynamically load cities
-        document.getElementById('province_id').addEventListener('change', function() {
-            const provinceId = this.value;
-            const citySelect = document.getElementById('city_id');
-            
-            // Clear current city options and add a default "Select City" option
-            citySelect.innerHTML = '<option value="">Select City</option>';
-            
-            if (provinceId) {
-                // Fetch cities for the selected province
-                fetch(`api/get_cities.php?province_id=${provinceId}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            data.cities.forEach(city => {
-                                const option = document.createElement('option');
-                                option.value = city.id;
-                                option.textContent = city.name;
-                                citySelect.appendChild(option);
-                            });
-                        } else {
-                            console.error('API Error:', data.error);
-                            showNotification(data.error || 'Failed to load cities.', 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch Error:', error);
-                        showNotification('Could not load cities. Please try again.', 'error');
-                    });
-            }
-        });
+<!-- Action Buttons -->
+<div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">
+<a href="projectlisting.php" class="btn btn-outline">
+Cancel
+</a>
+<button type="submit" class="btn btn-primary">
+<span class="submit-text">Update Project</span>
+<span class="loading-text hidden">
+<i class="fas fa-spinner fa-spin mr-2"></i>Updating...
+</span>
+</button>
+</div>
+</form>
 
-        // Function to handle image removal
-        function removeImage(imageNumber) {
-            if (confirm('Are you sure you want to remove this image? This action cannot be undone.')) {
-                const imageContainer = document.getElementById(`imageContainer${imageNumber}`);
-                
-                // Add a hidden input to signal deletion to the backend
-                const deleteInput = document.createElement('input');
-                deleteInput.type = 'hidden';
-                deleteInput.name = `delete_image${imageNumber}`;
-                deleteInput.value = '1';
-                document.getElementById('editProjectForm').appendChild(deleteInput);
-                
-                // Replace the image preview with a placeholder indicating removal
-                imageContainer.innerHTML = `
-                    <div class="w-full h-32 bg-red-50 rounded-lg border-2 border-dashed border-red-300 flex flex-col items-center justify-center text-red-500 text-center text-sm p-2">
-                        <i class="fas fa-trash-alt text-3xl mb-2"></i>
-                        <span>Image will be removed</span>
-                    </div>
-                `;
-            }
-        }
-
-        // Form submission handler
-        document.getElementById('editProjectForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            
-            // Show loading overlay
-            loadingOverlay.classList.remove('hidden');
-            
-            fetch('api/update_project.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(async (response) => {
-                // Parse response as text first to handle non-JSON responses
-                const text = await response.text();
-                console.log("Raw API response:", text); // Log raw response for debugging
-
-                if (!response.ok) {
-                    let errorMessage = 'Server error occurred.';
-                    try {
-                        const errorData = JSON.parse(text);
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) {
-                        // If response is not JSON, use generic message
-                    }
-                    throw new Error(errorMessage);
-                }
-                
-                try {
-                    return JSON.parse(text); // Try to parse as JSON
-                } catch (e) {
-                    throw new Error("Invalid JSON response from server. Check server logs.");
-                }
-            })
-            .then(data => {
-                loadingOverlay.classList.add('hidden'); // Hide loading overlay
-                
-                if (data.success) {
-                    showNotification(data.message || 'Project updated successfully!', 'success');
-                    
-                    // Redirect to project listing after a short delay for user to see notification
-                    setTimeout(() => {
-                        window.location.href = 'projectlisting.php';
-                    }, 1500);
-                } else {
-                    showNotification(data.message || 'Failed to update project. Please try again.', 'error');
-                }
-            })
-            .catch(error => {
-                loadingOverlay.classList.add('hidden'); // Hide loading overlay
-                console.error('Fetch Error:', error);
-                showNotification(error.message || 'An unexpected error occurred. Please try again.', 'error');
-            });
-        });
-
-        document.getElementById('priority').value = '<?php echo $project['priority']; ?>';
-    </script>
 <script>
-// -------- Layout responsiveness enhancements (match project listing) --------
-(function () {
-    const sidebar = document.getElementById('sidebar');
-    const mainContainer = document.querySelector('.flex-1');
-    const headerEl = document.querySelector('.main-header');
-
-    if (!sidebar || !mainContainer) return;
-
-    function adjustLayout() {
-        const desktop = window.innerWidth >= 1024;
-        if (desktop) {
-            const sideWidth = sidebar.getBoundingClientRect().width;
-            mainContainer.style.marginLeft = sideWidth + 'px';
-            if (headerEl) {
-                headerEl.style.left = sideWidth + 'px';
-                headerEl.style.width = `calc(100% - ${sideWidth}px)`;
-            }
-        } else {
-            mainContainer.style.marginLeft = '0';
-            if (headerEl) {
-                headerEl.style.left = '0';
-                headerEl.style.width = '100%';
-            }
+$(document).ready(function() {
+    // Province/city handling
+    $('#province_id').on('change', function() {
+        const provinceId = $(this).val();
+        const $citySelect = $('#city_id');
+        
+        $citySelect.val('');
+        $citySelect.find('option').not(':first').hide();
+        
+        if (provinceId) {
+            $citySelect.find(`option[data-province="${provinceId}"]`).show();
         }
-    }
+    });
 
-    if ('ResizeObserver' in window) {
-        const resizeObserver = new ResizeObserver(adjustLayout);
-        resizeObserver.observe(sidebar);
-    }
-    window.addEventListener('resize', adjustLayout);
-    adjustLayout();
-})();
+    // Form submission
+    $('#editProjectForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        // Show loading state
+        $('.submit-text').hide();
+        $('.loading-text').show();
+        $('button[type="submit"]').prop('disabled', true);
+        
+        $.ajax({
+            url: 'api/update_project.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(response) {
+            // Reset button state
+            $('.submit-text').show();
+            $('.loading-text').hide();
+            $('button[type="submit"]').prop('disabled', false);
+
+            // Remove any previous success message
+            $('.success-message').remove();
+
+            if (response.success) {
+                // Show green box message only after successful update
+                const successBox = $(
+                '<div class="success-message">' +
+                '<i class="fas fa-check-circle mr-2"></i>' +
+                '<strong>Success:</strong> Project updated successfully!' +
+                '</div>'
+                );
+                $('.container .max-w-5xl').prepend(successBox);
+
+                // Optionally redirect after a short delay
+                setTimeout(function() {
+                window.location.href = 'projectlisting.php';
+                }, 1500);
+            } else {
+                // Show error as a red box instead of alert
+                $('.error-message').remove();
+                const errorBox = $(
+                '<div class="error-message">' +
+                '<i class="fas fa-exclamation-triangle mr-2"></i>' +
+                '<strong>Error:</strong> ' + (response.message || 'Failed to update project') +
+                '</div>'
+                );
+                $('.container .max-w-5xl').prepend(errorBox);
+            }
+            },
+            error: function(xhr, status, error) {
+            // Reset button state
+            $('.submit-text').show();
+            $('.loading-text').hide();
+            $('button[type="submit"]').prop('disabled', false);
+
+            // Show error as a red box instead of alert
+            $('.error-message').remove();
+            const errorBox = $(
+                '<div class="error-message">' +
+                '<i class="fas fa-exclamation-triangle mr-2"></i>' +
+                '<strong>Error:</strong> An error occurred while updating the project. Please try again.' +
+                '</div>'
+            );
+            $('.container .max-w-5xl').prepend(errorBox);
+            }
+        });
+        });
+    });
+
 </script>
+
+</div>
+</div>
 </body>
 </html>

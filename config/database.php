@@ -240,14 +240,3 @@ function initializeDatabase() {
 
 // Call the initialize function
 initializeDatabase();
-
-// Development mode flag for compatibility
-define('DEVELOPMENT_MODE', $is_development);
-
-// Set error reporting based on environment
-if ($is_development) {
-    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-} else {
-    mysqli_report(MYSQLI_REPORT_OFF);
-}
-?>

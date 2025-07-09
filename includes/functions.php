@@ -1301,16 +1301,18 @@ function getQuarterlyReport($userId, $userRole, $year, $quarter) {
 function getDevelopers() {
     $conn = getDbConnection();
     $developers = [];
-    
-    $stmt = $conn->prepare("SELECT * FROM developers ORDER BY name");
-    $stmt->execute();
-    
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $developers[] = $row;
+    try {
+        $result = $conn->query("SELECT id, name FROM developers ORDER BY name");
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $developers[] = $row;
+            }
+            $result->free();
+        }
+    } catch (Exception $e) {
+        // Table may not exist in some environments; return empty list instead of fatal error
+        error_log("getDevelopers error: " . $e->getMessage());
     }
-    
-    $stmt->close();
     $conn->close();
     return $developers;
 }
@@ -1318,19 +1320,22 @@ function getDevelopers() {
 function getProjectModels() {
     $conn = getDbConnection();
     $models = [];
-    
-    $stmt = $conn->prepare("SELECT pm.*, d.name as developer_name 
-                           FROM project_models pm 
-                           JOIN developers d ON pm.developer_id = d.id 
-                           ORDER BY d.name, pm.name");
-    $stmt->execute();
-    
-    $result = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $models[] = $row;
+    try {
+        $query = "SELECT pm.id, pm.name, pm.description, pm.base_price, d.name as developer_name 
+                  FROM project_models pm 
+                  JOIN developers d ON pm.developer_id = d.id 
+                  WHERE pm.is_active = 1 
+                  ORDER BY d.name, pm.name";
+        $result = $conn->query($query);
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $models[] = $row;
+            }
+            $result->free();
+        }
+    } catch (Exception $e) {
+        error_log("getProjectModels error: " . $e->getMessage());
     }
-    
-    $stmt->close();
     $conn->close();
     return $models;
 }
@@ -1711,20 +1716,23 @@ if (!function_exists('getProjectModels')) {
     function getProjectModels() {
         $conn = getDbConnection();
         $models = [];
-        
-        $query = "SELECT pm.id, pm.name, pm.description, pm.base_price, d.name as developer_name 
-                FROM project_models pm 
-                JOIN developers d ON pm.developer_id = d.id 
-                WHERE pm.is_active = 1 
-                ORDER BY d.name, pm.name";
-        $result = $conn->query($query);
-        
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $models[] = $row;
+        try {
+            $query = "SELECT pm.id, pm.name, pm.description, pm.base_price, d.name as developer_name 
+                      FROM project_models pm 
+                      JOIN developers d ON pm.developer_id = d.id 
+                      WHERE pm.is_active = 1 
+                      ORDER BY d.name, pm.name";
+            $result = $conn->query($query);
+            if ($result && $result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $models[] = $row;
+                }
+                $result->free();
             }
+        } catch (Exception $e) {
+            error_log("getProjectModels error: " . $e->getMessage());
         }
-        
+        $conn->close();
         return $models;
     }
 }
@@ -1735,21 +1743,21 @@ if (!function_exists('getLeadSources')) {
         $conn = getDbConnection();
         $sources = [];
         
-        // Get ENUM values directly from the column
-        $stmt = $conn->prepare("SHOW COLUMNS FROM leads WHERE Field = 'source'");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        
-        // Parse ENUM values from the type definition
-        if ($row && preg_match("/^enum$$'(.*)'$$$/", $row['Type'], $matches)) {
-            $values = explode("','", $matches[1]);
-            foreach ($values as $value) {
-                $sources[] = [
-                    'id' => $value,
-                    'name' => $value
-                ];
+        // Get ENUM values directly from the column (cannot be prepared on some hosts)
+        $result = $conn->query("SHOW COLUMNS FROM leads WHERE Field = 'source'");
+        if ($result) {
+            $row = $result->fetch_assoc();
+            // Parse ENUM definition e.g. enum('A','B')
+            if ($row && preg_match("/^enum\\('(.*)'\\)$/", $row['Type'], $matches)) {
+                $values = explode("','", $matches[1]);
+                foreach ($values as $value) {
+                    $sources[] = [
+                        'id'   => $value,
+                        'name' => $value
+                    ];
+                }
             }
+            $result->free();
         }
         
         // If no sources found from database, provide default values based on the schema
@@ -1771,7 +1779,7 @@ if (!function_exists('getLeadSources')) {
             }
         }
         
-        $stmt->close();
+        $conn->close();
         return $sources;
     }
 }
@@ -1830,6 +1838,55 @@ function getUniqueStatuses() {
     }
     
     return $statuses;
+}
+
+function getRecruitmentStats() {
+    global $pdo;
+    
+    if (!isset($pdo)) {
+        return [
+            'success' => false, 
+            'message' => 'Database connection not available'
+        ];
+    }
+    
+    try {
+        $stats = [];
+        
+        // Total leads
+        $stmt = $pdo->query("SELECT COUNT(*) as total FROM recruitment_leads");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stats['total_leads'] = $result ? (int)$result['total'] : 0;
+        
+        // Leads by interest level
+        $stmt = $pdo->query("SELECT interest_level, COUNT(*) as count FROM recruitment_leads GROUP BY interest_level");
+        $stats['by_interest_level'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Leads by status
+        $stmt = $pdo->query("SELECT status, COUNT(*) as count FROM recruitment_leads GROUP BY status ORDER BY count DESC");
+        $stats['by_status'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Leads by source
+        $stmt = $pdo->query("SELECT source, COUNT(*) as count FROM recruitment_leads GROUP BY source ORDER BY count DESC LIMIT 10");
+        $stats['by_source'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Recent leads (last 7 days)
+        $stmt = $pdo->query("SELECT COUNT(*) as count FROM recruitment_leads WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stats['recent_leads'] = $result ? (int)$result['count'] : 0;
+        
+        return [
+            'success' => true,
+            'data' => $stats
+        ];
+        
+    } catch (PDOException $e) {
+        error_log("Database error in getRecruitmentStats: " . $e->getMessage());
+        return [
+            'success' => false, 
+            'message' => 'Database error: ' . $e->getMessage()
+        ];
+    }
 }
 
 /**
