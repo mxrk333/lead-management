@@ -1434,7 +1434,7 @@ $isSuperUser = isSuperUser($user['username']);
                                                 $maskedName = substr($name, 0, 2) . str_repeat('*', $spacePos - 2) . substr($name, $spacePos);
                                                 echo htmlspecialchars($maskedName);
                                             } else {
-                                                echo '******';
+                                                echo '************';
                                             }
                                         }
                                     ?></td>
