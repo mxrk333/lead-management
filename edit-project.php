@@ -27,7 +27,13 @@ if (!$conn) {
 }
 
 // Fetch project data with location details
-$stmt = $conn->prepare("SELECT p.*, c.name as city_name, pr.name as province_name 
+$stmt = $conn->prepare("SELECT p.id, p.name, p.description, p.house_model, p.status, p.developer,
+                        p.price_min, p.price_max, p.commission, p.priority, p.city_id, p.province_id,
+                        p.exact_location, p.image1, p.image2, p.image3, p.image4, p.drive_link, p.messenger_link,
+                        p.total_contract_price, p.reservation_fee, p.bank_amortization, p.required_salary,
+                        p.downpayment_percentage, p.downpayment_amount, p.downpayment_term,
+                        p.created_at, p.updated_at,
+                        c.name as city_name, pr.name as province_name 
                         FROM projects p 
                         LEFT JOIN cities c ON p.city_id = c.id 
                         LEFT JOIN provinces pr ON p.province_id = pr.id 
@@ -371,33 +377,24 @@ value="<?php echo htmlspecialchars($project['commission']); ?>">
     </div>
     
     <div class="mt-6">
-        <h3 class="text-lg font-medium text-gray-700 mb-4">Monthly Downpayment Options</h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <h3 class="text-lg font-medium text-gray-700 mb-4">Downpayment Options</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label for="monthly_downpayment_3mos" class="block text-sm font-medium text-gray-700 mb-2">3 Months</label>
-                <input type="number" id="monthly_downpayment_3mos" name="monthly_downpayment_3mos" step="0.01"
-                       class="form-input" placeholder="3 months payment"
-                       value="<?php echo htmlspecialchars($project['monthly_downpayment_3mos'] ?? ''); ?>">
+                <label for="downpayment_amount" class="block text-sm font-medium text-gray-700 mb-2">Downpayment Amount</label>
+                <input type="number" id="downpayment_amount" name="downpayment_amount" step="0.01"
+                       class="form-input" placeholder="e.g., 44000"
+                       value="<?php echo htmlspecialchars($project['downpayment_amount'] ?? ''); ?>">
+                <p class="text-xs text-gray-500 mt-1">Monthly amount to be paid (e.g., ₱44,000 per month)</p>
             </div>
             <div>
-                <label for="monthly_downpayment_6mos" class="block text-sm font-medium text-gray-700 mb-2">6 Months</label>
-                <input type="number" id="monthly_downpayment_6mos" name="monthly_downpayment_6mos" step="0.01"
-                       class="form-input" placeholder="6 months payment"
-                       value="<?php echo htmlspecialchars($project['monthly_downpayment_6mos'] ?? ''); ?>">
-            </div>
-            <div>
-                <label for="monthly_downpayment_12mos" class="block text-sm font-medium text-gray-700 mb-2">12 Months</label>
-                <input type="number" id="monthly_downpayment_12mos" name="monthly_downpayment_12mos" step="0.01"
-                       class="form-input" placeholder="12 months payment"
-                       value="<?php echo htmlspecialchars($project['monthly_downpayment_12mos'] ?? ''); ?>">
-            </div>
-            <div>
-                <label for="monthly_downpayment_18mos" class="block text-sm font-medium text-gray-700 mb-2">18 Months</label>
-                <input type="number" id="monthly_downpayment_18mos" name="monthly_downpayment_18mos" step="0.01"
-                       class="form-input" placeholder="18 months payment"
-                       value="<?php echo htmlspecialchars($project['monthly_downpayment_18mos'] ?? ''); ?>">
+                <label for="downpayment_term" class="block text-sm font-medium text-gray-700 mb-2">Downpayment Term (Months)</label>
+                <input type="number" id="downpayment_term" name="downpayment_term" min="1" max="120"
+                       class="form-input" placeholder="e.g., 12"
+                       value="<?php echo htmlspecialchars($project['downpayment_term'] ?? ''); ?>">
+                <p class="text-xs text-gray-500 mt-1">Example: 3, 6, 12, 24, 36 months</p>
             </div>
         </div>
+        
     </div>
 </div>
 
