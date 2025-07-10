@@ -56,10 +56,10 @@ try {
     $bank_amortization = !empty($_POST['bank_amortization']) ? floatval($_POST['bank_amortization']) : null;
     $required_salary = !empty($_POST['required_salary']) ? floatval($_POST['required_salary']) : null;
     $downpayment_percentage = !empty($_POST['downpayment_percentage']) ? floatval($_POST['downpayment_percentage']) : null;
-    $monthly_downpayment_3mos = !empty($_POST['monthly_downpayment_3mos']) ? floatval($_POST['monthly_downpayment_3mos']) : null;
-    $monthly_downpayment_6mos = !empty($_POST['monthly_downpayment_6mos']) ? floatval($_POST['monthly_downpayment_6mos']) : null;
-    $monthly_downpayment_12mos = !empty($_POST['monthly_downpayment_12mos']) ? floatval($_POST['monthly_downpayment_12mos']) : null;
-    $monthly_downpayment_18mos = !empty($_POST['monthly_downpayment_18mos']) ? floatval($_POST['monthly_downpayment_18mos']) : null;
+    
+    // New downpayment fields
+    $downpayment_amount = !empty($_POST['downpayment_amount']) ? floatval($_POST['downpayment_amount']) : null;
+    $downpayment_term = !empty($_POST['downpayment_term']) ? intval($_POST['downpayment_term']) : null;
 
     // Validate price range
     if ($price_min > $price_max) {
@@ -146,8 +146,7 @@ try {
         drive_link = ?, messenger_link = ?,
         total_contract_price = ?, reservation_fee = ?, bank_amortization = ?,
         required_salary = ?, downpayment_percentage = ?,
-        monthly_downpayment_3mos = ?, monthly_downpayment_6mos = ?,
-        monthly_downpayment_12mos = ?, monthly_downpayment_18mos = ?,
+        downpayment_amount = ?, downpayment_term = ?,
         updated_at = NOW()
         WHERE id = ?";
 
@@ -157,7 +156,7 @@ try {
     }
 
     $stmt->bind_param(
-        "sssssddssissssssssdddddddddi",
+        "sssssddssissssssssddddddii",
         $name, $description, $house_model, $status, $developer,
         $price_min, $price_max, $commission, $priority,
         $city_id, $province_id, $exact_location,
@@ -166,8 +165,7 @@ try {
         $drive_link, $messenger_link,
         $total_contract_price, $reservation_fee, $bank_amortization,
         $required_salary, $downpayment_percentage,
-        $monthly_downpayment_3mos, $monthly_downpayment_6mos,
-        $monthly_downpayment_12mos, $monthly_downpayment_18mos,
+        $downpayment_amount, $downpayment_term,
         $project_id
     );
 

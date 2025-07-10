@@ -2,8 +2,12 @@
 require_once '../config/database.php';
 require_once '../includes/functions.php';
 
-// Set content type to JSON
+// Set content type to JSON and prevent any HTML output
 header('Content-Type: application/json');
+
+// Turn off error display to prevent HTML in JSON response
+ini_set('display_errors', 0);
+error_reporting(0);
 
 try {
     if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -18,7 +22,7 @@ try {
         throw new Exception('Database connection failed');
     }
 
-    // Fetch project with location details
+    // Fetch project with location details - updated to use new column names
     $stmt = $conn->prepare("
         SELECT p.*, c.name as city_name, pr.name as province_name 
         FROM projects p 
@@ -64,21 +68,17 @@ try {
     if ($project['required_salary']) {
         $project['required_salary_formatted'] = number_format($project['required_salary'], 2);
     }
-    if ($project['monthly_downpayment_3mos']) {
-        $project['monthly_downpayment_3mos_formatted'] = number_format($project['monthly_downpayment_3mos'], 2);
-    }
-    if ($project['monthly_downpayment_6mos']) {
-        $project['monthly_downpayment_6mos_formatted'] = number_format($project['monthly_downpayment_6mos'], 2);
-    }
-    if ($project['monthly_downpayment_12mos']) {
-        $project['monthly_downpayment_12mos_formatted'] = number_format($project['monthly_downpayment_12mos'], 2);
-    }
-    if ($project['monthly_downpayment_18mos']) {
-        $project['monthly_downpayment_18mos_formatted'] = number_format($project['monthly_downpayment_18mos'], 2);
+    if ($project['downpayment_amount']) {
+        $project['downpayment_amount_formatted'] = number_format($project['downpayment_amount'], 2);
     }
     
     $stmt->close();
     $conn->close();
+    
+    // Clean output buffer to ensure no extra content
+    if (ob_get_level()) {
+        ob_clean();
+    }
     
     echo json_encode([
         'success' => true,
@@ -86,11 +86,20 @@ try {
     ]);
 
 } catch (Exception $e) {
+    // Log error but don't display it
     error_log("Error in get_project.php: " . $e->getMessage());
+    
+    // Clean output buffer
+    if (ob_get_level()) {
+        ob_clean();
+    }
     
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
     ]);
 }
+
+// Ensure no additional output
+exit;
 ?>
