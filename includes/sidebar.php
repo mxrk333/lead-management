@@ -111,16 +111,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
                             </ul>
                         </li>
                         
-                        <?php if (isset($user['role']) && in_array($user['role'], ['admin', 'manager', 'supervisor'])): ?>
-                        <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>reports.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reports.php' ? 'active' : ''; ?>">
-                                <i class="fas fa-chart-bar nav-icon"></i>
-                                <span class="nav-text">Reports</span>
-                            </a>
-                        </li>
-                        <?php endif; ?>
-                        
-                        <li class="nav-item has-submenu">
+                                            <li class="nav-item has-submenu">
                             <button class="nav-link submenu-trigger <?php echo basename($_SERVER['PHP_SELF']) == 'dp-stage.php' ? 'active' : ''; ?>" data-submenu="downpayment">
                                 <i class="fas fa-chart-line nav-icon"></i>
                                 <span class="nav-text">Leads Milestone</span>
@@ -141,6 +132,15 @@ if (strpos($current_path, '/users/memo/') !== false) {
                                 </li>
                             </ul>
                         </li>
+
+                        <?php if (isset($user['role']) && in_array($user['role'], ['admin', 'manager', 'supervisor'])): ?>
+                        <li class="nav-item">
+                            <a href="<?php echo $base_path; ?>reports.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reports.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-chart-bar nav-icon"></i>
+                                <span class="nav-text">Reports</span>
+                            </a>
+                        </li>
+                        <?php endif; ?>
                         
                         <li class="nav-item">
                             <a href="<?php echo $base_path; ?>users/memo/memo.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'memo.php' ? 'active' : ''; ?>">
@@ -156,22 +156,6 @@ if (strpos($current_path, '/users/memo/') !== false) {
                             </a>
                         </li>
                         
-                        <?php if (isset($user['role']) && $user['role'] == 'admin'): ?>
-                        <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>users.php" class="nav-link <?php echo in_array(basename($_SERVER['PHP_SELF']), ['users.php', 'add-user.php', 'edit-user.php', 'user-details.php']) ? 'active' : ''; ?>">
-                                <i class="fas fa-user-cog nav-icon"></i>
-                                <span class="nav-text">Users</span>
-                            </a>
-                        </li>
-                        
-                        <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>teams.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'teams.php' ? 'active' : ''; ?>">
-                                <i class="fas fa-users-cog nav-icon"></i>
-                                <span class="nav-text">Teams</span>
-                            </a>
-                        </li>
-                        <?php endif; ?>
-                        
                         <?php if (isset($user['role']) && in_array($user['role'], ['admin', 'manager', 'supervisor', 'agent'])): ?>
                         <li class="nav-item">
                             <a href="<?php echo $base_path; ?>projectlisting.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'projectlisting.php' ? 'active' : ''; ?>">
@@ -180,15 +164,34 @@ if (strpos($current_path, '/users/memo/') !== false) {
                             </a>
                         </li>
                         
-                        <?php if (in_array($user['role'], ['admin', 'manager'])): ?>
-                        <!-- FIXED: Workforce Management using consistent submenu pattern -->
+                        <?php if (in_array($user['role'], ['admin', 'superadmin', 'manager'])): ?>
+                        <!-- UPDATED: Organized Workforce Management with Users and Teams moved here -->
                         <li class="nav-item has-submenu">
-                            <button class="nav-link submenu-trigger <?php echo in_array(basename($_SERVER['PHP_SELF']), ['accreditation.php', 'recruitment-dashboard.php']) ? 'active' : ''; ?>" data-submenu="workforce">
+                            <button class="nav-link submenu-trigger <?php echo in_array(basename($_SERVER['PHP_SELF']), ['accreditation.php', 'recruitment-dashboard.php', 'users.php', 'add-user.php', 'edit-user.php', 'user-details.php', 'teams.php']) ? 'active' : ''; ?>" data-submenu="workforce">
                                 <i class="fas fa-users-cog nav-icon"></i>
                                 <span class="nav-text">Workforce Management</span>
                                 <i class="fas fa-chevron-down submenu-arrow"></i>
                             </button>
                             <ul class="nav-submenu" id="submenu-workforce">
+                                <?php if (in_array($user['role'], ['admin', 'superadmin'])): ?>
+                                <!-- Admin/Superadmin only - Users Management -->
+                                <li class="submenu-item">
+                                    <a href="<?php echo $base_path; ?>users.php" class="submenu-link <?php echo in_array(basename($_SERVER['PHP_SELF']), ['users.php', 'add-user.php', 'edit-user.php', 'user-details.php']) ? 'active' : ''; ?>">
+                                        <i class="fas fa-user-cog submenu-icon"></i>
+                                        <span class="submenu-text">Users</span>
+                                    </a>
+                                </li>
+                                
+                                <!-- Admin/Superadmin only - Teams Management -->
+                                <li class="submenu-item">
+                                    <a href="<?php echo $base_path; ?>teams.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'teams.php' ? 'active' : ''; ?>">
+                                        <i class="fas fa-users-cog submenu-icon"></i>
+                                        <span class="submenu-text">Teams</span>
+                                    </a>
+                                </li>
+                                <?php endif; ?>
+                                
+                                <!-- All roles (admin, superadmin, manager) -->
                                 <li class="submenu-item">
                                     <a href="<?php echo $base_path; ?>accreditation.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
                                         <i class="fas fa-user-check submenu-icon"></i>
@@ -228,6 +231,15 @@ if (strpos($current_path, '/users/memo/') !== false) {
                         </li>
                         <?php endif; ?>
                         
+                        <?php if (isset($user['role']) && $user['role'] == 'admin'): ?>
+                        <li class="nav-item">
+                            <a href="<?php echo $base_path; ?>users/reports/reports.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'users/reports/reports.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-warning nav-icon"></i>
+                                <span class="nav-text">Reports Problem</span>
+                            </a>
+                        </li>
+                        <?php endif; ?>
+
                         <?php if (isset($user['role']) && $user['role'] == 'admin'): ?>
                         <li class="nav-item">
                             <a href="<?php echo $base_path; ?>settings.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>">
@@ -487,6 +499,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
     flex: 1;
     padding: 1rem 0;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .nav-group {
@@ -609,7 +622,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
     }
     to {
         opacity: 1;
-        max-height: 200px;
+        max-height: 300px;
     }
 }
 
@@ -666,22 +679,52 @@ if (strpos($current_path, '/users/memo/') !== false) {
     z-index: 1;
 }
 
-/* Scrollbar Styling */
+/* FIXED: Enhanced Scrollbar Styling */
 .sidebar-provider::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
 }
 
 .sidebar-provider::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
 }
 
 .sidebar-provider::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.sidebar-provider::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar-provider::-webkit-scrollbar-thumb:active {
+    background: rgba(255, 255, 255, 0.7);
+}
+
+/* Firefox scrollbar styling */
+.sidebar-provider {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.05);
+}
+
+/* Navigation scrollbar styling */
+.sidebar-navigation::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-navigation::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-navigation::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 2px;
 }
 
-.sidebar-provider::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+.sidebar-navigation::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
 }
 
 /* Animation for smooth transitions */
@@ -1034,8 +1077,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // FIXED: Auto-expand workforce submenu
-        if (['accreditation.php', 'recruitment-dashboard.php'].includes(currentPage)) {
+        // UPDATED: Auto-expand workforce submenu for Users, Teams, and other workforce pages
+        if (['accreditation.php', 'recruitment-dashboard.php', 'users.php', 'add-user.php', 'edit-user.php', 'user-details.php', 'teams.php'].includes(currentPage)) {
             const workforceSubmenu = document.querySelector('[data-submenu="workforce"]');
             if (workforceSubmenu) {
                 workforceSubmenu.closest('.nav-item').classList.add('active');
