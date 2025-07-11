@@ -419,29 +419,23 @@ class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:rin
     </div>
     
     <div class="mt-6">
-        <h3 class="text-lg font-medium text-gray-700 mb-4">Monthly Downpayment Options</h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <h3 class="text-lg font-medium text-gray-700 mb-4">Downpayment Options</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label for="monthly_downpayment_3mos" class="block text-sm font-medium text-gray-700 mb-2">3 Months</label>
-                <input type="number" id="monthly_downpayment_3mos" name="monthly_downpayment_3mos" step="0.01"
-                       class="form-input" placeholder="3 months payment">
+                <label for="downpayment_amount" class="block text-sm font-medium text-gray-700 mb-2">Downpayment Amount</label>
+                <input type="number" id="downpayment_amount" name="downpayment_amount" step="0.01"
+                       class="form-input" placeholder="e.g., 44000">
+                <p class="text-xs text-gray-500 mt-1">Monthly amount to be paid (e.g., ₱44,000 per month)</p>
             </div>
             <div>
-                <label for="monthly_downpayment_6mos" class="block text-sm font-medium text-gray-700 mb-2">6 Months</label>
-                <input type="number" id="monthly_downpayment_6mos" name="monthly_downpayment_6mos" step="0.01"
-                       class="form-input" placeholder="6 months payment">
-            </div>
-            <div>
-                <label for="monthly_downpayment_12mos" class="block text-sm font-medium text-gray-700 mb-2">12 Months</label>
-                <input type="number" id="monthly_downpayment_12mos" name="monthly_downpayment_12mos" step="0.01"
-                       class="form-input" placeholder="12 months payment">
-            </div>
-            <div>
-                <label for="monthly_downpayment_18mos" class="block text-sm font-medium text-gray-700 mb-2">18 Months</label>
-                <input type="number" id="monthly_downpayment_18mos" name="monthly_downpayment_18mos" step="0.01"
-                       class="form-input" placeholder="18 months payment">
+                <label for="downpayment_term" class="block text-sm font-medium text-gray-700 mb-2">Downpayment Term (Months)</label>
+                <input type="number" id="downpayment_term" name="downpayment_term" min="1" max="120"
+                       class="form-input" placeholder="e.g., 12">
+                <p class="text-xs text-gray-500 mt-1">Example: 3, 6, 12, 24, 36 months</p>
             </div>
         </div>
+        
+        <!-- Display calculated monthly payment if both values are present -->
     </div>
 </div>
 <!-- Images -->

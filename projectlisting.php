@@ -406,6 +406,23 @@ foreach ($filters as $key => $value) {
         }
     </style>
 </head>
+<<<<<<< HEAD
+<body class="bg-gray-50 min-h-screen">
+    <!-- Main Container - Add ml-64 for sidebar space -->
+    <div id="main-container" class="main-container relative transition-all" style="margin-left: var(--sidebar-width);">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- Header Section -->
+            <div class="mb-8">
+                <div class="text-center">
+                    <h1 class="text-2xl sm:text-3xl md:text-5xl font-bold text-blue-primary mb-4">
+                        Inner SPARC Projects
+                    </h1>
+                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Gusto mo ng mabilisang benta? Check mo na 'tong list ng project listing na may full info, ready i-offer sa clients!                    </p>
+                </div>
+            </div>
+
+=======
 
 </html>
 <?php
@@ -831,6 +848,7 @@ foreach ($filters as $key => $value) {
                 </div>
             </div>
 
+>>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
             <div class="flex flex-col lg:flex-row gap-8">
                 <!-- Filter Section - Left Side -->
                 <div class="lg:w-1/4 flex-shrink-0">
@@ -1194,7 +1212,11 @@ foreach ($filters as $key => $value) {
                         <?php endif; ?>
                     </div>
 
+<<<<<<< HEAD
+                   <!-- High Priority Projects Section -->
+=======
                     <!-- High Priority Projects Section -->
+>>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                     <?php /* if (!empty($high_priority_projects) && empty(array_filter($filters))): ?>
                         <section class="mt-20" aria-labelledby="priority-heading">
                             <div class="text-center mb-10">
@@ -1277,7 +1299,11 @@ foreach ($filters as $key => $value) {
                                 <?php endforeach; ?>
                             </div>
                         </section>
+<<<<<<< HEAD
+                    <?php endif; */ ?> 
+=======
                     <?php endif; */ ?>
+>>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                 </div>
             </div>
         </div>
@@ -1390,9 +1416,15 @@ foreach ($filters as $key => $value) {
 
     <script>
         // Global variables
+<<<<<<< HEAD
+        var searchTimeout;
+        var isLoading = false;
+        var currentProjectId = null;
+=======
         let searchTimeout;
         let isLoading = false;
         let currentProjectId = null;
+>>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
 
         // Debounce function
         function debounce(func, wait) {
@@ -1447,7 +1479,11 @@ foreach ($filters as $key => $value) {
         }
 
         // Perform live search
+<<<<<<< HEAD
+        var performLiveSearch = debounce(() => {
+=======
         const performLiveSearch = debounce(() => {
+>>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
             // Get search input value
             const searchInput = document.getElementById('project_search');
             const searchValue = searchInput ? searchInput.value.trim() : '';
@@ -1643,6 +1679,25 @@ foreach ($filters as $key => $value) {
     let financialDetails = '';
     if (project.total_contract_price || project.reservation_fee || project.bank_amortization || 
         project.required_salary || project.downpayment_percentage || 
+<<<<<<< HEAD
+        project.downpayment_amount || project.downpayment_term) {
+        
+            
+        financialDetails = `
+            <div class="bg-blue-50 rounded-2xl p-6 mb-8">
+                <h4 class="text-2xl font-semibold text-blue-primary mb-6 flex items-center">
+                    <i class="fas fa-calculator mr-3"></i>Sample Computation
+                </h4>
+                <div class="flex flex-col sm:flex-row justify-between text-sm text-gray-500 mb-8 px-2">
+    
+    <div>
+        <i class="far fa-clock mr-1"></i>
+        Data as of: ${project.updated_at ? new Date(project.updated_at.replace(' ', 'T')).toLocaleString('en-PH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+    </div>
+</div>
+
+
+=======
         project.monthly_downpayment_3mos || project.monthly_downpayment_6mos || 
         project.monthly_downpayment_12mos || project.monthly_downpayment_18mos) {
         
@@ -1651,6 +1706,7 @@ foreach ($filters as $key => $value) {
                 <h4 class="text-2xl font-semibold text-blue-primary mb-6 flex items-center">
                     <i class="fas fa-calculator mr-3"></i>Financial Details
                 </h4>
+>>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                 <div class="grid grid-cols-1 gap-4">
                     ${project.total_contract_price ? `
                         <div class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-blue-100 last:border-b-0">
@@ -1704,6 +1760,13 @@ foreach ($filters as $key => $value) {
                     ` : ''}
                 </div>
                 
+<<<<<<< HEAD
+                ${(project.downpayment_amount && project.downpayment_term) ? `
+                    <div class="mt-6">
+                        <h5 class="text-sm font-semibold text-gray-700 mb-2">Downpayment Option</h5>
+                        <div class="text-lg font-medium text-gray-800">
+                            ₱${parseFloat(project.downpayment_amount).toLocaleString()} - ${project.downpayment_term} months
+=======
                 ${(project.monthly_downpayment_3mos || project.monthly_downpayment_6mos || 
                    project.monthly_downpayment_12mos || project.monthly_downpayment_18mos) ? `
                     <div class="mt-8">
@@ -1733,6 +1796,7 @@ foreach ($filters as $key => $value) {
                                     <div class="text-lg font-bold text-blue-primary">${formatCurrency(project.monthly_downpayment_18mos)}</div>
                                 </div>
                             ` : ''}
+>>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                         </div>
                     </div>
                 ` : ''}
@@ -1752,8 +1816,13 @@ foreach ($filters as $key => $value) {
                     <span class="price-badge px-4 py-2 rounded-lg text-lg font-bold">
                         ${project.commission}% COMM
                     </span>
+<<<<<<< HEAD
+                    <span class="priority-${['high','medium','low'].includes((project.priority||'').toLowerCase()) ? project.priority.toLowerCase() : 'low'} px-4 py-2 rounded-lg text-lg font-semibold">
+                        ${project.priority ? (project.priority.charAt(0).toUpperCase() + project.priority.slice(1)) : 'Low'} Priority
+=======
                     <span class="priority-${project.priority} px-4 py-2 rounded-lg text-lg font-semibold">
                         ${project.priority.charAt(0).toUpperCase() + project.priority.slice(1)} Priority
+>>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                     </span>
                 </div>
 
@@ -1768,6 +1837,9 @@ foreach ($filters as $key => $value) {
 
                 ${financialDetails}
 
+<<<<<<< HEAD
+                <div class="bg-gray-50 rounded-2xl p-6 mb-8">
+=======
                 <div class="flex flex-col sm:flex-row justify-between text-sm text-gray-500 mb-8 px-2">
     <div>
         <i class="far fa-calendar-plus mr-1"></i>
@@ -1783,6 +1855,7 @@ foreach ($filters as $key => $value) {
     <h4 class="text-2xl font-semibold text-gray-800 mb-6">Project Details</h4>
     ...
 </div>
+>>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                     <h4 class="text-2xl font-semibold text-gray-800 mb-6">Project Details</h4>
                     <div class="space-y-4">
                         <div class="flex flex-col sm:flex-row py-2 border-b border-gray-200 last:border-b-0">
@@ -2018,4 +2091,8 @@ foreach ($filters as $key => $value) {
 })();
 </script>
 </body>
+<<<<<<< HEAD
 </html>
+=======
+</html>
+>>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
