@@ -654,7 +654,7 @@ if (isset($_GET['success'])) {
     }
     
     /* Modal styles */
-    #trackerModal, #viewDpModal {
+    #trackerModal, #DpModaviewl {
         display: none;
         position: fixed;
         z-index: 1000;
