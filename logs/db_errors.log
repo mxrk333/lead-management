@@ -36723,3 +36723,336 @@ Stack trace:
 [09-Jul-2025 21:13:51 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
 [09-Jul-2025 21:13:51 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
 >>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
+[11-Jul-2025 03:02:13 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:02:13 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:06:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:06:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:06:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:06:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:06:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:06:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:06:27 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[11-Jul-2025 03:06:27 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[11-Jul-2025 03:06:28 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:06:28 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:06:28 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:06:28 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:06:28 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{}","sort_by":"created_at","sort_order":"DESC"}
+[11-Jul-2025 03:06:28 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:06:28 Europe/Berlin] RECRUITMENT API DEBUG: Filters received
+[11-Jul-2025 03:06:28 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called
+[11-Jul-2025 03:06:28 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 ORDER BY created_at DESC"
+[11-Jul-2025 03:06:28 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters
+[11-Jul-2025 03:06:28 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 5 leads"
+[11-Jul-2025 03:28:14 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:28:14 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:28:14 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:28:14 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:28:14 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{\"id\":18}"}
+[11-Jul-2025 03:28:14 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:28:14 Europe/Berlin] RECRUITMENT API DEBUG: Filters received - {"id":18}
+[11-Jul-2025 03:28:14 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called - {"id":18}
+[11-Jul-2025 03:28:14 Europe/Berlin] RECRUITMENT API DEBUG: Added ID filter - 18
+[11-Jul-2025 03:28:14 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 AND id = :id ORDER BY created_at DESC"
+[11-Jul-2025 03:28:14 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters - {":id":18}
+[11-Jul-2025 03:28:14 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 1 leads"
+[11-Jul-2025 03:28:25 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:28:25 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:28:25 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:28:25 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:28:25 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:28:25 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:28:25 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:29:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:29:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:29:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:29:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:29:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:29:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:29:31 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[11-Jul-2025 03:29:31 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[11-Jul-2025 03:29:31 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:29:31 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:29:31 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:29:31 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:29:31 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{}","sort_by":"created_at","sort_order":"DESC"}
+[11-Jul-2025 03:29:31 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:29:31 Europe/Berlin] RECRUITMENT API DEBUG: Filters received
+[11-Jul-2025 03:29:31 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called
+[11-Jul-2025 03:29:31 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 ORDER BY created_at DESC"
+[11-Jul-2025 03:29:31 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters
+[11-Jul-2025 03:29:31 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 5 leads"
+[11-Jul-2025 03:30:19 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:30:19 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:30:19 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:30:19 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:30:19 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{\"id\":18}"}
+[11-Jul-2025 03:30:19 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:30:19 Europe/Berlin] RECRUITMENT API DEBUG: Filters received - {"id":18}
+[11-Jul-2025 03:30:19 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called - {"id":18}
+[11-Jul-2025 03:30:19 Europe/Berlin] RECRUITMENT API DEBUG: Added ID filter - 18
+[11-Jul-2025 03:30:19 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 AND id = :id ORDER BY created_at DESC"
+[11-Jul-2025 03:30:19 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters - {":id":18}
+[11-Jul-2025 03:30:19 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 1 leads"
+[11-Jul-2025 03:36:38 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:36:38 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:36:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:36:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:36:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:36:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:36:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:36:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:36:58 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[11-Jul-2025 03:36:58 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[11-Jul-2025 03:36:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:36:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:36:58 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:36:58 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:36:58 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{}","sort_by":"created_at","sort_order":"DESC"}
+[11-Jul-2025 03:36:58 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:36:58 Europe/Berlin] RECRUITMENT API DEBUG: Filters received
+[11-Jul-2025 03:36:58 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called
+[11-Jul-2025 03:36:58 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 ORDER BY created_at DESC"
+[11-Jul-2025 03:36:58 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters
+[11-Jul-2025 03:36:58 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 5 leads"
+[11-Jul-2025 03:40:37 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:40:37 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:49 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:49 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:49 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:49 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:48:49 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{\"id\":18}"}
+[11-Jul-2025 03:48:49 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:48:49 Europe/Berlin] RECRUITMENT API DEBUG: Filters received - {"id":18}
+[11-Jul-2025 03:48:49 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called - {"id":18}
+[11-Jul-2025 03:48:49 Europe/Berlin] RECRUITMENT API DEBUG: Added ID filter - 18
+[11-Jul-2025 03:48:49 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 AND id = :id ORDER BY created_at DESC"
+[11-Jul-2025 03:48:49 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters - {":id":18}
+[11-Jul-2025 03:48:49 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 1 leads"
+[11-Jul-2025 03:48:53 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:53 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:53 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:53 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:48:53 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:53 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:48:53 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:54 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:54 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:54 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:54 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:48:54 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:54 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:48:54 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:55 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:55 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:55 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:55 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:55 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:55 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:55 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:55 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:55 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:48:55 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:55 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:55 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:56 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:56 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:48:56 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:56 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:48:56 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:48:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:57 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[11-Jul-2025 03:48:57 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[11-Jul-2025 03:48:58 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:48:58 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:58 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:48:58 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:48:58 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{}","sort_by":"created_at","sort_order":"DESC"}
+[11-Jul-2025 03:48:58 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:48:58 Europe/Berlin] RECRUITMENT API DEBUG: Filters received
+[11-Jul-2025 03:48:58 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called
+[11-Jul-2025 03:48:58 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 ORDER BY created_at DESC"
+[11-Jul-2025 03:48:58 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters
+[11-Jul-2025 03:48:58 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 5 leads"
+[11-Jul-2025 03:49:00 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:00 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:00 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:00 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:49:00 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{\"id\":18}"}
+[11-Jul-2025 03:49:00 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:49:00 Europe/Berlin] RECRUITMENT API DEBUG: Filters received - {"id":18}
+[11-Jul-2025 03:49:00 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called - {"id":18}
+[11-Jul-2025 03:49:00 Europe/Berlin] RECRUITMENT API DEBUG: Added ID filter - 18
+[11-Jul-2025 03:49:00 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 AND id = :id ORDER BY created_at DESC"
+[11-Jul-2025 03:49:00 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters - {":id":18}
+[11-Jul-2025 03:49:00 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 1 leads"
+[11-Jul-2025 03:49:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:06 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:06 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:49:06 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:06 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:49:06 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:06 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:06 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:06 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:06 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:49:06 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:06 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:49:06 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:07 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:07 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:07 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:07 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:07 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:07 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:07 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:07 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:07 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:07 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:07 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:07 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:49:07 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:08 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:08 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:08 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:08 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:49:08 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:08 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:49:08 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:08 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:08 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:08 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:08 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:49:08 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:08 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:49:08 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:49:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:11 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[11-Jul-2025 03:49:11 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[11-Jul-2025 03:49:11 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:49:11 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:11 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:49:11 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:49:11 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{}","sort_by":"created_at","sort_order":"DESC"}
+[11-Jul-2025 03:49:11 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:49:11 Europe/Berlin] RECRUITMENT API DEBUG: Filters received
+[11-Jul-2025 03:49:11 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called
+[11-Jul-2025 03:49:11 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 ORDER BY created_at DESC"
+[11-Jul-2025 03:49:11 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters
+[11-Jul-2025 03:49:11 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 5 leads"
+[11-Jul-2025 03:51:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:51:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:51:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:51:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:51:56 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:51:56 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:51:56 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[11-Jul-2025 03:51:56 Europe/Berlin] Header loaded - Total notifications: 0, Unread count: 0
+[11-Jul-2025 03:51:57 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:51:57 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:51:57 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:51:57 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:51:57 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{}","sort_by":"created_at","sort_order":"DESC"}
+[11-Jul-2025 03:51:57 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:51:57 Europe/Berlin] RECRUITMENT API DEBUG: Filters received
+[11-Jul-2025 03:51:57 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called
+[11-Jul-2025 03:51:57 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 ORDER BY created_at DESC"
+[11-Jul-2025 03:51:57 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters
+[11-Jul-2025 03:51:57 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 5 leads"
+[11-Jul-2025 03:52:00 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:52:00 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:00 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:00 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:52:00 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{\"id\":18}"}
+[11-Jul-2025 03:52:00 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:52:00 Europe/Berlin] RECRUITMENT API DEBUG: Filters received - {"id":18}
+[11-Jul-2025 03:52:00 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called - {"id":18}
+[11-Jul-2025 03:52:00 Europe/Berlin] RECRUITMENT API DEBUG: Added ID filter - 18
+[11-Jul-2025 03:52:00 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 AND id = :id ORDER BY created_at DESC"
+[11-Jul-2025 03:52:00 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters - {":id":18}
+[11-Jul-2025 03:52:00 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 1 leads"
+[11-Jul-2025 03:52:07 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:52:07 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:07 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Manny Alberto Violenta","status":"Onboarding","source":"KKK","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:52:07 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:52:07 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:07 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{}","sort_by":"created_at","sort_order":"DESC"}
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: Filters received
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 ORDER BY created_at DESC"
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters
+[11-Jul-2025 03:52:07 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 5 leads"
+[11-Jul-2025 03:52:16 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:52:16 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:16 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:16 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:52:16 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{\"id\":18}"}
+[11-Jul-2025 03:52:16 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:52:16 Europe/Berlin] RECRUITMENT API DEBUG: Filters received - {"id":18}
+[11-Jul-2025 03:52:16 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called - {"id":18}
+[11-Jul-2025 03:52:16 Europe/Berlin] RECRUITMENT API DEBUG: Added ID filter - 18
+[11-Jul-2025 03:52:16 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 AND id = :id ORDER BY created_at DESC"
+[11-Jul-2025 03:52:16 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters - {":id":18}
+[11-Jul-2025 03:52:16 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 1 leads"
+[11-Jul-2025 03:52:24 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:52:24 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:24 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Yerik Yves Gavrie F. Talaboc","status":"Onboarding","source":"Organic Posting","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "update_recruitment_lead"
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: update_recruitment_lead called - {"id":"18","full_name":"paul andreei","contact_number":"09380326931","email":"violentamanny@gmail.com","recruiter_name":"Yerik Yves Gavrie F. Talaboc","status":"Onboarding","source":"Organic Posting","remarks":"sample","action":"update_recruitment_lead"}
+[11-Jul-2025 03:52:24 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[11-Jul-2025 03:52:24 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:24 Europe/Berlin] PDO connection successful to localhost/real_estate_leads
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: Request Method - "POST"
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: POST data - {"action":"get_recruitment_leads","filters":"{}","sort_by":"created_at","sort_order":"DESC"}
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: Action received - "get_recruitment_leads"
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: Filters received
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: get_recruitment_leads called
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: Final SQL - "SELECT * FROM recruitment_leads WHERE 1=1 ORDER BY created_at DESC"
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: SQL Parameters
+[11-Jul-2025 03:52:24 Europe/Berlin] RECRUITMENT API DEBUG: Query executed successfully - "Found 5 leads"
