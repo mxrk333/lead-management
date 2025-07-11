@@ -48,15 +48,16 @@ if (strpos($current_path, '/users/memo/') !== false) {
         
         <div class="sidebar-user-section">
             <div class="user-avatar">
-    <?php
-    // Always use the correct path for the image
-    if (!empty($user['profile_picture'])): ?>
-        <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
-    <?php elseif (!empty($user['avatar'])): ?>
-        <img src="<?php echo htmlspecialchars($user['avatar']); ?>" alt="Profile Picture">
-    <?php else: ?>
-        <span class="avatar-text"><?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?></span>
-    <?php endif; ?>
+                <?php
+                $imagePath = !empty($user['profile_picture']) ? $user['profile_picture']
+                        : (!empty($user['avatar']) ? $user['avatar'] : null);
+
+                if ($imagePath):
+                    echo '<img src="/lead-management/' . htmlspecialchars($imagePath) . '" alt="Profile Picture">';
+                else:
+                    echo '<span class="avatar-text">' . strtoupper(substr($user['name'] ?? 'U', 0, 1)) . '</span>';
+                endif;
+                ?>
             </div>
             
             <div class="user-info">
