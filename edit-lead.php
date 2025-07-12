@@ -41,7 +41,6 @@ if (!$lead) {
 
 // Enhanced permission check including superuser access
 $canEdit = ($lead['user_id'] == $user_id) || isSuperUser($user['username']);
-
 if (!$canEdit) {
     header("Location: leads.php");
     exit();
@@ -56,8 +55,8 @@ $leadSources = getLeadSources();
 $temperatures = ['Hot', 'Warm', 'Cold'];
 $statuses = [
     'Inquiry', 'Presentation Stage', 'Negotiation', 'Closed', 'Lost', 
-    'Site Tour', 'Closed Deal', 'Requirement Stage', 'Downpayment Stage', 
-    'Housing Loan Application', 'Loan Approval', 'Loan Takeout', 
+    'Site Tour', 'Closed Deal', 'Requirement Stage', 'Downpayment Stage',
+    'Housing Loan Application', 'Loan Approval', 'Loan Takeout',
     'House Inspection', 'House Turn Over'
 ];
 
@@ -67,7 +66,6 @@ $success = '';
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $conn = getDbConnection();
-
     try {
         // Start transaction
         $conn->begin_transaction();
@@ -75,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Get form data
         $client_name = trim($_POST['client_name']);
         $phone = trim($_POST['phone']);
-        $email = trim($_POST['email']);
+        $email = trim($_POST['email']); // Keep email field but remove validation
         $facebook = trim($_POST['facebook']);
         $linkedin = trim($_POST['linkedin']);
         $temperature = $_POST['temperature'];
@@ -83,22 +81,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $source = $_POST['source'];
         $developer = trim($_POST['developer']);
         $project_model = trim($_POST['project_model']);
+        
         // Clean and convert price
         $price = str_replace(',', '', $_POST['price']);
         $price = floatval($price);
         $remarks = trim($_POST['remarks']);
-
-        // Validate required fields
-        if (empty($client_name) || empty($phone) || empty($email) || empty($temperature) || 
+        
+        // Validate required fields (email validation removed)
+        if (empty($client_name) || empty($phone) || empty($temperature) || 
             empty($status) || empty($source) || empty($developer) || empty($project_model) || $price <= 0) {
             throw new Exception("Please fill in all required fields.");
         }
-
-        // Validate email format
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("Please enter a valid email address.");
-        }
-
+        
+        // EMAIL VALIDATION REMOVED - No longer validating email format
+        
         // Track changes
         $changes = array();
         if ($client_name !== $lead['client_name']) {
@@ -185,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'new_value' => $remarks
             );
         }
-
+        
         // Update lead
         $update_stmt = $conn->prepare("
             UPDATE leads 
@@ -205,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (!$update_stmt->execute()) {
             throw new Exception("Failed to update lead");
         }
-
+        
         // If there are changes, create an activity and record modifications
         if (!empty($changes)) {
             // Create activity entry
@@ -213,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             foreach ($changes as $change) {
                 $activity_notes .= "- Changed {$change['field']} from '{$change['old_value']}' to '{$change['new_value']}'\n";
             }
-
+            
             $activity_stmt = $conn->prepare("
                 INSERT INTO lead_activities (lead_id, user_id, activity_type, notes)
                 VALUES (?, ?, 'Lead Update', ?)
@@ -223,15 +219,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (!$activity_stmt->execute()) {
                 throw new Exception("Failed to create activity record");
             }
+            
             $activity_id = $activity_stmt->insert_id;
-
+            
             // Record each modification
             $mod_stmt = $conn->prepare("
                 INSERT INTO lead_modifications 
                 (lead_id, user_id, modification_type, old_value, new_value, activity_id)
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
-
+            
             foreach ($changes as $change) {
                 $mod_type = $change['field'] . '_change';
                 $mod_stmt->bind_param(
@@ -249,13 +246,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
             }
         }
-
+        
         // Commit transaction
         $conn->commit();
         
         header("Location: lead-details.php?id=$lead_id&success=updated");
         exit();
-
+        
     } catch (Exception $e) {
         // Rollback transaction on error
         $conn->rollback();
@@ -267,7 +264,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -696,9 +692,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
                         
                         <div class="form-row">
-                            <div class="form-group required-field">
-                                <label for="email">Email Address</label>
-                                <input type="email" id="email" name="email" placeholder="client@example.com" value="<?php echo htmlspecialchars($lead['email']); ?>" required>
+                            <div class="form-group">
+                                <label for="email">Email Address <span class="optional-field">(Optional)</span></label>
+                                <input type="text" id="email" name="email"
+                                       value="<?php echo htmlspecialchars($lead['email']); ?>"
+                                       placeholder="client@example.com" maxlength="100">
                             </div>
                             
                             <div class="form-group required-field">
@@ -775,8 +773,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <option value="">Select Project Model</option>
                                     <?php foreach ($projectModels as $model): ?>
                                         <?php if ($model['developer_name'] == $lead['developer']): ?>
-                                            <option value="<?php echo htmlspecialchars($model['name']); ?>" 
-                                                <?php echo ($model['name'] == $lead['project_model']) ? 'selected' : ''; ?>>
+                                            <option value="<?php echo htmlspecialchars($model['name']); ?>"
+                                                 <?php echo ($model['name'] == $lead['project_model']) ? 'selected' : ''; ?>>
                                                 <?php echo htmlspecialchars($model['name']); ?>
                                             </option>
                                         <?php endif; ?>
@@ -886,14 +884,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     }
                 });
                 
-                // Validate email format
-                const emailField = document.getElementById('email');
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (emailField.value && !emailRegex.test(emailField.value)) {
-                    isValid = false;
-                    emailField.style.borderColor = 'var(--danger-color)';
-                    alert('Please enter a valid email address.');
-                }
+                // EMAIL VALIDATION REMOVED - No longer validating email format in JavaScript
                 
                 // Validate price
                 const priceField = document.getElementById('price');
@@ -927,7 +918,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }, 5000);
         });
     </script>
-
     <script src="assets/js/script.js"></script>
 </body>
 </html>
