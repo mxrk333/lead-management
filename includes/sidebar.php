@@ -18,10 +18,13 @@ if ($depth <= 1) {
 }
 
 // Special handling for specific subdirectories
-if (strpos($current_path, '/users/memo/') !== false) {
+
+if (strpos($current_path, '/users/memo/') !== false || strpos($current_path, '/users/report-problem/') !== false) {
     $base_path = '../../';
 } elseif (strpos($current_path, '/users/') !== false) {
     $base_path = '../';
+} else {
+    $base_path = './'; // fallback for root-level pages
 }
 ?>
 
@@ -234,7 +237,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
                         
                         <?php if (isset($user['role']) && $user['role'] == 'admin'): ?>
                         <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>users/reports/reports.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'users/reports/reports.php' ? 'active' : ''; ?>">
+                            <a href="<?php echo $base_path; ?>users/report-problem/process-report.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'users/report-problem/process-report.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-warning nav-icon"></i>
                                 <span class="nav-text">Reports Problem</span>
                             </a>

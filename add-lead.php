@@ -988,7 +988,7 @@ debugLog("Page rendering started");
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="email">Email Addres <span class="optional-field">(Optional)</span></label>
+                                <label for="email">Email Address <span class="optional-field">(Optional)</span></label>
                                 <input type="email" id="email" name="email" 
                                        value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
                                        placeholder="client@example.com" maxlength="100">
