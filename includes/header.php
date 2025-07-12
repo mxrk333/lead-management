@@ -377,7 +377,7 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
                                 <span>Help & Support</span>
                             </a>
                             <div class="menu-divider"></div>
-                            <a href="logout.php" class="menu-item logout">
+                            <a href="/lead-management/logout.php" class="menu-item logout">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
                             </a>
