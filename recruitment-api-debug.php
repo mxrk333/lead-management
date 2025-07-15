@@ -16,10 +16,28 @@ header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization'); // Added Authorization for completeness
 
 // Debug function to log information
-function debugLog($message, $data = null) {
+function debugLog($message, $data = null)
+{
     // Use error_log for server-side logging, not echo
     error_log("RECRUITMENT API DEBUG: " . $message . ($data ? " - " . json_encode($data) : ""));
 }
+
+// --- Start of new code for automatic recruiter name ---
+$current_recruiter_name = '';
+if (isset($_SESSION['user_id']) && $pdo !== null) {
+    try {
+        $stmt = $pdo->prepare("SELECT name FROM users WHERE id = :user_id");
+        $stmt->execute([':user_id' => $_SESSION['user_id']]);
+        $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($user_data) {
+            $current_recruiter_name = $user_data['name'];
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching recruiter name from session in debug API: " . $e->getMessage());
+        $current_recruiter_name = '';
+    }
+}
+// --- End of new code ---
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -44,7 +62,8 @@ if (!isset($pdo) || $pdo === null) {
  * @param array $filters An associative array of filters.
  * @return array An associative array containing success status, data, and debug info.
  */
-function get_recruitment_leads(PDO $pdo, array $filters = []) {
+function get_recruitment_leads(PDO $pdo, array $filters = [])
+{
     debugLog("get_recruitment_leads called", $filters);
 
     try {
@@ -65,12 +84,6 @@ function get_recruitment_leads(PDO $pdo, array $filters = []) {
             debugLog("Added status filter", $filters['status']);
         }
 
-        if (!empty($filters['interest_level'])) {
-            $sql .= " AND interest_level = :interest_level";
-            $params[':interest_level'] = $filters['interest_level'];
-            debugLog("Added interest_level filter", $filters['interest_level']);
-        }
-
         if (!empty($filters['source'])) {
             $sql .= " AND source = :source";
             $params[':source'] = $filters['source'];
@@ -87,7 +100,7 @@ function get_recruitment_leads(PDO $pdo, array $filters = []) {
         }
 
         // Add sorting (with whitelisting for security)
-        $allowed_sort_columns = ['created_at', 'full_name', 'contact_number', 'email', 'recruiter_name', 'interest_level', 'status', 'source'];
+        $allowed_sort_columns = ['created_at', 'full_name', 'contact_number', 'email', 'recruiter_name', 'status', 'source'];
         $allowed_sort_orders = ['ASC', 'DESC'];
 
         $sort_by = $_POST['sort_by'] ?? 'created_at';
@@ -106,23 +119,27 @@ function get_recruitment_leads(PDO $pdo, array $filters = []) {
         }
 
         $sql .= " ORDER BY {$sort_by} " . strtoupper($sort_order);
-        
+
         debugLog("Final SQL", $sql);
         debugLog("SQL Parameters", $params);
-        
+
         // Execute query
         $stmt = $pdo->prepare($sql); // Line 123
         $stmt->execute($params);
         $leads = $stmt->fetchAll();
-        
+
         debugLog("Query executed successfully", "Found " . count($leads) . " leads");
-        return ['success' => true, 'data' => $leads, 'debug' => [
-            'sql' => $sql,
-            'params' => $params,
-            'filters' => $filters,
-            'count' => count($leads)
-        ]];
-        
+        return [
+            'success' => true,
+            'data' => $leads,
+            'debug' => [
+                'sql' => $sql,
+                'params' => $params,
+                'filters' => $filters,
+                'count' => count($leads)
+            ]
+        ];
+
     } catch (Exception $e) {
         debugLog("Query error", $e->getMessage());
         return ['success' => false, 'message' => 'Error fetching leads: ' . $e->getMessage()];
@@ -134,46 +151,50 @@ function get_recruitment_leads(PDO $pdo, array $filters = []) {
  *
  * @param PDO $pdo The PDO database connection object.
  * @param array $data An associative array of lead data.
+ * @param string $recruiter_name_override Optional: Override recruiter name from session.
  * @return array An associative array containing success status and message.
  */
-function add_recruitment_lead(PDO $pdo, array $data) {
+function add_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_override = '')
+{
     debugLog("add_recruitment_lead called", $data);
     try {
         // Validate required fields
-        $required_fields = ['full_name', 'contact_number', 'interest_level', 'status', 'source'];
+        $required_fields = ['full_name', 'contact_number', 'status', 'source'];
         foreach ($required_fields as $field) {
             if (empty($data[$field])) {
                 return ['success' => false, 'message' => "Required field '{$field}' is missing"];
             }
         }
-        
+
+        // Use override if provided, otherwise use data['recruiter_name'] (which will be ignored from POST)
+        $final_recruiter_name = $recruiter_name_override ?: ($data['recruiter_name'] ?? '');
+
         $sql = "INSERT INTO recruitment_leads (
-                    full_name, contact_number, email, recruiter_name, 
-                    interest_level, status, source, agent_onboarding_status, remarks
-                ) VALUES (
-                    :full_name, :contact_number, :email, :recruiter_name, 
-                    :interest_level, :status, :source, :agent_onboarding_status, :remarks
-                )";
-        
+                  full_name, contact_number, email, recruiter_name, 
+                  status, source, agent_onboarding_status, remarks
+              ) VALUES (
+                  :full_name, :contact_number, :email, :recruiter_name, 
+                  :status, :source, :agent_onboarding_status, :remarks
+              )";
+
         $stmt = $pdo->prepare($sql);
         $result = $stmt->execute([
             ':full_name' => $data['full_name'],
             ':contact_number' => $data['contact_number'],
             ':email' => $data['email'] ?? '',
-            ':recruiter_name' => $data['recruiter_name'] ?? '',
-            ':interest_level' => $data['interest_level'],
+            ':recruiter_name' => $final_recruiter_name, // Use the determined recruiter name
             ':status' => $data['status'],
             ':source' => $data['source'],
             ':agent_onboarding_status' => $data['agent_onboarding_status'] ?? null,
             ':remarks' => $data['remarks'] ?? ''
         ]);
-        
+
         if ($result) {
             return ['success' => true, 'message' => 'Lead added successfully', 'id' => $pdo->lastInsertId()];
         } else {
             return ['success' => false, 'message' => 'Failed to add lead'];
         }
-        
+
     } catch (Exception $e) {
         debugLog("Add lead error", $e->getMessage());
         return ['success' => false, 'message' => 'Error adding lead: ' . $e->getMessage()];
@@ -185,46 +206,49 @@ function add_recruitment_lead(PDO $pdo, array $data) {
  *
  * @param PDO $pdo The PDO database connection object.
  * @param array $data An associative array of lead data including 'id'.
+ * @param string $recruiter_name_override Optional: Override recruiter name from session.
  * @return array An associative array containing success status and message.
  */
-function update_recruitment_lead(PDO $pdo, array $data) {
+function update_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_override = '')
+{
     debugLog("update_recruitment_lead called", $data);
     try {
         // Validate required fields
-        $required_fields = ['id', 'full_name', 'contact_number', 'interest_level', 'status', 'source'];
+        $required_fields = ['id', 'full_name', 'contact_number', 'status', 'source'];
         foreach ($required_fields as $field) {
             if (empty($data[$field])) {
                 return ['success' => false, 'message' => "Required field '{$field}' is missing"];
             }
         }
-        
+
+        // Use override if provided, otherwise use data['recruiter_name'] (which will be ignored from POST)
+        $final_recruiter_name = $recruiter_name_override ?: ($data['recruiter_name'] ?? '');
+
         $sql = "UPDATE recruitment_leads SET 
-                    full_name = :full_name,
-                    contact_number = :contact_number,
-                    email = :email,
-                    recruiter_name = :recruiter_name,
-                    interest_level = :interest_level,
-                    status = :status,
-                    source = :source,
-                    agent_onboarding_status = :agent_onboarding_status,
-                    remarks = :remarks,
-                    updated_at = NOW()
-                WHERE id = :id";
-        
+                  full_name = :full_name,
+                  contact_number = :contact_number,
+                  email = :email,
+                  recruiter_name = :recruiter_name,
+                  status = :status,
+                  source = :source,
+                  agent_onboarding_status = :agent_onboarding_status,
+                  remarks = :remarks,
+                  updated_at = NOW()
+              WHERE id = :id";
+
         $stmt = $pdo->prepare($sql);
         $result = $stmt->execute([
             ':id' => $data['id'],
             ':full_name' => $data['full_name'],
             ':contact_number' => $data['contact_number'],
             ':email' => $data['email'] ?? '',
-            ':recruiter_name' => $data['recruiter_name'] ?? '',
-            ':interest_level' => $data['interest_level'],
+            ':recruiter_name' => $final_recruiter_name, // Use the determined recruiter name
             ':status' => $data['status'],
             ':source' => $data['source'],
             ':agent_onboarding_status' => $data['agent_onboarding_status'] ?? null,
             ':remarks' => $data['remarks'] ?? ''
         ]);
-        
+
         if ($result) {
             $rowsAffected = $stmt->rowCount();
             if ($rowsAffected > 0) {
@@ -235,7 +259,7 @@ function update_recruitment_lead(PDO $pdo, array $data) {
         } else {
             return ['success' => false, 'message' => 'Failed to update lead'];
         }
-        
+
     } catch (Exception $e) {
         debugLog("Update lead error", $e->getMessage());
         return ['success' => false, 'message' => 'Error updating lead: ' . $e->getMessage()];
@@ -249,17 +273,18 @@ function update_recruitment_lead(PDO $pdo, array $data) {
  * @param int $id The ID of the lead to delete.
  * @return array An associative array containing success status and message.
  */
-function delete_recruitment_lead(PDO $pdo, int $id) {
+function delete_recruitment_lead(PDO $pdo, int $id)
+{
     debugLog("delete_recruitment_lead called", ['id' => $id]);
     try {
         if (!$id || !is_numeric($id)) {
             return ['success' => false, 'message' => 'Invalid ID'];
         }
-        
+
         $sql = "DELETE FROM recruitment_leads WHERE id = :id";
         $stmt = $pdo->prepare($sql);
         $result = $stmt->execute([':id' => $id]);
-        
+
         if ($result) {
             $rowsAffected = $stmt->rowCount();
             if ($rowsAffected > 0) {
@@ -270,7 +295,7 @@ function delete_recruitment_lead(PDO $pdo, int $id) {
         } else {
             return ['success' => false, 'message' => 'Failed to delete lead'];
         }
-        
+
     } catch (Exception $e) {
         debugLog("Delete lead error", $e->getMessage());
         return ['success' => false, 'message' => 'Error deleting lead: ' . $e->getMessage()];
@@ -280,37 +305,33 @@ function delete_recruitment_lead(PDO $pdo, int $id) {
 
 // Main request handling logic
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    
+
     debugLog("Action received", $_POST['action']);
-    
+
     switch ($_POST['action']) {
         case 'get_recruitment_stats':
             try {
                 $stats = [];
-                
+
                 // Total leads
                 $stmt = $pdo->query("SELECT COUNT(*) as total FROM recruitment_leads");
                 $result = $stmt->fetch();
-                $stats['total_leads'] = $result ? (int)$result['total'] : 0;
-                
-                // Leads by interest level
-                $stmt = $pdo->query("SELECT interest_level, COUNT(*) as count FROM recruitment_leads GROUP BY interest_level");
-                $stats['by_interest_level'] = $stmt->fetchAll();
-                
+                $stats['total_leads'] = $result ? (int) $result['total'] : 0;
+
                 // Recent leads (last 7 days)
                 $stmt = $pdo->query("SELECT COUNT(*) as count FROM recruitment_leads WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
                 $result = $stmt->fetch();
-                $stats['recent_leads'] = $result ? (int)$result['count'] : 0;
-                
+                $stats['recent_leads'] = $result ? (int) $result['count'] : 0;
+
                 debugLog("Stats loaded successfully", $stats);
                 echo json_encode(['success' => true, 'data' => $stats]);
-                
+
             } catch (Exception $e) {
                 debugLog("Stats error", $e->getMessage());
                 echo json_encode(['success' => false, 'message' => 'Error loading statistics: ' . $e->getMessage()]);
             }
             break;
-            
+
         case 'get_recruitment_leads':
             try {
                 // Parse filters
@@ -326,7 +347,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 debugLog("Filters received", $filters);
 
                 // Pass the $pdo object to the function
-                $result = get_recruitment_leads($pdo, $filters); 
+                $result = get_recruitment_leads($pdo, $filters);
                 echo json_encode($result);
 
             } catch (Exception $e) {
@@ -334,26 +355,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 echo json_encode(['success' => false, 'message' => 'Error fetching leads: ' . $e->getMessage()]);
             }
             break;
-            
+
         case 'add_recruitment_lead':
             // Pass the $pdo object and $_POST data to the function
-            $result = add_recruitment_lead($pdo, $_POST);
+            $result = add_recruitment_lead($pdo, $_POST, $current_recruiter_name);
             echo json_encode($result);
             break;
-            
+
         case 'update_recruitment_lead':
             // Pass the $pdo object and $_POST data to the function
-            $result = update_recruitment_lead($pdo, $_POST);
+            $result = update_recruitment_lead($pdo, $_POST, $current_recruiter_name);
             echo json_encode($result);
             break;
-            
+
         case 'delete_recruitment_lead':
             // Pass the $pdo object and the ID to the function
             $id = $_POST['id'] ?? null;
-            $result = delete_recruitment_lead($pdo, (int)$id); // Cast to int for type hint
+            $result = delete_recruitment_lead($pdo, (int) $id); // Cast to int for type hint
             echo json_encode($result);
             break;
-            
+
         default:
             echo json_encode(['success' => false, 'message' => 'Invalid action']);
             break;

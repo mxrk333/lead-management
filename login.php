@@ -1,7 +1,95 @@
 <?php
 session_start();
-require_once 'config/database.php';
-require_once 'includes/functions.php';
+
+// Enable detailed error reporting for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Handle AJAX report submission if action parameter is present
+if (isset($_GET['action']) && $_GET['action'] === 'submit_report' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json'); // Indicate JSON response
+
+    // Temporarily disable display_errors for this AJAX section
+    // Errors will still be logged to the server's PHP error log,
+    // but won't break the JSON response.
+    ini_set('display_errors', 0);
+    error_reporting(E_ALL); // Keep logging all errors
+
+    // Paths are relative to the current file (login.php)
+    // Using __DIR__ for more robust path resolution
+    $config_db_path = __DIR__ . '/config/database.php';
+
+    // Initialize response array
+    $response = ['success' => false, 'message' => 'An unknown error occurred.'];
+
+    // Check if required files exist before including them
+    if (!file_exists($config_db_path)) {
+        $response['message'] = 'PHP Server Error: Required file not found: ' . $config_db_path . '. Please check your file structure.';
+        echo json_encode($response);
+        exit();
+    }
+
+    require_once $config_db_path;
+
+    try {
+        $conn = getDbConnection();
+        if (!$conn) {
+            throw new Exception("Failed to get database connection. Check config/database.php and database server status.");
+        }
+
+        $username = trim($_POST['username'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $issue_type = trim($_POST['issue_type'] ?? '');
+        $priority = trim($_POST['priority'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $browser_info = trim($_POST['browser_info'] ?? '');
+
+        // Basic validation
+        if (empty($username) || empty($phone) || empty($issue_type) || empty($priority) || empty($description)) {
+            $response['message'] = 'Validation Error: Please fill in all required fields (Username, Phone, Issue Type, Priority, Description).';
+            echo json_encode($response);
+            exit();
+        }
+
+        // Prepare and execute the insert statement
+        $stmt = $conn->prepare("INSERT INTO problem_reports (username, phone, email, issue_type, priority, description, browser_info) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            // This means the SQL query itself is malformed or table/columns don't exist
+            throw new Exception("SQL Prepare Error: " . $conn->error . " (SQLSTATE: " . $conn->errno . "). Check 'problem_reports' table schema.");
+        }
+
+        $stmt->bind_param("sssssss", $username, $phone, $email, $issue_type, $priority, $description, $browser_info);
+
+        if ($stmt->execute()) {
+            $report_id = $conn->insert_id;
+            $response['success'] = true;
+            $response['message'] = 'Your problem report has been submitted successfully. Report ID: #' . $report_id;
+
+        } else {
+            // This means the SQL query executed but failed (e.g., constraint violation, data type mismatch)
+            $response['message'] = 'Database Execute Error: Failed to submit report: ' . $stmt->error . " (SQLSTATE: " . $stmt->errno . "). Check data types or constraints.";
+        }
+
+        $stmt->close();
+        $conn->close();
+
+    } catch (Exception $e) {
+        $response['message'] = 'PHP Server Error: ' . $e->getMessage();
+        error_log("Critical Error in login.php (submit_report action): " . $e->getMessage());
+    }
+    echo json_encode($response);
+    exit(); // IMPORTANT: Exit after sending JSON response for AJAX requests
+}
+
+// Re-enable display_errors for the rest of the page if needed (optional, but good practice)
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+// Standard login page logic below
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/functions.php';
 
 $error = '';
 
@@ -424,23 +512,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         /* Modal Styles */
         .modal {
-            display: none;
+            display: none; /* Hidden by default */
             position: fixed;
-            z-index: 2000;
+            z-index: 2000; /* High z-index to be on top */
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
+            background-color: rgba(0, 0, 0, 0.6); /* Dark overlay */
+            backdrop-filter: blur(8px); /* Blur background */
             animation: fadeIn 0.3s ease-out;
+            align-items: center; /* Center content vertically */
+            justify-content: center; /* Center content horizontally */
+            padding: 1rem; /* Padding for smaller screens */
         }
 
         .modal.show {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
+            display: flex; /* Show as flex to center content */
         }
 
         @keyframes fadeIn {
@@ -464,8 +552,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 16px;
             width: 100%;
             max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
+            max-height: 90vh; /* Limit height to prevent overflow */
+            overflow-y: auto; /* Enable scrolling for content */
             box-shadow: var(--shadow-lg);
             animation: slideUp 0.3s ease-out;
             position: relative;
@@ -800,6 +888,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 margin-bottom: 1rem;
             }
 
+            .login-logo-text h1 {
+                font-size: 1.25rem;
+            }
+
             .login-header {
                 margin-bottom: 1.5rem;
                 text-align: center;
@@ -878,15 +970,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
             
             .form-group {
-                margin-bottom: 1rem;
+                margin-bottom: 0.75rem;
             }
             
+            .secure-badge,
             .real-estate-features {
-                margin-top: 1rem;
-            }
-            
-            .secure-badge {
-                margin-top: 1rem;
+                display: none;
             }
         }
 
@@ -1051,6 +1140,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     Thank you! Your problem report has been submitted successfully. We'll investigate and get back to you soon.
                 </div>
                 
+                <div id="errorMessage" class="error-message" style="display: none;">
+                </div>
+                
                 <form id="reportForm">
                     <div class="modal-form-group">
                         <label for="report-username">Username <span class="required">*</span></label>
@@ -1130,6 +1222,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded. Initializing scripts...');
             const togglePassword = document.getElementById('togglePassword');
             const passwordField = document.getElementById('password');
             
@@ -1227,21 +1320,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 // Detect Browser (Order matters!)
                 if (userAgent.indexOf('Edg/') !== -1) {
-                    // Microsoft Edge (Chromium-based)
                     browserName = 'Microsoft Edge';
                     const edgeVersion = userAgent.match(/Edg\/([0-9.]+)/);
                     if (edgeVersion) browserVersion = edgeVersion[1];
                 } else if (userAgent.indexOf('Edge/') !== -1) {
-                    // Microsoft Edge (Legacy)
                     browserName = 'Microsoft Edge (Legacy)';
                     const edgeVersion = userAgent.match(/Edge\/([0-9.]+)/);
                     if (edgeVersion) browserVersion = edgeVersion[1];
                 } else if (userAgent.indexOf('OPR/') !== -1 || userAgent.indexOf('Opera/') !== -1) {
-                    // Opera
                     browserName = 'Opera';
                     const operaVersion = userAgent.match(/(?:OPR|Opera)\/([0-9.]+)/);
                     if (operaVersion) browserVersion = operaVersion[1];
-                } else if (userAgent.indexOf('Chrome/') !== -1 && userAgent.indexOf('Safari/') !== -1) {
+                } else if (userAgent.indexOf('Chrome/') !== -1 && userAgent.indexOf('Safari/') === -1) { // Corrected Safari check
                     // Google Chrome
                     browserName = 'Google Chrome';
                     const chromeVersion = userAgent.match(/Chrome\/([0-9.]+)/);
@@ -1251,8 +1341,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     browserName = 'Mozilla Firefox';
                     const firefoxVersion = userAgent.match(/Firefox\/([0-9.]+)/);
                     if (firefoxVersion) browserVersion = firefoxVersion[1];
-                } else if (userAgent.indexOf('Safari/') !== -1 && userAgent.indexOf('Chrome') === -1) {
-                    // Safari
+                } else if (userAgent.indexOf('Safari/') !== -1) { // Safari (after Chrome check)
                     browserName = 'Safari';
                     const safariVersion = userAgent.match(/Version\/([0-9.]+)/);
                     if (safariVersion) browserVersion = safariVersion[1];
@@ -1260,7 +1349,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     // Internet Explorer
                     browserName = 'Internet Explorer';
                     const ieVersion = userAgent.match(/(?:MSIE |rv:)([0-9.]+)/);
-                    if (ieVersion) browserVersion = ieVersion[1];
+                    if (ieVersion) ieVersion[1];
                 }
 
                 // Get additional system info
@@ -1314,9 +1403,86 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
                 e.target.value = value;
             });
+
+            // Handle form submission
+            document.getElementById('reportForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                console.log('Report form submitted. Initiating fetch request...');
+                
+                const submitBtn = document.getElementById('submitBtn');
+                const originalText = submitBtn.innerHTML;
+                const successMessageDiv = document.getElementById('successMessage');
+                const errorMessageDiv = document.getElementById('errorMessage'); // Add this div in HTML if you want to show errors
+
+                // Hide previous messages
+                successMessageDiv.style.display = 'none';
+                if (errorMessageDiv) errorMessageDiv.style.display = 'none';
+                
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                
+                const formData = new FormData(this); // Get form data
+
+                fetch('login.php?action=submit_report', { // Send to login.php with action parameter
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    console.log('Fetch response received:', response);
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.indexOf("application/json") !== -1) {
+                        return response.json();
+                    } else {
+                        return response.text().then(text => {
+                            console.error('Server did not return JSON. Full response text:', text);
+                            throw new Error('Server did not return JSON. Response: ' + text);
+                        });
+                    }
+                })
+                .then(data => {
+                    console.log('Fetch data processed:', data);
+                    if (data.success) {
+                        successMessageDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                        successMessageDiv.style.display = 'flex';
+                        document.getElementById('reportForm').reset(); // Reset form on success
+                        document.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('selected'));
+                        document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
+                        document.getElementById('priority').value = 'medium';
+                        
+                        // Auto close modal after 3 seconds
+                        setTimeout(() => {
+                            closeReportModal();
+                        }, 3000);
+                    } else {
+                        if (errorMessageDiv) {
+                            errorMessageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + data.message;
+                            errorMessageDiv.style.display = 'flex';
+                        } else {
+                            alert('Error: ' + data.message); // Fallback alert if no error div
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch request failed:', error);
+                    if (errorMessageDiv) {
+                        errorMessageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> An unexpected error occurred: ' + error.message;
+                        errorMessageDiv.style.display = 'flex';
+                    } else {
+                        alert('An unexpected error occurred. Please try again. Error: ' + error.message);
+                    }
+                })
+                .finally(() => {
+                    console.log('Fetch request finished.');
+                    // Reset button regardless of success or failure
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            });
         });
 
         function openReportModal() {
+            console.log('Opening report modal...');
             const modal = document.getElementById('reportModal');
             modal.classList.add('show');
             document.body.style.overflow = 'hidden';
@@ -1324,6 +1490,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Reset form and hide success message
             document.getElementById('reportForm').reset();
             document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none'; // Also hide error message on open
             
             // Reset priority to medium
             document.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('selected'));
@@ -1396,22 +1563,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         browserName = 'Opera';
                         const operaVersion = userAgent.match(/(?:OPR|Opera)\/([0-9.]+)/);
                         if (operaVersion) browserVersion = operaVersion[1];
-                    } else if (userAgent.indexOf('Chrome/') !== -1 && userAgent.indexOf('Safari/') !== -1) {
+                    } else if (userAgent.indexOf('Chrome/') !== -1 && userAgent.indexOf('Safari/') === -1) { // Corrected Safari check
+                        // Google Chrome
                         browserName = 'Google Chrome';
                         const chromeVersion = userAgent.match(/Chrome\/([0-9.]+)/);
                         if (chromeVersion) browserVersion = chromeVersion[1];
                     } else if (userAgent.indexOf('Firefox/') !== -1) {
+                        // Mozilla Firefox
                         browserName = 'Mozilla Firefox';
                         const firefoxVersion = userAgent.match(/Firefox\/([0-9.]+)/);
                         if (firefoxVersion) browserVersion = firefoxVersion[1];
-                    } else if (userAgent.indexOf('Safari/') !== -1 && userAgent.indexOf('Chrome') === -1) {
+                    } else if (userAgent.indexOf('Safari/') !== -1) { // Safari (after Chrome check)
                         browserName = 'Safari';
                         const safariVersion = userAgent.match(/Version\/([0-9.]+)/);
                         if (safariVersion) browserVersion = safariVersion[1];
                     } else if (userAgent.indexOf('MSIE') !== -1 || userAgent.indexOf('Trident/') !== -1) {
+                        // Internet Explorer
                         browserName = 'Internet Explorer';
                         const ieVersion = userAgent.match(/(?:MSIE |rv:)([0-9.]+)/);
-                        if (ieVersion) browserVersion = ieVersion[1];
+                        if (ieVersion) ieVersion[1];
                     }
 
                     // Get additional system info
@@ -1455,34 +1625,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 closeReportModal();
             }
         }
-
-        // Handle form submission
-        document.getElementById('reportForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.innerHTML;
-            
-            // Show loading state
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-            
-            // Simulate form submission (replace with actual AJAX call)
-            setTimeout(() => {
-                // Show success message
-                document.getElementById('successMessage').style.display = 'flex';
-                
-                // Reset button
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-                
-                // Auto close modal after 3 seconds
-                setTimeout(() => {
-                    closeReportModal();
-                }, 3000);
-                
-            }, 2000);
-        });
     </script>
 </body>
 </html>

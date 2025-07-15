@@ -325,11 +325,16 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
                 <div class="header-user-menu" id="userMenuDropdown">
                     <div class="user-menu-trigger">
                         <div class="user-avatar">
-                            <?php if (isset($user) && !empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
-                                <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
-                            <?php else: ?>
-                                <span class="avatar-text"><?php echo isset($user) ? strtoupper(substr($user['name'], 0, 1)) : 'U'; ?></span>
-                            <?php endif; ?>
+                            <?php
+                            $imagePath = !empty($user['profile_picture']) ? $user['profile_picture']
+                                    : (!empty($user['avatar']) ? $user['avatar'] : null);
+
+                            if ($imagePath):
+                                echo '<img src="/lead-management/' . htmlspecialchars($imagePath) . '" alt="Profile Picture">';
+                            else:
+                                echo '<span class="avatar-text">' . strtoupper(substr($user['name'] ?? 'U', 0, 1)) . '</span>';
+                            endif;
+                            ?>
                         </div>
                         <div class="user-info">
                             <span class="user-name"><?php echo isset($user) ? htmlspecialchars($user['name']) : 'User'; ?></span>
@@ -340,13 +345,18 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
                     
                     <div class="user-menu-dropdown">
                         <div class="dropdown-header">
-                            <div class="user-avatar large">
-                                <?php if (isset($user) && !empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
-                                    <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
-                            <?php else: ?>
-                                    <span class="avatar-text"><?php echo isset($user) ? strtoupper(substr($user['name'], 0, 1)) : 'U'; ?></span>
-                            <?php endif; ?>
-                            </div>
+                                <div class="user-avatar">
+                                    <?php
+                                    $imagePath = !empty($user['profile_picture']) ? $user['profile_picture']
+                                            : (!empty($user['avatar']) ? $user['avatar'] : null);
+
+                                    if ($imagePath):
+                                        echo '<img src="/lead-management/' . htmlspecialchars($imagePath) . '" alt="Profile Picture">';
+                                    else:
+                                        echo '<span class="avatar-text">' . strtoupper(substr($user['name'] ?? 'U', 0, 1)) . '</span>';
+                                    endif;
+                                    ?>
+                                </div>
                             <div class="user-details">
                                 <h4><?php echo isset($user) ? htmlspecialchars($user['name']) : 'User'; ?></h4>
                                 <p><?php echo isset($user) ? htmlspecialchars($user['email']) : 'user@example.com'; ?></p>
@@ -367,7 +377,7 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
                                 <span>Help & Support</span>
                             </a>
                             <div class="menu-divider"></div>
-                            <a href="logout.php" class="menu-item logout">
+                            <a href="/lead-management/logout.php" class="menu-item logout">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
                             </a>

@@ -1,28 +1,27 @@
 <?php
-// Check if user variable exists
+// includes/sidebar.php - This file is designed to be included within another PHP page.
+
+// Check if user variable exists, if not, try to load it from session
 if (!isset($user) && isset($_SESSION['user_id'])) {
-    $user = getUserById($_SESSION['user_id']);
+    // Assuming getUserById function is available from functions.php
+    // which should be included by the parent page (e.g., process-report.php)
+    if (function_exists('getUserById')) {
+        $user = getUserById($_SESSION['user_id']);
+    } else {
+        // Fallback if getUserById is not available (should not happen if functions.php is included)
+        $user = ['name' => 'Guest', 'email' => 'guest@example.com', 'role' => 'Guest', 'profile_picture' => null, 'avatar' => null, 'username' => ''];
+    }
 }
 
-// Determine the base path based on current directory depth
-$current_path = $_SERVER['PHP_SELF'];
-$path_parts = explode('/', trim($current_path, '/'));
-
-// Count directory depth to determine how many "../" we need
-$depth = count($path_parts) - 1; // Subtract 1 for the filename
-$base_path = str_repeat('../', max(0, $depth - 1)); // Adjust for root level
-
-// If we're already at root level, no need for ../
-if ($depth <= 1) {
-    $base_path = '';
+// Ensure $base_url is defined, default to '/' if not passed from including script
+if (!isset($base_url)) {
+    $base_url = '/'; 
 }
 
-// Special handling for specific subdirectories
-if (strpos($current_path, '/users/memo/') !== false) {
-    $base_path = '../../';
-} elseif (strpos($current_path, '/users/') !== false) {
-    $base_path = '../';
-}
+// Determine the profile picture path
+$imagePath = !empty($user['profile_picture']) ? $user['profile_picture']
+             : (!empty($user['avatar']) ? $user['avatar'] : null);
+
 ?>
 
 <!-- Mobile Toggle Button (outside sidebar for better accessibility) -->
@@ -36,8 +35,8 @@ if (strpos($current_path, '/users/memo/') !== false) {
     <div class="sidebar-container">
         <div class="sidebar-header">
             <div class="logo-section">
-                <a href="<?php echo $base_path; ?>index.php" class="logo-link">
-                    <img src="<?php echo $base_path; ?>assets/images/logo.png" alt="Inner Sparc Realty Logo" class="logo-image">
+                <a href="<?php echo $base_url; ?>index.php" class="logo-link">
+                    <img src="<?php echo $base_url; ?>assets/images/logo.png" alt="Inner Sparc Realty Logo" class="logo-image">
                 </a>
                 <span class="company-name">Inner SPARC Realty Corporation</span>
             </div>
@@ -48,15 +47,13 @@ if (strpos($current_path, '/users/memo/') !== false) {
         
         <div class="sidebar-user-section">
             <div class="user-avatar">
-    <?php
-    // Always use the correct path for the image
-    if (!empty($user['profile_picture'])): ?>
-        <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
-    <?php elseif (!empty($user['avatar'])): ?>
-        <img src="<?php echo htmlspecialchars($user['avatar']); ?>" alt="Profile Picture">
-    <?php else: ?>
-        <span class="avatar-text"><?php echo strtoupper(substr($user['name'] ?? 'U', 0, 1)); ?></span>
-    <?php endif; ?>
+                <?php
+                if ($imagePath):
+                    echo '<img src="' . $base_url . htmlspecialchars($imagePath) . '" alt="Profile Picture">';
+                else:
+                    echo '<span class="avatar-text">' . strtoupper(substr($user['name'] ?? 'U', 0, 1)) . '</span>';
+                endif;
+                ?>
             </div>
             
             <div class="user-info">
@@ -83,7 +80,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
                 <div class="nav-group-content">
                     <ul class="nav-menu">
                         <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>index.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">
+                            <a href="<?php echo $base_url; ?>index.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-tachometer-alt nav-icon"></i>
                                 <span class="nav-text">Dashboard</span>
                             </a>
@@ -97,13 +94,13 @@ if (strpos($current_path, '/users/memo/') !== false) {
                             </button>
                             <ul class="nav-submenu" id="submenu-leads">
                                 <li class="submenu-item">
-                                    <a href="<?php echo $base_path; ?>leads.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'leads.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
+                                    <a href="<?php echo $base_url; ?>leads.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'leads.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
                                         <i class="fas fa-list submenu-icon"></i>
                                         <span class="submenu-text">All Leads</span>
                                     </a>
                                 </li>
                                 <li class="submenu-item">
-                                    <a href="<?php echo $base_path; ?>lead-conversion.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'lead-conversion.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
+                                    <a href="<?php echo $base_url; ?>lead-conversion.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'lead-conversion.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
                                         <i class="fas fa-handshake submenu-icon"></i>
                                         <span class="submenu-text">Lead Conversion</span>
                                     </a>
@@ -111,7 +108,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
                             </ul>
                         </li>
                         
-                                            <li class="nav-item has-submenu">
+                        <li class="nav-item has-submenu">
                             <button class="nav-link submenu-trigger <?php echo basename($_SERVER['PHP_SELF']) == 'dp-stage.php' ? 'active' : ''; ?>" data-submenu="downpayment">
                                 <i class="fas fa-chart-line nav-icon"></i>
                                 <span class="nav-text">Leads Milestone</span>
@@ -119,13 +116,13 @@ if (strpos($current_path, '/users/memo/') !== false) {
                             </button>
                             <ul class="nav-submenu" id="submenu-downpayment">
                                 <li class="submenu-item">
-                                    <a href="<?php echo $base_path; ?>dp-stage.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'dp-stage.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
+                                    <a href="<?php echo $base_url; ?>dp-stage.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'dp-stage.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
                                         <i class="fas fa-clock submenu-icon"></i>
                                         <span class="submenu-text">In Progress</span>
                                     </a>
                                 </li>
                                 <li class="submenu-item">
-                                    <a href="<?php echo $base_path; ?>dp-stage.php?view=completed" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'dp-stage.php' && isset($_GET['view']) && $_GET['view'] == 'completed' ? 'active' : ''; ?>">
+                                    <a href="<?php echo $base_url; ?>dp-stage.php?view=completed" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'dp-stage.php' && isset($_GET['view']) && $_GET['view'] == 'completed' ? 'active' : ''; ?>">
                                         <i class="fas fa-check-circle submenu-icon"></i>
                                         <span class="submenu-text">Completed</span>
                                     </a>
@@ -135,7 +132,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
 
                         <?php if (isset($user['role']) && in_array($user['role'], ['admin', 'manager', 'supervisor'])): ?>
                         <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>reports.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reports.php' ? 'active' : ''; ?>">
+                            <a href="<?php echo $base_url; ?>reports.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reports.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-chart-bar nav-icon"></i>
                                 <span class="nav-text">Reports</span>
                             </a>
@@ -143,14 +140,14 @@ if (strpos($current_path, '/users/memo/') !== false) {
                         <?php endif; ?>
                         
                         <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>users/memo/memo.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'memo.php' ? 'active' : ''; ?>">
+                            <a href="<?php echo $base_url; ?>users/memo/memo.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'memo.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-sticky-note nav-icon"></i>
                                 <span class="nav-text">Memos</span>
                             </a>
                         </li>
                         
                         <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>incentives.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'incentives.php' ? 'active' : ''; ?>">
+                            <a href="<?php echo $base_url; ?>incentives.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'incentives.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-coins nav-icon"></i>
                                 <span class="nav-text">Incentives</span>
                             </a>
@@ -158,7 +155,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
                         
                         <?php if (isset($user['role']) && in_array($user['role'], ['admin', 'manager', 'supervisor', 'agent'])): ?>
                         <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>projectlisting.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'projectlisting.php' ? 'active' : ''; ?>">
+                            <a href="<?php echo $base_url; ?>projectlisting.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'projectlisting.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-house nav-icon"></i>
                                 <span class="nav-text">Project Listing</span>
                             </a>
@@ -176,7 +173,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
                                 <?php if (in_array($user['role'], ['admin', 'superadmin'])): ?>
                                 <!-- Admin/Superadmin only - Users Management -->
                                 <li class="submenu-item">
-                                    <a href="<?php echo $base_path; ?>users.php" class="submenu-link <?php echo in_array(basename($_SERVER['PHP_SELF']), ['users.php', 'add-user.php', 'edit-user.php', 'user-details.php']) ? 'active' : ''; ?>">
+                                    <a href="<?php echo $base_url; ?>users.php" class="submenu-link <?php echo in_array(basename($_SERVER['PHP_SELF']), ['users.php', 'add-user.php', 'edit-user.php', 'user-details.php']) ? 'active' : ''; ?>">
                                         <i class="fas fa-user-cog submenu-icon"></i>
                                         <span class="submenu-text">Users</span>
                                     </a>
@@ -184,7 +181,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
                                 
                                 <!-- Admin/Superadmin only - Teams Management -->
                                 <li class="submenu-item">
-                                    <a href="<?php echo $base_path; ?>teams.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'teams.php' ? 'active' : ''; ?>">
+                                    <a href="<?php echo $base_url; ?>teams.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'teams.php' ? 'active' : ''; ?>">
                                         <i class="fas fa-users-cog submenu-icon"></i>
                                         <span class="submenu-text">Teams</span>
                                     </a>
@@ -193,13 +190,13 @@ if (strpos($current_path, '/users/memo/') !== false) {
                                 
                                 <!-- All roles (admin, superadmin, manager) -->
                                 <li class="submenu-item">
-                                    <a href="<?php echo $base_path; ?>accreditation.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
+                                    <a href="<?php echo $base_url; ?>accreditation.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
                                         <i class="fas fa-user-check submenu-icon"></i>
                                         <span class="submenu-text">Accreditation</span>
                                     </a>
                                 </li>
                                 <li class="submenu-item">
-                                    <a href="<?php echo $base_path; ?>recruitment-dashboard.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'recruitment-dashboard.php' ? 'active' : ''; ?>">
+                                    <a href="<?php echo $base_url; ?>recruitment-dashboard.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'recruitment-dashboard.php' ? 'active' : ''; ?>">
                                         <i class="fas fa-user-plus submenu-icon"></i>
                                         <span class="submenu-text">Recruitment</span>
                                     </a>
@@ -216,13 +213,13 @@ if (strpos($current_path, '/users/memo/') !== false) {
                             </button>
                             <ul class="nav-submenu" id="submenu-materials">
                                 <li class="submenu-item">
-                                    <a href="<?php echo $base_path; ?>handbook.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'handbook.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
+                                    <a href="<?php echo $base_url; ?>handbook.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'handbook.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
                                         <i class="fas fa-book submenu-icon"></i>
                                         <span class="submenu-text">Handbook</span>
                                     </a>
                                 </li>
                                 <li class="submenu-item">
-                                    <a href="<?php echo $base_path; ?>links.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'links.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
+                                    <a href="<?php echo $base_url; ?>links.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'links.php' && !isset($_GET['view']) ? 'active' : ''; ?>">
                                         <i class="fas fa-link submenu-icon"></i>
                                         <span class="submenu-text">Quick Links</span>
                                     </a>
@@ -233,7 +230,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
                         
                         <?php if (isset($user['role']) && $user['role'] == 'admin'): ?>
                         <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>users/reports/reports.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'users/reports/reports.php' ? 'active' : ''; ?>">
+                            <a href="<?php echo $base_url; ?>users/report-problem/process-report.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'process-report.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-warning nav-icon"></i>
                                 <span class="nav-text">Reports Problem</span>
                             </a>
@@ -242,7 +239,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
 
                         <?php if (isset($user['role']) && $user['role'] == 'admin'): ?>
                         <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>settings.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>">
+                            <a href="<?php echo $base_url; ?>settings.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-cog nav-icon"></i>
                                 <span class="nav-text">Settings</span>
                             </a>
@@ -251,7 +248,7 @@ if (strpos($current_path, '/users/memo/') !== false) {
                         
                         <?php if (isset($user['role']) && $user['role'] == 'manager'): ?>
                         <li class="nav-item">
-                            <a href="<?php echo $base_path; ?>teams.php?team_id=<?php echo htmlspecialchars($user['team_id'] ?? ''); ?>" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'teams.php' ? 'active' : ''; ?>">
+                            <a href="<?php echo $base_url; ?>teams.php?team_id=<?php echo htmlspecialchars($user['team_id'] ?? ''); ?>" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'teams.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-user-friends nav-icon"></i>
                                 <span class="nav-text">My Team</span>
                             </a>
