@@ -44,6 +44,21 @@ if (isset($_SESSION['user_id'])) {
 $current_user_id = $_SESSION['user_id'];
 $current_user = getUserById($current_user_id);
 
+// Fetch the current user's team name
+$current_user_team = "No Team";
+if (!empty($current_user['team_id'])) {
+    $conn = getDbConnection();
+    $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ?");
+    $stmt->bind_param("i", $current_user['team_id']);
+    $stmt->execute();
+    $stmt->bind_result($team_name);
+    if ($stmt->fetch()) {
+        $current_user_team = $team_name;
+    }
+    $stmt->close();
+    $conn->close();
+}
+
 // Check if user has permission to edit users
 if ($current_user['role'] != 'admin' && $current_user['role'] != 'manager') {
     header("Location: index.php");
@@ -102,169 +117,169 @@ echo '<style>
 
 
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'blue-primary': '#1e40af',
-                        'blue-secondary': '#3b82f6',
-                        'blue-light': '#dbeafe',
-                        'blue-dark': '#1e3a8a'
-                    }
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    'blue-primary': '#1e40af',
+                    'blue-secondary': '#3b82f6',
+                    'blue-light': '#dbeafe',
+                    'blue-dark': '#1e3a8a'
                 }
             }
         }
+    }
     </script>
     <style>
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #64748b;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+    }
+
+    /* Utility classes */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Smooth transitions */
+    .transition-all {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Card hover effects */
+    .property-card {
+        transform: translateY(0);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .property-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Focus states for accessibility */
+    .focus-ring:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+
+    /* Loading animation */
+    .loading-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
         }
 
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
+        50% {
+            opacity: .5;
         }
+    }
 
-        ::-webkit-scrollbar-thumb {
-            background: #64748b;
-            border-radius: 4px;
+    /* Modal backdrop */
+    .modal-backdrop {
+        backdrop-filter: blur(8px);
+        background-color: rgba(0, 0, 0, 0.6);
+    }
+
+    /* Responsive container */
+    @media (max-width: 640px) {
+        .container {
+            padding-left: 1rem;
+            padding-right: 1rem;
         }
+    }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+    /* Filter section responsive */
+    @media (max-width: 1024px) {
+        .filter-section {
+            position: relative !important;
+            top: 0 !important;
         }
+    }
 
-        /* Utility classes */
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
+    /* Search input focus effect */
+    .search-input:focus {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
 
-        /* Smooth transitions */
-        .transition-all {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+    /* Button hover effects */
+    .btn-primary {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        transition: all 0.3s ease;
+    }
 
-        /* Card hover effects */
-        .property-card {
-            transform: translateY(0);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        transform: translateY(-1px);
+    }
 
-        .property-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
+    /* Price badge styles */
+    .price-badge {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        color: #92400e;
+        font-weight: 700;
+    }
 
-        /* Focus states for accessibility */
-        .focus-ring:focus {
-            outline: 2px solid #3b82f6;
-            outline-offset: 2px;
-        }
+    /* Priority badge styles */
+    .priority-high {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
 
-        /* Loading animation */
-        .loading-pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
+    .priority-medium {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
 
-        @keyframes pulse {
+    .priority-low {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
 
-            0%,
-            100% {
-                opacity: 1;
-            }
+    /* Responsive adjustment for main container based on sidebar */
+    .main-container {
+        transition: margin-left 0.3s ease;
+    }
 
-            50% {
-                opacity: .5;
-            }
-        }
-
-        /* Modal backdrop */
-        .modal-backdrop {
-            backdrop-filter: blur(8px);
-            background-color: rgba(0, 0, 0, 0.6);
-        }
-
-        /* Responsive container */
-        @media (max-width: 640px) {
-            .container {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-        }
-
-        /* Filter section responsive */
-        @media (max-width: 1024px) {
-            .filter-section {
-                position: relative !important;
-                top: 0 !important;
-            }
-        }
-
-        /* Search input focus effect */
-        .search-input:focus {
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        /* Button hover effects */
-        .btn-primary {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-            transform: translateY(-1px);
-        }
-
-        /* Price badge styles */
-        .price-badge {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #92400e;
-            font-weight: 700;
-        }
-
-        /* Priority badge styles */
-        .priority-high {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-        }
-
-        .priority-medium {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-        }
-
-        .priority-low {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        /* Responsive adjustment for main container based on sidebar */
+    @media (min-width: 1024px) {
         .main-container {
-            transition: margin-left 0.3s ease;
+            margin-left: var(--sidebar-width);
         }
 
-        @media (min-width: 1024px) {
-            .main-container {
-                margin-left: var(--sidebar-width);
-            }
-
-            /* When sidebar is collapsed */
-            .sidebar-provider.collapsed~.main-container {
-                margin-left: var(--sidebar-width-collapsed);
-            }
+        /* When sidebar is collapsed */
+        .sidebar-provider.collapsed~.main-container {
+            margin-left: var(--sidebar-width-collapsed);
         }
+    }
 
-        @media (max-width: 1023.98px) {
-            .main-container {
-                margin-left: 0 !important;
-            }
+    @media (max-width: 1023.98px) {
+        .main-container {
+            margin-left: 0 !important;
         }
+    }
     </style>
 
 </head>
@@ -443,7 +458,7 @@ echo '<style>
             <!-- Add/Edit Modal (Tailwind) -->
             <div id="recruitmentModal"
                 class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
-                <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl mx-4">
+                <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90%] mx-4 overflow-y-auto">
                     <div class="flex justify-between items-center border-b px-6 py-4">
                         <h5 class="text-lg font-semibold" id="modalTitle">Add New Recruitment Lead</h5>
                         <button type="button" class="text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -480,6 +495,27 @@ echo '<style>
                                     <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
                                         id="recruiterName" name="recruiter_name"
                                         value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" readonly
+                                        aria-readonly="true">
+                                </div>
+                                <div>
+                                    <label for="teamName" class="block text-sm font-medium mb-1">Team</label>
+                                    <?php
+                                    $teamName = "No Team";
+                                    if (!empty($lead['recruiter_name'])) {
+                                        $conn = getDbConnection();
+                                        $stmt = $conn->prepare("SELECT t.name FROM users u LEFT JOIN teams t ON u.team_id = t.id WHERE u.name = ? LIMIT 1");
+                                        $stmt->bind_param("s", $lead['recruiter_name']);
+                                        $stmt->execute();
+                                        $stmt->bind_result($foundTeamName);
+                                        if ($stmt->fetch() && $foundTeamName) {
+                                            $teamName = $foundTeamName;
+                                        }
+                                        $stmt->close();
+                                        $conn->close();
+                                    }
+                                    ?>
+                                    <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100" id="teamName"
+                                        name="team_name" value="<?php echo htmlspecialchars($teamName); ?>" readonly
                                         aria-readonly="true">
                                 </div>
                             </div>
@@ -537,10 +573,10 @@ echo '<style>
                         </form>
                     </div>
                     <div class="flex justify-end gap-2 border-t px-6 py-4">
-                        <button type="button" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
-                            onclick="hideRecruitmentModal()">Cancel</button>
                         <button type="button" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
                             onclick="saveRecruitmentLead()">Save</button>
+                        <button type="button" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                            onclick="hideRecruitmentModal()">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -550,144 +586,144 @@ echo '<style>
 
 
     <script>
-        // Show notification function (Tailwind)
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            let bg = 'bg-green-500',
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
-            if (type === 'error') {
-                bg = 'bg-red-500';
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
-            } else if (type === 'info') {
-                bg = 'bg-blue-500';
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
-            }
-            notification.className =
-                `fixed top-6 right-6 flex items-center px-6 py-3 rounded-lg text-white shadow-lg z-[99999] text-base font-medium gap-2 ${bg} animate-fade-in`;
-            notification.innerHTML = `${icon}<span>${message}</span>`;
-            notification.setAttribute('role', 'alert');
-            document.body.appendChild(notification);
-            setTimeout(() => {
-                notification.classList.add('opacity-0');
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 3000);
+    // Show notification function (Tailwind)
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        let bg = 'bg-green-500',
+            icon =
+            '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
+        if (type === 'error') {
+            bg = 'bg-red-500';
+            icon =
+                '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
+        } else if (type === 'info') {
+            bg = 'bg-blue-500';
+            icon =
+                '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
         }
-        // Fade-in animation for notification
-        const style = document.createElement('style');
-        style.innerHTML =
-            `@keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} } .animate-fade-in { animation: fade-in 0.3s ease; }`;
-        document.head.appendChild(style);
+        notification.className =
+            `fixed top-6 right-6 flex items-center px-6 py-3 rounded-lg text-white shadow-lg z-[99999] text-base font-medium gap-2 ${bg} animate-fade-in`;
+        notification.innerHTML = `${icon}<span>${message}</span>`;
+        notification.setAttribute('role', 'alert');
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.classList.add('opacity-0');
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
+    // Fade-in animation for notification
+    const style = document.createElement('style');
+    style.innerHTML =
+        `@keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} } .animate-fade-in { animation: fade-in 0.3s ease; }`;
+    document.head.appendChild(style);
 
-        // -------- Layout responsiveness enhancements --------
-        (function () {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.getElementById('main-container');
-            const headerEl = document.querySelector('.main-header');
+    // -------- Layout responsiveness enhancements --------
+    (function() {
+        const sidebar = document.getElementById('sidebar');
+        const container = document.getElementById('main-container');
+        const headerEl = document.querySelector('.main-header');
 
-            if (!sidebar || !container) return;
+        if (!sidebar || !container) return;
 
-            function adjustLayout() {
-                const desktop = window.innerWidth >= 1024;
-                if (desktop) {
-                    const sideWidth = sidebar.getBoundingClientRect().width;
-                    container.style.marginLeft = sideWidth + 'px';
-                    if (headerEl) {
-                        headerEl.style.left = sideWidth + 'px';
-                        headerEl.style.width = `calc(100% - ${sideWidth}px)`;
-                    }
-                } else {
-                    container.style.marginLeft = '0';
-                    if (headerEl) {
-                        headerEl.style.left = '0';
-                        headerEl.style.width = '100%';
-                    }
+        function adjustLayout() {
+            const desktop = window.innerWidth >= 1024;
+            if (desktop) {
+                const sideWidth = sidebar.getBoundingClientRect().width;
+                container.style.marginLeft = sideWidth + 'px';
+                if (headerEl) {
+                    headerEl.style.left = sideWidth + 'px';
+                    headerEl.style.width = `calc(100% - ${sideWidth}px)`;
+                }
+            } else {
+                container.style.marginLeft = '0';
+                if (headerEl) {
+                    headerEl.style.left = '0';
+                    headerEl.style.width = '100%';
                 }
             }
+        }
 
-            // Observe sidebar width changes to capture collapse/expand.
-            if ('ResizeObserver' in window) {
-                const resizeObserver = new ResizeObserver(adjustLayout);
-                resizeObserver.observe(sidebar);
-            }
+        // Observe sidebar width changes to capture collapse/expand.
+        if ('ResizeObserver' in window) {
+            const resizeObserver = new ResizeObserver(adjustLayout);
+            resizeObserver.observe(sidebar);
+        }
 
-            // Adjust on viewport resize as well.
-            window.addEventListener('resize', adjustLayout);
+        // Adjust on viewport resize as well.
+        window.addEventListener('resize', adjustLayout);
 
-            // Initial call
-            adjustLayout();
-        })();
+        // Initial call
+        adjustLayout();
+    })();
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Recruitment Dashboard JavaScript - Clean and Working Version
-        const currentSort = {
-            column: "created_at",
-            order: "DESC"
+    // Recruitment Dashboard JavaScript - Clean and Working Version
+    const currentSort = {
+        column: "created_at",
+        order: "DESC"
+    }
+    let currentFilters = {}
+    let allLeads = []
+
+    // Debounce function to limit how often a function is called
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), delay);
+        };
+    }
+
+    // Create a debounced version of applyFilters
+    const debouncedApplyFilters = debounce(applyFilters, 500); // 500ms delay
+
+    // REMOVE THIS ENTIRE BLOCK:
+    // New debounced function for header search
+    // const debouncedHeaderSearch = debounce(function() {
+    //     const headerSearchInput = document.getElementById('headerSearchInput');
+    //     const mainSearchInput = document.getElementById('searchInput');
+    //     if (headerSearchInput && mainSearchInput) {
+    //         mainSearchInput.value = headerSearchInput.value; // Sync header search to main filter search
+    //     }
+    //     applyFilters();
+    // }, 500);
+
+
+    // Initialize dashboard
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log('Recruitment dashboard loading...');
+        // Removed loadStats() call
+        loadRecruitmentData()
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', handleKeyboardShortcuts)
+    })
+
+    // Handle keyboard shortcuts
+    function handleKeyboardShortcuts(e) {
+        // Keep Ctrl/Cmd + Enter for explicit search if desired, or remove if live search is preferred
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault()
+            applyFilters()
         }
-        let currentFilters = {}
-        let allLeads = []
-
-        // Debounce function to limit how often a function is called
-        function debounce(func, delay) {
-            let timeout;
-            return function (...args) {
-                const context = this;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(context, args), delay);
-            };
+        if (e.key === 'Escape') {
+            clearFilters()
         }
+    }
 
-        // Create a debounced version of applyFilters
-        const debouncedApplyFilters = debounce(applyFilters, 500); // 500ms delay
+    // Load recruitment data
+    function loadRecruitmentData() {
+        console.log('Loading recruitment data with filters:', currentFilters);
+        const startTime = Date.now()
+        document.getElementById("loadingIndicator").style.display = "block"
 
-        // REMOVE THIS ENTIRE BLOCK:
-        // New debounced function for header search
-        // const debouncedHeaderSearch = debounce(function() {
-        //     const headerSearchInput = document.getElementById('headerSearchInput');
-        //     const mainSearchInput = document.getElementById('searchInput');
-        //     if (headerSearchInput && mainSearchInput) {
-        //         mainSearchInput.value = headerSearchInput.value; // Sync header search to main filter search
-        //     }
-        //     applyFilters();
-        // }, 500);
-
-
-        // Initialize dashboard
-        document.addEventListener("DOMContentLoaded", function () {
-            console.log('Recruitment dashboard loading...');
-            // Removed loadStats() call
-            loadRecruitmentData()
-
-            // Add keyboard shortcuts
-            document.addEventListener('keydown', handleKeyboardShortcuts)
-        })
-
-        // Handle keyboard shortcuts
-        function handleKeyboardShortcuts(e) {
-            // Keep Ctrl/Cmd + Enter for explicit search if desired, or remove if live search is preferred
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault()
-                applyFilters()
-            }
-            if (e.key === 'Escape') {
-                clearFilters()
-            }
-        }
-
-        // Load recruitment data
-        function loadRecruitmentData() {
-            console.log('Loading recruitment data with filters:', currentFilters);
-            const startTime = Date.now()
-            document.getElementById("loadingIndicator").style.display = "block"
-
-            // Show loading state in table
-            document.getElementById("recruitmentTableBody").innerHTML = `
+        // Show loading state in table
+        document.getElementById("recruitmentTableBody").innerHTML = `
     <tr>
         <td colspan="8" class="text-center">
             <div class="spinner-border spinner-border-sm" role="status">
@@ -698,65 +734,65 @@ echo '<style>
     </tr>
 `
 
-            const formData = new FormData()
-            formData.append("action", "get_recruitment_leads")
-            formData.append("filters", JSON.stringify(currentFilters))
-            formData.append("sort_by", currentSort.column)
-            formData.append("sort_order", currentSort.order)
+        const formData = new FormData()
+        formData.append("action", "get_recruitment_leads")
+        formData.append("filters", JSON.stringify(currentFilters))
+        formData.append("sort_by", currentSort.column)
+        formData.append("sort_order", currentSort.order)
 
-            fetch("recruitment-api-debug.php", {
+        fetch("recruitment-api-debug.php", {
                 method: "POST",
                 body: formData,
             })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const loadTime = Date.now() - startTime
-                    document.getElementById("loadingIndicator").style.display = "none"
-                    console.log('Data response:', data);
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const loadTime = Date.now() - startTime
+                document.getElementById("loadingIndicator").style.display = "none"
+                console.log('Data response:', data);
 
-                    // Add debug information
-                    if (data.debug) {
-                        console.log('Debug info:', data.debug);
-                        console.log('SQL Query:', data.debug.sql);
-                        console.log('Parameters:', data.debug.params);
-                        console.log('Filters sent:', data.debug.filters);
-                    }
+                // Add debug information
+                if (data.debug) {
+                    console.log('Debug info:', data.debug);
+                    console.log('SQL Query:', data.debug.sql);
+                    console.log('Parameters:', data.debug.params);
+                    console.log('Filters sent:', data.debug.filters);
+                }
 
-                    if (data.success) {
-                        allLeads = data.data || []
-                        displayRecruitmentData(allLeads)
-                        updateActiveFilters()
-                        updateResultsInfo(allLeads.length, loadTime)
-                    } else {
-                        console.error('Data error:', data.message);
-                        showNotification("Error loading data: " + data.message, "error")
-                        document.getElementById("recruitmentTableBody").innerHTML =
-                            '<tr><td colspan="8" class="text-center text-danger">Error loading data: ' + data.message +
-                            '</td></tr>'
-                    }
-                })
-                .catch(error => {
-                    document.getElementById("loadingIndicator").style.display = "none"
-                    console.error("Error loading data:", error)
-                    showNotification("Error connecting to server: " + error.message, "error")
+                if (data.success) {
+                    allLeads = data.data || []
+                    displayRecruitmentData(allLeads)
+                    updateActiveFilters()
+                    updateResultsInfo(allLeads.length, loadTime)
+                } else {
+                    console.error('Data error:', data.message);
+                    showNotification("Error loading data: " + data.message, "error")
                     document.getElementById("recruitmentTableBody").innerHTML =
-                        '<tr><td colspan="8" class="text-center text-danger">Connection error: ' + error.message +
+                        '<tr><td colspan="8" class="text-center text-danger">Error loading data: ' + data.message +
                         '</td></tr>'
-                })
-        }
+                }
+            })
+            .catch(error => {
+                document.getElementById("loadingIndicator").style.display = "none"
+                console.error("Error loading data:", error)
+                showNotification("Error connecting to server: " + error.message, "error")
+                document.getElementById("recruitmentTableBody").innerHTML =
+                    '<tr><td colspan="8" class="text-center text-danger">Connection error: ' + error.message +
+                    '</td></tr>'
+            })
+    }
 
-        // Display recruitment data in table
-        function displayRecruitmentData(leads) {
-            const tbody = document.getElementById("recruitmentTableBody")
-            tbody.innerHTML = ""
+    // Display recruitment data in table
+    function displayRecruitmentData(leads) {
+        const tbody = document.getElementById("recruitmentTableBody")
+        tbody.innerHTML = ""
 
-            if (!leads || leads.length === 0) {
-                tbody.innerHTML = `
+        if (!leads || leads.length === 0) {
+            tbody.innerHTML = `
         <tr>
             <td colspan="8" class="text-center text-muted py-4">
                 <i class="fas fa-search fa-2x mb-2 d-block"></i>
@@ -765,18 +801,18 @@ echo '<style>
             </td>
         </tr>
     `
-                return
-            }
+            return
+        }
 
-            leads.forEach((lead, index) => {
-                const row = document.createElement("tr")
-                const timestamp = new Date(lead.created_at).toLocaleString()
-                // Removed interestBadge
+        leads.forEach((lead, index) => {
+            const row = document.createElement("tr")
+            const timestamp = new Date(lead.created_at).toLocaleString()
+            // Removed interestBadge
 
-                row.style.animationDelay = `${index * 50}ms`
-                row.className = 'fade-in'
+            row.style.animationDelay = `${index * 50}ms`
+            row.className = 'fade-in'
 
-                row.innerHTML = `
+            row.innerHTML = `
         <td>${timestamp}</td>
         <td><strong>${lead.full_name || 'N/A'}</strong></td>
         <td>${lead.contact_number || 'N/A'}</td>
@@ -795,356 +831,356 @@ echo '<style>
             </div>
         </td>
     `
-                tbody.appendChild(row)
-            })
+            tbody.appendChild(row)
+        })
+    }
+
+    // Apply filters - Main function
+    function applyFilters() {
+        console.log('Applying filters...');
+
+        // Show loading feedback
+        const searchBtn = document.querySelector('button[onclick="applyFilters()"]')
+        const originalText = searchBtn.innerHTML
+        searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...'
+        searchBtn.disabled = true
+
+        // Collect filter values
+        currentFilters = {}
+        const status = document.getElementById("filterStatus").value.trim()
+        const source = document.getElementById("filterSource").value.trim()
+        const search = document.getElementById("searchInput").value.trim() // Get value from main search input
+
+        if (status) currentFilters.status = status
+        if (source) currentFilters.source = source
+        if (search) currentFilters.search = search
+
+        console.log('Applied filters:', currentFilters);
+
+        // Load data with filters
+        loadRecruitmentData()
+
+        // Restore button state
+        setTimeout(() => {
+            searchBtn.innerHTML = originalText
+            searchBtn.disabled = false
+        }, 500)
+
+        // Show success message
+        loadRecruitmentData()
+
+        // Restore button state
+        setTimeout(() => {
+            searchBtn.innerHTML = originalText
+            searchBtn.disabled = false
+        }, 500)
+
+        // Show success message
+        const filterCount = Object.keys(currentFilters).length
+        if (filterCount > 0) {
+            showNotification(`Applied ${filterCount} filter${filterCount > 1 ? 's' : ''}`, "success")
         }
+    }
 
-        // Apply filters - Main function
-        function applyFilters() {
-            console.log('Applying filters...');
+    // Clear filters
+    function clearFilters() {
+        console.log('Clearing all filters...');
 
-            // Show loading feedback
-            const searchBtn = document.querySelector('button[onclick="applyFilters()"]')
-            const originalText = searchBtn.innerHTML
-            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...'
-            searchBtn.disabled = true
+        currentFilters = {}
+        document.getElementById("filterStatus").value = ""
+        document.getElementById("filterSource").value = ""
+        document.getElementById("searchInput").value = ""
+        // REMOVE THIS LINE: const headerSearchInput = document.getElementById("headerSearchInput").value = "";
 
-            // Collect filter values
-            currentFilters = {}
-            const status = document.getElementById("filterStatus").value.trim()
-            const source = document.getElementById("filterSource").value.trim()
-            const search = document.getElementById("searchInput").value.trim() // Get value from main search input
+        document.getElementById("activeFilters").style.display = "none"
+        document.getElementById("filterResults").style.display = "none"
 
-            if (status) currentFilters.status = status
-            if (source) currentFilters.source = source
-            if (search) currentFilters.search = search
+        loadRecruitmentData()
+        showNotification("All filters cleared", "info")
+    }
 
-            console.log('Applied filters:', currentFilters);
+    // Quick filter function
+    function quickFilter(field, value) {
+        console.log('Quick filter:', field, value);
 
-            // Load data with filters
-            loadRecruitmentData()
+        currentFilters = {}
+        currentFilters[field] = value
 
-            // Restore button state
-            setTimeout(() => {
-                searchBtn.innerHTML = originalText
-                searchBtn.disabled = false
-            }, 500)
-
-            // Show success message
-            loadRecruitmentData()
-
-            // Restore button state
-            setTimeout(() => {
-                searchBtn.innerHTML = originalText
-                searchBtn.disabled = false
-            }, 500)
-
-            // Show success message
-            const filterCount = Object.keys(currentFilters).length
-            if (filterCount > 0) {
-                showNotification(`Applied ${filterCount} filter${filterCount > 1 ? 's' : ''}`, "success")
-            }
-        }
-
-        // Clear filters
-        function clearFilters() {
-            console.log('Clearing all filters...');
-
-            currentFilters = {}
-            document.getElementById("filterStatus").value = ""
+        if (field === 'status') {
+            document.getElementById("filterStatus").value = value
             document.getElementById("filterSource").value = ""
-            document.getElementById("searchInput").value = ""
-            // REMOVE THIS LINE: const headerSearchInput = document.getElementById("headerSearchInput").value = "";
+        }
+        document.getElementById("searchInput").value = ""
+        // REMOVE THIS LINE: document.getElementById("headerSearchInput").value = "";
 
-            document.getElementById("activeFilters").style.display = "none"
-            document.getElementById("filterResults").style.display = "none"
+        loadRecruitmentData()
+        showNotification(`Showing ${value} leads`, "info")
+    }
 
-            loadRecruitmentData()
-            showNotification("All filters cleared", "info")
+    // Update active filters display
+    function updateActiveFilters() {
+        const activeFiltersDiv = document.getElementById("activeFilters")
+        const activeFilterTags = document.getElementById("activeFilterTags")
+
+        if (Object.keys(currentFilters).length === 0) {
+            activeFiltersDiv.style.display = "none"
+            return
         }
 
-        // Quick filter function
-        function quickFilter(field, value) {
-            console.log('Quick filter:', field, value);
+        activeFiltersDiv.style.display = "block"
+        activeFilterTags.innerHTML = ""
 
-            currentFilters = {}
-            currentFilters[field] = value
+        Object.entries(currentFilters).forEach(([key, value]) => {
+            const tag = document.createElement("span")
+            tag.className = "badge bg-primary me-2 mb-1"
+            tag.style.cursor = "pointer"
 
-            if (field === 'status') {
-                document.getElementById("filterStatus").value = value
-                document.getElementById("filterSource").value = ""
-            }
-            document.getElementById("searchInput").value = ""
-            // REMOVE THIS LINE: document.getElementById("headerSearchInput").value = "";
+            const displayKey = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+            tag.innerHTML =
+                `${displayKey}: ${value} <i class="fas fa-times ms-1" onclick="removeFilter('${key}')"></i>`
+            activeFilterTags.appendChild(tag)
+        })
+    }
 
-            loadRecruitmentData()
-            showNotification(`Showing ${value} leads`, "info")
+    // Remove individual filter
+    function removeFilter(key) {
+        delete currentFilters[key];
+
+        const fieldMap = {
+            'status': 'filterStatus',
+            'source': 'filterSource',
+            'search': 'searchInput'
+        };
+
+        if (fieldMap[key]) {
+            document.getElementById(fieldMap[key]).value = "";
         }
+        // REMOVE THIS BLOCK:
+        // If the removed filter was 'search', also clear the header search input
+        // if (key === 'search') {
+        //     document.getElementById('headerSearchInput').value = '';
+        // }
 
-        // Update active filters display
-        function updateActiveFilters() {
-            const activeFiltersDiv = document.getElementById("activeFilters")
-            const activeFilterTags = document.getElementById("activeFilterTags")
+        loadRecruitmentData();
+        showNotification("Filter removed", "info");
+    }
 
-            if (Object.keys(currentFilters).length === 0) {
-                activeFiltersDiv.style.display = "none"
-                return
-            }
+    // Update results info
+    function updateResultsInfo(count, loadTime) {
+        const resultsDiv = document.getElementById("filterResults")
+        const resultsCount = document.getElementById("resultsCount")
+        const filterTime = document.getElementById("filterTime")
 
-            activeFiltersDiv.style.display = "block"
-            activeFilterTags.innerHTML = ""
+        resultsCount.textContent = count
+        filterTime.textContent = `(loaded in ${loadTime}ms)`
+        resultsDiv.style.display = "block"
+    }
 
-            Object.entries(currentFilters).forEach(([key, value]) => {
-                const tag = document.createElement("span")
-                tag.className = "badge bg-primary me-2 mb-1"
-                tag.style.cursor = "pointer"
+    // Modal and CRUD functions
+    function showAddModal() {
+        document.getElementById('modalTitle').textContent = 'Add New Recruitment Lead';
+        document.getElementById('recruitmentForm').reset();
+        document.getElementById('leadId').value = '';
+        document.getElementById('recruiterName').value = "<?php echo htmlspecialchars($user['name'] ?? ''); ?>";
+        document.getElementById('recruitmentModal').classList.remove('hidden');
+    }
 
-                const displayKey = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
-                tag.innerHTML =
-                    `${displayKey}: ${value} <i class="fas fa-times ms-1" onclick="removeFilter('${key}')"></i>`
-                activeFilterTags.appendChild(tag)
+    function hideRecruitmentModal() {
+        document.getElementById('recruitmentModal').classList.add('hidden');
+    }
+
+    // FIXED: Working edit function
+    function editLead(id) {
+        console.log('Editing lead with ID:', id);
+
+        // Show loading state
+        showNotification("Loading lead data...", "info")
+
+        // Fetch the specific lead data
+        const formData = new FormData()
+        formData.append("action", "get_recruitment_leads")
+        formData.append("filters", JSON.stringify({
+            id: id
+        }))
+
+        fetch("recruitment-api-debug.php", {
+                method: "POST",
+                body: formData,
             })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Edit lead response:', data);
+
+                if (data.success && data.data && data.data.length > 0) {
+                    const lead = data.data[0]
+
+                    // Update modal title
+                    document.getElementById("modalTitle").textContent = "Edit Recruitment Lead"
+
+                    // Populate form fields
+                    document.getElementById("leadId").value = lead.id
+                    document.getElementById("fullName").value = lead.full_name || ""
+                    document.getElementById("contactNumber").value = lead.contact_number || ""
+                    document.getElementById("email").value = lead.email || ""
+                    document.getElementById("recruiterName").value = lead.recruiter_name || ""
+                    // document.getElementById("interestLevel").value = lead.interest_level || "" // Removed
+                    document.getElementById("status").value = lead.status || ""
+                    document.getElementById("source").value = lead.source || ""
+                    // Removed this line as 'agentOnboardingStatus' input is no longer in the form
+                    // document.getElementById("agentOnboardingStatus").value = lead.agent_onboarding_status || "" 
+                    document.getElementById("remarks").value = lead.remarks || ""
+
+                    // Show the modal
+                    document.getElementById('recruitmentModal').classList.remove('hidden');
+
+                    showNotification("Lead data loaded successfully", "success")
+                } else {
+                    showNotification("Error: Lead not found or no data returned", "error")
+                    console.error('No lead data found:', data)
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching lead data:", error)
+                showNotification("Error loading lead data: " + error.message, "error")
+            })
+    }
+
+    // Save recruitment lead (add or update)
+    function saveRecruitmentLead() {
+        const form = document.getElementById("recruitmentForm")
+        const formData = new FormData(form)
+
+        // Get the lead ID to determine if this is an add or update
+        const leadId = document.getElementById("leadId").value
+        const isUpdate = leadId && leadId.trim() !== ""
+        const action = isUpdate ? "update_recruitment_lead" : "add_recruitment_lead"
+
+        formData.append("action", action)
+        if (isUpdate) {
+            formData.append("id", leadId)
         }
 
-        // Remove individual filter
-        function removeFilter(key) {
-            delete currentFilters[key];
+        // Show loading state
+        const saveBtn = document.querySelector('button[onclick="saveRecruitmentLead()"]')
+        const originalText = saveBtn.innerHTML
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'
+        saveBtn.disabled = true;
 
-            const fieldMap = {
-                'status': 'filterStatus',
-                'source': 'filterSource',
-                'search': 'searchInput'
-            };
+        console.log('Saving lead with action:', action, 'ID:', leadId);
 
-            if (fieldMap[key]) {
-                document.getElementById(fieldMap[key]).value = "";
-            }
-            // REMOVE THIS BLOCK:
-            // If the removed filter was 'search', also clear the header search input
-            // if (key === 'search') {
-            //     document.getElementById('headerSearchInput').value = '';
-            // }
+        fetch("recruitment-api-debug.php", {
+                method: "POST",
+                body: formData,
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Save response:', data);
 
-            loadRecruitmentData();
-            showNotification("Filter removed", "info");
-        }
+                // Restore button state
+                saveBtn.innerHTML = originalText
+                saveBtn.disabled = false
 
-        // Update results info
-        function updateResultsInfo(count, loadTime) {
-            const resultsDiv = document.getElementById("filterResults")
-            const resultsCount = document.getElementById("resultsCount")
-            const filterTime = document.getElementById("filterTime")
+                if (data.success) {
+                    const message = isUpdate ? "Lead updated successfully!" : "Lead added successfully!"
+                    showNotification(message, "success")
 
-            resultsCount.textContent = count
-            filterTime.textContent = `(loaded in ${loadTime}ms)`
-            resultsDiv.style.display = "block"
-        }
+                    // Hide the modal
+                    hideRecruitmentModal();
 
-        // Modal and CRUD functions
-        function showAddModal() {
-            document.getElementById('modalTitle').textContent = 'Add New Recruitment Lead';
-            document.getElementById('recruitmentForm').reset();
-            document.getElementById('leadId').value = '';
-            document.getElementById('recruiterName').value = "<?php echo htmlspecialchars($user['name'] ?? ''); ?>";
-            document.getElementById('recruitmentModal').classList.remove('hidden');
-        }
+                    // Refresh the data
+                    loadRecruitmentData()
+                } else {
+                    showNotification("Error: " + (data.message || "Unknown error occurred"), "error")
+                }
+            })
+            .catch(error => {
+                // Restore button state
+                saveBtn.innerHTML = originalText
+                saveBtn.disabled = false
 
-        function hideRecruitmentModal() {
-            document.getElementById('recruitmentModal').classList.add('hidden');
-        }
+                console.error("Error saving lead:", error)
+                showNotification("Error saving lead: " + error.message, "error")
+            })
+    }
 
-        // FIXED: Working edit function
-        function editLead(id) {
-            console.log('Editing lead with ID:', id);
-
-            // Show loading state
-            showNotification("Loading lead data...", "info")
-
-            // Fetch the specific lead data
+    function deleteLead(id) {
+        if (confirm("Are you sure you want to delete this recruitment lead?")) {
             const formData = new FormData()
-            formData.append("action", "get_recruitment_leads")
-            formData.append("filters", JSON.stringify({
-                id: id
-            }))
+            formData.append("action", "delete_recruitment_lead")
+            formData.append("id", id)
 
             fetch("recruitment-api-debug.php", {
-                method: "POST",
-                body: formData,
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Edit lead response:', data);
-
-                    if (data.success && data.data && data.data.length > 0) {
-                        const lead = data.data[0]
-
-                        // Update modal title
-                        document.getElementById("modalTitle").textContent = "Edit Recruitment Lead"
-
-                        // Populate form fields
-                        document.getElementById("leadId").value = lead.id
-                        document.getElementById("fullName").value = lead.full_name || ""
-                        document.getElementById("contactNumber").value = lead.contact_number || ""
-                        document.getElementById("email").value = lead.email || ""
-                        document.getElementById("recruiterName").value = lead.recruiter_name || ""
-                        // document.getElementById("interestLevel").value = lead.interest_level || "" // Removed
-                        document.getElementById("status").value = lead.status || ""
-                        document.getElementById("source").value = lead.source || ""
-                        // Removed this line as 'agentOnboardingStatus' input is no longer in the form
-                        // document.getElementById("agentOnboardingStatus").value = lead.agent_onboarding_status || "" 
-                        document.getElementById("remarks").value = lead.remarks || ""
-
-                        // Show the modal
-                        document.getElementById('recruitmentModal').classList.remove('hidden');
-
-                        showNotification("Lead data loaded successfully", "success")
-                    } else {
-                        showNotification("Error: Lead not found or no data returned", "error")
-                        console.error('No lead data found:', data)
-                    }
-                })
-                .catch(error => {
-                    console.error("Error fetching lead data:", error)
-                    showNotification("Error loading lead data: " + error.message, "error")
-                })
-        }
-
-        // Save recruitment lead (add or update)
-        function saveRecruitmentLead() {
-            const form = document.getElementById("recruitmentForm")
-            const formData = new FormData(form)
-
-            // Get the lead ID to determine if this is an add or update
-            const leadId = document.getElementById("leadId").value
-            const isUpdate = leadId && leadId.trim() !== ""
-            const action = isUpdate ? "update_recruitment_lead" : "add_recruitment_lead"
-
-            formData.append("action", action)
-            if (isUpdate) {
-                formData.append("id", leadId)
-            }
-
-            // Show loading state
-            const saveBtn = document.querySelector('button[onclick="saveRecruitmentLead()"]')
-            const originalText = saveBtn.innerHTML
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'
-            saveBtn.disabled = true;
-
-            console.log('Saving lead with action:', action, 'ID:', leadId);
-
-            fetch("recruitment-api-debug.php", {
-                method: "POST",
-                body: formData,
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Save response:', data);
-
-                    // Restore button state
-                    saveBtn.innerHTML = originalText
-                    saveBtn.disabled = false
-
-                    if (data.success) {
-                        const message = isUpdate ? "Lead updated successfully!" : "Lead added successfully!"
-                        showNotification(message, "success")
-
-                        // Hide the modal
-                        hideRecruitmentModal();
-
-                        // Refresh the data
-                        loadRecruitmentData()
-                    } else {
-                        showNotification("Error: " + (data.message || "Unknown error occurred"), "error")
-                    }
-                })
-                .catch(error => {
-                    // Restore button state
-                    saveBtn.innerHTML = originalText
-                    saveBtn.disabled = false
-
-                    console.error("Error saving lead:", error)
-                    showNotification("Error saving lead: " + error.message, "error")
-                })
-        }
-
-        function deleteLead(id) {
-            if (confirm("Are you sure you want to delete this recruitment lead?")) {
-                const formData = new FormData()
-                formData.append("action", "delete_recruitment_lead")
-                formData.append("id", id)
-
-                fetch("recruitment-api-debug.php", {
                     method: "POST",
                     body: formData,
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showNotification(data.message, "success")
-                            loadRecruitmentData()
-                        } else {
-                            showNotification("Error: " + data.message, "error")
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error deleting lead:", error)
-                        showNotification("Error deleting lead", "error")
-                    })
-            }
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message, "success")
+                        loadRecruitmentData()
+                    } else {
+                        showNotification("Error: " + data.message, "error")
+                    }
+                })
+                .catch(error => {
+                    console.error("Error deleting lead:", error)
+                    showNotification("Error deleting lead", "error")
+                })
         }
+    }
 
-        function sortTable(column) {
-            if (currentSort.column === column) {
-                currentSort.order = currentSort.order === "ASC" ? "DESC" : "ASC"
-            } else {
-                currentSort.column = column
-                currentSort.order = "ASC"
-            }
-            loadRecruitmentData()
+    function sortTable(column) {
+        if (currentSort.column === column) {
+            currentSort.order = currentSort.order === "ASC" ? "DESC" : "ASC"
+        } else {
+            currentSort.column = column
+            currentSort.order = "ASC"
         }
+        loadRecruitmentData()
+    }
 
-        function refreshData() {
-            console.log('Refreshing all data...');
-            loadRecruitmentData()
-            showNotification("Data refreshed successfully", "success")
+    function refreshData() {
+        console.log('Refreshing all data...');
+        loadRecruitmentData()
+        showNotification("Data refreshed successfully", "success")
+    }
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        let bg = 'bg-green-500',
+            icon =
+            '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
+        if (type === 'error') {
+            bg = 'bg-red-500';
+            icon =
+                '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
+        } else if (type === 'info') {
+            bg = 'bg-blue-500';
+            icon =
+                '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
         }
-
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            let bg = 'bg-green-500',
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
-            if (type === 'error') {
-                bg = 'bg-red-500';
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
-            } else if (type === 'info') {
-                bg = 'bg-blue-500';
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
-            }
-            notification.className =
-                `fixed bottom-6 right-6 flex items-center px-6 py-3 rounded-lg text-white shadow-lg z-[99999] text-base font-medium gap-2 ${bg} animate-fade-in`;
-            notification.innerHTML = `${icon}<span>${message}</span>`;
-            notification.setAttribute('role', 'alert');
-            document.body.appendChild(notification);
+        notification.className =
+            `fixed bottom-6 right-6 flex items-center px-6 py-3 rounded-lg text-white shadow-lg z-[99999] text-base font-medium gap-2 ${bg} animate-fade-in`;
+        notification.innerHTML = `${icon}<span>${message}</span>`;
+        notification.setAttribute('role', 'alert');
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.classList.add('opacity-0');
             setTimeout(() => {
-                notification.classList.add('opacity-0');
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 3000);
-        }
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
     </script>
     <script src="assets/js/script.js"></script>
 </body>
