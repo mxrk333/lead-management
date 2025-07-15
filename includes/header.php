@@ -1,20 +1,34 @@
 <?php
-// Check if user variable exists
+// includes/header.php - This file is designed to be included within another PHP page.
+
+// Check if user variable exists, if not, try to load it from session
 if (!isset($user) && isset($_SESSION['user_id'])) {
-    $user = getUserById($_SESSION['user_id']);
+    // Assuming getUserById function is available from functions.php
+    // which should be included by the parent page (e.g., process-report.php)
+    if (function_exists('getUserById')) {
+        $user = getUserById($_SESSION['user_id']);
+    } else {
+        // Fallback if getUserById is not available (should not happen if functions.php is included)
+        $user = ['name' => 'Guest', 'email' => 'guest@example.com', 'role' => 'Guest', 'profile_picture' => null];
+    }
+}
+
+// Ensure $base_url is defined, default to '/' if not passed from including script
+if (!isset($base_url)) {
+    $base_url = '/'; 
 }
 
 // Function to get recent notifications for the current user
+// This function should ideally be in functions.php or a dedicated notification file
 function getRecentNotifications($user_id, $limit = 10) {
     if (empty($user_id)) {
         return array();
     }
     
-    $conn = getDbConnection();
+    $conn = getDbConnection(); // Assuming getDbConnection is available
     $notifications = array();
     
     try {
-        // Get the last time notifications were read
         $last_read = null;
         $user_query = "SELECT last_notification_read FROM users WHERE id = ?";
         $user_stmt = $conn->prepare($user_query);
@@ -28,15 +42,10 @@ function getRecentNotifications($user_id, $limit = 10) {
             $user_stmt->close();
         }
         
-        // If not in database, check session
         if (!$last_read && isset($_SESSION['last_notification_read'])) {
             $last_read = $_SESSION['last_notification_read'];
         }
         
-        // Debug logging
-        error_log("getRecentNotifications - User ID: $user_id, Last Read: " . ($last_read ? $last_read : 'NULL'));
-        
-        // Get lead activities
         $activity_query = "
             SELECT 
                 la.id,
@@ -74,7 +83,6 @@ function getRecentNotifications($user_id, $limit = 10) {
             $stmt->close();
         }
         
-        // Check if memos table exists and get memo notifications
         $table_check = $conn->query("SHOW TABLES LIKE 'memos'");
         if ($table_check && $table_check->num_rows > 0) {
             $memo_query = "
@@ -115,39 +123,27 @@ function getRecentNotifications($user_id, $limit = 10) {
             }
         }
         
-        // Sort all notifications by created_at descending
         usort($notifications, function($a, $b) {
             return strtotime($b['created_at']) - strtotime($a['created_at']);
         });
         
-        // Limit to the requested number
         $notifications = array_slice($notifications, 0, $limit);
         
-        // Mark notifications as read/unread based on last_read timestamp
         foreach ($notifications as &$notification) {
-            $notification['is_read'] = true; // Default to read
+            $notification['is_read'] = true; 
             
             if ($notification['notification_type'] === 'memo') {
-                // For memos, check the memo_read_status
                 $notification['is_read'] = isset($notification['memo_read_status']) && $notification['memo_read_status'] == 1;
             } else {
-                // For activities, use the last_read timestamp
                 if ($last_read) {
-                    // Convert both timestamps to Unix timestamps for comparison
                     $notification_time = strtotime($notification['created_at']);
                     $last_read_time = strtotime($last_read);
                     
-                    // If notification was created AFTER the last read time, it's unread
                     if ($notification_time > $last_read_time) {
                         $notification['is_read'] = false;
                     }
-                    
-                    // Debug logging for each notification
-                    error_log("Notification: {$notification['activity_type']}, Created: {$notification['created_at']} ($notification_time), Last Read: $last_read ($last_read_time), Is Read: " . ($notification['is_read'] ? 'true' : 'false'));
                 } else {
-                    // If no last_read timestamp, consider all notifications as unread
                     $notification['is_read'] = false;
-                    error_log("No last_read timestamp, marking as unread: {$notification['activity_type']}");
                 }
             }
         }
@@ -193,17 +189,14 @@ function timeAgo($datetime) {
     return floor($time/31536000) . ' years ago';
 }
 
-// Function to get notification URL
-function getNotificationUrl($notification) {
+// Function to get notification URL - NOW USES $base_url
+function getNotificationUrl($notification, $base_url) {
     if ($notification['notification_type'] === 'memo') {
         // Check if memo.php exists, otherwise fallback to dashboard
-        if (file_exists('memo.php')) {
-            return 'memo.php?id=' . $notification['lead_id'];
-        } else {
-            return 'dashboard.php';
-        }
+        // Always use $base_url for consistency
+        return $base_url . 'memo.php?id=' . $notification['lead_id'];
     } else {
-        return 'lead-details.php?id=' . $notification['lead_id'];
+        return $base_url . 'lead-details.php?id=' . $notification['lead_id'];
     }
 }
 
@@ -212,15 +205,13 @@ $notifications = getRecentNotifications($user_id ?? 0, 10);
 $unread_count = count(array_filter($notifications, function($n) {
     return !$n['is_read'];
 }));
-
-// Debug output
-error_log("Header loaded - Total notifications: " . count($notifications) . ", Unread count: $unread_count");
 ?>
+
 <header class="main-header">
     <div class="header-container">
         <div class="header-left">
             <div class="header-search">
-                <form action="leads.php" method="GET" class="search-form">
+                <form action="<?php echo $base_url; ?>leads.php" method="GET" class="search-form">
                     <div class="search-input-wrapper">
                         <input type="text" name="search" placeholder="Search leads only" class="search-input" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                         <i class="fas fa-search search-icon"></i>
@@ -238,7 +229,7 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
             <div class="header-actions">
                 <!-- Quick Actions -->
                 <div class="quick-actions">
-                    <a href="add-lead.php" class="quick-action-btn" title="Add New Lead">
+                    <a href="<?php echo $base_url; ?>add-lead.php" class="quick-action-btn" title="Add New Lead">
                         <i class="fas fa-plus"></i>
                         <span class="action-text">Add Lead</span>
                     </a>
@@ -270,7 +261,8 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
                                 <?php foreach ($notifications as $index => $notification): ?>
                                     <?php 
                                     $iconClass = getNotificationIcon($notification['activity_type']);
-                                    $notificationUrl = getNotificationUrl($notification);
+                                    // Pass $base_url to getNotificationUrl
+                                    $notificationUrl = getNotificationUrl($notification, $base_url);
                                     ?>
                                     <div class="notification-item <?php echo !$notification['is_read'] ? 'unread' : ''; ?>" 
                                          data-url="<?php echo htmlspecialchars($notificationUrl); ?>"
@@ -316,7 +308,7 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
                             <?php endif; ?>
                         </div>
                         <div class="notification-footer">
-                            <a href="leads.php">View all leads</a>
+                            <a href="<?php echo $base_url; ?>leads.php">View all leads</a>
                         </div>
                     </div>
                 </div>
@@ -330,7 +322,8 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
                                     : (!empty($user['avatar']) ? $user['avatar'] : null);
 
                             if ($imagePath):
-                                echo '<img src="/lead-management/' . htmlspecialchars($imagePath) . '" alt="Profile Picture">';
+                                // Use $base_url for profile picture path
+                                echo '<img src="' . $base_url . htmlspecialchars($imagePath) . '" alt="Profile Picture">';
                             else:
                                 echo '<span class="avatar-text">' . strtoupper(substr($user['name'] ?? 'U', 0, 1)) . '</span>';
                             endif;
@@ -351,7 +344,8 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
                                             : (!empty($user['avatar']) ? $user['avatar'] : null);
 
                                     if ($imagePath):
-                                        echo '<img src="/lead-management/' . htmlspecialchars($imagePath) . '" alt="Profile Picture">';
+                                        // Use $base_url for profile picture path in dropdown header
+                                        echo '<img src="' . $base_url . htmlspecialchars($imagePath) . '" alt="Profile Picture">';
                                     else:
                                         echo '<span class="avatar-text">' . strtoupper(substr($user['name'] ?? 'U', 0, 1)) . '</span>';
                                     endif;
@@ -364,20 +358,20 @@ error_log("Header loaded - Total notifications: " . count($notifications) . ", U
                         </div>
                         
                         <div class="dropdown-menu">
-                            <a href="profile.php" class="menu-item">
+                            <a href="<?php echo $base_url; ?>profile.php" class="menu-item" id="profile-link">
                                 <i class="fas fa-user"></i>
                                 <span>My Profile</span>
                             </a>
-                            <a href="settings.php" class="menu-item">
+                            <a href="<?php echo $base_url; ?>settings.php" class="menu-item">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
                             </a>
-                            <a href="help.php" class="menu-item">
+                            <a href="<?php echo $base_url; ?>help.php" class="menu-item">
                                 <i class="fas fa-question-circle"></i>
                                 <span>Help & Support</span>
                             </a>
                             <div class="menu-divider"></div>
-                            <a href="/lead-management/logout.php" class="menu-item logout">
+                            <a href="<?php echo $base_url; ?>logout.php" class="menu-item logout">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>Logout</span>
                             </a>
@@ -1079,7 +1073,7 @@ body > *:first-child,
         height: 40px;
         position: relative;
     }
-    
+
     .search-input-wrapper {
         width: 40px;
         height: 40px;
@@ -1117,22 +1111,22 @@ body > *:first-child,
     .search-input:focus::placeholder {
         color: #9ca3af;
     }
-    
+
     .search-icon {
         position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
+        left: 50%; /* Center horizontally */
+        top: 50%; /* Center vertically */
+        transform: translate(-50%, -50%); /* Adjust for exact centering */
         color: #6b7280;
         font-size: 0.9rem;
-        pointer-events: none;
+        pointer-events: none; /* Allow clicks to pass through to input */
         z-index: 2;
         transition: all 0.2s ease;
     }
-    
+
     .search-input:focus + .search-icon {
-        left: auto;
-        right: 0.75rem;
+        left: auto; /* Reset left positioning */
+        right: 0.75rem; /* Position to the right */
         top: 50%;
         transform: translateY(-50%);
     }
@@ -1192,20 +1186,20 @@ body > *:first-child,
         height: 30px;
         font-size: 0.75rem;
     }
-    
+
     /* Mobile notification button */
     .notification-btn {
         width: 40px;
         height: 40px;
         padding: 0.5rem;
     }
-    
+
     /* CRITICAL: Ensure main content doesn't have excessive top margin */
     .main-content {
         margin-top: 0 !important;
         padding-top: 0 !important;
     }
-    
+
     /* CRITICAL: Mobile dropdown positioning and interaction fixes */
     .notification-dropdown,
     .user-menu-dropdown {
@@ -1225,40 +1219,40 @@ body > *:first-child,
         box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.15) !important;
         margin: 0 !important;
     }
-    
+
     .notification-dropdown.active,
     .user-menu-dropdown.active {
         display: block !important;
         transform: translateY(0) !important;
         animation: slideUp 0.3s ease;
     }
-    
+
     /* Mobile dropdown content scrolling */
     .notification-list {
         max-height: calc(90vh - 120px) !important;
         -webkit-overflow-scrolling: touch;
         overflow-y: auto;
     }
-    
+
     .dropdown-menu {
         max-height: calc(90vh - 120px) !important;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         padding: 0.75rem 0;
     }
-    
+
     /* Show mobile close button */
     .mobile-close {
         display: flex !important;
     }
-    
+
     /* Adjust header padding for mobile close button */
     .notification-header,
     .dropdown-header {
         padding-right: 3.5rem !important;
         position: relative;
     }
-    
+
     /* CRITICAL: Better mobile menu item touch targets and clickability */
     .menu-item {
         padding: 1rem 1.25rem;
@@ -1272,7 +1266,7 @@ body > *:first-child,
         pointer-events: auto;
         cursor: pointer;
     }
-    
+
     /* CRITICAL: Ensure logout link is fully clickable */
     .menu-item.logout {
         /* Override any conflicting styles */
@@ -1280,22 +1274,22 @@ body > *:first-child,
         cursor: pointer !important;
         z-index: 1006 !important;
     }
-    
+
     .notification-item {
         padding: 1rem 1.25rem;
         min-height: 60px;
     }
-}
 
-/* Slide up animation for mobile */
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(100%);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    /* Slide up animation for mobile */
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 }
 
@@ -1344,6 +1338,13 @@ body > *:first-child,
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Header script initializing...');
     
+    // --- Debugging: Log the href of the profile link on load ---
+    const profileLink = document.getElementById('profile-link');
+    if (profileLink) {
+        console.log('Profile link href on DOMContentLoaded:', profileLink.href);
+    }
+    // ----------------------------------------------------------
+
     // Create mobile overlay element
     const mobileOverlay = document.createElement('div');
     mobileOverlay.className = 'mobile-overlay';
