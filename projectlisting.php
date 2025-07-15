@@ -406,7 +406,6 @@ foreach ($filters as $key => $value) {
         }
     </style>
 </head>
-<<<<<<< HEAD
 <body class="bg-gray-50 min-h-screen">
     <!-- Main Container - Add ml-64 for sidebar space -->
     <div id="main-container" class="main-container relative transition-all" style="margin-left: var(--sidebar-width);">
@@ -422,433 +421,6 @@ foreach ($filters as $key => $value) {
                 </div>
             </div>
 
-=======
-
-</html>
-<?php
-// Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Include database configuration and functions
-require_once 'config/database.php';
-require_once 'includes/functions.php';
-
-// Enable error reporting during development
-if (!isDreamHost()) {
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);
-    error_reporting(E_ALL);
-} else {
-    ini_set('display_errors', 0);
-    ini_set('display_startup_errors', 0);
-    error_reporting(0);
-}
-
-// Ensure errors are logged
-ini_set('log_errors', 1);
-$log_dir = __DIR__ . '/logs';
-if (!file_exists($log_dir)) {
-    mkdir($log_dir, 0755, true);
-}
-ini_set('error_log', $log_dir . '/php_errors.log');
-
-// Set default timezone
-date_default_timezone_set('Asia/Manila');
-
-// Get user data before including sidebar
-if (isset($_SESSION['user_id'])) {
-    try {
-        $conn = getDbConnection();
-        $user = getUserById($_SESSION['user_id']);
-    } catch (Exception $e) {
-        error_log("Error getting user data: " . $e->getMessage());
-        $user = null;
-    }
-}
-
-// Now include the sidebar after all dependencies are loaded
-require_once 'includes/sidebar.php';
-require_once 'includes/header.php';
-
-// Custom style to ensure header sits next to sidebar
-echo '<style>
-    .main-header {
-        left: var(--sidebar-width);
-        width: calc(100% - var(--sidebar-width));
-        z-index: 1100;
-        transition: left 0.3s ease, width 0.3s ease;
-    }
-    .sidebar-collapsed .main-header {
-        left: var(--sidebar-collapsed-width);
-        width: calc(100% - var(--sidebar-collapsed-width));
-    }
-    @media (max-width: 1024px) {
-        .main-header {
-            left: 0;
-            width: 100%;
-        }
-    }
-    #project-modal {
-        z-index: 1201;
-    }
-    #delete-modal {
-        z-index: 1300;
-    }
-</style>';
-
-// Initialize variables
-$error_message = null;
-$projects = [];
-$high_priority_projects = [];
-$provinces = [];
-$cities = [];
-$total_projects = 0;
-$total_pages = 1;
-$page = 1;
-// Fetch all projects on one page for client-side searching
-$items_per_page = 0; // 0 means no limit
-
-// Default filters
-$filters = [
-    'search' => '',
-    'province_id' => '',
-    'city_id' => '',
-    'price_range' => '',
-    'commission' => '',
-    'category' => ''
-];
-
-// Process filters from GET parameters
-foreach ($filters as $key => $value) {
-    if (isset($_GET[$key]) && $_GET[$key] !== '') {
-        $filters[$key] = $_GET[$key];
-    }
-}
-
-// Set current page from GET parameter
-if (isset($_GET['page']) && is_numeric($_GET['page']) && $_GET['page'] > 0) {
-    $page = (int)$_GET['page'];
-}
-
-// Calculate offset for pagination
-$offset = ($page - 1) * $items_per_page;
-
-try {
-    // Get database connection
-    $conn = getDbConnection();
-    
-    // Fetch provinces
-    $provinces_result = safeQuery($conn, "SELECT * FROM provinces ORDER BY name");
-    if ($provinces_result) {
-        while ($row = $provinces_result->fetch_assoc()) {
-            $provinces[] = $row;
-        }
-    }
-    
-    // Fetch cities based on province filter
-    $cities_query = "SELECT * FROM cities";
-    $cities_params = [];
-    $cities_types = "";
-    
-    if (!empty($filters['province_id'])) {
-        $cities_query .= " WHERE province_id = ?";
-        $cities_params[] = $filters['province_id'];
-        $cities_types = "i";
-    }
-    
-    $cities_query .= " ORDER BY name";
-    $cities_result = safeQuery($conn, $cities_query, $cities_params, $cities_types);
-    
-    if ($cities_result) {
-        while ($row = $cities_result->fetch_assoc()) {
-            $cities[] = $row;
-        }
-    }
-    
-    // Build query for projects with filters
-    $query = "SELECT p.*, c.name as city_name, pr.name as province_name 
-              FROM projects p 
-              LEFT JOIN cities c ON p.city_id = c.id 
-              LEFT JOIN provinces pr ON p.province_id = pr.id 
-              WHERE 1=1";
-    
-    $count_query = "SELECT COUNT(*) as total FROM projects p 
-                    LEFT JOIN cities c ON p.city_id = c.id 
-                    LEFT JOIN provinces pr ON p.province_id = pr.id 
-                    WHERE 1=1";
-    
-    $params = [];
-    $types = "";
-    
-    // Apply filters
-    if (!empty($filters['search'])) {
-        $search_term = "%" . $filters['search'] . "%";
-        $query .= " AND (p.name LIKE ? OR p.description LIKE ? OR p.developer LIKE ? OR c.name LIKE ? OR pr.name LIKE ?)";
-        $count_query .= " AND (p.name LIKE ? OR p.description LIKE ? OR p.developer LIKE ? OR c.name LIKE ? OR pr.name LIKE ?)";
-        $params = array_merge($params, [$search_term, $search_term, $search_term, $search_term, $search_term]);
-        $types .= "sssss";
-    }
-    
-    if (!empty($filters['province_id'])) {
-        $query .= " AND p.province_id = ?";
-        $count_query .= " AND p.province_id = ?";
-        $params[] = $filters['province_id'];
-        $types .= "i";
-    }
-    
-    if (!empty($filters['city_id'])) {
-        $query .= " AND p.city_id = ?";
-        $count_query .= " AND p.city_id = ?";
-        $params[] = $filters['city_id'];
-        $types .= "i";
-    }
-    
-    if (!empty($filters['commission'])) {
-        $query .= " AND p.commission = ?";
-        $count_query .= " AND p.commission = ?";
-        $params[] = $filters['commission'];
-        $types .= "d";
-    }
-    
-    if (!empty($filters['price_range'])) {
-        $price_range = explode('-', $filters['price_range']);
-        if (count($price_range) == 2) {
-            $min_price = $price_range[0];
-            $max_price = $price_range[1];
-            $query .= " AND ((p.price_min >= ? AND p.price_min <= ?) OR (p.price_max >= ? AND p.price_max <= ?))";
-            $count_query .= " AND ((p.price_min >= ? AND p.price_min <= ?) OR (p.price_max >= ? AND p.price_max <= ?))";
-            $params = array_merge($params, [$min_price, $max_price, $min_price, $max_price]);
-            $types .= "dddd";
-        } elseif (substr($filters['price_range'], -1) == '+') {
-            $min_price = (int)substr($filters['price_range'], 0, -1);
-            $query .= " AND (p.price_min >= ? OR p.price_max >= ?)";
-            $count_query .= " AND (p.price_min >= ? OR p.price_max >= ?)";
-            $params = array_merge($params, [$min_price, $min_price]);
-            $types .= "dd";
-        }
-    }
-    
-    // Get total count (no longer used for pagination, but may be useful for stats)
-    $count_result = safeQuery($conn, $count_query, $params, $types);
-    if ($count_result && $row = $count_result->fetch_assoc()) {
-        $total_projects = $row['total'];
-        $total_pages = 1; // all projects displayed on single page
-    }
-    
-    // Remove pagination limit – fetch all
-    $query .= " ORDER BY FIELD(p.priority, 'high', 'medium', 'low'), p.name ASC";
-    
-    // Execute main query
-    $result = safeQuery($conn, $query, $params, $types);
-    
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            // Format price range for display
-            $price_min = number_format($row['price_min']);
-            $price_max = number_format($row['price_max']);
-            $row['price_range_display'] = "₱{$price_min} - ₱{$price_max}";
-            
-            $projects[] = $row;
-        }
-    }
-    
-    // Close connection
-    $conn->close();
-    
-} catch (Exception $e) {
-    error_log("Error in project listing: " . $e->getMessage());
-    $error_message = "An error occurred while loading projects. Please try again later.";
-}
-
-// Build base URL for pagination
-$base_url = "projectlisting.php?";
-foreach ($filters as $key => $value) {
-    if (!empty($value)) {
-        $base_url .= "{$key}=" . urlencode($value) . "&";
-    }
-}
-?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inner SPARC Projects</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'blue-primary': '#1e40af',
-                        'blue-secondary': '#3b82f6',
-                        'blue-light': '#dbeafe',
-                        'blue-dark': '#1e3a8a'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #64748b;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
-        }
-
-        /* Utility classes */
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        
-        /* Smooth transitions */
-        .transition-all {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        /* Card hover effects */
-        .property-card {
-            transform: translateY(0);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .property-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        
-        /* Focus states for accessibility */
-        .focus-ring:focus {
-            outline: 2px solid #3b82f6;
-            outline-offset: 2px;
-        }
-        
-        /* Loading animation */
-        .loading-pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: .5;
-            }
-        }
-        
-        /* Modal backdrop */
-        .modal-backdrop {
-            backdrop-filter: blur(8px);
-            background-color: rgba(0, 0, 0, 0.6);
-        }
-        
-        /* Responsive container */
-        @media (max-width: 640px) {
-            .container {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-        }
-        
-        /* Filter section responsive */
-        @media (max-width: 1024px) {
-            .filter-section {
-                position: relative !important;
-                top: 0 !important;
-            }
-        }
-        
-        /* Search input focus effect */
-        .search-input:focus {
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        
-        /* Button hover effects */
-        .btn-primary {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-            transform: translateY(-1px);
-        }
-        
-        /* Price badge styles */
-        .price-badge {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #92400e;
-            font-weight: 700;
-        }
-        
-        /* Priority badge styles */
-        .priority-high {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-        }
-        .priority-medium {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-        }
-        .priority-low {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-        /* Responsive adjustment for main container based on sidebar */
-        .main-container {
-            transition: margin-left 0.3s ease;
-        }
-
-        @media (min-width: 1024px) {
-            .main-container {
-                margin-left: var(--sidebar-width);
-            }
-            /* When sidebar is collapsed */
-            .sidebar-provider.collapsed ~ .main-container {
-                margin-left: var(--sidebar-width-collapsed);
-            }
-        }
-
-        @media (max-width: 1023.98px) {
-            .main-container {
-                margin-left: 0 !important;
-            }
-        }
-    </style>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Main Container - Add ml-64 for sidebar space -->
-    <div id="main-container" class="main-container relative transition-all" style="margin-left: var(--sidebar-width);">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <!-- Header Section -->
-            <div class="mb-8">
-                <div class="text-center">
-                    <h1 class="text-2xl sm:text-3xl md:text-5xl font-bold text-blue-primary mb-4">
-                        Inner SPARC Projects
-                    </h1>
-                    <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                    Gusto mo ng mabilisang benta? Check mo na ‘tong list ng project listing na may full info, ready i-offer sa clients!                    </p>
-                </div>
-            </div>
-
->>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
             <div class="flex flex-col lg:flex-row gap-8">
                 <!-- Filter Section - Left Side -->
                 <div class="lg:w-1/4 flex-shrink-0">
@@ -1212,11 +784,7 @@ foreach ($filters as $key => $value) {
                         <?php endif; ?>
                     </div>
 
-<<<<<<< HEAD
                    <!-- High Priority Projects Section -->
-=======
-                    <!-- High Priority Projects Section -->
->>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                     <?php /* if (!empty($high_priority_projects) && empty(array_filter($filters))): ?>
                         <section class="mt-20" aria-labelledby="priority-heading">
                             <div class="text-center mb-10">
@@ -1299,11 +867,7 @@ foreach ($filters as $key => $value) {
                                 <?php endforeach; ?>
                             </div>
                         </section>
-<<<<<<< HEAD
                     <?php endif; */ ?> 
-=======
-                    <?php endif; */ ?>
->>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                 </div>
             </div>
         </div>
@@ -1416,15 +980,9 @@ foreach ($filters as $key => $value) {
 
     <script>
         // Global variables
-<<<<<<< HEAD
         var searchTimeout;
         var isLoading = false;
         var currentProjectId = null;
-=======
-        let searchTimeout;
-        let isLoading = false;
-        let currentProjectId = null;
->>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
 
         // Debounce function
         function debounce(func, wait) {
@@ -1479,11 +1037,7 @@ foreach ($filters as $key => $value) {
         }
 
         // Perform live search
-<<<<<<< HEAD
         var performLiveSearch = debounce(() => {
-=======
-        const performLiveSearch = debounce(() => {
->>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
             // Get search input value
             const searchInput = document.getElementById('project_search');
             const searchValue = searchInput ? searchInput.value.trim() : '';
@@ -1679,7 +1233,6 @@ foreach ($filters as $key => $value) {
     let financialDetails = '';
     if (project.total_contract_price || project.reservation_fee || project.bank_amortization || 
         project.required_salary || project.downpayment_percentage || 
-<<<<<<< HEAD
         project.downpayment_amount || project.downpayment_term) {
         
             
@@ -1697,16 +1250,6 @@ foreach ($filters as $key => $value) {
 </div>
 
 
-=======
-        project.monthly_downpayment_3mos || project.monthly_downpayment_6mos || 
-        project.monthly_downpayment_12mos || project.monthly_downpayment_18mos) {
-        
-        financialDetails = `
-            <div class="bg-blue-50 rounded-2xl p-6 mb-8">
-                <h4 class="text-2xl font-semibold text-blue-primary mb-6 flex items-center">
-                    <i class="fas fa-calculator mr-3"></i>Financial Details
-                </h4>
->>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                 <div class="grid grid-cols-1 gap-4">
                     ${project.total_contract_price ? `
                         <div class="flex flex-col sm:flex-row sm:items-center py-2 border-b border-blue-100 last:border-b-0">
@@ -1760,43 +1303,11 @@ foreach ($filters as $key => $value) {
                     ` : ''}
                 </div>
                 
-<<<<<<< HEAD
                 ${(project.downpayment_amount && project.downpayment_term) ? `
                     <div class="mt-6">
                         <h5 class="text-sm font-semibold text-gray-700 mb-2">Downpayment Option</h5>
                         <div class="text-lg font-medium text-gray-800">
                             ₱${parseFloat(project.downpayment_amount).toLocaleString()} - ${project.downpayment_term} months
-=======
-                ${(project.monthly_downpayment_3mos || project.monthly_downpayment_6mos || 
-                   project.monthly_downpayment_12mos || project.monthly_downpayment_18mos) ? `
-                    <div class="mt-8">
-                        <h5 class="text-lg font-semibold text-gray-700 mb-4">Monthly Downpayment Options</h5>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            ${project.monthly_downpayment_3mos ? `
-                                <div class="text-center p-4 bg-white rounded-lg border border-blue-200 shadow-sm">
-                                    <div class="text-sm text-gray-600 mb-2">3 Months</div>
-                                    <div class="text-lg font-bold text-blue-primary">${formatCurrency(project.monthly_downpayment_3mos)}</div>
-                                </div>
-                            ` : ''}
-                            ${project.monthly_downpayment_6mos ? `
-                                <div class="text-center p-4 bg-white rounded-lg border border-blue-200 shadow-sm">
-                                    <div class="text-sm text-gray-600 mb-2">6 Months</div>
-                                    <div class="text-lg font-bold text-blue-primary">${formatCurrency(project.monthly_downpayment_6mos)}</div>
-                                </div>
-                            ` : ''}
-                            ${project.monthly_downpayment_12mos ? `
-                                <div class="text-center p-4 bg-white rounded-lg border border-blue-200 shadow-sm">
-                                    <div class="text-sm text-gray-600 mb-2">12 Months</div>
-                                    <div class="text-lg font-bold text-blue-primary">${formatCurrency(project.monthly_downpayment_12mos)}</div>
-                                </div>
-                            ` : ''}
-                            ${project.monthly_downpayment_18mos ? `
-                                <div class="text-center p-4 bg-white rounded-lg border border-blue-200 shadow-sm">
-                                    <div class="text-sm text-gray-600 mb-2">18 Months</div>
-                                    <div class="text-lg font-bold text-blue-primary">${formatCurrency(project.monthly_downpayment_18mos)}</div>
-                                </div>
-                            ` : ''}
->>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                         </div>
                     </div>
                 ` : ''}
@@ -1816,13 +1327,8 @@ foreach ($filters as $key => $value) {
                     <span class="price-badge px-4 py-2 rounded-lg text-lg font-bold">
                         ${project.commission}% COMM
                     </span>
-<<<<<<< HEAD
                     <span class="priority-${['high','medium','low'].includes((project.priority||'').toLowerCase()) ? project.priority.toLowerCase() : 'low'} px-4 py-2 rounded-lg text-lg font-semibold">
                         ${project.priority ? (project.priority.charAt(0).toUpperCase() + project.priority.slice(1)) : 'Low'} Priority
-=======
-                    <span class="priority-${project.priority} px-4 py-2 rounded-lg text-lg font-semibold">
-                        ${project.priority.charAt(0).toUpperCase() + project.priority.slice(1)} Priority
->>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                     </span>
                 </div>
 
@@ -1837,25 +1343,7 @@ foreach ($filters as $key => $value) {
 
                 ${financialDetails}
 
-<<<<<<< HEAD
                 <div class="bg-gray-50 rounded-2xl p-6 mb-8">
-=======
-                <div class="flex flex-col sm:flex-row justify-between text-sm text-gray-500 mb-8 px-2">
-    <div>
-        <i class="far fa-calendar-plus mr-1"></i>
-        Added: ${project.created_at ? new Date(project.created_at.replace(' ', 'T')).toLocaleString('en-PH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
-    </div>
-    <div>
-        <i class="far fa-clock mr-1"></i>
-        Updated: ${project.updated_at ? new Date(project.updated_at.replace(' ', 'T')).toLocaleString('en-PH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
-    </div>
-</div>
-
-<div class="bg-gray-50 rounded-2xl p-6 mb-8">
-    <h4 class="text-2xl font-semibold text-gray-800 mb-6">Project Details</h4>
-    ...
-</div>
->>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c
                     <h4 class="text-2xl font-semibold text-gray-800 mb-6">Project Details</h4>
                     <div class="space-y-4">
                         <div class="flex flex-col sm:flex-row py-2 border-b border-gray-200 last:border-b-0">
@@ -2091,8 +1579,4 @@ foreach ($filters as $key => $value) {
 })();
 </script>
 </body>
-<<<<<<< HEAD
 </html>
-=======
-</html>
->>>>>>> 3b2a244df7964cf36815ef656249ddb92d38ae3c

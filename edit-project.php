@@ -56,6 +56,7 @@ $provinces = $provincesStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $provincesStmt->close();
 
 // Fetch all cities for the dropdown
+// It's better to fetch all cities and filter them client-side for simplicity in this context
 $citiesStmt = $conn->prepare("SELECT c.id, c.name, c.province_id, p.name as province_name FROM cities c LEFT JOIN provinces p ON c.province_id = p.id ORDER BY c.name");
 $citiesStmt->execute();
 $cities = $citiesStmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -462,18 +463,50 @@ Cancel
 </form>
 
 <script>
+// PHP variables passed to JavaScript
+const initialProjectProvinceId = <?php echo json_encode($project['province_id']); ?>;
+const initialProjectCityId = <?php echo json_encode($project['city_id']); ?>;
+
 $(document).ready(function() {
-    // Province/city handling
-    $('#province_id').on('change', function() {
-        const provinceId = $(this).val();
+    // Function to update city dropdown based on province
+    function updateCityDropdown(provinceId, selectedCityId = null) {
         const $citySelect = $('#city_id');
         
-        $citySelect.val('');
+        // Hide all city options except the first one
         $citySelect.find('option').not(':first').hide();
         
         if (provinceId) {
+            // Show cities for the selected province
             $citySelect.find(`option[data-province="${provinceId}"]`).show();
+            
+            // If a specific city ID is provided, try to select it
+            if (selectedCityId) {
+                const $optionToSelect = $citySelect.find(`option[value="${selectedCityId}"][data-province="${provinceId}"]`);
+                if ($optionToSelect.length) {
+                    $citySelect.val(selectedCityId);
+                } else {
+                    // If the selectedCityId is not found for this province, clear selection
+                    $citySelect.val('');
+                }
+            } else {
+                // If no specific city ID, clear selection (for manual province change)
+                $citySelect.val('');
+            }
+        } else {
+            // No province selected, clear city selection
+            $citySelect.val('');
         }
+    }
+    
+    // Initialize city dropdown on page load using the project's actual province and city IDs
+    if (initialProjectProvinceId) {
+        updateCityDropdown(initialProjectProvinceId, initialProjectCityId);
+    }
+    
+    // Handle province change
+    $('#province_id').on('change', function() {
+        const provinceId = $(this).val();
+        updateCityDropdown(provinceId); // No specific city to select when user manually changes province
     });
 
     // Form submission
