@@ -36,6 +36,73 @@ function canEditLead($lead, $current_user_id) {
     return ($lead['user_id'] == $current_user_id);
 }
 
+// Enhanced function to get total count of active leads
+function getTotalActiveLeadsCount($user_id, $role, $username = null) {
+    $conn = getDbConnection();
+    
+    $whereClause = "WHERE l.status != 'Closed Deal'";
+    
+    // Superusers can see all leads
+    if ($username && isSuperUser($username)) {
+        // No additional WHERE clause needed - show all active leads
+    } elseif ($role === 'agent') {
+        $whereClause .= " AND l.user_id = $user_id";
+    } elseif ($role === 'supervisor' || $role === 'manager') {
+        $team_query = "SELECT team_id FROM users WHERE id = $user_id";
+        $team_result = mysqli_query($conn, $team_query);
+        $team_data = mysqli_fetch_assoc($team_result);
+        if ($team_data && $team_data['team_id']) {
+            $whereClause .= " AND u.team_id = " . $team_data['team_id'];
+        }
+    }
+    
+    $query = "
+        SELECT COUNT(*) as total
+        FROM leads l
+        LEFT JOIN users u ON l.user_id = u.id
+        LEFT JOIN teams t ON u.team_id = t.id
+        $whereClause
+    ";
+    
+    $result = mysqli_query($conn, $query);
+    $data = mysqli_fetch_assoc($result);
+    return $data['total'];
+}
+
+// Enhanced function to get paginated active leads
+function getPaginatedActiveLeads($user_id, $role, $offset, $limit, $username = null) {
+    $conn = getDbConnection();
+    
+    $whereClause = "WHERE l.status != 'Closed Deal'";
+    
+    // Superusers can see all leads
+    if ($username && isSuperUser($username)) {
+        // No additional WHERE clause needed - show all active leads
+    } elseif ($role === 'agent') {
+        $whereClause .= " AND l.user_id = $user_id";
+    } elseif ($role === 'supervisor' || $role === 'manager') {
+        $team_query = "SELECT team_id FROM users WHERE id = $user_id";
+        $team_result = mysqli_query($conn, $team_query);
+        $team_data = mysqli_fetch_assoc($team_result);
+        if ($team_data && $team_data['team_id']) {
+            $whereClause .= " AND u.team_id = " . $team_data['team_id'];
+        }
+    }
+    
+    $query = "
+        SELECT l.*, u.name as agent_name, t.name as team_name
+        FROM leads l
+        LEFT JOIN users u ON l.user_id = u.id
+        LEFT JOIN teams t ON u.team_id = t.id
+        $whereClause
+        ORDER BY l.created_at DESC
+        LIMIT $offset, $limit
+    ";
+    
+    $result = mysqli_query($conn, $query);
+    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+}
+
 // Helper functions for active leads (excluding closed deals)
 function getActiveLeads($user_id, $role, $username = null) {
     $conn = getDbConnection();
@@ -63,36 +130,6 @@ function getActiveLeads($user_id, $role, $username = null) {
         LEFT JOIN teams t ON u.team_id = t.id
         $whereClause
         ORDER BY l.created_at DESC
-    ";
-    
-    $result = mysqli_query($conn, $query);
-    return mysqli_fetch_all($result, MYSQLI_ASSOC);
-}
-
-function getPaginatedActiveLeads($user_id, $role, $offset, $limit) {
-    $conn = getDbConnection();
-    
-    $whereClause = "WHERE l.status != 'Closed Deal'";
-    
-    if ($role === 'agent') {
-        $whereClause .= " AND l.user_id = $user_id";
-    } elseif ($role === 'supervisor' || $role === 'manager') {
-        $team_query = "SELECT team_id FROM users WHERE id = $user_id";
-        $team_result = mysqli_query($conn, $team_query);
-        $team_data = mysqli_fetch_assoc($team_result);
-        if ($team_data && $team_data['team_id']) {
-            $whereClause .= " AND u.team_id = " . $team_data['team_id'];
-        }
-    }
-    
-    $query = "
-        SELECT l.*, u.name as agent_name, t.name as team_name
-        FROM leads l
-        LEFT JOIN users u ON l.user_id = u.id
-        LEFT JOIN teams t ON u.team_id = t.id
-        $whereClause
-        ORDER BY l.created_at DESC
-        LIMIT $offset, $limit
     ";
     
     $result = mysqli_query($conn, $query);
@@ -303,9 +340,6 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $current_page = max(1, $current_page);
 $offset = ($current_page - 1) * $leads_per_page;
 
-// Get all active leads based on user role (for counting total)
-$all_leads = getActiveLeads($user_id, $user['role'], $user['username']);
-
 // Initialize filter flags
 $search_active = false;
 $status_filter_active = false;
@@ -313,43 +347,52 @@ $temp_filter_active = false;
 $source_filter_active = false;
 $my_leads_filter_active = false;
 
-// Apply filters if set
+// Initialize variables
+$total_leads = 0;
+$leads = [];
+
+// Apply filters and get data
 if (isset($_GET['my_leads']) && $_GET['my_leads'] == '1') {
     $my_leads_filter_active = true;
-    $leads = filterMyLeads($user_id);
+    $all_filtered_leads = filterMyLeads($user_id);
+    $total_leads = count($all_filtered_leads);
+    $leads = array_slice($all_filtered_leads, $offset, $leads_per_page);
 } elseif (isset($_GET['search']) && !empty($_GET['search'])) {
     $search = $_GET['search'];
     $search_active = true;
-    $leads = searchActiveLeads($search, $user_id, $user['role'], $user['username']);
+    $all_filtered_leads = searchActiveLeads($search, $user_id, $user['role'], $user['username']);
+    $total_leads = count($all_filtered_leads);
+    $leads = array_slice($all_filtered_leads, $offset, $leads_per_page);
 } elseif (isset($_GET['status']) && !empty($_GET['status'])) {
     $status = $_GET['status'];
     $status_filter_active = true;
-    $leads = filterActiveLeadsByStatus($status, $user_id, $user['role'], $user['username']);
+    $all_filtered_leads = filterActiveLeadsByStatus($status, $user_id, $user['role'], $user['username']);
+    $total_leads = count($all_filtered_leads);
+    $leads = array_slice($all_filtered_leads, $offset, $leads_per_page);
 } elseif (isset($_GET['temperature']) && !empty($_GET['temperature'])) {
     $temperature = $_GET['temperature'];
     $temp_filter_active = true;
-    $leads = filterActiveLeadsByTemperature($temperature, $user_id, $user['role'], $user['username']);
+    $all_filtered_leads = filterActiveLeadsByTemperature($temperature, $user_id, $user['role'], $user['username']);
+    $total_leads = count($all_filtered_leads);
+    $leads = array_slice($all_filtered_leads, $offset, $leads_per_page);
 } elseif (isset($_GET['source']) && !empty($_GET['source'])) {
     $source = $_GET['source'];
     $source_filter_active = true;
-    $leads = filterActiveLeadsBySource($source, $user_id, $user['role'], $user['username']);
+    $all_filtered_leads = filterActiveLeadsBySource($source, $user_id, $user['role'], $user['username']);
+    $total_leads = count($all_filtered_leads);
+    $leads = array_slice($all_filtered_leads, $offset, $leads_per_page);
 } else {
-    // No filters, get paginated leads
-    $leads = getPaginatedActiveLeads($user_id, $user['role'], $offset, $leads_per_page);
+    // No filters, get paginated leads directly from database
+    $total_leads = getTotalActiveLeadsCount($user_id, $user['role'], $user['username']);
+    $leads = getPaginatedActiveLeads($user_id, $user['role'], $offset, $leads_per_page, $user['username']);
 }
 
-// Count total leads after filtering
-$total_leads = count($leads);
+// Calculate total pages
 $total_pages = ceil($total_leads / $leads_per_page);
 
 // Adjust current page if it exceeds total pages
 if ($total_pages > 0) {
     $current_page = min($current_page, $total_pages);
-}
-
-// Apply pagination to filtered results
-if ($search_active || $status_filter_active || $temp_filter_active || $source_filter_active || $my_leads_filter_active) {
-    $leads = array_slice($leads, $offset, $leads_per_page);
 }
 
 // Function to build pagination URL
@@ -385,6 +428,9 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
     
     return $result;
 }
+
+// Get all active leads for summary cards (not paginated)
+$all_leads = getActiveLeads($user_id, $user['role'], $user['username']);
 
 // Get temperature counts (ACTIVE ONLY)
 $hotLeads = array_filter($all_leads, function($lead) {
@@ -426,6 +472,7 @@ $isSuperUser = isSuperUser($user['username']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Active Leads - InnerSPARC Lead Management System</title>
+    <link rel="icon" href="assets/images/logo.png">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1044,28 +1091,39 @@ $isSuperUser = isSuperUser($user['username']);
             color: #25d366;
         }
 
-        .pagination {
+        /* Enhanced Pagination Styles */
+        .pagination-container {
             display: flex;
-            justify-content: center;
+            justify-content: flex-end;
             align-items: center;
-            gap: 0.5rem;
             margin-top: 1.5rem;
+            padding: 1rem 1.5rem;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--gray-200);
         }
 
         .pagination-info {
-            text-align: center;
             color: var(--gray-500);
             font-size: 0.875rem;
-            margin-bottom: 1rem;
+            margin-right: 2rem;
+            white-space: nowrap;
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
         }
 
         .pagination-button {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 2rem;
-            height: 2rem;
-            padding: 0 0.5rem;
+            min-width: 2.5rem;
+            height: 2.5rem;
+            padding: 0 0.75rem;
             border-radius: var(--border-radius);
             background: white;
             border: 1px solid var(--gray-200);
@@ -1074,22 +1132,36 @@ $isSuperUser = isSuperUser($user['username']);
             font-weight: 500;
             text-decoration: none;
             transition: all 0.2s ease;
+            cursor: pointer;
         }
 
         .pagination-button.active {
             background: var(--primary);
             color: white;
             border-color: var(--primary);
+            box-shadow: var(--shadow-sm);
         }
 
         .pagination-button:hover:not(.active):not(.disabled) {
             background: var(--gray-50);
             border-color: var(--gray-300);
+            transform: translateY(-1px);
         }
 
         .pagination-button.disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .pagination-button.first,
+        .pagination-button.last {
+            font-weight: 600;
+        }
+
+        .pagination-button.prev,
+        .pagination-button.next {
+            padding: 0 0.5rem;
         }
 
         /* Filter active indicator */
@@ -1256,6 +1328,23 @@ $isSuperUser = isSuperUser($user['username']);
 
             .modal-body {
                 padding: 1rem;
+            }
+
+            .pagination-container {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: center;
+                padding: 1rem;
+            }
+
+            .pagination-info {
+                margin-right: 0;
+                text-align: center;
+            }
+
+            .pagination {
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
     </style>
@@ -1434,7 +1523,7 @@ $isSuperUser = isSuperUser($user['username']);
                                                 $maskedName = substr($name, 0, 2) . str_repeat('*', $spacePos - 2) . substr($name, $spacePos);
                                                 echo htmlspecialchars($maskedName);
                                             } else {
-                                                echo '************';
+                                                echo '******';
                                             }
                                         }
                                     ?></td>
@@ -1524,15 +1613,18 @@ $isSuperUser = isSuperUser($user['username']);
                 </div>
                 
                 <?php if ($total_pages > 1): ?>
-                <div class="pagination">
+                <div class="pagination-container">
                     <div class="pagination-info">
                         Showing <?php echo min(($current_page - 1) * $leads_per_page + 1, $total_leads); ?> to 
                         <?php echo min($current_page * $leads_per_page, $total_leads); ?> of 
                         <?php echo $total_leads; ?> active leads
                     </div>
-                    <div>
+                    <div class="pagination">
                         <?php if ($current_page > 1): ?>
-                            <a href="<?php echo buildPaginationUrl($current_page - 1); ?>" class="pagination-button">
+                            <a href="<?php echo buildPaginationUrl(1); ?>" class="pagination-button first" title="First Page">
+                                First
+                            </a>
+                            <a href="<?php echo buildPaginationUrl($current_page - 1); ?>" class="pagination-button prev" title="Previous Page">
                                 <i class="fas fa-chevron-left"></i>
                             </a>
                         <?php endif; ?>
@@ -1545,15 +1637,19 @@ $isSuperUser = isSuperUser($user['username']);
                             <span class="pagination-button disabled">...</span>
                         <?php else: ?>
                             <a href="<?php echo buildPaginationUrl($page); ?>" 
-                               class="pagination-button <?php echo ($current_page == $page) ? 'active' : ''; ?>">
+                               class="pagination-button <?php echo ($current_page == $page) ? 'active' : ''; ?>"
+                               title="Page <?php echo $page; ?>">
                                 <?php echo $page; ?>
                             </a>
                         <?php endif; ?>
                         <?php endforeach; ?>
 
                         <?php if ($current_page < $total_pages): ?>
-                            <a href="<?php echo buildPaginationUrl($current_page + 1); ?>" class="pagination-button">
+                            <a href="<?php echo buildPaginationUrl($current_page + 1); ?>" class="pagination-button next" title="Next Page">
                                 <i class="fas fa-chevron-right"></i>
+                            </a>
+                            <a href="<?php echo buildPaginationUrl($total_pages); ?>" class="pagination-button last" title="Last Page">
+                                Last
                             </a>
                         <?php endif; ?>
                     </div>
@@ -1661,4 +1757,4 @@ $isSuperUser = isSuperUser($user['username']);
     
     <script src="assets/js/script.js"></script>
 </body>
-</html> 
+</html>

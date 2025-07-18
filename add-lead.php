@@ -279,8 +279,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $linkedin = isset($_POST['linkedin']) ? trim($_POST['linkedin']) : '';
         $temperature = isset($_POST['temperature']) ? trim($_POST['temperature']) : '';
         $status = isset($_POST['status']) ? trim($_POST['status']) : '';
+        
+        // Handle "Others" option for developer/project
         $developer = isset($_POST['developer']) ? trim($_POST['developer']) : '';
+        if ($developer === 'Others' && isset($_POST['developer_other']) && !empty(trim($_POST['developer_other']))) {
+            $developer = trim($_POST['developer_other']);
+        }
+        
+        // Handle "Others" option for project model
         $projectModel = isset($_POST['project_model']) ? trim($_POST['project_model']) : '';
+        if ($projectModel === 'Others' && isset($_POST['project_model_other']) && !empty(trim($_POST['project_model_other']))) {
+            $projectModel = trim($_POST['project_model_other']);
+        }
+        
         $priceRaw = isset($_POST['price']) ? trim($_POST['price']) : '';
         $remarks = isset($_POST['remarks']) ? trim($_POST['remarks']) : '';
         $source = isset($_POST['source']) ? trim($_POST['source']) : '';
@@ -301,12 +312,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $validation_errors[] = "Client name is required";
         } elseif (strlen($clientName) > 100) {
             $validation_errors[] = "Client name is too long (max 100 characters)";
-        }
-        
-        if (empty($phone)) {
-            $validation_errors[] = "Phone number is required";
-        } elseif (!preg_match('/^\d{11}$/', $phone)) {
-            $validation_errors[] = "Phone number must be 11 digits";
         }
         
         if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -432,7 +437,7 @@ function getLeadSources() {
             'Organic Posting', 'Email Marketing', 'Follow up', 'Manning', 
             'Walk in', 'Flyering', 'Chat messaging', 'Property Listing', 
             'Landing Page', 'Networking Events', 'Organic Sharing', 
-            'Youtube Marketing', 'LinkedIn', 'Open House'
+            'Youtube Marketing', 'LinkedIn', 'Open House', 'Facebook Page'
         ];
         
         foreach ($defaultSources as $source) {
@@ -786,6 +791,28 @@ debugLog("Page rendering started");
             resize: vertical;
             min-height: 100px;
         }
+
+        /* Others input field styling */
+        .others-input {
+            margin-top: 0.75rem;
+            display: none;
+        }
+
+        .others-input.show {
+            display: block;
+        }
+
+        .others-input input {
+            border-color: #4f46e5;
+            background-color: #f8fafc;
+        }
+
+        .others-input label {
+            font-size: 0.75rem;
+            color: #4f46e5;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
         
         /* Form actions */
         .form-actions {
@@ -978,11 +1005,11 @@ debugLog("Page rendering started");
                                        placeholder="Enter client's full name" maxlength="100" required>
                             </div>
                             
-                            <div class="form-group required-field">
-                                <label for="phone">Phone Number</label>
+                            <div class="form-group">
+                                <label for="phone">Phone Number <span class="optional-field">(Optional)</span></label>
                                 <input type="text" id="phone" name="phone" 
                                        value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
-                                       placeholder="e.g. 09123456789" maxlength="11" pattern="\d{11}" required>
+                                       placeholder="e.g. 09123456789" maxlength="11" pattern="\d{11}">
                             </div>      
                         </div>
                         
@@ -1070,14 +1097,27 @@ debugLog("Page rendering started");
                                         <?php echo htmlspecialchars($dev['name']); ?>
                                     </option>
                                     <?php endforeach; ?>
+                                    <option value="Others" <?php echo (isset($_POST['developer']) && $_POST['developer'] === 'Others') ? 'selected' : ''; ?>>Others</option>
                                 </select>
+                                <div class="others-input" id="developer-others">
+                                    <label for="developer_other">Specify Project</label>
+                                    <input type="text" id="developer_other" name="developer_other" 
+                                           value="<?php echo htmlspecialchars($_POST['developer_other'] ?? ''); ?>"
+                                           placeholder="Enter project name" maxlength="100">
+                                </div>
                             </div>
                             
                             <div class="form-group required-field">
                                 <label for="project_model">House Model</label>
-                                <select id="project_model" name="project_model" required>
+                                <select id="project_model" name="project_model" required onchange="toggleProjectModelOthers(this.value)">
                                     <option value="">Select House Model</option>
                                 </select>
+                                <div class="others-input" id="project-model-others">
+                                    <label for="project_model_other">Specify House Model</label>
+                                    <input type="text" id="project_model_other" name="project_model_other" 
+                                           value="<?php echo htmlspecialchars($_POST['project_model_other'] ?? ''); ?>"
+                                           placeholder="Enter house model name" maxlength="100">
+                                </div>
                             </div>
                         </div>
                         
@@ -1140,6 +1180,36 @@ debugLog("Page rendering started");
             };
         }
         
+        // Function to toggle developer others input
+        function toggleDeveloperOthers(value) {
+            const othersDiv = document.getElementById('developer-others');
+            const othersInput = document.getElementById('developer_other');
+            
+            if (value === 'Others') {
+                othersDiv.classList.add('show');
+                othersInput.required = true;
+            } else {
+                othersDiv.classList.remove('show');
+                othersInput.required = false;
+                othersInput.value = '';
+            }
+        }
+
+        // Function to toggle project model others input
+        function toggleProjectModelOthers(value) {
+            const othersDiv = document.getElementById('project-model-others');
+            const othersInput = document.getElementById('project_model_other');
+            
+            if (value === 'Others') {
+                othersDiv.classList.add('show');
+                othersInput.required = true;
+            } else {
+                othersDiv.classList.remove('show');
+                othersInput.required = false;
+                othersInput.value = '';
+            }
+        }
+        
         // Function to load project models based on selected developer
         function loadProjectModels(developer) {
             console.log('Loading project models for developer:', developer);
@@ -1151,9 +1221,12 @@ debugLog("Page rendering started");
             }
             
             // Clear existing options
-            projectModelSelect.innerHTML = '<option value="">Select Project Model</option>';
+            projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
             
-            if (developer) {
+            // Toggle developer others input
+            toggleDeveloperOthers(developer);
+            
+            if (developer && developer !== 'Others') {
                 try {
                     // Get models for the selected developer
                     const models = projectModelsData[developer] || [];
@@ -1178,10 +1251,17 @@ debugLog("Page rendering started");
                         });
                     }
                     
+                    // Add "Others" option
+                    const othersOption = document.createElement('option');
+                    othersOption.value = 'Others';
+                    othersOption.textContent = 'Others';
+                    projectModelSelect.appendChild(othersOption);
+                    
                     // Restore selected value if form was submitted with errors
                     const selectedModel = '<?php echo htmlspecialchars($_POST['project_model'] ?? ''); ?>';
-                    if (selectedModel && models.includes(selectedModel)) {
+                    if (selectedModel && (models.includes(selectedModel) || selectedModel === 'Others')) {
                         projectModelSelect.value = selectedModel;
+                        toggleProjectModelOthers(selectedModel);
                         console.log('Restored selected model:', selectedModel);
                     }
                     
@@ -1195,6 +1275,19 @@ debugLog("Page rendering started");
                     option.disabled = true;
                     projectModelSelect.appendChild(option);
                 }
+            } else if (developer === 'Others') {
+                // Add "Others" option for custom developer
+                const othersOption = document.createElement('option');
+                othersOption.value = 'Others';
+                othersOption.textContent = 'Others';
+                projectModelSelect.appendChild(othersOption);
+                
+                // Auto-select Others if it was previously selected
+                const selectedModel = '<?php echo htmlspecialchars($_POST['project_model'] ?? ''); ?>';
+                if (selectedModel === 'Others') {
+                    projectModelSelect.value = 'Others';
+                    toggleProjectModelOthers('Others');
+                }
             }
         }
 
@@ -1207,6 +1300,21 @@ debugLog("Page rendering started");
                 if (developerSelect && developerSelect.value) {
                     console.log('Initializing with pre-selected developer:', developerSelect.value);
                     loadProjectModels(developerSelect.value);
+                }
+                
+                // Add event listener for developer select change
+                if (developerSelect) {
+                    developerSelect.addEventListener('change', function() {
+                        loadProjectModels(this.value);
+                    });
+                }
+
+                // Add event listener for project model select change
+                const projectModelSelect = document.getElementById('project_model');
+                if (projectModelSelect) {
+                    projectModelSelect.addEventListener('change', function() {
+                        toggleProjectModelOthers(this.value);
+                    });
                 }
                 
                 // Price formatting
@@ -1285,6 +1393,18 @@ debugLog("Page rendering started");
                             saveBtn.disabled = false;
                         }
                     });
+                }
+                
+                // Initialize others inputs based on current values
+                const currentDeveloper = '<?php echo htmlspecialchars($_POST['developer'] ?? ''); ?>';
+                const currentProjectModel = '<?php echo htmlspecialchars($_POST['project_model'] ?? ''); ?>';
+                
+                if (currentDeveloper === 'Others') {
+                    toggleDeveloperOthers('Others');
+                }
+                
+                if (currentProjectModel === 'Others') {
+                    toggleProjectModelOthers('Others');
                 }
                 
                 // Debug: Log current state
