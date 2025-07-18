@@ -301,12 +301,12 @@ echo '<style>
                     </h1>
                     <div class="flex gap-2 mt-4 md:mt-0">
                         <button type="button"
-                            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
                             onclick="showAddModal()">
                             <i class="fas fa-plus"></i> Add New Lead
                         </button>
                         <button type="button"
-                            class="border border-gray-400 text-gray-700 px-4 py-2 rounded hover:bg-gray-100 flex items-center gap-2"
+                            class="border border-gray-400 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 flex items-center gap-2"
                             onclick="refreshData()">
                             <i class="fas fa-refresh"></i> Refresh
                         </button>
@@ -322,12 +322,12 @@ echo '<style>
                             </h5>
                             <div class="flex gap-2">
                                 <button type="button"
-                                    class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 flex items-center gap-2"
+                                    class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 flex items-center gap-2"
                                     onclick="applyFilters()">
                                     <i class="fas fa-search"></i> Search
                                 </button>
                                 <button type="button"
-                                    class="border border-gray-400 text-gray-700 px-3 py-1.5 rounded text-sm hover:bg-gray-100 flex items-center gap-2"
+                                    class="border border-gray-400 text-gray-700 px-3 py-1.5 rounded-md text-sm hover:bg-gray-100 flex items-center gap-2"
                                     onclick="clearFilters()">
                                     <i class="fas fa-times"></i> Clear All
                                 </button>
@@ -346,11 +346,8 @@ echo '<style>
                                     class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     id="filterStatus">
                                     <option value="">All Statuses</option>
-                                    <option value="Accreditation">Accreditation</option>
-                                    <option value="Assessment">Assessment</option>
-                                    <option value="Product Knowledge System">Product Knowledge Seminar</option>
-                                    <option value="Site tour">Site tour</option>
-                                    <option value="Onboarding">Onboarding</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
                                 </select>
                             </div>
                             <div class="flex-1">
@@ -395,7 +392,7 @@ echo '<style>
                         <div id="filterResults" class="mt-3 hidden">
                             <small class="text-gray-500 flex items-center gap-2">
                                 <i class="fas fa-info-circle"></i>
-                                <span id="resultsCount">0</span> results found
+                                <span id="resultsCount">0</span> Results found
                                 <span id="filterTime"></span>
                             </small>
                         </div>
@@ -403,27 +400,45 @@ echo '<style>
                 </div>
 
                 <!-- Lead Table -->
-                <div class="bg-white rounded-lg shadow">
-                    <div class="px-6 py-4 border-b">
+                <div class="rounded-xl shadow bg-white">
+                    <div class="px-6 py-4 border-b border-gray-200">
                         <h5 class="text-lg font-semibold mb-0">Recruitment Leads</h5>
                     </div>
-                    <div class="p-6">
+                    <div class="p-0">
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 table-auto" id="recruitmentTable">
-                                <thead class="bg-gray-800 text-white">
+                            <table id="recruitmentTable"
+                                class="w-full min-w-[900px] border-separate border-spacing-0 rounded-xl text-left bg-white">
+                                <thead class="sticky top-0 z-10 bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-2 cursor-pointer" onclick="sortTable('created_at')">
+                                        <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
+                                            onclick="sortTable('created_at')">
                                             Timestamp <i class="fas fa-sort"></i>
                                         </th>
-                                        <th class="px-4 py-2 cursor-pointer" onclick="sortTable('full_name')">
+                                        <th
+                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                            Status</th>
+                                        <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
+                                            onclick="sortTable('full_name')">
                                             Name <i class="fas fa-sort"></i>
                                         </th>
-                                        <th class="px-4 py-2">Contact</th>
-                                        <th class="px-4 py-2">Email</th>
-                                        <th class="px-4 py-2">Recruiter</th>
-                                        <th class="px-4 py-2">Status</th>
-                                        <th class="px-4 py-2">Source</th>
-                                        <th class="px-4 py-2">Actions</th>
+                                        <th
+                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                            Contact</th>
+                                        <th
+                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                            Email</th>
+                                        <th
+                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                            Recruiter</th>
+                                        <th
+                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                            Progress</th>
+                                        <th
+                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                            Source</th>
+                                        <th
+                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                            Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="recruitmentTableBody">
@@ -466,17 +481,25 @@ echo '<style>
                     </div>
                     <div class="p-6">
                         <form id="recruitmentForm">
+                            <?php
+
+                            $required_mark = '<span class="text-[12px] text-red-500">*</span>';
+                            $automatic_mark = '<span class="text-[12px] text-gray-500">(Automatic)</span>';
+                            $optional_mark = '<span class="text-[12px] text-gray-500">(Optional)</span>';
+
+                            ?>
                             <input type="hidden" id="leadId" name="id">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label for="fullName" class="block text-sm font-medium mb-1">Full Name *</label>
+                                    <label for="fullName" class="block text-sm font-medium mb-1">Full Name
+                                        <?= $required_mark; ?></label>
                                     <input type="text"
                                         class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         id="fullName" name="full_name" required>
                                 </div>
                                 <div>
                                     <label for="contactNumber" class="block text-sm font-medium mb-1">Contact Number
-                                        *</label>
+                                        <?= $required_mark; ?></label>
                                     <input type="text"
                                         class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         id="contactNumber" name="contact_number" required>
@@ -484,27 +507,47 @@ echo '<style>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label for="email" class="block text-sm font-medium mb-1">Email</label>
+                                    <label for="email" class="block text-sm font-medium mb-1">Email
+                                        <?= $required_mark; ?></label>
                                     <input type="email"
                                         class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="email" name="email">
+                                        id="email" name="email" required>
                                 </div>
+
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label for="recruiterName" class="block text-sm font-medium mb-1">Recruiter
-                                        Name</label>
+                                        Name <?= $automatic_mark; ?></label>
                                     <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
                                         id="recruiterName" name="recruiter_name"
                                         value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" readonly
                                         aria-readonly="true">
                                 </div>
                                 <div>
-                                    <label for="teamName" class="block text-sm font-medium mb-1">Team</label>
+                                    <label for="teamName" class="block text-sm font-medium mb-1">Team
+                                        <?= $automatic_mark; ?></label>
                                     <?php
                                     $teamName = "No Team";
-                                    if (!empty($lead['recruiter_name'])) {
+                                    // Edit mode: show the team of the recruiter who added the lead
+                                    if (!empty($lead['recruiter_team_id'])) {
                                         $conn = getDbConnection();
-                                        $stmt = $conn->prepare("SELECT t.name FROM users u LEFT JOIN teams t ON u.team_id = t.id WHERE u.name = ? LIMIT 1");
-                                        $stmt->bind_param("s", $lead['recruiter_name']);
+                                        $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ? LIMIT 1");
+                                        $stmt->bind_param("i", $lead['recruiter_team_id']);
+                                        $stmt->execute();
+                                        $stmt->bind_result($foundTeamName);
+                                        if ($stmt->fetch() && $foundTeamName) {
+                                            $teamName = $foundTeamName;
+                                        }
+                                        $stmt->close();
+                                        $conn->close();
+                                    }
+                                    // Add mode: show the current user's team
+                                    elseif (!empty($current_user['team_id'])) {
+                                        $conn = getDbConnection();
+                                        $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ? LIMIT 1");
+                                        $stmt->bind_param("i", $current_user['team_id']);
                                         $stmt->execute();
                                         $stmt->bind_result($foundTeamName);
                                         if ($stmt->fetch() && $foundTeamName) {
@@ -519,22 +562,28 @@ echo '<style>
                                         aria-readonly="true">
                                 </div>
                             </div>
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label for="status" class="block text-sm font-medium mb-1">Status *</label>
+                                    <label for="status" class="block text-sm font-medium mb-1">Status
+                                        <?= $required_mark; ?></label>
                                     <select
                                         class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         id="status" name="status" required>
-                                        <option value="">Select Status</option>
+                                        <!-- <option value="">Select Status</option>
                                         <option value="Accreditation">Accreditation</option>
                                         <option value="Assessment">Assessment</option>
                                         <option value="Product Knowledge System">Product Knowledge Seminar</option>
                                         <option value="Site tour">Site tour</option>
-                                        <option value="Onboarding">Onboarding</option>
+                                        <option value="Onboarding">Onboarding</option> -->
+
+                                        <option value="Active">Active</option>
+                                        <option value="Inactive">Inactive</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label for="source" class="block text-sm font-medium mb-1">Source *</label>
+                                    <label for="source" class="block text-sm font-medium mb-1">Source
+                                        <?= $required_mark; ?></label>
                                     <select
                                         class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         id="source" name="source" required>
@@ -564,12 +613,182 @@ echo '<style>
                                     </select>
                                 </div>
                             </div>
+
                             <div class="mb-4">
-                                <label for="remarks" class="block text-sm font-medium mb-1">Remarks</label>
-                                <textarea
-                                    class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    id="remarks" name="remarks" rows="3"></textarea>
-                            </div>
+                                <label for="recruitment_progress" class="block text-sm font-medium mb-1">Recruitment
+                                    Progress
+                                    <?= $required_mark; ?></label>
+
+                                <?php
+
+                                $checklist_style = 'w-full text-center py-2 px-3 border rounded-lg transition-all duration-300 cursor-pointer bg-white text-gray-800 peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600';
+
+                                $label_style = 'text-gray-600 text-sm';
+
+                                $label_subsection_style = 'space-y-2 border-l border-gray-300 pl-2 w-[97%]';
+                                ?>
+                                <div id="progressChecklist" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="space-y-2">
+                                        <label for="pre-recruitment"
+                                            class="<?php echo htmlspecialchars($label_style) ?>">Pre-recruitment</label>
+                                        <!-- Pre-recruitment checkboxes -->
+                                        <label class="block">
+                                            <input type="checkbox" id="pre-assessment" name="pre-assessment" value="1"
+                                                class="peer hidden">
+                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                Pre-Assessment
+                                            </div>
+                                        </label>
+                                        <label class="block">
+                                            <input type="checkbox" id="accreditation" name="accreditation" value="1"
+                                                class="peer hidden">
+                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                Accreditation
+                                            </div>
+                                        </label>
+                                        <label class="block">
+                                            <input type="checkbox" id="assessment" name="assessment" value="1"
+                                                class="peer hidden">
+                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                Assessment
+                                            </div>
+                                        </label>
+                                        <label class="block">
+                                            <input type="checkbox" id="sales_training" name="sales_training" value="1"
+                                                class="peer hidden">
+                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                Sales 101
+                                            </div>
+                                        </label>
+                                        <label class="block">
+                                            <input type="checkbox" id="site_tour" name="site_tour" value="1"
+                                                class="peer hidden">
+                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                Site Tour
+                                            </div>
+                                        </label>
+                                        <label class="block">
+                                            <input type="checkbox" id="focus_projects" name="focus_projects" value="1"
+                                                class="peer hidden">
+                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                Focus Projects
+                                            </div>
+                                        </label>
+                                        <!-- Pre-recruitment progress bar -->
+                                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-2">
+                                            <div id="preRecruitmentProgressBar"
+                                                class="h-3 bg-green-500 transition-all duration-300" style="width: 0%;">
+                                            </div>
+                                        </div>
+                                        <div class="text-xs text-right text-gray-600" id="preRecruitmentProgressText">0%
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <label for="post-recruitment"
+                                            class="<?php echo htmlspecialchars($label_style) ?>">Post-recruitment</label>
+                                        <!-- Post-recruitment checkboxes -->
+                                        <label class="block">
+                                            <input type="checkbox" id="habit_forming" name="habit_forming" value="1"
+                                                class="peer hidden">
+                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                Habit Forming
+                                            </div>
+                                        </label>
+                                        <div class="space-y-2">
+                                            <label for="training_materials"
+                                                class="<?php echo htmlspecialchars($label_style) ?> text-xs">
+                                                Training Materials
+                                            </label>
+                                            <div class="flex justify-end">
+                                                <div class="<?php echo htmlspecialchars($label_subsection_style) ?>">
+                                                    <label class="block">
+                                                        <input type="checkbox" id="digital_training"
+                                                            name="digital_training" value="1" class="peer hidden">
+                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?> ">
+                                                            Digital Marketing Training
+                                                        </div>
+                                                    </label>
+                                                    <label class="block">
+                                                        <input type="checkbox" id="sales_training_materials"
+                                                            name="sales_training_materials" value="1"
+                                                            class="peer hidden">
+                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                            Sales Training
+                                                        </div>
+                                                    </label>
+                                                    <label class="block">
+                                                        <input type="checkbox" id="objection_handling"
+                                                            name="objection_handling" value="1" class="peer hidden">
+                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                            Objection Handling
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-2">
+                                            <label for="tools_familiarization"
+                                                class="<?php echo htmlspecialchars($label_style) ?> text-xs">
+                                                Tools Familiarization
+                                            </label>
+                                            <div class="flex justify-end">
+                                                <div class="<?php echo htmlspecialchars($label_subsection_style) ?>">
+                                                    <label class="block">
+                                                        <input type="checkbox" id="VAST" name="VAST" value="1"
+                                                            class="peer hidden">
+                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                            VAST Training
+                                                        </div>
+                                                    </label>
+                                                    <label class="block">
+                                                        <input type="checkbox" id="sales_monitoring"
+                                                            name="sales_monitoring" value="1" class="peer hidden">
+                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                            Google Site (Sales Monitoring)
+                                                        </div>
+                                                    </label>
+                                                    <label class="block">
+                                                        <input type="checkbox" id="LMS" name="LMS" value="1"
+                                                            class="peer hidden">
+                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                            Lead Management System
+                                                        </div>
+                                                    </label>
+                                                    <label class="block">
+                                                        <input type="checkbox" id="comm_structure" name="comm_structure"
+                                                            value="1" class="peer hidden">
+                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
+                                                            Comm Structure
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Post-recruitment progress bar -->
+                                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-2">
+                                            <div id="postRecruitmentProgressBar"
+                                                class="h-3 bg-green-500 transition-all duration-300" style="width: 0%;">
+                                            </div>
+                                        </div>
+                                        <div class="text-xs text-right text-gray-600" id="postRecruitmentProgressText">
+                                            0%</div>
+                                    </div>
+                                </div>
+                                <!-- Overall progress bar -->
+                                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden mt-4">
+                                    <div id="progressBar" class="h-4 bg-green-500 transition-all duration-300"
+                                        style="width: 0%;"></div>
+                                </div>
+                                <div class="text-sm text-right text-gray-600" id="progressText">0%</div>
+                                <div class="mb-4">
+                                    <label for="remarks" class="block text-sm font-medium mb-1">Remarks
+                                        <?= $optional_mark; ?>
+                                    </label>
+                                    <textarea
+                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        id="remarks" name="remarks" rows="3"></textarea>
+                                </div>
                         </form>
                     </div>
                     <div class="flex justify-end gap-2 border-t px-6 py-4">
@@ -668,6 +887,10 @@ echo '<style>
     }
     let currentFilters = {}
     let allLeads = []
+
+    // Inject current user info from PHP
+    const CURRENT_USER_ID = <?php echo json_encode($current_user['id']); ?>;
+    const CURRENT_USER_ROLE = <?php echo json_encode($current_user['role']); ?>;
 
     // Debounce function to limit how often a function is called
     function debounce(func, delay) {
@@ -806,28 +1029,77 @@ echo '<style>
 
         leads.forEach((lead, index) => {
             const row = document.createElement("tr")
-            const timestamp = new Date(lead.created_at).toLocaleString()
-            // Removed interestBadge
+            const dateObj = new Date(lead.created_at);
+            const timestamp = dateObj.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }).replace(',', '').replace(/(\d{4}) (\d{1,2}):/, '$1 at $2:');
+
+            // Masking logic: only recruiter or admin can see full details
+            const isOwnLead = (CURRENT_USER_ID == lead.recruiter_id);
+            const isAdmin = (CURRENT_USER_ROLE === 'admin');
+            const canSeeDetails = isOwnLead || isAdmin;
+            const canEditDelete = isOwnLead || isAdmin;
 
             row.style.animationDelay = `${index * 50}ms`
-            row.className = 'fade-in'
+            row.className = 'fade-in hover:bg-gray-50 transition-colors';
+
+            function maskWord(word) {
+                if (word.length <= 2) return word[0] + '*'.repeat(word.length - 1);
+                if (word.length <= 4) return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1];
+                return word.slice(0, 2) + '*'.repeat(word.length - 4) + word.slice(-2);
+            }
+
+            function maskText(text) {
+                if (!text) return '';
+                return text.split(' ').map(maskWord).join(' ');
+            }
 
             row.innerHTML = `
-        <td>${timestamp}</td>
-        <td><strong>${lead.full_name || 'N/A'}</strong></td>
-        <td>${lead.contact_number || 'N/A'}</td>
-        <td>${lead.email || 'N/A'}</td>
-        <td>${lead.recruiter_name || 'N/A'}</td>
-        <td><span class="badge bg-secondary">${lead.status || 'N/A'}</span></td>
-        <td><small>${lead.source || 'N/A'}</small></td>
-        <td>
-            <div class="btn-group btn-group-sm flex items-center justify-center gap-3">
+        <td class="px-6 py-4 align-middle">${timestamp}</td>
+        <td class="px-6 py-4 align-middle">
+  ${lead.status === 'Active' ? `<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span>` :
+                        lead.status === 'Inactive' ? `<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Inactive</span>` :
+                            `<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">${lead.status || 'N/A'}</span>`}
+</td>
+        <td class="px-6 py-4 align-middle"><strong>${canSeeDetails ? (lead.full_name || 'N/A') : maskText(lead.full_name || '')}</strong></td>
+        <td class="px-6 py-4 align-middle whitespace-nowrap">${canSeeDetails ? (lead.contact_number || 'N/A') : maskText(lead.contact_number || '')}</td>
+        <td class="px-6 py-4 align-middle">${canSeeDetails ? (lead.email || 'N/A') : maskText(lead.email || '')}</td>
+        <td class="px-6 py-4 align-middle">${lead.recruiter_name || 'N/A'}</td>
+        <td class="px-6 py-4 align-middle">
+        <div class='flex flex-col items-start gap-1 w-full'>
+            <!-- Overall Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div class="progress-bar h-3 bg-green-500 transition-all duration-300" style="width: ${getProgressPercent(lead)}%"></div>
+            </div>
+            <div class="text-xs text-left text-gray-600">Overall: ${getProgressPercent(lead)}%</div>
+            <!-- Pre-recruitment Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-1">
+                <div class="progress-bar h-3 bg-blue-500 transition-all duration-300" style="width: ${getPreRecruitmentPercent(lead)}%"></div>
+            </div>
+            <div class="text-xs text-left text-gray-600">Pre: ${getPreRecruitmentPercent(lead)}%</div>
+            <!-- Post-recruitment Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-1">
+                <div class="progress-bar h-3 bg-yellow-500 transition-all duration-300" style="width: ${getPostRecruitmentPercent(lead)}%"></div>
+            </div>
+            <div class="text-xs text-left text-gray-600">Post: ${getPostRecruitmentPercent(lead)}%</div>
+        </div>
+        </td>
+        <td class="px-6 py-4 align-middle"><small>${lead.source || 'N/A'}</small></td>
+        <td class="px-6 py-4 align-middle">
+            <div class="btn-group btn-group-sm flex items-center justify-center gap-2">
+                ${canEditDelete ? `
                 <button class="btn btn-outline-primary text-yellow-500 border-2 p-1 rounded-md border-yellow-500 hover:border-yellow-500 hover:bg-yellow-500 hover:text-white transition-all" onclick="editLead(${lead.id})" title="Edit">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button class="btn btn-outline-danger text-red-500 border-2 p-1 rounded-md border-red-500 hover:border-red-500 hover:bg-red-500 hover:text-white transition-all" onclick="deleteLead(${lead.id})" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
+                ` : ''}
             </div>
         </td>
     `
@@ -982,6 +1254,21 @@ echo '<style>
         document.getElementById('recruitmentForm').reset();
         document.getElementById('leadId').value = '';
         document.getElementById('recruiterName').value = "<?php echo htmlspecialchars($user['name'] ?? ''); ?>";
+        // Reset all checklist checkboxes and progress bar
+        const checklistKeys = [
+            'pre-assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'onboarding',
+            'habit_forming',
+            'digital_training', 'sales_training_materials', 'objection_handling', 'VAST', 'sales_monitoring',
+            'LMS', 'comm_structure', 'focus_projects'
+        ];
+        checklistKeys.forEach(id => {
+            const cb = document.getElementById(id);
+            if (cb) cb.checked = false;
+        });
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        if (progressBar) progressBar.style.width = '0%';
+        if (progressText) progressText.textContent = '0%';
         document.getElementById('recruitmentModal').classList.remove('hidden');
     }
 
@@ -1028,12 +1315,54 @@ echo '<style>
                     document.getElementById("contactNumber").value = lead.contact_number || ""
                     document.getElementById("email").value = lead.email || ""
                     document.getElementById("recruiterName").value = lead.recruiter_name || ""
-                    // document.getElementById("interestLevel").value = lead.interest_level || "" // Removed
                     document.getElementById("status").value = lead.status || ""
                     document.getElementById("source").value = lead.source || ""
-                    // Removed this line as 'agentOnboardingStatus' input is no longer in the form
-                    // document.getElementById("agentOnboardingStatus").value = lead.agent_onboarding_status || "" 
                     document.getElementById("remarks").value = lead.remarks || ""
+
+                    // Fetch and display the team name dynamically
+                    const teamNameInput = document.getElementById("teamName");
+                    teamNameInput.value = "Loading...";
+                    if (lead.recruiter_team_id) {
+                        fetch('get_team_name.php?team_id=' + lead.recruiter_team_id)
+                            .then(res => res.json())
+                            .then(teamData => {
+                                teamNameInput.value = teamData.name || "No Team";
+                            })
+                            .catch(() => {
+                                teamNameInput.value = "No Team";
+                            });
+                    } else {
+                        teamNameInput.value = "No Team";
+                    }
+
+                    // Set checklist checkboxes and progress bar from lead data
+                    const checklistKeys = [
+                        'pre-assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour',
+                        'onboarding',
+                        'habit_forming',
+                        'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
+                        'sales_monitoring',
+                        'LMS', 'comm_structure', 'focus_projects'
+                    ];
+                    checklistKeys.forEach(id => {
+                        const cb = document.getElementById(id);
+                        // Use snake_case for DB fields, kebab-case for IDs
+                        const dbKey = id.replace(/-/g, '_');
+                        if (cb) cb.checked = !!lead[dbKey];
+                    });
+                    // Update progress bar
+                    (function updateProgress() {
+                        let checked = 0;
+                        checklistKeys.forEach(id => {
+                            const cb = document.getElementById(id);
+                            if (cb && cb.checked) checked++;
+                        });
+                        const percent = Math.round((checked / checklistKeys.length) * 100);
+                        const progressBar = document.getElementById('progressBar');
+                        const progressText = document.getElementById('progressText');
+                        if (progressBar) progressBar.style.width = percent + '%';
+                        if (progressText) progressText.textContent = percent + '%';
+                    })();
 
                     // Show the modal
                     document.getElementById('recruitmentModal').classList.remove('hidden');
@@ -1181,6 +1510,95 @@ echo '<style>
             }, 500);
         }, 3000);
     }
+
+    function getProgressPercent(lead) {
+        const keys = [
+            'pre_assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects',
+            'habit_forming', 'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
+            'sales_monitoring',
+            'LMS', 'comm_structure'
+        ];
+        let checked = 0;
+        keys.forEach(k => {
+            if (lead[k]) checked++;
+        });
+        return Math.round((checked / keys.length) * 100);
+    }
+
+    function getPreRecruitmentPercent(lead) {
+        const keys = [
+            'pre_assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects'
+        ];
+        let checked = 0;
+        keys.forEach(k => {
+            if (lead[k]) checked++;
+        });
+        return Math.round((checked / keys.length) * 100);
+    }
+
+    function getPostRecruitmentPercent(lead) {
+        const keys = [
+            'habit_forming', 'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
+            'sales_monitoring',
+            'LMS', 'comm_structure'
+        ];
+        let checked = 0;
+        keys.forEach(k => {
+            if (lead[k]) checked++;
+        });
+        return Math.round((checked / keys.length) * 100);
+    }
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Checklist keys for each section
+        const preRecruitmentKeys = [
+            'pre-assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects'
+        ];
+        const postRecruitmentKeys = [
+            'habit_forming', 'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
+            'sales_monitoring', 'LMS', 'comm_structure'
+        ];
+        const allKeys = preRecruitmentKeys.concat(postRecruitmentKeys);
+        const checkboxes = allKeys.map(id => document.getElementById(id)).filter(Boolean);
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const preRecruitmentProgressBar = document.getElementById('preRecruitmentProgressBar');
+        const preRecruitmentProgressText = document.getElementById('preRecruitmentProgressText');
+        const postRecruitmentProgressBar = document.getElementById('postRecruitmentProgressBar');
+        const postRecruitmentProgressText = document.getElementById('postRecruitmentProgressText');
+
+        function updateProgress() {
+            // Overall
+            let checked = 0;
+            checkboxes.forEach(cb => {
+                if (cb && cb.checked) checked++;
+            });
+            const percent = Math.round((checked / checkboxes.length) * 100);
+            if (progressBar) progressBar.style.width = percent + '%';
+            if (progressText) progressText.textContent = percent + '%';
+            // Pre-recruitment
+            let preChecked = 0;
+            preRecruitmentKeys.forEach(id => {
+                const cb = document.getElementById(id);
+                if (cb && cb.checked) preChecked++;
+            });
+            const prePercent = Math.round((preChecked / preRecruitmentKeys.length) * 100);
+            if (preRecruitmentProgressBar) preRecruitmentProgressBar.style.width = prePercent + '%';
+            if (preRecruitmentProgressText) preRecruitmentProgressText.textContent = prePercent + '%';
+            // Post-recruitment
+            let postChecked = 0;
+            postRecruitmentKeys.forEach(id => {
+                const cb = document.getElementById(id);
+                if (cb && cb.checked) postChecked++;
+            });
+            const postPercent = Math.round((postChecked / postRecruitmentKeys.length) * 100);
+            if (postRecruitmentProgressBar) postRecruitmentProgressBar.style.width = postPercent + '%';
+            if (postRecruitmentProgressText) postRecruitmentProgressText.textContent = postPercent + '%';
+        }
+        checkboxes.forEach(cb => cb && cb.addEventListener('change', updateProgress));
+        updateProgress();
+    });
     </script>
     <script src="assets/js/script.js"></script>
 </body>
