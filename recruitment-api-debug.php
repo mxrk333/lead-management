@@ -22,19 +22,22 @@ function debugLog($message, $data = null)
     error_log("RECRUITMENT API DEBUG: " . $message . ($data ? " - " . json_encode($data) : ""));
 }
 
-// --- Start of new code for automatic recruiter name ---
+// --- Start of new code for automatic recruiter name and id ---
 $current_recruiter_name = '';
+$current_recruiter_id = null;
 if (isset($_SESSION['user_id']) && $pdo !== null) {
     try {
-        $stmt = $pdo->prepare("SELECT name FROM users WHERE id = :user_id");
+        $stmt = $pdo->prepare("SELECT id, name FROM users WHERE id = :user_id");
         $stmt->execute([':user_id' => $_SESSION['user_id']]);
         $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($user_data) {
             $current_recruiter_name = $user_data['name'];
+            $current_recruiter_id = $user_data['id'];
         }
     } catch (Exception $e) {
-        error_log("Error fetching recruiter name from session in debug API: " . $e->getMessage());
+        error_log("Error fetching recruiter info from session in debug API: " . $e->getMessage());
         $current_recruiter_name = '';
+        $current_recruiter_id = null;
     }
 }
 // --- End of new code ---
@@ -68,7 +71,7 @@ function get_recruitment_leads(PDO $pdo, array $filters = [])
 
     try {
         // Build base query
-        $sql = "SELECT * FROM recruitment_leads WHERE 1=1";
+        $sql = "SELECT id, timestamp, full_name, contact_number, email, recruiter_name, status, source, agent_onboarding_status, remarks, created_at, updated_at, recruiter_id, recruiter_team_id, pre_assessment, accreditation, assessment, sales_training, site_tour, onboarding, habit_forming, digital_training, sales_training_materials, objection_handling, VAST, sales_monitoring, LMS, comm_structure, terminologies, focus_projects FROM recruitment_leads WHERE 1=1";
         $params = [];
 
         // Add filter conditions
@@ -154,7 +157,7 @@ function get_recruitment_leads(PDO $pdo, array $filters = [])
  * @param string $recruiter_name_override Optional: Override recruiter name from session.
  * @return array An associative array containing success status and message.
  */
-function add_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_override = '')
+function add_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_override = '', $recruiter_id_override = null)
 {
     debugLog("add_recruitment_lead called", $data);
     try {
@@ -168,13 +171,27 @@ function add_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_over
 
         // Use override if provided, otherwise use data['recruiter_name'] (which will be ignored from POST)
         $final_recruiter_name = $recruiter_name_override ?: ($data['recruiter_name'] ?? '');
+        $final_recruiter_id = $recruiter_id_override ?: null;
+        $final_recruiter_team_id = null;
+
+        // Fetch the recruiter's team_id at insert time
+        if ($final_recruiter_id) {
+            $stmt = $pdo->prepare("SELECT team_id FROM users WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => $final_recruiter_id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row && $row['team_id']) {
+                $final_recruiter_team_id = $row['team_id'];
+            }
+        }
 
         $sql = "INSERT INTO recruitment_leads (
-                  full_name, contact_number, email, recruiter_name, 
-                  status, source, agent_onboarding_status, remarks
+                  full_name, contact_number, email, recruiter_name, recruiter_id, recruiter_team_id,
+                  status, source, agent_onboarding_status, remarks,
+                  pre_assessment, accreditation, assessment, sales_training, site_tour, onboarding, digital_training, sales_training_materials, objection_handling, VAST, sales_monitoring, LMS, comm_structure, terminologies, focus_projects, habit_forming
               ) VALUES (
-                  :full_name, :contact_number, :email, :recruiter_name, 
-                  :status, :source, :agent_onboarding_status, :remarks
+                  :full_name, :contact_number, :email, :recruiter_name, :recruiter_id, :recruiter_team_id,
+                  :status, :source, :agent_onboarding_status, :remarks,
+                  :pre_assessment, :accreditation, :assessment, :sales_training, :site_tour, :onboarding, :digital_training, :sales_training_materials, :objection_handling, :VAST, :sales_monitoring, :LMS, :comm_structure, :terminologies, :focus_projects, :habit_forming
               )";
 
         $stmt = $pdo->prepare($sql);
@@ -183,10 +200,28 @@ function add_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_over
             ':contact_number' => $data['contact_number'],
             ':email' => $data['email'] ?? '',
             ':recruiter_name' => $final_recruiter_name, // Use the determined recruiter name
+            ':recruiter_id' => $final_recruiter_id,
+            ':recruiter_team_id' => $final_recruiter_team_id,
             ':status' => $data['status'],
             ':source' => $data['source'],
             ':agent_onboarding_status' => $data['agent_onboarding_status'] ?? null,
-            ':remarks' => $data['remarks'] ?? ''
+            ':remarks' => $data['remarks'] ?? '',
+            ':pre_assessment' => !empty($data['pre-assessment']) ? 1 : 0,
+            ':accreditation' => !empty($data['accreditation']) ? 1 : 0,
+            ':assessment' => !empty($data['assessment']) ? 1 : 0,
+            ':sales_training' => !empty($data['sales_training']) ? 1 : 0,
+            ':site_tour' => !empty($data['site_tour']) ? 1 : 0,
+            ':onboarding' => !empty($data['onboarding']) ? 1 : 0,
+            ':digital_training' => !empty($data['digital_training']) ? 1 : 0,
+            ':sales_training_materials' => !empty($data['sales_training_materials']) ? 1 : 0,
+            ':objection_handling' => !empty($data['objection_handling']) ? 1 : 0,
+            ':VAST' => !empty($data['VAST']) ? 1 : 0,
+            ':sales_monitoring' => !empty($data['sales_monitoring']) ? 1 : 0,
+            ':LMS' => !empty($data['LMS']) ? 1 : 0,
+            ':comm_structure' => !empty($data['comm_structure']) ? 1 : 0,
+            ':terminologies' => !empty($data['terminologies']) ? 1 : 0,
+            ':focus_projects' => !empty($data['focus_projects']) ? 1 : 0,
+            ':habit_forming' => !empty($data['habit_forming']) ? 1 : 0
         ]);
 
         if ($result) {
@@ -209,7 +244,7 @@ function add_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_over
  * @param string $recruiter_name_override Optional: Override recruiter name from session.
  * @return array An associative array containing success status and message.
  */
-function update_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_override = '')
+function update_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_override = '', $recruiter_id_override = null)
 {
     debugLog("update_recruitment_lead called", $data);
     try {
@@ -223,16 +258,46 @@ function update_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_o
 
         // Use override if provided, otherwise use data['recruiter_name'] (which will be ignored from POST)
         $final_recruiter_name = $recruiter_name_override ?: ($data['recruiter_name'] ?? '');
+        $final_recruiter_id = $recruiter_id_override ?: null;
+
+        // Ensure recruiter_team_id is set
+        $final_recruiter_team_id = $data['recruiter_team_id'] ?? null;
+        if (!$final_recruiter_team_id && $final_recruiter_id) {
+            $stmt = $pdo->prepare("SELECT team_id FROM users WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => $final_recruiter_id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row && $row['team_id']) {
+                $final_recruiter_team_id = $row['team_id'];
+            }
+        }
 
         $sql = "UPDATE recruitment_leads SET 
                   full_name = :full_name,
                   contact_number = :contact_number,
                   email = :email,
                   recruiter_name = :recruiter_name,
+                  recruiter_id = :recruiter_id,
+                  recruiter_team_id = :recruiter_team_id,
                   status = :status,
                   source = :source,
                   agent_onboarding_status = :agent_onboarding_status,
                   remarks = :remarks,
+                  pre_assessment = :pre_assessment,
+                  accreditation = :accreditation,
+                  assessment = :assessment,
+                  sales_training = :sales_training,
+                  site_tour = :site_tour,
+                  onboarding = :onboarding,
+                  digital_training = :digital_training,
+                  sales_training_materials = :sales_training_materials,
+                  objection_handling = :objection_handling,
+                  VAST = :VAST,
+                  sales_monitoring = :sales_monitoring,
+                  LMS = :LMS,
+                  comm_structure = :comm_structure,
+                  terminologies = :terminologies,
+                  focus_projects = :focus_projects,
+                  habit_forming = :habit_forming,
                   updated_at = NOW()
               WHERE id = :id";
 
@@ -243,10 +308,28 @@ function update_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_o
             ':contact_number' => $data['contact_number'],
             ':email' => $data['email'] ?? '',
             ':recruiter_name' => $final_recruiter_name, // Use the determined recruiter name
+            ':recruiter_id' => $final_recruiter_id,
+            ':recruiter_team_id' => $final_recruiter_team_id,
             ':status' => $data['status'],
             ':source' => $data['source'],
             ':agent_onboarding_status' => $data['agent_onboarding_status'] ?? null,
-            ':remarks' => $data['remarks'] ?? ''
+            ':remarks' => $data['remarks'] ?? '',
+            ':pre_assessment' => !empty($data['pre-assessment']) ? 1 : 0,
+            ':accreditation' => !empty($data['accreditation']) ? 1 : 0,
+            ':assessment' => !empty($data['assessment']) ? 1 : 0,
+            ':sales_training' => !empty($data['sales_training']) ? 1 : 0,
+            ':site_tour' => !empty($data['site_tour']) ? 1 : 0,
+            ':onboarding' => !empty($data['onboarding']) ? 1 : 0,
+            ':digital_training' => !empty($data['digital_training']) ? 1 : 0,
+            ':sales_training_materials' => !empty($data['sales_training_materials']) ? 1 : 0,
+            ':objection_handling' => !empty($data['objection_handling']) ? 1 : 0,
+            ':VAST' => !empty($data['VAST']) ? 1 : 0,
+            ':sales_monitoring' => !empty($data['sales_monitoring']) ? 1 : 0,
+            ':LMS' => !empty($data['LMS']) ? 1 : 0,
+            ':comm_structure' => !empty($data['comm_structure']) ? 1 : 0,
+            ':terminologies' => !empty($data['terminologies']) ? 1 : 0,
+            ':focus_projects' => !empty($data['focus_projects']) ? 1 : 0,
+            ':habit_forming' => !empty($data['habit_forming']) ? 1 : 0
         ]);
 
         if ($result) {
@@ -358,13 +441,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         case 'add_recruitment_lead':
             // Pass the $pdo object and $_POST data to the function
-            $result = add_recruitment_lead($pdo, $_POST, $current_recruiter_name);
+            $result = add_recruitment_lead($pdo, $_POST, $current_recruiter_name, $current_recruiter_id);
             echo json_encode($result);
             break;
 
         case 'update_recruitment_lead':
             // Pass the $pdo object and $_POST data to the function
-            $result = update_recruitment_lead($pdo, $_POST, $current_recruiter_name);
+            $result = update_recruitment_lead($pdo, $_POST, $current_recruiter_name, $current_recruiter_id);
             echo json_encode($result);
             break;
 
