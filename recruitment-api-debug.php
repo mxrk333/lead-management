@@ -42,6 +42,14 @@ if (isset($_SESSION['user_id']) && $pdo !== null) {
 }
 // --- End of new code ---
 
+// DEBUG: Log entry at top of file
+error_log('DEBUG: recruitment-api-debug.php loaded, REQUEST_METHOD=' . (isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'N/A') . ', POST action=' . (isset($_POST['action']) ? $_POST['action'] : 'N/A'));
+
+// If this is a get_recruitment_leads request, echo a debug message (for troubleshooting only)
+if (isset($_POST['action']) && $_POST['action'] === 'get_recruitment_leads') {
+    error_log('DEBUG: get_recruitment_leads POST received. Raw POST: ' . print_r($_POST, true));
+}
+
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0); // Exit immediately for OPTIONS requests
@@ -456,6 +464,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $id = $_POST['id'] ?? null;
             $result = delete_recruitment_lead($pdo, (int) $id); // Cast to int for type hint
             echo json_encode($result);
+            break;
+
+        case 'get_team_status_summary':
+            $filters = [];
+            if (isset($_POST['filters']) && !empty($_POST['filters'])) {
+                $filters = json_decode($_POST['filters'], true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $filters = [];
+                }
+            }
+
+            $where = [];
+            $params = [];
+            // Date filtering (use positional params)
+            if (!empty($filters['year'])) {
+                $where[] = 'YEAR(rl.created_at) = ?';
+                $params[] = $filters['year'];
+            }
+            if (!empty($filters['month'])) {
+                $where[] = 'MONTH(rl.created_at) = ?';
+                $params[] = $filters['month'];
+            }
+            if (!empty($filters['quarter'])) {
+                $where[] = 'QUARTER(rl.created_at) = ?';
+                $params[] = $filters['quarter'];
+            }
+            $where_sql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+
+            // Only Active/Inactive
+            $status_list = ['Active', 'Inactive'];
+            $status_placeholders = implode(',', array_fill(0, count($status_list), '?'));
+
+            // LEFT JOIN all teams, then LEFT JOIN recruitment_leads filtered by date/status
+            $sql = "SELECT t.id as team_id, t.name as team_name, rl.status, COUNT(rl.id) as count
+                    FROM teams t
+                    LEFT JOIN recruitment_leads rl ON rl.recruiter_team_id = t.id
+                    " . ($where_sql ? $where_sql . " AND rl.status IN ($status_placeholders)" : "WHERE rl.status IN ($status_placeholders)") . "
+                    GROUP BY t.id, rl.status
+                    ORDER BY t.name, rl.status";
+
+            // Merge params for status
+            foreach ($status_list as $s)
+                $params[] = $s;
+
+            try {
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                // Ensure every team has both statuses (Active/Inactive), fill missing with 0
+                $all_teams_stmt = $pdo->query('SELECT id, name FROM teams');
+                $all_teams = $all_teams_stmt->fetchAll(PDO::FETCH_ASSOC);
+                $output = [];
+                foreach ($all_teams as $team) {
+                    foreach ($status_list as $status) {
+                        $found = false;
+                        foreach ($results as $row) {
+                            if ($row['team_id'] == $team['id'] && $row['status'] === $status) {
+                                $output[] = [
+                                    'team_id' => $team['id'],
+                                    'team_name' => $team['name'],
+                                    'status' => $status,
+                                    'count' => (int) $row['count']
+                                ];
+                                $found = true;
+                                break;
+                            }
+                        }
+                        if (!$found) {
+                            $output[] = [
+                                'team_id' => $team['id'],
+                                'team_name' => $team['name'],
+                                'status' => $status,
+                                'count' => 0
+                            ];
+                        }
+                    }
+                }
+                echo json_encode(['success' => true, 'data' => $output]);
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            }
+            exit;
             break;
 
         default:
