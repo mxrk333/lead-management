@@ -40,7 +40,7 @@ function canEditLead($lead, $current_user_id) {
 function getTotalActiveLeadsCount($user_id, $role, $username = null) {
     $conn = getDbConnection();
     
-    $whereClause = "WHERE l.status != 'Closed Deal'";
+    $whereClause = "WHERE l.status NOT IN ('Closed Deal', 'requirement stage', 'downpayment stage', 'housing loan application', 'loan approval', 'loan takeout', 'house inspection', 'house turn over')";
     
     // Superusers can see all leads
     if ($username && isSuperUser($username)) {
@@ -73,7 +73,7 @@ function getTotalActiveLeadsCount($user_id, $role, $username = null) {
 function getPaginatedActiveLeads($user_id, $role, $offset, $limit, $username = null) {
     $conn = getDbConnection();
     
-    $whereClause = "WHERE l.status != 'Closed Deal'";
+    $whereClause = "WHERE l.status NOT IN ('Closed Deal', 'requirement stage', 'downpayment stage', 'housing loan application', 'loan approval', 'loan takeout', 'house inspection', 'house turn over')";
     
     // Superusers can see all leads
     if ($username && isSuperUser($username)) {
@@ -103,11 +103,11 @@ function getPaginatedActiveLeads($user_id, $role, $offset, $limit, $username = n
     return mysqli_fetch_all($result, MYSQLI_ASSOC);
 }
 
-// Helper functions for active leads (excluding closed deals)
+// Helper functions for active leads (excluding closed deals and other stages)
 function getActiveLeads($user_id, $role, $username = null) {
     $conn = getDbConnection();
     
-    $whereClause = "WHERE l.status != 'Closed Deal'";
+    $whereClause = "WHERE l.status NOT IN ('Closed Deal', 'requirement stage', 'downpayment stage', 'housing loan application', 'loan approval', 'loan takeout', 'house inspection', 'house turn over')";
     
     // Superusers can see all leads
     if ($username && isSuperUser($username)) {
@@ -139,16 +139,17 @@ function getActiveLeads($user_id, $role, $username = null) {
 function searchActiveLeads($search, $user_id, $role, $username = null) {
     $conn = getDbConnection();
     $search = mysqli_real_escape_string($conn, $search);
+    $excluded_statuses = "l.status NOT IN ('Closed Deal', 'requirement stage', 'downpayment stage', 'housing loan application', 'loan approval', 'loan takeout', 'house inspection', 'house turn over')";
     
     if ($username && isSuperUser($username)) {
         // Superusers see all results, no additional filtering by user/team
-        $whereClause = "WHERE l.status != 'Closed Deal' AND (
+        $whereClause = "WHERE $excluded_statuses AND (
             l.client_name LIKE '%$search%' OR 
             l.email LIKE '%$search%' OR 
             l.phone LIKE '%$search%'
         )";
     } else {
-        $whereClause = "WHERE l.status != 'Closed Deal' AND (
+        $whereClause = "WHERE $excluded_statuses AND (
             l.client_name LIKE '%$search%' OR 
             l.email LIKE '%$search%' OR 
             l.phone LIKE '%$search%'
@@ -182,12 +183,13 @@ function searchActiveLeads($search, $user_id, $role, $username = null) {
 function filterActiveLeadsByStatus($status, $user_id, $role, $username = null) {
     $conn = getDbConnection();
     $status = mysqli_real_escape_string($conn, $status);
+    $excluded_statuses = "l.status NOT IN ('Closed Deal', 'requirement stage', 'downpayment stage', 'housing loan application', 'loan approval', 'loan takeout', 'house inspection', 'house turn over')";
     
     if ($username && isSuperUser($username)) {
         // Superusers see all results, no additional filtering by user/team
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.status = '$status'";
+        $whereClause = "WHERE $excluded_statuses AND l.status = '$status'";
     } else {
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.status = '$status'";
+        $whereClause = "WHERE $excluded_statuses AND l.status = '$status'";
         
         if ($role === 'agent') {
             $whereClause .= " AND l.user_id = $user_id";
@@ -217,12 +219,13 @@ function filterActiveLeadsByStatus($status, $user_id, $role, $username = null) {
 function filterActiveLeadsByTemperature($temperature, $user_id, $role, $username = null) {
     $conn = getDbConnection();
     $temperature = mysqli_real_escape_string($conn, $temperature);
+    $excluded_statuses = "l.status NOT IN ('Closed Deal', 'requirement stage', 'downpayment stage', 'housing loan application', 'loan approval', 'loan takeout', 'house inspection', 'house turn over')";
     
     if ($username && isSuperUser($username)) {
         // Superusers see all results, no additional filtering by user/team
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.temperature = '$temperature'";
+        $whereClause = "WHERE $excluded_statuses AND l.temperature = '$temperature'";
     } else {
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.temperature = '$temperature'";
+        $whereClause = "WHERE $excluded_statuses AND l.temperature = '$temperature'";
         
         if ($role === 'agent') {
             $whereClause .= " AND l.user_id = $user_id";
@@ -252,12 +255,13 @@ function filterActiveLeadsByTemperature($temperature, $user_id, $role, $username
 function filterActiveLeadsBySource($source, $user_id, $role, $username = null) {
     $conn = getDbConnection();
     $source = mysqli_real_escape_string($conn, $source);
+    $excluded_statuses = "l.status NOT IN ('Closed Deal', 'requirement stage', 'downpayment stage', 'housing loan application', 'loan approval', 'loan takeout', 'house inspection', 'house turn over')";
     
     if ($username && isSuperUser($username)) {
         // Superusers see all results, no additional filtering by user/team
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.source = '$source'";
+        $whereClause = "WHERE $excluded_statuses AND l.source = '$source'";
     } else {
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.source = '$source'";
+        $whereClause = "WHERE $excluded_statuses AND l.source = '$source'";
         
         if ($role === 'agent') {
             $whereClause .= " AND l.user_id = $user_id";
@@ -293,7 +297,7 @@ function filterMyLeads($user_id) {
         FROM leads l
         LEFT JOIN users u ON l.user_id = u.id
         LEFT JOIN teams t ON u.team_id = t.id
-        WHERE l.status != 'Closed Deal' AND l.user_id = $user_id
+        WHERE l.status NOT IN ('Closed Deal', 'requirement stage', 'downpayment stage', 'housing loan application', 'loan approval', 'loan takeout', 'house inspection', 'house turn over') AND l.user_id = $user_id
         ORDER BY l.created_at DESC
     ";
     
@@ -303,7 +307,7 @@ function filterMyLeads($user_id) {
 
 function getUniqueActiveStatuses() {
     $conn = getDbConnection();
-    $query = "SELECT DISTINCT status FROM leads WHERE status != 'Closed Deal' ORDER BY status";
+    $query = "SELECT DISTINCT status FROM leads WHERE status NOT IN ('Closed Deal', 'requirement stage', 'downpayment stage', 'housing loan application', 'loan approval', 'loan takeout', 'house inspection', 'house turn over') ORDER BY status";
     $result = mysqli_query($conn, $query);
     $statuses = [];
     while ($row = mysqli_fetch_assoc($result)) {
@@ -312,6 +316,7 @@ function getUniqueActiveStatuses() {
     return $statuses;
 }
 
+// THIS FUNCTION REMAINS UNCHANGED AS IT SPECIFICALLY QUERIES FOR 'Closed Deal'
 function getClosedDealsCount($user_id, $role) {
     $conn = getDbConnection();
     
@@ -457,7 +462,7 @@ $myLeadsCount = count($myLeads);
 // Get closed deals count
 $closedDealsCount = getClosedDealsCount($user_id, $user['role']);
 
-// Get filter options from database (EXCLUDING CLOSED DEAL STATUS)
+// Get filter options from database (EXCLUDING a range of statuses)
 $sources = getUniqueSources();
 $temperatures = getUniqueTemperatures();
 $statuses = getUniqueActiveStatuses();
@@ -1659,7 +1664,6 @@ $isSuperUser = isSuperUser($user['username']);
         </div>
     </div>
 
-    <!-- Call Modal -->
     <div id="callModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">

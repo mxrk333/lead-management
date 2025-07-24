@@ -294,10 +294,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         $priceRaw = isset($_POST['price']) ? trim($_POST['price']) : '';
         $remarks = isset($_POST['remarks']) ? trim($_POST['remarks']) : '';
+        
+        // MODIFIED: Handle "Others" option for lead source
         $source = isset($_POST['source']) ? trim($_POST['source']) : '';
+        if ($source === 'Others' && isset($_POST['source_other']) && !empty(trim($_POST['source_other']))) {
+            $source = trim($_POST['source_other']);
+        }
         
         debugLog("Form data collected - Client: '$clientName', Phone: '$phone', Email: '$email'");
         debugLog("Project data - Developer: '$developer', Model: '$projectModel'");
+        debugLog("Source data - Source: '$source'");
         
         // Clean and convert price
         $price = str_replace([',', ' '], '', $priceRaw);
@@ -383,7 +389,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Enhanced getLeadSources function with better error handling
+// Enhanced getLeadSources function with better error handling and "Others" option
 function getLeadSources() {
     debugLog("Getting lead sources");
     
@@ -409,7 +415,7 @@ function getLeadSources() {
         $row = $result->fetch_assoc();
         
         // Parse ENUM values from the type definition
-        if ($row && preg_match("/^enum$$'(.*)'$$$/", $row['Type'], $matches)) {
+        if ($row && preg_match("/^enum\('(.*)'\)$/", $row['Type'], $matches)) {
             $values = explode("','", $matches[1]);
             foreach ($values as $value) {
                 $sources[] = [
@@ -437,7 +443,7 @@ function getLeadSources() {
             'Organic Posting', 'Email Marketing', 'Follow up', 'Manning', 
             'Walk in', 'Flyering', 'Chat messaging', 'Property Listing', 
             'Landing Page', 'Networking Events', 'Organic Sharing', 
-            'Youtube Marketing', 'LinkedIn', 'Open House', 'Facebook Page'
+            'Youtube Marketing', 'LinkedIn', 'Open House', 'Facebook Page', 'Others'
         ];
         
         foreach ($defaultSources as $source) {
@@ -447,6 +453,12 @@ function getLeadSources() {
             ];
         }
     }
+    
+    // MODIFIED: Always add "Others" option at the end
+    $sources[] = [
+        'id' => 'Others',
+        'name' => 'Others'
+    ];
     
     return $sources;
 }
@@ -1073,8 +1085,8 @@ debugLog("Page rendering started");
                                     <?php 
                                     $statuses = [
                                         'Inquiry', 'Presentation Stage', 'Negotiation', 'Lost', 'Site Tour',
-                                        'Closed Deal', 'Requirement Stage', 'Downpayment Stage', 'Housing Loan Application',
-                                        'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over'
+                                        , 'Requirement Stage', 'Downpayment Stage', 'Housing Loan Application',
+                                        'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over','Closed Deal'
                                     ];
                                     foreach ($statuses as $status_option): ?>
                                     <option value="<?php echo htmlspecialchars($status_option); ?>"
@@ -1153,6 +1165,21 @@ debugLog("Page rendering started");
     <script>
         // Enhanced JavaScript with comprehensive project model handling
         console.log('Add Lead form script loaded');
+        
+        // Function to toggle source others input
+        function toggleSourceOthers(value) {
+            const othersDiv = document.getElementById('source-others');
+            const othersInput = document.getElementById('source_other');
+            
+            if (value === 'Others') {
+                othersDiv.classList.add('show');
+                othersInput.required = true;
+            } else {
+                othersDiv.classList.remove('show');
+                othersInput.required = false;
+                othersInput.value = '';
+            }
+        }
         
         // Project models data from PHP - with enhanced error handling
         let projectModelsData = {};
@@ -1316,6 +1343,14 @@ debugLog("Page rendering started");
                         toggleProjectModelOthers(this.value);
                     });
                 }
+
+                // Add event listener for source select change
+                const sourceSelect = document.getElementById('source');
+                if (sourceSelect) {
+                    sourceSelect.addEventListener('change', function() {
+                        toggleSourceOthers(this.value);
+                    });
+                }
                 
                 // Price formatting
                 const priceInput = document.getElementById('price');
@@ -1396,8 +1431,13 @@ debugLog("Page rendering started");
                 }
                 
                 // Initialize others inputs based on current values
+                const currentSource = '<?php echo htmlspecialchars($_POST['source'] ?? ''); ?>';
                 const currentDeveloper = '<?php echo htmlspecialchars($_POST['developer'] ?? ''); ?>';
                 const currentProjectModel = '<?php echo htmlspecialchars($_POST['project_model'] ?? ''); ?>';
+                
+                if (currentSource === 'Others') {
+                    toggleSourceOthers('Others');
+                }
                 
                 if (currentDeveloper === 'Others') {
                     toggleDeveloperOthers('Others');

@@ -9,224 +9,247 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Get user information
 $user_id = $_SESSION['user_id'];
 $user = getUserById($user_id);
 
+// Function to check if user is superuser
+function isSuperUser($username) {
+    $superusers = [
+        'markpatigayon.intern',
+        'gabriellibacao.founder', 
+        'romeocorberta.itdept'
+    ];
+    return in_array($username, $superusers);
+}
+
 // Check if lead ID is provided
 if (!isset($_GET['id']) || empty($_GET['id'])) {
-    header("Location: leads.php");
+    header("Location: leads.php?error=invalid_lead");
     exit();
 }
 
-$lead_id = $_GET['id'];
+$lead_id = intval($_GET['id']);
+
+// Get lead information - FIXED: Now passing all required parameters
 $lead = getLeadById($lead_id, $user_id, $user['role']);
-
-// Check if lead exists and user has permission to edit it
-if (!$lead || $lead['user_id'] != $user_id) {
-    header("Location: leads.php");
+if (!$lead) {
+    header("Location: leads.php?error=lead_not_found");
     exit();
 }
 
-// Get developers, project models, and lead sources for dropdowns - using the same functions as add-lead.php
+// Check if user can edit this lead
+$canEdit = isSuperUser($user['username']) || ($lead['user_id'] == $user_id);
+if (!$canEdit) {
+    header("Location: leads.php?error=access_denied");
+    exit();
+}
+
+// Get dropdown data
 $developers = getDevelopers();
 $projectModels = getProjectModels();
-$leadSources = getLeadSources();
 
-// Get temperature and status options
-$temperatures = ['Hot', 'Warm', 'Cold'];
-$statuses = [
-    'Inquiry', 'Presentation Stage', 'Negotiation', 'Closed', 'Lost', 
-    'Site Tour', 'Closed Deal', 'Requirement Stage', 'Downpayment Stage', 
-    'Housing Loan Application', 'Loan Approval', 'Loan Takeout', 
-    'House Inspection', 'House Turn Over'
-];
-
-$error = '';
-
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $conn = getDbConnection();
-    
+// Enhanced getLeadSources function with "Others" option
+function getLeadSourcesWithOthers() {
     try {
-        // Start transaction
-        $conn->begin_transaction();
+        $conn = getDbConnection();
+        if (!$conn) {
+            throw new Exception("Database connection failed");
+        }
         
-        // Get form data
-        $client_name = trim($_POST['client_name']);
+        $sources = [];
+        
+        // Get ENUM values directly from the column
+        $stmt = $conn->prepare("SHOW COLUMNS FROM leads WHERE Field = 'source'");
+        if (!$stmt) {
+            throw new Exception("Failed to prepare statement: " . $conn->error);
+        }
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to execute statement: " . $stmt->error);
+        }
+        
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        // Parse ENUM values from the type definition
+        if ($row && preg_match("/^enum\$$'(.*)'\$$$/", $row['Type'], $matches)) {
+            $values = explode("','", $matches[1]);
+            foreach ($values as $value) {
+                $sources[] = [
+                    'id' => $value,
+                    'name' => $value
+                ];
+            }
+        }
+        
+        $stmt->close();
+        $conn->close();
+        
+    } catch (Exception $e) {
+        $sources = [];
+    }
+    
+    // If no sources found from database, provide default values
+    if (empty($sources)) {
+        $defaultSources = [
+            'Facebook Groups', 'KKK', 'Facebook Ads', 'TikTok ads', 'Google Ads', 
+            'Facebook live', 'Referral', 'Teleprospecting', 'Video Message', 
+            'Organic Posting', 'Email Marketing', 'Follow up', 'Manning', 
+            'Walk in', 'Flyering', 'Chat messaging', 'Property Listing', 
+            'Landing Page', 'Networking Events', 'Organic Sharing', 
+            'Youtube Marketing', 'LinkedIn', 'Open House', 'Facebook Page'
+        ];
+        
+        foreach ($defaultSources as $source) {
+            $sources[] = [
+                'id' => $source,
+                'name' => $source
+            ];
+        }
+    }
+    
+    // Always add "Others" option at the end
+    $sources[] = [
+        'id' => 'Others',
+        'name' => 'Others'
+    ];
+    
+    return $sources;
+}
+
+$leadSources = getLeadSourcesWithOthers();
+
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    try {
+        // Collect and sanitize form data
+        $clientName = trim($_POST['client_name']);
         $phone = trim($_POST['phone']);
         $email = trim($_POST['email']);
         $facebook = trim($_POST['facebook']);
         $linkedin = trim($_POST['linkedin']);
-        $temperature = $_POST['temperature'];
-        $status = $_POST['status'];
-        $source = $_POST['source'];
+        $temperature = trim($_POST['temperature']);
+        $status = trim($_POST['status']);
         
         // Handle "Others" option for developer/project
-        $developer = isset($_POST['developer']) ? trim($_POST['developer']) : '';
+        $developer = trim($_POST['developer']);
         if ($developer === 'Others' && isset($_POST['developer_other']) && !empty(trim($_POST['developer_other']))) {
             $developer = trim($_POST['developer_other']);
         }
         
         // Handle "Others" option for project model
-        $project_model = isset($_POST['project_model']) ? trim($_POST['project_model']) : '';
-        if ($project_model === 'Others' && isset($_POST['project_model_other']) && !empty(trim($_POST['project_model_other']))) {
-            $project_model = trim($_POST['project_model_other']);
+        $projectModel = trim($_POST['project_model']);
+        if ($projectModel === 'Others' && isset($_POST['project_model_other']) && !empty(trim($_POST['project_model_other']))) {
+            $projectModel = trim($_POST['project_model_other']);
+        }
+        
+        $priceRaw = trim($_POST['price']);
+        $remarks = trim($_POST['remarks']);
+        
+        // Handle "Others" option for lead source
+        $source = trim($_POST['source']);
+        if ($source === 'Others' && isset($_POST['source_other']) && !empty(trim($_POST['source_other']))) {
+            $source = trim($_POST['source_other']);
         }
         
         // Clean and convert price
-        $price = str_replace(',', '', $_POST['price']);
+        $price = str_replace([',', ' '], '', $priceRaw);
         $price = floatval($price);
-        $remarks = trim($_POST['remarks']);
-
-        // Track changes
-        $changes = array();
-        if ($client_name !== $lead['client_name']) {
-            $changes[] = array(
-                'field' => 'client_name',
-                'old_value' => $lead['client_name'],
-                'new_value' => $client_name
-            );
-        }
-        if ($facebook !== $lead['facebook']) {
-            $changes[] = array(
-                'field' => 'facebook',
-                'old_value' => $lead['facebook'],
-                'new_value' => $facebook
-            );
-        }
-        if ($linkedin !== $lead['linkedin']) {
-            $changes[] = array(
-                'field' => 'linkedin',
-                'old_value' => $lead['linkedin'],
-                'new_value' => $linkedin
-            );
-        }
-        if ($temperature !== $lead['temperature']) {
-            $changes[] = array(
-                'field' => 'temperature',
-                'old_value' => $lead['temperature'],
-                'new_value' => $temperature
-            );
-        }
-        if ($status !== $lead['status']) {
-            $changes[] = array(
-                'field' => 'status',
-                'old_value' => $lead['status'],
-                'new_value' => $status
-            );
-        }
-        if ($source !== $lead['source']) {
-            $changes[] = array(
-                'field' => 'source',
-                'old_value' => $lead['source'],
-                'new_value' => $source
-            );
-        }
-        if ($developer !== $lead['developer']) {
-            $changes[] = array(
-                'field' => 'developer',
-                'old_value' => $lead['developer'],
-                'new_value' => $developer
-            );
-        }
-        if ($project_model !== $lead['project_model']) {
-            $changes[] = array(
-                'field' => 'project_model',
-                'old_value' => $lead['project_model'],
-                'new_value' => $project_model
-            );
-        }
-        if ($price !== floatval($lead['price'])) {
-            $changes[] = array(
-                'field' => 'price',
-                'old_value' => $lead['price'],
-                'new_value' => $price
-            );
-        }
-        if ($remarks !== $lead['remarks']) {
-            $changes[] = array(
-                'field' => 'remarks',
-                'old_value' => $lead['remarks'],
-                'new_value' => $remarks
-            );
-        }
-
-        // Update lead
-        $update_stmt = $conn->prepare("
-            UPDATE leads 
-            SET client_name = ?, phone = ?, email = ?, facebook = ?, linkedin = ?,
-                temperature = ?, status = ?, source = ?, developer = ?, project_model = ?,
-                price = ?, remarks = ?, updated_at = NOW()
-            WHERE id = ?
-        ");
         
-        $update_stmt->bind_param(
-            "ssssssssssdsi",
-            $client_name, $phone, $email, $facebook, $linkedin,
-            $temperature, $status, $source, $developer, $project_model,
-            $price, $remarks, $lead_id
-        );
+        // Validation
+        $errors = [];
         
-        if (!$update_stmt->execute()) {
-            throw new Exception("Failed to update lead");
+        if (empty($clientName)) {
+            $errors[] = "Client name is required";
         }
-
-        // If there are changes, create an activity and record modifications
-        if (!empty($changes)) {
-            // Create activity entry
-            $activity_notes = "Lead details updated:\n";
-            foreach ($changes as $change) {
-                $activity_notes .= "- Changed {$change['field']} from '{$change['old_value']}' to '{$change['new_value']}'\n";
-            }
-
-            $activity_stmt = $conn->prepare("
-                INSERT INTO lead_activities (lead_id, user_id, activity_type, notes)
-                VALUES (?, ?, 'Lead Update', ?)
-            ");
-            $activity_stmt->bind_param("iis", $lead_id, $user_id, $activity_notes);
+        
+        if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "Invalid email address format";
+        }
+        
+        if (empty($temperature)) {
+            $errors[] = "Temperature is required";
+        }
+        
+        if (empty($status)) {
+            $errors[] = "Status is required";
+        }
+        
+        if (empty($developer)) {
+            $errors[] = "Project is required";
+        }
+        
+        if (empty($projectModel)) {
+            $errors[] = "Project model is required";
+        }
+        
+        if ($price <= 0) {
+            $errors[] = "Valid price is required";
+        }
+        
+        if (empty($source)) {
+            $errors[] = "Lead source is required";
+        }
+        
+        if (empty($errors)) {
+            // Update lead in database
+            $result = updateLead(
+                $lead_id, $clientName, $phone, $email, $facebook, $linkedin, 
+                $temperature, $status, $source, $developer, $projectModel, $price, $remarks
+            );
             
-            if (!$activity_stmt->execute()) {
-                throw new Exception("Failed to create activity record");
+            if ($result) {
+                $_SESSION['success_message'] = "Lead updated successfully";
+                header("Location: leads.php");
+                exit();
+            } else {
+                $error = "Failed to update lead";
             }
-            $activity_id = $activity_stmt->insert_id;
-
-            // Record each modification
-            $mod_stmt = $conn->prepare("
-                INSERT INTO lead_modifications 
-                (lead_id, user_id, modification_type, old_value, new_value, activity_id)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ");
-
-            foreach ($changes as $change) {
-                $mod_type = $change['field'] . '_change';
-                $mod_stmt->bind_param(
-                    "iisssi",
-                    $lead_id,
-                    $user_id,
-                    $mod_type,
-                    $change['old_value'],
-                    $change['new_value'],
-                    $activity_id
-                );
-                
-                if (!$mod_stmt->execute()) {
-                    throw new Exception("Failed to record modification");
-                }
-            }
+        } else {
+            $error = implode(", ", $errors);
         }
-
-        // Commit transaction
-        $conn->commit();
         
-        header("Location: lead-details.php?id=$lead_id&success=updated");
-        exit();
-
     } catch (Exception $e) {
-        // Rollback transaction on error
-        $conn->rollback();
-        $error = $e->getMessage();
-    } finally {
-        $conn->close();
+        $error = "Failed to update lead: " . $e->getMessage();
+    }
+}
+
+// Check if current source is not in the predefined list (custom source)
+$isCustomSource = true;
+$currentSourceValue = 'Others'; // Default to Others for custom sources
+
+foreach ($leadSources as $sourceOption) {
+    if ($sourceOption['name'] === $lead['source']) {
+        $isCustomSource = false;
+        $currentSourceValue = $lead['source'];
+        break;
+    }
+}
+
+// If it's a custom source, we need to set up the form to show "Others" selected
+// and populate the custom input field
+if ($isCustomSource) {
+    $customSourceValue = $lead['source'];
+} else {
+    $customSourceValue = '';
+}
+
+// Check if current developer is custom
+$isCustomDeveloper = true;
+foreach ($developers as $dev) {
+    if ($dev['name'] === $lead['developer']) {
+        $isCustomDeveloper = false;
+        break;
+    }
+}
+
+// Check if current project model is custom
+$isCustomProjectModel = true;
+foreach ($projectModels as $model) {
+    if ($model['name'] === $lead['project_model'] && $model['developer_name'] === $lead['developer']) {
+        $isCustomProjectModel = false;
+        break;
     }
 }
 ?>
@@ -239,151 +262,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>Edit Lead - Inners SPARC Realty Corporation</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Base styles */
-        :root {
-            --container-padding: 25px;
-        }
-
-        @media (max-width: 768px) {
-            :root {
-                --container-padding: 15px;
-            }
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 992px) {
-            .edit-lead-page {
-                padding: var(--container-padding);
-            }
-            
-            .page-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            
-            .btn-back {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .lead-form {
-                border-radius: 0.75rem;
-            }
-            
-            .form-section {
-                padding: 20px;
-            }
-            
-            .form-row {
-                margin: 0 -10px 1.25rem;
-            }
-            
-            .form-group {
-                padding: 0 10px;
-                margin-bottom: 15px;
-                min-width: 100%;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .edit-lead-page {
-                padding: var(--container-padding);
-            }
-            
-            .page-header h2 {
-                font-size: 1.5rem;
-            }
-            
-            .page-header h2::after {
-                width: 2rem;
-            }
-            
-            .form-section {
-                padding: 15px;
-            }
-            
-            .form-section h3 {
-                font-size: 1.1rem;
-                margin-bottom: 1.25rem;
-            }
-            
-            .form-group label {
-                font-size: 0.8rem;
-                margin-bottom: 0.375rem;
-            }
-            
-            .form-group input,
-            .form-group select,
-            .form-group textarea {
-                padding: 0.625rem 0.875rem;
-                font-size: 0.8rem;
-                border-radius: 0.375rem;
-            }
-            
-            .form-group select {
-                padding-right: 2rem;
-                background-size: 0.875rem;
-            }
-            
-            .form-actions {
-                padding: 15px;
-                flex-direction: column-reverse;
-                gap: 10px;
-            }
-            
-            .btn-save,
-            .btn-cancel {
-                width: 100%;
-                padding: 0.625rem;
-                font-size: 0.8rem;
-            }
-            
-            .required-note {
-                font-size: 0.7rem;
-                margin-bottom: 0.75rem;
-            }
-            
-            .optional-field {
-                font-size: 0.7rem;
-            }
-            
-            .success-message,
-            .error-message {
-                padding: 0.75rem;
-                font-size: 0.8rem;
-                margin-bottom: 1rem;
-            }
-        }
-
-        /* Touch device optimizations */
-        @media (hover: none) {
-            .btn-save:hover,
-            .btn-cancel:hover,
-            .btn-back:hover {
-                transform: none;
-                box-shadow: none;
-            }
-            
-            .form-group input:focus,
-            .form-group select:focus,
-            .form-group textarea:focus {
-                box-shadow: none;
-            }
-        }
-        
-        /* Base styles */
         body {
             font-family: 'Inter', sans-serif;
             color: #1f2937;
             background-color: #f9fafb;
         }
         
-        /* Edit Lead page styles */
         .edit-lead-page {
             padding: 2rem;
             background-color: #f9fafb;
@@ -413,7 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             left: 0;
             width: 2.5rem;
             height: 0.25rem;
-            background: linear-gradient(to right, #4f46e5, #8b5cf6);
+            background: linear-gradient(to right, #f59e0b, #d97706);
             border-radius: 0.25rem;
         }
         
@@ -422,8 +308,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             align-items: center;
             padding: 0.625rem 1rem;
             background-color: white;
-            color: #4f46e5;
-            border: 1px solid rgba(79, 70, 229, 0.2);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.2);
             border-radius: 0.5rem;
             font-size: 0.875rem;
             font-weight: 500;
@@ -432,15 +318,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         .btn-back:hover {
-            background-color: rgba(79, 70, 229, 0.05);
-            border-color: rgba(79, 70, 229, 0.3);
+            background-color: rgba(245, 158, 11, 0.05);
+            border-color: rgba(245, 158, 11, 0.3);
         }
         
         .btn-back i {
             margin-right: 0.5rem;
         }
         
-        /* Form styles */
         .lead-form {
             background-color: white;
             border-radius: 1rem;
@@ -473,7 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             display: inline-block;
             width: 0.25rem;
             height: 1.25rem;
-            background: linear-gradient(to bottom, #4f46e5, #8b5cf6);
+            background: linear-gradient(to bottom, #f59e0b, #d97706);
             margin-right: 0.75rem;
             border-radius: 0.125rem;
         }
@@ -513,7 +398,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             margin-bottom: 0.5rem;
         }
         
-        /* Required field indicator */
         .required-field label::after {
             content: ' *';
             color: #ef4444;
@@ -539,9 +423,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
-            border-color: #4f46e5;
+            border-color: #f59e0b;
             outline: 0;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
         }
         
         .form-group select {
@@ -558,7 +442,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             min-height: 100px;
         }
 
-        /* Others input field styling */
         .others-input {
             margin-top: 0.75rem;
             display: none;
@@ -569,18 +452,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         .others-input input {
-            border-color: #4f46e5;
-            background-color: #f8fafc;
+            border-color: #f59e0b;
+            background-color: #fef3c7;
         }
 
         .others-input label {
             font-size: 0.75rem;
-            color: #4f46e5;
+            color: #f59e0b;
             font-weight: 600;
             margin-bottom: 0.25rem;
         }
         
-        /* Form actions */
         .form-actions {
             display: flex;
             justify-content: flex-end;
@@ -603,14 +485,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         .btn-save {
-            background-color: #4f46e5;
+            background-color: #f59e0b;
             color: white;
             border: none;
             margin-left: 0.75rem;
         }
         
         .btn-save:hover {
-            background-color: #4338ca;
+            background-color: #d97706;
         }
         
         .btn-cancel {
@@ -624,7 +506,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-color: #f3f4f6;
         }
         
-        /* Success and error messages */
         .success-message,
         .error-message {
             padding: 1rem;
@@ -646,7 +527,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border: 1px solid rgba(239, 68, 68, 0.2);
         }
         
-        /* Required field indicator */
         .required-note {
             font-size: 0.75rem;
             color: #6b7280;
@@ -657,13 +537,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: #ef4444;
         }
         
-        /* Source select styling */
-        .source-select {
-            max-height: 15rem;
-            overflow-y: auto;
-        }
-        
-        /* Optional field styling */
         .optional-field {
             color: #6b7280;
             font-size: 0.75rem;
@@ -682,45 +555,52 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="edit-lead-page">
                 <div class="page-header">
                     <h2>Edit Lead</h2>
-                    <a href="lead-details.php?id=<?php echo $lead_id; ?>" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Lead Details</a>
+                    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
                 </div>
                 
-                <?php if ($error): ?>
+                <?php if (isset($error)): ?>
                 <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i> <?php echo $error; ?>
+                    <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
                 </div>
                 <?php endif; ?>
                 
                 <div class="required-note">Fields marked with <span>*</span> are required</div>
                 
-                <form method="POST" class="lead-form">
+                <form method="POST" action="" class="lead-form" id="editLeadForm">
                     <div class="form-section">
                         <h3>Client Information</h3>
                         
                         <div class="form-row">
                             <div class="form-group required-field">
                                 <label for="client_name">Client Name</label>
-                                <input type="text" id="client_name" name="client_name" placeholder="Enter client's full name" value="<?php echo htmlspecialchars($lead['client_name']); ?>" required>
+                                <input type="text" id="client_name" name="client_name" 
+                                       value="<?php echo htmlspecialchars($lead['client_name']); ?>"
+                                       placeholder="Enter client's full name" maxlength="100" required>
                             </div>
                             
                             <div class="form-group">
                                 <label for="phone">Phone Number <span class="optional-field">(Optional)</span></label>
-                                <input type="text" id="phone" name="phone" placeholder="e.g. +63 912 345 6789" value="<?php echo htmlspecialchars($lead['phone']); ?>">
-                            </div>
+                                <input type="text" id="phone" name="phone" 
+                                       value="<?php echo htmlspecialchars($lead['phone']); ?>"
+                                       placeholder="e.g. 09123456789" maxlength="11">
+                            </div>      
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="email">Email Address <span class="optional-field">(Optional)</span></label>
-                                <input type="email" id="email" name="email" placeholder="client@example.com" value="<?php echo htmlspecialchars($lead['email']); ?>">
+                                <input type="email" id="email" name="email" 
+                                       value="<?php echo htmlspecialchars($lead['email']); ?>"
+                                       placeholder="client@example.com" maxlength="100">
                             </div>
                             
                             <div class="form-group required-field">
                                 <label for="source">Lead Source</label>
-                                <select id="source" name="source" required class="source-select">
+                                <select id="source" name="source" required onchange="toggleSourceOthers(this.value)">
                                     <option value="">Select Lead Source</option>
                                     <?php foreach ($leadSources as $source): ?>
-                                    <option value="<?php echo htmlspecialchars($source['name']); ?>" <?php echo ($source['name'] == $lead['source']) ? 'selected' : ''; ?>>
+                                    <option value="<?php echo htmlspecialchars($source['name']); ?>"
+                                            <?php echo ($currentSourceValue === $source['name']) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($source['name']); ?>
                                     </option>
                                     <?php endforeach; ?>
@@ -731,12 +611,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="facebook">Facebook Profile <span class="optional-field">(Optional)</span></label>
-                                <input type="text" id="facebook" name="facebook" placeholder="Facebook profile URL" value="<?php echo htmlspecialchars($lead['facebook']); ?>">
+                                <input type="url" id="facebook" name="facebook" 
+                                       value="<?php echo htmlspecialchars($lead['facebook']); ?>"
+                                       placeholder="Facebook profile URL" maxlength="255">
                             </div>
                             
                             <div class="form-group">
                                 <label for="linkedin">LinkedIn Profile <span class="optional-field">(Optional)</span></label>
-                                <input type="text" id="linkedin" name="linkedin" placeholder="LinkedIn profile URL" value="<?php echo htmlspecialchars($lead['linkedin']); ?>">
+                                <input type="url" id="linkedin" name="linkedin" 
+                                       value="<?php echo htmlspecialchars($lead['linkedin']); ?>"
+                                       placeholder="LinkedIn profile URL" maxlength="255">
                             </div>
                         </div>
                     </div>
@@ -749,11 +633,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <label for="temperature">Temperature</label>
                                 <select id="temperature" name="temperature" required>
                                     <option value="">Select Temperature</option>
-                                    <?php foreach ($temperatures as $temp): ?>
-                                    <option value="<?php echo htmlspecialchars($temp); ?>" <?php echo ($temp == $lead['temperature']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($temp); ?>
-                                    </option>
-                                    <?php endforeach; ?>
+                                    <option value="Hot" <?php echo ($lead['temperature'] === 'Hot') ? 'selected' : ''; ?>>Hot</option>
+                                    <option value="Warm" <?php echo ($lead['temperature'] === 'Warm') ? 'selected' : ''; ?>>Warm</option>
+                                    <option value="Cold" <?php echo ($lead['temperature'] === 'Cold') ? 'selected' : ''; ?>>Cold</option>
                                 </select>
                             </div>
                             
@@ -761,9 +643,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <label for="status">Status</label>
                                 <select id="status" name="status" required>
                                     <option value="">Select Status</option>
-                                    <?php foreach ($statuses as $stat): ?>
-                                    <option value="<?php echo htmlspecialchars($stat); ?>" <?php echo ($stat == $lead['status']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($stat); ?>
+                                    <?php 
+                                    $statuses = [
+                                        'Inquiry', 'Presentation Stage', 'Negotiation', 'Lost', 'Site Tour',
+                                         'Requirement Stage', 'Downpayment Stage', 'Housing Loan Application',
+                                        'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over', 'Closed Deal'
+                                    ];
+                                    foreach ($statuses as $status_option): ?>
+                                    <option value="<?php echo htmlspecialchars($status_option); ?>"
+                                            <?php echo ($lead['status'] === $status_option) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($status_option); ?>
                                     </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -772,51 +661,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         
                         <div class="form-row">
                             <div class="form-group required-field">
-                                <label for="developer">Developer</label>
+                                <label for="developer">Project</label>
                                 <select id="developer" name="developer" required onchange="loadProjectModels(this.value)">
-                                    <option value="">Select Developer</option>
+                                    <option value="">Select Project</option>
                                     <?php foreach ($developers as $dev): ?>
-                                    <option value="<?php echo htmlspecialchars($dev['name']); ?>" <?php echo ($dev['name'] == $lead['developer']) ? 'selected' : ''; ?>>
+                                    <option value="<?php echo htmlspecialchars($dev['name']); ?>"
+                                            <?php echo ($lead['developer'] === $dev['name']) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($dev['name']); ?>
                                     </option>
                                     <?php endforeach; ?>
-                                    <option value="Others" <?php echo ($lead['developer'] === 'Others' || !in_array($lead['developer'], array_column($developers, 'name'))) ? 'selected' : ''; ?>>Others</option>
+                                    <option value="Others" <?php echo $isCustomDeveloper ? 'selected' : ''; ?>>Others</option>
                                 </select>
-                                <div class="others-input" id="developer-others">
+                                <div class="others-input <?php echo $isCustomDeveloper ? 'show' : ''; ?>" id="developer-others">
                                     <label for="developer_other">Specify Project</label>
                                     <input type="text" id="developer_other" name="developer_other" 
-                                           value="<?php echo (!in_array($lead['developer'], array_column($developers, 'name'))) ? htmlspecialchars($lead['developer']) : ''; ?>"
-                                           placeholder="Enter project name" maxlength="100">
+                                           value="<?php echo $isCustomDeveloper ? htmlspecialchars($lead['developer']) : ''; ?>"
+                                           placeholder="Enter project name" maxlength="100"
+                                           <?php echo $isCustomDeveloper ? 'required' : ''; ?>>
                                 </div>
                             </div>
                             
                             <div class="form-group required-field">
-                                <label for="project_model">Project Model</label>
+                                <label for="project_model">House Model</label>
                                 <select id="project_model" name="project_model" required onchange="toggleProjectModelOthers(this.value)">
-                                    <option value="">Select Project Model</option>
-                                    <?php 
-                                    $currentDeveloper = $lead['developer'];
-                                    $modelFound = false;
-                                    foreach ($projectModels as $model): 
-                                        if ($model['developer_name'] == $currentDeveloper): 
-                                            if ($model['name'] == $lead['project_model']) {
-                                                $modelFound = true;
-                                            }
-                                    ?>
-                                        <option value="<?php echo htmlspecialchars($model['name']); ?>" 
-                                            <?php echo ($model['name'] == $lead['project_model']) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($model['name']); ?>
-                                        </option>
-                                    <?php 
-                                        endif;
-                                    endforeach; 
-                                    ?>
-                                    <option value="Others" <?php echo (!$modelFound && !empty($lead['project_model'])) ? 'selected' : ''; ?>>Others</option>
+                                    <option value="">Select House Model</option>
                                 </select>
                                 <div class="others-input" id="project-model-others">
                                     <label for="project_model_other">Specify House Model</label>
                                     <input type="text" id="project_model_other" name="project_model_other" 
-                                           value="<?php echo (!$modelFound && !empty($lead['project_model'])) ? htmlspecialchars($lead['project_model']) : ''; ?>"
+                                           value=""
                                            placeholder="Enter house model name" maxlength="100">
                                 </div>
                             </div>
@@ -825,21 +698,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="form-row">
                             <div class="form-group required-field">
                                 <label for="price">Total Selling Price (PHP)</label>
-                                <input type="text" id="price" name="price" placeholder="e.g. 1,000,000.00" value="<?php echo number_format($lead['price'], 2); ?>" required>
+                                <input type="text" id="price" name="price" 
+                                       value="<?php echo number_format($lead['price'], 2); ?>"
+                                       placeholder="e.g. 1,000,000.00" required>
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group full-width">
                                 <label for="remarks">Remarks <span class="optional-field">(Optional)</span></label>
-                                <textarea id="remarks" name="remarks" rows="4" placeholder="Add any additional notes or comments about this lead"><?php echo htmlspecialchars($lead['remarks']); ?></textarea>
+                                <textarea id="remarks" name="remarks" rows="4" maxlength="1000"
+                                          placeholder="Add any additional notes or comments about this lead"><?php echo htmlspecialchars($lead['remarks']); ?></textarea>
                             </div>
                         </div>
                     </div>
                     
                     <div class="form-actions">
-                        <a href="lead-details.php?id=<?php echo $lead_id; ?>" class="btn-cancel">Cancel</a>
-                        <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Changes</button>
+                        <a href="javascript:history.back()" class="btn-cancel">Cancel</a>
+                        <button type="submit" class="btn-save" id="saveBtn">
+                            <i class="fas fa-save"></i> Update Lead
+                        </button>
                     </div>
                 </form>
             </div>
@@ -847,7 +725,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
     
     <script>
-        // Function to toggle developer others input
+        // Project models data from PHP
+        let projectModelsData = {};
+        try {
+            projectModelsData = <?php 
+                $modelsArray = [];
+                foreach ($projectModels as $model) {
+                    if (!isset($modelsArray[$model['developer_name']])) {
+                        $modelsArray[$model['developer_name']] = [];
+                    }
+                    $modelsArray[$model['developer_name']][] = $model['name'];
+                }
+                echo json_encode($modelsArray, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+            ?>;
+        } catch (error) {
+            console.error('Error loading project models data:', error);
+            projectModelsData = {};
+        }
+        
+        // Current lead data
+        const currentLead = {
+            developer: '<?php echo htmlspecialchars($lead['developer']); ?>',
+            project_model: '<?php echo htmlspecialchars($lead['project_model']); ?>',
+            source: '<?php echo htmlspecialchars($lead['source']); ?>'
+        };
+        
+        function toggleSourceOthers(value) {
+            const othersDiv = document.getElementById('source-others');
+            const othersInput = document.getElementById('source_other');
+            
+            if (value === 'Others') {
+                othersDiv.classList.add('show');
+                othersInput.required = true;
+            } else {
+                othersDiv.classList.remove('show');
+                othersInput.required = false;
+                othersInput.value = '';
+            }
+        }
+        
         function toggleDeveloperOthers(value) {
             const othersDiv = document.getElementById('developer-others');
             const othersInput = document.getElementById('developer_other');
@@ -862,7 +778,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
 
-        // Function to toggle project model others input
         function toggleProjectModelOthers(value) {
             const othersDiv = document.getElementById('project-model-others');
             const othersInput = document.getElementById('project_model_other');
@@ -876,61 +791,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 othersInput.value = '';
             }
         }
-
-        // Function to load project models based on selected developer
+        
         function loadProjectModels(developer) {
             const projectModelSelect = document.getElementById('project_model');
-            projectModelSelect.innerHTML = '<option value="">Select Project Model</option>';
+            if (!projectModelSelect) return;
+            
+            // Clear existing options
+            projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
             
             // Toggle developer others input
             toggleDeveloperOthers(developer);
             
             if (developer && developer !== 'Others') {
-                // Get project models from PHP as JSON
-                const projectModelsData = <?php 
-                    $modelsArray = [];
-                    foreach ($projectModels as $model) {
-                        if (!isset($modelsArray[$model['developer_name']])) {
-                            $modelsArray[$model['developer_name']] = [];
-                        }
-                        $modelsArray[$model['developer_name']][] = $model['name'];
-                    }
-                    echo json_encode($modelsArray);
-                ?>;
+                const models = projectModelsData[developer] || [];
                 
-                // Use the data from PHP or fallback to hardcoded values
-                const models = projectModelsData[developer] || {
-                    'Lancaster': ['Kennedy', 'Alexandra', 'Victoria', 'Elizabeth'],
-                    'Antipolo Heights': ['Sierra', 'Montana', 'Alpine', 'Summit'],
-                    'Pleasant Fields': ['Meadow', 'Garden', 'Park', 'Grove']
-                }[developer] || [];
+                // Check if current project model exists in the list
+                let isCustomModel = true;
                 
+                // Add model options
                 models.forEach(model => {
                     const option = document.createElement('option');
                     option.value = model;
                     option.textContent = model;
-                    
-                    // Check if this model is the currently selected one
-                    if (model === '<?php echo addslashes($lead['project_model']); ?>') {
+                    if (model === currentLead.project_model) {
                         option.selected = true;
+                        isCustomModel = false;
                     }
-                    
                     projectModelSelect.appendChild(option);
                 });
-
+                
                 // Add "Others" option
                 const othersOption = document.createElement('option');
                 othersOption.value = 'Others';
                 othersOption.textContent = 'Others';
-                
-                // Check if current project model is not in the list (should be "Others")
-                const currentModel = '<?php echo addslashes($lead['project_model']); ?>';
-                if (currentModel && !models.includes(currentModel)) {
+                if (isCustomModel && currentLead.project_model) {
                     othersOption.selected = true;
                     toggleProjectModelOthers('Others');
+                    document.getElementById('project_model_other').value = currentLead.project_model;
                 }
-                
                 projectModelSelect.appendChild(othersOption);
+                
             } else if (developer === 'Others') {
                 // Add "Others" option for custom developer
                 const othersOption = document.createElement('option');
@@ -938,68 +838,87 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 othersOption.textContent = 'Others';
                 othersOption.selected = true;
                 projectModelSelect.appendChild(othersOption);
+                
                 toggleProjectModelOthers('Others');
+                document.getElementById('project_model_other').value = currentLead.project_model;
             }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            var priceInput = document.getElementById('price');
+            // Initialize project models if developer is already selected
+            const developerSelect = document.getElementById('developer');
+            if (developerSelect && developerSelect.value) {
+                loadProjectModels(developerSelect.value);
+            }
             
-            priceInput.addEventListener('input', function(e) {
-                // Get the current value and remove all non-digits
-                var value = this.value.replace(/\D/g, '');
+            // Initialize source others if needed
+            const sourceSelect = document.getElementById('source');
+            const isCustomSource = <?php echo $isCustomSource ? 'true' : 'false'; ?>;
+
+            if (sourceSelect && isCustomSource) {
+                // Set dropdown to "Others" and show the custom input
+                sourceSelect.value = 'Others';
+                toggleSourceOthers('Others');
                 
-                // Convert to number
-                var number = parseInt(value);
-                
-                // If it's a valid number
-                if (!isNaN(number)) {
-                    // Convert to string and add decimals
-                    var withDecimals = (number / 100).toFixed(2);
-                    
-                    // Add commas for thousands
-                    var parts = withDecimals.toString().split('.');
-                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                    
-                    // Update the input value
-                    this.value = parts.join('.');
-                } else {
-                    this.value = '';
+                // Set the custom value
+                const customInput = document.getElementById('source_other');
+                if (customInput) {
+                    customInput.value = '<?php echo htmlspecialchars($customSourceValue); ?>';
                 }
-            });
-            
-            // Handle form submission
-            document.querySelector('form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                var price = priceInput.value.replace(/,/g, '');
-                priceInput.value = price;
-                this.submit();
-            });
-
-            // Initialize the form based on current values
-            const currentDeveloper = '<?php echo addslashes($lead['developer']); ?>';
-            const availableDevelopers = <?php echo json_encode(array_column($developers, 'name')); ?>;
-            
-            // Check if current developer is in the list
-            if (currentDeveloper && !availableDevelopers.includes(currentDeveloper)) {
-                // Current developer is not in the list, so it should be "Others"
-                document.getElementById('developer').value = 'Others';
-                toggleDeveloperOthers('Others');
+            } else if (sourceSelect && sourceSelect.value === 'Others') {
+                toggleSourceOthers('Others');
             }
-
-            // Initialize project models for the current developer
-            if (currentDeveloper) {
-                loadProjectModels(currentDeveloper);
+            
+            // Price formatting
+            const priceInput = document.getElementById('price');
+            if (priceInput) {
+                priceInput.addEventListener('input', function(e) {
+                    let value = this.value.replace(/[^\d.]/g, '');
+                    
+                    const parts = value.split('.');
+                    if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    
+                    if (parts[1] && parts[1].length > 2) {
+                        value = parts[0] + '.' + parts[1].substring(0, 2);
+                    }
+                    
+                    if (value) {
+                        const numParts = value.split('.');
+                        numParts[0] = numParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                        this.value = numParts.join('.');
+                    }
+                });
             }
-
-            // Add event listeners
-            document.getElementById('developer').addEventListener('change', function() {
-                loadProjectModels(this.value);
-            });
-
-            document.getElementById('project_model').addEventListener('change', function() {
-                toggleProjectModelOthers(this.value);
-            });
+            
+            // Phone number validation
+            const phoneInput = document.getElementById('phone');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/\D/g, '');
+                    if (this.value.length > 11) {
+                        this.value = this.value.substring(0, 11);
+                    }
+                });
+            }
+            
+            // Form submission handling
+            const form = document.getElementById('editLeadForm');
+            const saveBtn = document.getElementById('saveBtn');
+            
+            if (form && saveBtn) {
+                form.addEventListener('submit', function(e) {
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+                    saveBtn.disabled = true;
+                    
+                    // Clean price value for submission
+                    if (priceInput) {
+                        const price = priceInput.value.replace(/,/g, '');
+                        priceInput.value = price;
+                    }
+                });
+            }
         });
     </script>
     
