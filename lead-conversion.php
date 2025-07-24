@@ -60,16 +60,54 @@ function canEditLead($lead, $current_user_id) {
     return ($lead['user_id'] == $current_user_id);
 }
 
+// Enhanced role-based filtering with superuser support
+if (!function_exists('isSuperUser')) {
+    function isSuperUser($username) {
+        $superusers = [
+            'markpatigayon.intern',
+            'gabriellibacao.founder', 
+            'romeocorberta.itdept'
+        ];
+        return in_array($username, $superusers);
+    }
+}
+
 // Pagination settings
 $leads_per_page = 10;
 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $current_page = max(1, $current_page);
 $offset = ($current_page - 1) * $leads_per_page;
 
-// MODIFIED: Build query to include Closed Deal to House Turn Over statuses
-$conversion_statuses = ['Closed Deal', 'Requirement Stage', 'Downpayment Stage', 
-                       'Housing Loan Application', 'Loan Approval', 'Loan Takeout', 
-                       'House Inspection', 'House Turn Over', 'Lost'];
+// ENHANCED: Status filtering with validation
+$status_filter = isset($_GET['status_filter']) ? $_GET['status_filter'] : 'all';
+$valid_filters = ['all', 'closed', 'lost', 'in_progress'];
+
+if (!in_array($status_filter, $valid_filters)) {
+    $status_filter = 'all';
+}
+
+// ENHANCED: Define conversion statuses with proper categorization
+$closed_statuses = ['Closed Deal'];
+$lost_statuses = ['Lost'];
+$in_progress_statuses = ['Requirement Stage', 'Downpayment Stage', 'Housing Loan Application', 
+                        'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over'];
+
+// Build status condition based on filter
+switch ($status_filter) {
+    case 'closed':
+        $conversion_statuses = $closed_statuses;
+        break;
+    case 'lost':
+        $conversion_statuses = $lost_statuses;
+        break;
+    case 'in_progress':
+        $conversion_statuses = $in_progress_statuses;
+        break;
+    default: // 'all'
+        $conversion_statuses = array_merge($closed_statuses, $lost_statuses, $in_progress_statuses);
+        break;
+}
+
 $status_placeholders = str_repeat('?,', count($conversion_statuses) - 1) . '?';
 $whereClause = "WHERE l.status IN ($status_placeholders)";
 
@@ -92,18 +130,7 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
     $search_active = true;
 }
 
-// Enhanced role-based filtering with superuser support
-if (!function_exists('isSuperUser')) {
-    function isSuperUser($username) {
-        $superusers = [
-            'markpatigayon.intern',
-            'gabriellibacao.founder', 
-            'romeocorberta.itdept'
-        ];
-        return in_array($username, $superusers);
-    }
-}
-
+// Role-based access control
 if (isSuperUser($user['username'])) {
     // Superusers can see all conversion leads - no additional WHERE clause needed
 } elseif ($user['role'] === 'agent') {
@@ -152,7 +179,7 @@ if ($total_pages > 0) {
     $current_page = min($current_page, $total_pages);
 }
 
-// MODIFIED: Query to get conversion leads with status information
+// ENHANCED: Query to get conversion leads with comprehensive tracking
 $query = "
     SELECT 
         l.id,
@@ -186,14 +213,30 @@ $query = "
         dt.turnover,
         dt.turnover_date,
         dt.progress_rate,
-        dt.next_payment_date
+        dt.next_payment_date,
+        CASE 
+            WHEN l.status = 'House Turn Over' THEN 100
+            WHEN l.status = 'House Inspection' THEN 90
+            WHEN l.status = 'Loan Takeout' THEN 80
+            WHEN l.status = 'Loan Approval' THEN 70
+            WHEN l.status = 'Housing Loan Application' THEN 60
+            WHEN l.status = 'Downpayment Stage' THEN 40
+            WHEN l.status = 'Requirement Stage' THEN 20
+            WHEN l.status = 'Closed Deal' THEN 10
+            ELSE 0
+        END as conversion_progress
     FROM leads l
     LEFT JOIN users u ON l.user_id = u.id
     LEFT JOIN teams t ON u.team_id = t.id
     LEFT JOIN downpayment_tracker dt ON l.id = dt.lead_id
     $whereClause
     $search_condition
-    ORDER BY l.updated_at DESC
+    ORDER BY 
+        CASE 
+            WHEN l.status = 'Lost' THEN 1 
+            ELSE 0 
+        END,
+        l.updated_at DESC
     LIMIT ?, ?
 ";
 
@@ -220,29 +263,54 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// MODIFIED: Get summary statistics for conversion leads with proper closed deal counting
+// ENHANCED: Get comprehensive statistics for all conversion statuses
+$all_conversion_statuses = array_merge($closed_statuses, $lost_statuses, $in_progress_statuses);
+$all_status_placeholders = str_repeat('?,', count($all_conversion_statuses) - 1) . '?';
+
 $stats_query = "
 SELECT 
     COUNT(*) as total_deals,
-    COUNT(CASE WHEN l.status IN ('Closed Deal') THEN 1 END) as total_closed,
+    COUNT(CASE WHEN l.status IN ('" . implode("','", $closed_statuses) . "') THEN 1 END) as total_closed,
     COUNT(CASE WHEN l.status = 'Lost' THEN 1 END) as total_lost,
-    COALESCE(SUM(CASE WHEN l.status IN ('Closed Deal', 'Requirement Stage', 'Downpayment Stage', 
-                                       'Housing Loan Application', 'Loan Approval', 'Loan Takeout', 
-                                       'House Inspection', 'House Turn Over') THEN l.price ELSE 0 END), 0) as total_sales,
-    COALESCE(SUM(CASE WHEN l.status IN ('Closed Deal', 'Requirement Stage', 'Downpayment Stage', 
-                                       'Housing Loan Application', 'Loan Approval', 'Loan Takeout', 
-                                       'House Inspection', 'House Turn Over') THEN l.expected_commission ELSE 0 END), 0) as total_commission,
+    COUNT(CASE WHEN l.status IN ('" . implode("','", $in_progress_statuses) . "') THEN 1 END) as in_progress,
+    COALESCE(SUM(CASE WHEN l.status NOT IN ('Lost') THEN l.price ELSE 0 END), 0) as total_sales,
+    COALESCE(SUM(CASE WHEN l.status NOT IN ('Lost') THEN l.expected_commission ELSE 0 END), 0) as total_commission,
+    COALESCE(SUM(CASE WHEN l.status = 'Lost' THEN l.price ELSE 0 END), 0) as lost_sales,
     COUNT(CASE WHEN l.status = 'House Turn Over' THEN 1 END) as turned_over,
     COUNT(CASE WHEN dt.loan_takeout = 1 AND l.status IN ('Loan Takeout', 'House Inspection', 'House Turn Over') THEN 1 END) as loan_takeouts,
-    COUNT(CASE WHEN dt.pagibig_bank_approval = 1 AND l.status IN ('Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over') THEN 1 END) as bank_approved
+    COUNT(CASE WHEN dt.pagibig_bank_approval = 1 AND l.status IN ('Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over') THEN 1 END) as bank_approved,
+    AVG(CASE WHEN l.status NOT IN ('Lost') THEN 
+        CASE 
+            WHEN l.status = 'House Turn Over' THEN 100
+            WHEN l.status = 'House Inspection' THEN 90
+            WHEN l.status = 'Loan Takeout' THEN 80
+            WHEN l.status = 'Loan Approval' THEN 70
+            WHEN l.status = 'Housing Loan Application' THEN 60
+            WHEN l.status = 'Downpayment Stage' THEN 40
+            WHEN l.status = 'Requirement Stage' THEN 20
+            WHEN l.status = 'Closed Deal' THEN 10
+            ELSE 0
+        END 
+    END) as avg_conversion_progress
 FROM leads l
 LEFT JOIN users u ON l.user_id = u.id
 LEFT JOIN downpayment_tracker dt ON l.id = dt.lead_id
-$whereClause
+WHERE l.status IN ($all_status_placeholders)
 ";
 
+// Apply role-based filtering to stats query
+if (isSuperUser($user['username'])) {
+    // No additional filtering for superusers
+} elseif ($user['role'] === 'agent') {
+    $stats_query .= " AND l.user_id = " . $user['id'];
+} elseif ($user['role'] === 'supervisor' || $user['role'] === 'manager') {
+    if (isset($team_data) && $team_data) {
+        $stats_query .= " AND u.team_id = " . $team_data['team_id'];
+    }
+}
+
 $stats_stmt = $conn->prepare($stats_query);
-$stats_stmt->bind_param(str_repeat('s', count($conversion_statuses)), ...$conversion_statuses);
+$stats_stmt->bind_param(str_repeat('s', count($all_conversion_statuses)), ...$all_conversion_statuses);
 $stats_stmt->execute();
 $stats_result = $stats_stmt->get_result();
 $stats = $stats_result->fetch_assoc();
@@ -283,6 +351,27 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
     }
 
     return $result;
+}
+
+// Function to get status badge class
+function getStatusBadgeClass($status) {
+    switch ($status) {
+        case 'House Turn Over':
+        case 'Loan Takeout':
+            return 'success';
+        case 'Lost':
+            return 'danger';
+        case 'Closed Deal':
+        case 'Loan Approval':
+        case 'House Inspection':
+            return 'info';
+        case 'Requirement Stage':
+        case 'Downpayment Stage':
+        case 'Housing Loan Application':
+            return 'warning';
+        default:
+            return 'info';
+    }
 }
 ?>
 
@@ -396,13 +485,11 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
             align-items: center;
         }
 
-        .btn-export {
+        .btn-export, .btn-back {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
             padding: 0.625rem 1.25rem;
-            background: var(--success);
-            color: white;
             border: none;
             border-radius: var(--border-radius);
             font-weight: 500;
@@ -413,6 +500,11 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
             cursor: pointer;
         }
 
+        .btn-export {
+            background: var(--success);
+            color: white;
+        }
+
         .btn-export:hover {
             background: #059669;
             transform: translateY(-1px);
@@ -420,25 +512,59 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
         }
 
         .btn-back {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1.25rem;
             background: var(--primary);
             color: white;
-            border: none;
-            border-radius: var(--border-radius);
-            font-weight: 500;
-            font-size: 0.875rem;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            box-shadow: var(--shadow-sm);
         }
 
         .btn-back:hover {
             background: var(--primary-hover);
             transform: translateY(-1px);
             box-shadow: var(--shadow-md);
+        }
+
+        .filters-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--gray-200);
+        }
+
+        .filters-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        .filter-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            background-color: var(--gray-50);
+            transition: all 0.2s ease;
+            min-width: 150px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+            background-color: white;
         }
 
         .search-container {
@@ -679,6 +805,21 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
             transition: width 0.3s ease;
         }
 
+        .conversion-progress {
+            width: 100%;
+            height: 0.375rem;
+            background: var(--gray-200);
+            border-radius: 9999px;
+            overflow: hidden;
+            margin: 0.25rem 0;
+        }
+
+        .conversion-progress .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--warning), var(--success));
+            transition: width 0.3s ease;
+        }
+
         .amount-text {
             font-weight: 600;
             color: var(--success);
@@ -830,6 +971,20 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                 justify-content: center;
             }
 
+            .filters-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .filter-select {
+                min-width: auto;
+                width: 100%;
+            }
+
             .search-form {
                 flex-direction: column;
             }
@@ -858,6 +1013,7 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
         }
 
         @media print {
+            .filters-container,
             .search-container,
             .header-actions,
             .pagination {
@@ -888,7 +1044,7 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
             
             <div class="leads-page">
                 <div class="page-header">
-                    <h2><i class="fas fa-handshake"></i> Lead Conversion - Closed & Lost Deals</h2>
+                    <h2><i class="fas fa-handshake"></i> Lead Conversion Tracking</h2>
                     <div class="header-actions">
                         <a href="leads.php" class="btn-back">
                             <i class="fas fa-arrow-left"></i>
@@ -901,6 +1057,24 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                     </div>
                 </div>
                 
+                <!-- Enhanced Filters Container -->
+                <div class="filters-container">
+                    <form method="GET" action="" class="filters-row">
+                        <div class="filter-group">
+                            <label class="filter-label">Status Filter</label>
+                            <select name="status_filter" class="filter-select" onchange="this.form.submit()">
+                                <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Conversion Leads</option>
+                                <option value="closed" <?php echo $status_filter === 'closed' ? 'selected' : ''; ?>>Closed Deals Only</option>
+                                <option value="lost" <?php echo $status_filter === 'lost' ? 'selected' : ''; ?>>Lost Deals Only</option>
+                                <option value="in_progress" <?php echo $status_filter === 'in_progress' ? 'selected' : ''; ?>>In Progress</option>
+                            </select>
+                        </div>
+                        <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
+                            <input type="hidden" name="search" value="<?php echo htmlspecialchars($_GET['search']); ?>">
+                        <?php endif; ?>
+                    </form>
+                </div>
+                
                 <!-- Search Container -->
                 <div class="search-container">
                     <form class="search-form" method="GET" action="">
@@ -908,29 +1082,42 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                             type="text" 
                             name="search" 
                             class="search-input" 
-                            placeholder="Search by client name" 
+                            placeholder="Search by client name, phone, email, developer, or project" 
                             value="<?php echo htmlspecialchars($search_term); ?>"
                         >
+                        <?php if ($status_filter !== 'all'): ?>
+                            <input type="hidden" name="status_filter" value="<?php echo htmlspecialchars($status_filter); ?>">
+                        <?php endif; ?>
                         <button type="submit" class="search-button">
                             <i class="fas fa-search"></i>
                             Search
                         </button>
-                        <?php if ($search_active): ?>
-                        <a href="lead-conversion.php" class="search-reset" title="Clear search">
+                        <?php if ($search_active || $status_filter !== 'all'): ?>
+                        <a href="lead-conversion.php" class="search-reset" title="Clear all filters">
                             <i class="fas fa-times"></i>
                         </a>
                         <?php endif; ?>
                     </form>
                 </div>
                 
+                <!-- Enhanced Summary Cards -->
                 <div class="summary-cards">
                     <div class="summary-card">
                         <div class="summary-icon" style="background: var(--success-light); color: var(--success);">
                             <i class="fas fa-handshake"></i>
                         </div>
                         <div class="summary-info">
-                            <h3>Total Closed Deals</h3>
+                            <h3>Closed Deals</h3>
                             <p><?php echo number_format($stats['total_closed']); ?></p>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: var(--warning-light); color: var(--warning);">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="summary-info">
+                            <h3>In Progress</h3>
+                            <p><?php echo number_format($stats['in_progress']); ?></p>
                         </div>
                     </div>
                     <div class="summary-card">
@@ -952,21 +1139,21 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                         </div>
                     </div>
                     <div class="summary-card">
-                        <div class="summary-icon" style="background: var(--warning-light); color: var(--warning);">
-                            <i class="fas fa-money-bill-wave"></i>
-                        </div>
-                        <div class="summary-info">
-                            <h3>Total Commission</h3>
-                            <p>₱<?php echo number_format($stats['total_commission'] ?? 0, 0); ?></p>
-                        </div>
-                    </div>
-                    <div class="summary-card">
                         <div class="summary-icon" style="background: var(--info-light); color: var(--info);">
                             <i class="fas fa-home"></i>
                         </div>
                         <div class="summary-info">
                             <h3>Turned Over</h3>
                             <p><?php echo number_format($stats['turned_over']); ?></p>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: var(--warning-light); color: var(--warning);">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="summary-info">
+                            <h3>Total Commission</h3>
+                            <p>₱<?php echo number_format($stats['total_commission'] ?? 0, 0); ?></p>
                         </div>
                     </div>
                 </div>
@@ -981,6 +1168,7 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                                 <th>PROPERTY</th>
                                 <th>PRICE</th>
                                 <th>AGENT</th>
+                                <th>CONVERSION PROGRESS</th>
                                 <th>DP PROGRESS</th>
                                 <th>LOAN STATUS</th>
                                 <th>DATE</th>
@@ -991,17 +1179,14 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                             <?php foreach ($leads as $lead): ?>
                                 <tr class="<?php echo ($lead['status'] == 'Lost') ? 'lost-deal' : ''; ?>">
                                     <td>
-                                        <?php
-                                            $statusClass = 'info';
-                                            if ($lead['status'] == 'Closed Deal' || $lead['status'] == 'Loan Takeout' || $lead['status'] == 'House Turn Over') {
-                                                $statusClass = 'success';
-                                            } elseif ($lead['status'] == 'Lost') {
-                                                $statusClass = 'danger';
-                                            } elseif ($lead['status'] == 'Requirement Stage' || $lead['status'] == 'Downpayment Stage' || $lead['status'] == 'Housing Loan Application' || $lead['status'] == 'Loan Approval' || $lead['status'] == 'House Inspection') {
-                                                $statusClass = 'warning';
-                                            }
-                                        ?>
-                                        <span class="status-badge <?php echo $statusClass; ?>"><?php echo $lead['status'] == 'Closed Deal' ? 'Closed' : htmlspecialchars($lead['status']); ?></span>
+                                        <span class="status-badge <?php echo getStatusBadgeClass($lead['status']); ?>">
+                                            <?php echo htmlspecialchars($lead['status']); ?>
+                                        </span>
+                                        <?php if ($lead['status'] == 'Lost'): ?>
+                                            <div style="font-size: 0.75rem; color: var(--danger); margin-top: 0.25rem;">
+                                                Lost Deal
+                                            </div>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <div style="font-weight: 600;"><?php echo htmlspecialchars($lead['client_name']); ?></div>
@@ -1019,7 +1204,19 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                                         <div style="font-size: 0.75rem; color: var(--gray-500);"><?php echo htmlspecialchars($lead['team_name'] ?? 'N/A'); ?></div>
                                     </td>
                                     <td>
-                                        <?php if ($lead['status'] != 'Lost' && $lead['status'] != 'Closed Deal'): ?>
+                                        <?php if ($lead['status'] != 'Lost'): ?>
+                                            <div class="conversion-progress">
+                                                <div class="progress-fill" style="width: <?php echo $lead['conversion_progress']; ?>%"></div>
+                                            </div>
+                                            <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                                <?php echo $lead['conversion_progress']; ?>% Complete
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="status-badge danger">Lost</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($lead['status'] != 'Lost' && in_array($lead['status'], ['Downpayment Stage', 'Housing Loan Application', 'Loan Approval'])): ?>
                                             <?php if ($lead['total_dp_paid'] && $lead['price']): ?>
                                                 <?php $dp_percentage = ($lead['total_dp_paid'] / ($lead['price'] * 0.2)) * 100; ?>
                                                 <div class="progress-bar">
@@ -1032,7 +1229,17 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                                                 <span class="status-badge info">No DP Data</span>
                                             <?php endif; ?>
                                         <?php else: ?>
-                                            <span class="status-badge info"><?php echo $lead['status'] == 'Lost' ? '—' : 'Cash'; ?></span>
+                                            <span class="status-badge info">
+                                                <?php 
+                                                if ($lead['status'] == 'Lost') {
+                                                    echo '—';
+                                                } elseif (in_array($lead['status'], ['Closed Deal', 'Requirement Stage'])) {
+                                                    echo 'N/A';
+                                                } else {
+                                                    echo 'Complete';
+                                                }
+                                                ?>
+                                            </span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -1041,14 +1248,24 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                                                 <span class="status-badge success">Approved</span>
                                             <?php elseif ($lead['pagibig_bank_approval']): ?>
                                                 <span class="status-badge warning">Processing</span>
+                                            <?php elseif (in_array($lead['status'], ['Housing Loan Application', 'Loan Approval'])): ?>
+                                                <span class="status-badge info">Applied</span>
                                             <?php else: ?>
-                                                <span class="status-badge info">— Cash</span>
+                                                <span class="status-badge info">Cash</span>
                                             <?php endif; ?>
                                         <?php else: ?>
                                             <span class="status-badge danger">—</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?php echo date('M j, Y', strtotime($lead['updated_at'])); ?></td>
+                                    <td>
+                                        <?php 
+$display_date = $lead['updated_at'];
+if ($lead['status'] == 'House Turn Over' && $lead['turnover_date']) {
+    $display_date = $lead['turnover_date'];
+}
+echo date('M j, Y', strtotime($display_date)); 
+?>
+                                    </td>
                                     <td>
                                         <div class="action-buttons">
                                             <a href="lead-details.php?id=<?php echo $lead['id']; ?>" class="btn-view" title="View Lead">
@@ -1072,17 +1289,28 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                     <?php else: ?>
                     <div class="empty-state">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <p>No conversion leads found.</p>
+                        <p>
+                            <?php 
+                            if ($search_active) {
+                                echo "No leads found matching your search criteria.";
+                            } elseif ($status_filter !== 'all') {
+                                echo "No leads found for the selected status filter.";
+                            } else {
+                                echo "No conversion leads found.";
+                            }
+                            ?>
+                        </p>
                     </div>
                     <?php endif; ?>
                 </div>
 
+                <?php if ($total_pages > 1): ?>
                 <div class="pagination">
                     <?php
                     $paginationRange = getPaginationRange($current_page, $total_pages);
                     ?>
                     <div class="pagination-info">
-                        Page <?php echo $current_page; ?> of <?php echo $total_pages; ?>
+                        Showing <?php echo (($current_page - 1) * $leads_per_page) + 1; ?> to <?php echo min($current_page * $leads_per_page, $total_leads); ?> of <?php echo $total_leads; ?> leads
                     </div>
                     <?php if ($current_page > 1): ?>
                         <a href="<?php echo buildPaginationUrl($current_page - 1); ?>" class="pagination-button">
@@ -1112,6 +1340,7 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
                         </span>
                     <?php endif; ?>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

@@ -13,14 +13,57 @@ if (!isset($user) && isset($_SESSION['user_id'])) {
     }
 }
 
-// Ensure $base_url is defined, default to '/' if not passed from including script
+// FIXED: Proper base URL detection for both localhost and deployed environments
 if (!isset($base_url)) {
-    $base_url = '/'; 
+    // Get the current script's directory path
+    $currentDir = dirname($_SERVER['SCRIPT_NAME']);
+    
+    // Check if we're in the lead-management directory or a subdirectory
+    if (strpos($currentDir, '/lead-management') !== false) {
+        // Extract the base path up to and including lead-management
+        $basePath = substr($currentDir, 0, strpos($currentDir, '/lead-management') + strlen('/lead-management'));
+        $base_url = $basePath . '/';
+    } elseif (basename(dirname($_SERVER['SCRIPT_NAME'])) === 'lead-management') {
+        // We're directly in the lead-management directory
+        $base_url = dirname($_SERVER['SCRIPT_NAME']) . '/';
+    } elseif (basename(getcwd()) === 'lead-management' || strpos(getcwd(), 'lead-management') !== false) {
+        // Fallback: check current working directory
+        $base_url = '/lead-management/';
+    } else {
+        // Final fallback - try to detect from REQUEST_URI
+        $requestUri = $_SERVER['REQUEST_URI'];
+        if (strpos($requestUri, '/lead-management/') !== false) {
+            $base_url = '/lead-management/';
+        } else {
+            $base_url = '/';
+        }
+    }
 }
 
-// Determine the profile picture path
-$imagePath = !empty($user['profile_picture']) ? $user['profile_picture']
-             : (!empty($user['avatar']) ? $user['avatar'] : null);
+// Ensure base_url ends with a slash
+if (substr($base_url, -1) !== '/') {
+    $base_url .= '/';
+}
+
+// FIXED: Determine the profile picture path with proper base URL
+$imagePath = null;
+if (!empty($user['profile_picture'])) {
+    // If profile_picture already starts with http or /, use as is
+    if (strpos($user['profile_picture'], 'http') === 0 || strpos($user['profile_picture'], '/') === 0) {
+        $imagePath = $user['profile_picture'];
+    } else {
+        // Otherwise, prepend base_url
+        $imagePath = $base_url . $user['profile_picture'];
+    }
+} elseif (!empty($user['avatar'])) {
+    // If avatar already starts with http or /, use as is
+    if (strpos($user['avatar'], 'http') === 0 || strpos($user['avatar'], '/') === 0) {
+        $imagePath = $user['avatar'];
+    } else {
+        // Otherwise, prepend base_url
+        $imagePath = $base_url . $user['avatar'];
+    }
+}
 
 ?>
 
@@ -36,7 +79,7 @@ $imagePath = !empty($user['profile_picture']) ? $user['profile_picture']
         <div class="sidebar-header">
             <div class="logo-section">
                 <a href="<?php echo $base_url; ?>index.php" class="logo-link">
-                    <img src="<?php echo $base_url; ?>assets/images/logo.png" alt="Inner Sparc Realty Logo" class="logo-image">
+                    <img src="<?php echo $base_url; ?>assets/images/logo.png" alt="Inner Sparc Realty Logo" class="logo-image" onerror="this.src='<?php echo $base_url; ?>public/placeholder-logo.png'">
                 </a>
                 <span class="company-name">Inner SPARC Realty Corporation</span>
             </div>
@@ -49,7 +92,8 @@ $imagePath = !empty($user['profile_picture']) ? $user['profile_picture']
             <div class="user-avatar">
                 <?php
                 if ($imagePath):
-                    echo '<img src="' . $base_url . htmlspecialchars($imagePath) . '" alt="Profile Picture">';
+                    echo '<img src="' . htmlspecialchars($imagePath) . '" alt="Profile Picture" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">';
+                    echo '<span class="avatar-text" style="display: none;">' . strtoupper(substr($user['name'] ?? 'U', 0, 1)) . '</span>';
                 else:
                     echo '<span class="avatar-text">' . strtoupper(substr($user['name'] ?? 'U', 0, 1)) . '</span>';
                 endif;
@@ -189,12 +233,14 @@ $imagePath = !empty($user['profile_picture']) ? $user['profile_picture']
                                 <?php endif; ?>
                                 
                                 <!-- All roles (admin, superadmin, manager) -->
+                                <!--
                                 <li class="submenu-item">
                                     <a href="<?php echo $base_url; ?>accreditation.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'accreditation.php' ? 'active' : ''; ?>">
                                         <i class="fas fa-user-check submenu-icon"></i>
                                         <span class="submenu-text">Accreditation</span>
                                     </a>
                                 </li>
+                                -->
                                 <li class="submenu-item">
                                     <a href="<?php echo $base_url; ?>recruitment-dashboard.php" class="submenu-link <?php echo basename($_SERVER['PHP_SELF']) == 'recruitment-dashboard.php' ? 'active' : ''; ?>">
                                         <i class="fas fa-user-plus submenu-icon"></i>
@@ -450,6 +496,7 @@ $imagePath = !empty($user['profile_picture']) ? $user['profile_picture']
     overflow: hidden;
     flex-shrink: 0;
     border: 2px solid rgba(255, 255, 255, 0.2);
+    position: relative;
 }
 
 .user-avatar img {
@@ -461,6 +508,15 @@ $imagePath = !empty($user['profile_picture']) ? $user['profile_picture']
 
 .avatar-text {
     color: var(--sidebar-text);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
 }
 
 .user-info {
