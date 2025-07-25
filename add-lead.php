@@ -1135,7 +1135,7 @@ debugLog("Page rendering started");
                         
                         <div class="form-row">
                             <div class="form-group required-field">
-                                <label for="price">Total Selling Price (PHP)</label>
+                                <label for="price">Total Contract Price (PHP)</label>
                                 <input type="text" id="price" name="price" 
                                        value="<?php echo htmlspecialchars($_POST['price'] ?? ''); ?>"
                                        placeholder="e.g. 1,000,000.00" required>
