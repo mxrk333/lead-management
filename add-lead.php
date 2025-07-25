@@ -1,5 +1,5 @@
 <?php
-// Enhanced add-lead.php with specific focus on project models fetching
+// Enhanced add-lead.php with strict duplicate prevention and popup modal
 session_start();
 
 // Enable error logging
@@ -73,6 +73,67 @@ $projectModels = [];
 $leadSources = [];
 $success = '';
 $error = '';
+$duplicate_found = false;
+$duplicate_details = [];
+
+// ENHANCED: Function to check for exact duplicate leads (case-insensitive)
+function checkExactDuplicateLead($clientName) {
+    debugLog("Checking for exact duplicate lead: $clientName");
+    
+    try {
+        $conn = getDbConnection();
+        if (!$conn) {
+            throw new Exception("Database connection failed");
+        }
+        
+        // Search for leads with exact same name (case-insensitive, trimmed)
+        $stmt = $conn->prepare("
+            SELECT 
+                l.id, 
+                l.client_name, 
+                l.phone, 
+                l.email, 
+                l.status,
+                l.created_at,
+                u.name as agent_name,
+                t.name as team_name
+            FROM leads l
+            LEFT JOIN users u ON l.user_id = u.id
+            LEFT JOIN teams t ON u.team_id = t.id
+            WHERE LOWER(TRIM(l.client_name)) = LOWER(TRIM(?))
+            ORDER BY l.created_at DESC
+            LIMIT 5
+        ");
+        
+        if (!$stmt) {
+            throw new Exception("Failed to prepare duplicate check statement: " . $conn->error);
+        }
+        
+        $stmt->bind_param("s", $clientName);
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to execute duplicate check: " . $stmt->error);
+        }
+        
+        $result = $stmt->get_result();
+        $duplicates = [];
+        
+        while ($row = $result->fetch_assoc()) {
+            $duplicates[] = $row;
+        }
+        
+        $stmt->close();
+        $conn->close();
+        
+        debugLog("Found " . count($duplicates) . " exact duplicates for: $clientName");
+        
+        return $duplicates;
+        
+    } catch (Exception $e) {
+        debugLog("Error checking for duplicates: " . $e->getMessage());
+        return [];
+    }
+}
 
 // Enhanced function to get developers with fallback
 function getDevelopersEnhanced() {
@@ -295,7 +356,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $priceRaw = isset($_POST['price']) ? trim($_POST['price']) : '';
         $remarks = isset($_POST['remarks']) ? trim($_POST['remarks']) : '';
         
-        // MODIFIED: Handle "Others" option for lead source
+        // Handle "Others" option for lead source
         $source = isset($_POST['source']) ? trim($_POST['source']) : '';
         if ($source === 'Others' && isset($_POST['source_other']) && !empty(trim($_POST['source_other']))) {
             $source = trim($_POST['source_other']);
@@ -352,10 +413,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $validation_errors[] = "Lead source is required";
         }
         
+        // ENHANCED: Check for exact duplicate leads - PREVENT SAVING IF FOUND
+        if (empty($validation_errors) && !empty($clientName)) {
+            $duplicates = checkExactDuplicateLead($clientName);
+            
+            if (!empty($duplicates)) {
+                $duplicate_found = true;
+                $duplicate_details = $duplicates;
+                
+                // Log duplicate detection
+                debugLog("DUPLICATE PREVENTED - Exact duplicate lead found for: $clientName");
+                foreach ($duplicates as $dup) {
+                    debugLog("Existing lead: ID {$dup['id']}, Agent: {$dup['agent_name']}, Team: {$dup['team_name']}, Status: {$dup['status']}");
+                }
+                
+                // DO NOT PROCEED WITH SAVING - Set flag to show popup
+                debugLog("Lead creation blocked due to duplicate name");
+            }
+        }
+        
         if (!empty($validation_errors)) {
             $error = implode(", ", $validation_errors);
             debugLog("Validation failed: $error");
-        } else {
+        } elseif (!$duplicate_found) {
             debugLog("Validation passed, attempting to add lead");
             
             // Check if addLead function exists
@@ -415,7 +495,7 @@ function getLeadSources() {
         $row = $result->fetch_assoc();
         
         // Parse ENUM values from the type definition
-        if ($row && preg_match("/^enum\('(.*)'\)$/", $row['Type'], $matches)) {
+        if ($row && preg_match("/^enum$$'(.*)'$$$/", $row['Type'], $matches)) {
             $values = explode("','", $matches[1]);
             foreach ($values as $value) {
                 $sources[] = [
@@ -454,7 +534,7 @@ function getLeadSources() {
         }
     }
     
-    // MODIFIED: Always add "Others" option at the end
+    // Always add "Others" option at the end
     $sources[] = [
         'id' => 'Others',
         'name' => 'Others'
@@ -878,6 +958,9 @@ debugLog("Page rendering started");
             margin-bottom: 1.5rem;
             font-size: 0.875rem;
             font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
         }
         
         .success-message {
@@ -890,6 +973,223 @@ debugLog("Page rendering started");
             background-color: rgba(239, 68, 68, 0.1);
             color: #ef4444;
             border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* NEW: Duplicate Modal Styles */
+        .duplicate-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .duplicate-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .duplicate-modal-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        .duplicate-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .duplicate-modal-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #dc2626;
+        }
+
+        .duplicate-modal-title i {
+            font-size: 1.5rem;
+            color: #dc2626;
+        }
+
+        .duplicate-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .duplicate-modal-close:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .duplicate-modal-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .duplicate-warning-text {
+            font-size: 1rem;
+            color: #374151;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .duplicate-details {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .duplicate-details h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #991b1b;
+            margin-bottom: 0.75rem;
+        }
+
+        .duplicate-item {
+            background: white;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #dc2626;
+        }
+
+        .duplicate-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .duplicate-item-name {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.25rem;
+        }
+
+        .duplicate-item-details {
+            font-size: 0.75rem;
+            color: #6b7280;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .duplicate-modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .auto-close-timer {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .timer-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #e5e7eb;
+            border-top-color: #dc2626;
+            animation: spin 1s linear infinite;
+        }
+
+        .duplicate-modal-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-modal-close {
+            padding: 0.5rem 1rem;
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-modal-close:hover {
+            background-color: #b91c1c;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile responsive for modal */
+        @media (max-width: 768px) {
+            .duplicate-modal-content {
+                width: 95%;
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            .duplicate-modal-title {
+                font-size: 1.125rem;
+            }
+
+            .duplicate-modal-footer {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .duplicate-modal-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .btn-modal-close {
+                flex: 1;
+            }
         }
         
         /* Required field indicator */
@@ -937,10 +1237,6 @@ debugLog("Page rendering started");
             animation: spin 1s linear infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
         /* Debug info styling */
         .debug-info {
             background-color: #f3f4f6;
@@ -973,13 +1269,15 @@ debugLog("Page rendering started");
                 
                 <?php if ($success): ?>
                 <div class="success-message">
-                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success); ?>
+                    <i class="fas fa-check-circle"></i> 
+                    <span><?php echo htmlspecialchars($success); ?></span>
                 </div>
                 <?php endif; ?>
                 
                 <?php if ($error): ?>
                 <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
+                    <i class="fas fa-exclamation-circle"></i> 
+                    <span><?php echo htmlspecialchars($error); ?></span>
                 </div>
                 <?php endif; ?>
 
@@ -1035,7 +1333,7 @@ debugLog("Page rendering started");
                             
                             <div class="form-group required-field">
                                 <label for="source">Lead Source</label>
-                                <select id="source" name="source" required class="source-select">
+                                <select id="source" name="source" required class="source-select" onchange="toggleSourceOthers(this.value)">
                                     <option value="">Select Lead Source</option>
                                     <?php foreach ($leadSources as $source): ?>
                                     <option value="<?php echo htmlspecialchars($source['name']); ?>"
@@ -1044,6 +1342,12 @@ debugLog("Page rendering started");
                                     </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <div class="others-input" id="source-others">
+                                    <label for="source_other">Specify Lead Source</label>
+                                    <input type="text" id="source_other" name="source_other" 
+                                           value="<?php echo htmlspecialchars($_POST['source_other'] ?? ''); ?>"
+                                           placeholder="Enter lead source" maxlength="100">
+                                </div>
                             </div>
                         </div>
                         
@@ -1085,8 +1389,8 @@ debugLog("Page rendering started");
                                     <?php 
                                     $statuses = [
                                         'Inquiry', 'Presentation Stage', 'Negotiation', 'Lost', 'Site Tour',
-                                        , 'Requirement Stage', 'Downpayment Stage', 'Housing Loan Application',
-                                        'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over','Closed Deal'
+                                        'Closed Deal', 'Requirement Stage', 'Downpayment Stage', 'Housing Loan Application',
+                                        'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over'
                                     ];
                                     foreach ($statuses as $status_option): ?>
                                     <option value="<?php echo htmlspecialchars($status_option); ?>"
@@ -1161,10 +1465,126 @@ debugLog("Page rendering started");
             </div>
         </div>
     </div>
+
+    <!-- NEW: Duplicate Detection Modal -->
+    <?php if ($duplicate_found && !empty($duplicate_details)): ?>
+    <div class="duplicate-modal show" id="duplicateModal">
+        <div class="duplicate-modal-content">
+            <div class="duplicate-modal-header">
+                <div class="duplicate-modal-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Duplicate Lead Detected
+                </div>
+                <button class="duplicate-modal-close" onclick="closeDuplicateModal()" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="duplicate-modal-body">
+                <div class="duplicate-warning-text">
+                    <strong>A lead with this exact name already exists in the system.</strong><br><br>
+                    The lead was <strong>NOT SAVED</strong> to prevent duplicate entries. This helps maintain data integrity across all teams.
+                </div>
+                
+                <div class="duplicate-details">
+                    <h4>Existing Lead(s) Found:</h4>
+                    <?php foreach ($duplicate_details as $dup): ?>
+                    <div class="duplicate-item">
+                        <div class="duplicate-item-name"><?php echo htmlspecialchars($dup['client_name']); ?></div>
+                        <div class="duplicate-item-details">
+                            <span><strong>Agent:</strong> <?php echo htmlspecialchars($dup['agent_name'] ?? 'N/A'); ?></span>
+                            <span><strong>Team:</strong> <?php echo htmlspecialchars($dup['team_name'] ?? 'N/A'); ?></span>
+                            <span><strong>Status:</strong> <?php echo htmlspecialchars($dup['status']); ?></span>
+                            <span><strong>Created:</strong> <?php echo date('M j, Y', strtotime($dup['created_at'])); ?></span>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                
+                <div class="duplicate-warning-text">
+                    If you believe this is an error or the leads are genuinely different people with the same name, please:
+                    <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                        <li>Report it to the system administrator via the login page, or</li>
+                        <li>Notify management directly for manual review</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="duplicate-modal-footer">
+                <div class="auto-close-timer">
+                    <div class="timer-circle"></div>
+                    <span>Auto-closing in <span id="countdown">30</span> seconds</span>
+                </div>
+                <div class="duplicate-modal-actions">
+                    <button class="btn-modal-close" onclick="closeDuplicateModal()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
     
     <script>
-        // Enhanced JavaScript with comprehensive project model handling
+        // Enhanced JavaScript with duplicate modal handling
         console.log('Add Lead form script loaded');
+        
+        // NEW: Duplicate Modal Management
+        let countdownTimer = null;
+        let countdownSeconds = 30;
+
+        function closeDuplicateModal() {
+            const modal = document.getElementById('duplicateModal');
+            if (modal) {
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
+            
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+        }
+
+        function startCountdown() {
+            const countdownElement = document.getElementById('countdown');
+            if (!countdownElement) return;
+
+            countdownTimer = setInterval(() => {
+                countdownSeconds--;
+                countdownElement.textContent = countdownSeconds;
+                
+                if (countdownSeconds <= 0) {
+                    closeDuplicateModal();
+                }
+            }, 1000);
+        }
+
+        // Initialize countdown if modal is shown
+        <?php if ($duplicate_found): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            startCountdown();
+            
+            // Close modal on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeDuplicateModal();
+                }
+            });
+            
+            // Close modal on backdrop click
+            const modal = document.getElementById('duplicateModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeDuplicateModal();
+                    }
+                });
+            }
+        });
+        <?php endif; ?>
         
         // Function to toggle source others input
         function toggleSourceOthers(value) {

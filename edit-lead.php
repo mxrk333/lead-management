@@ -1,5 +1,9 @@
 <?php
 session_start();
+
+// Set Philippine timezone at the very beginning
+date_default_timezone_set('Asia/Manila');
+
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
@@ -23,6 +27,110 @@ function isSuperUser($username) {
     return in_array($username, $superusers);
 }
 
+// Function to get current Philippine time
+function getCurrentPhilippineTime($format = 'Y-m-d H:i:s') {
+    $date = new DateTime('now', new DateTimeZone('Asia/Manila'));
+    return $date->format($format);
+}
+
+// Function to format datetime for Philippine timezone
+function formatPhilippineDateTime($datetime, $format = 'M j, Y g:i A') {
+    if (empty($datetime) || $datetime === '0000-00-00 00:00:00') {
+        return 'N/A';
+    }
+    
+    try {
+        // Create DateTime object and set to Philippine timezone
+        $date = new DateTime($datetime);
+        $date->setTimezone(new DateTimeZone('Asia/Manila'));
+        return $date->format($format);
+    } catch (Exception $e) {
+        return $datetime; // Return original if formatting fails
+    }
+}
+
+// Enhanced database connection with timezone setting
+function getDbConnectionWithTimezone() {
+    $conn = getDbConnection();
+    if ($conn) {
+        // Set MySQL session timezone to Philippine time
+        $conn->query("SET time_zone = '+08:00'");
+    }
+    return $conn;
+}
+
+// Function to automatically log status changes with Philippine time
+function logStatusChange($lead_id, $user_id, $old_status, $new_status) {
+    try {
+        $conn = getDbConnectionWithTimezone();
+        if (!$conn) {
+            throw new Exception("Database connection failed");
+        }
+        
+        // Create activity log entry for status change
+        $activity_notes = "Status changed from '{$old_status}' to '{$new_status}'";
+        $current_time = getCurrentPhilippineTime();
+        
+        $stmt = $conn->prepare("
+            INSERT INTO lead_activities (lead_id, user_id, activity_type, notes, created_at) 
+            VALUES (?, ?, 'Status Change', ?, ?)
+        ");
+        
+        if ($stmt) {
+            $stmt->bind_param("iiss", $lead_id, $user_id, $activity_notes, $current_time);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                error_log("Status change logged with Philippine time: Lead ID $lead_id, User ID $user_id, $old_status -> $new_status at $current_time");
+                return true;
+            }
+        }
+        
+        $conn->close();
+        return false;
+        
+    } catch (Exception $e) {
+        error_log("Error logging status change: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Function to log lead modifications with Philippine time
+function logLeadModification($lead_id, $user_id, $field_name, $old_value, $new_value, $activity_id = null) {
+    try {
+        $conn = getDbConnectionWithTimezone();
+        if (!$conn) {
+            throw new Exception("Database connection failed");
+        }
+        
+        $current_time = getCurrentPhilippineTime();
+        
+        $stmt = $conn->prepare("
+            INSERT INTO lead_modifications (lead_id, user_id, field_name, old_value, new_value, activity_id, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        
+        if ($stmt) {
+            $stmt->bind_param("iisssss", $lead_id, $user_id, $field_name, $old_value, $new_value, $activity_id, $current_time);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            if ($result) {
+                error_log("Lead modification logged with Philippine time: Lead ID $lead_id, Field: $field_name, $old_value -> $new_value at $current_time");
+                return true;
+            }
+        }
+        
+        $conn->close();
+        return false;
+        
+    } catch (Exception $e) {
+        error_log("Error logging lead modification: " . $e->getMessage());
+        return false;
+    }
+}
+
 // Check if lead ID is provided
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     header("Location: leads.php?error=invalid_lead");
@@ -38,6 +146,9 @@ if (!$lead) {
     exit();
 }
 
+// Store original lead data for comparison
+$original_lead = $lead;
+
 // Check if user can edit this lead
 $canEdit = isSuperUser($user['username']) || ($lead['user_id'] == $user_id);
 if (!$canEdit) {
@@ -52,7 +163,7 @@ $projectModels = getProjectModels();
 // Enhanced getLeadSources function with "Others" option
 function getLeadSourcesWithOthers() {
     try {
-        $conn = getDbConnection();
+        $conn = getDbConnectionWithTimezone();
         if (!$conn) {
             throw new Exception("Database connection failed");
         }
@@ -73,7 +184,7 @@ function getLeadSourcesWithOthers() {
         $row = $result->fetch_assoc();
         
         // Parse ENUM values from the type definition
-        if ($row && preg_match("/^enum\$$'(.*)'\$$$/", $row['Type'], $matches)) {
+        if ($row && preg_match("/^enum$$'(.*)'$$$/", $row['Type'], $matches)) {
             $values = explode("','", $matches[1]);
             foreach ($values as $value) {
                 $sources[] = [
@@ -193,6 +304,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         if (empty($errors)) {
+            // ENHANCED: Check for status change and log it automatically
+            $statusChanged = ($original_lead['status'] !== $status);
+            
             // Update lead in database
             $result = updateLead(
                 $lead_id, $clientName, $phone, $email, $facebook, $linkedin, 
@@ -200,7 +314,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             );
             
             if ($result) {
-                $_SESSION['success_message'] = "Lead updated successfully";
+                // AUTOMATIC STATUS CHANGE LOGGING with Philippine time
+                if ($statusChanged) {
+                    $logResult = logStatusChange($lead_id, $user_id, $original_lead['status'], $status);
+                    if ($logResult) {
+                        error_log("Automatic status change logged successfully for lead ID: $lead_id with Philippine time");
+                    } else {
+                        error_log("Failed to log automatic status change for lead ID: $lead_id");
+                    }
+                }
+                
+                // ENHANCED: Log other significant field changes with Philippine time
+                $fieldsToTrack = [
+                    'client_name' => [$original_lead['client_name'], $clientName],
+                    'phone' => [$original_lead['phone'], $phone],
+                    'email' => [$original_lead['email'], $email],
+                    'temperature' => [$original_lead['temperature'], $temperature],
+                    'developer' => [$original_lead['developer'], $developer],
+                    'project_model' => [$original_lead['project_model'], $projectModel],
+                    'price' => [$original_lead['price'], $price],
+                    'source' => [$original_lead['source'], $source]
+                ];
+                
+                foreach ($fieldsToTrack as $fieldName => $values) {
+                    $oldValue = $values[0];
+                    $newValue = $values[1];
+                    
+                    // Only log if the value actually changed
+                    if ($oldValue != $newValue) {
+                        logLeadModification($lead_id, $user_id, $fieldName, $oldValue, $newValue);
+                    }
+                }
+                
+                $_SESSION['success_message'] = "Lead updated successfully" . ($statusChanged ? " and status change logged with Philippine time" : "");
                 header("Location: leads.php");
                 exit();
             } else {
@@ -212,6 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
     } catch (Exception $e) {
         $error = "Failed to update lead: " . $e->getMessage();
+        error_log("Edit lead error: " . $e->getMessage());
     }
 }
 
@@ -543,6 +690,37 @@ foreach ($projectModels as $model) {
             font-weight: normal;
             margin-left: 0.25rem;
         }
+
+        /* NEW: Status change indicator with Philippine time notice */
+        .status-change-indicator {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: #92400e;
+        }
+
+        .status-change-indicator i {
+            margin-right: 0.5rem;
+            color: #f59e0b;
+        }
+
+        .timezone-notice {
+            background-color: #e0f2fe;
+            border: 1px solid #0288d1;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: #01579b;
+        }
+
+        .timezone-notice i {
+            margin-right: 0.5rem;
+            color: #0288d1;
+        }
     </style>
 </head>
 <body>
@@ -563,6 +741,18 @@ foreach ($projectModels as $model) {
                     <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
                 </div>
                 <?php endif; ?>
+
+                <!-- NEW: Philippine timezone notice -->
+                <div class="timezone-notice">
+                    <i class="fas fa-clock"></i>
+                    <strong>Philippine Time Zone:</strong> All timestamps are recorded in Philippine Standard Time (UTC+8). Current time: <?php echo formatPhilippineDateTime(getCurrentPhilippineTime(), 'M j, Y g:i A'); ?>
+                </div>
+
+                <!-- NEW: Status change notification -->
+                <div class="status-change-indicator">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Automatic Activity Logging:</strong> Any status changes will be automatically recorded in the lead activity log with Philippine timestamp and your name.
+                </div>
                 
                 <div class="required-note">Fields marked with <span>*</span> are required</div>
                 
@@ -605,6 +795,13 @@ foreach ($projectModels as $model) {
                                     </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <div class="others-input <?php echo $isCustomSource ? 'show' : ''; ?>" id="source-others">
+                                    <label for="source_other">Specify Lead Source</label>
+                                    <input type="text" id="source_other" name="source_other" 
+                                           value="<?php echo $isCustomSource ? htmlspecialchars($customSourceValue) : ''; ?>"
+                                           placeholder="Enter lead source" maxlength="100"
+                                           <?php echo $isCustomSource ? 'required' : ''; ?>>
+                                </div>
                             </div>
                         </div>
                         
@@ -641,7 +838,7 @@ foreach ($projectModels as $model) {
                             
                             <div class="form-group required-field">
                                 <label for="status">Status</label>
-                                <select id="status" name="status" required>
+                                <select id="status" name="status" required onchange="highlightStatusChange(this.value)">
                                     <option value="">Select Status</option>
                                     <?php 
                                     $statuses = [
@@ -725,6 +922,9 @@ foreach ($projectModels as $model) {
     </div>
     
     <script>
+        // Store original status for comparison
+        const originalStatus = '<?php echo htmlspecialchars($lead['status']); ?>';
+        
         // Project models data from PHP
         let projectModelsData = {};
         try {
@@ -749,6 +949,32 @@ foreach ($projectModels as $model) {
             project_model: '<?php echo htmlspecialchars($lead['project_model']); ?>',
             source: '<?php echo htmlspecialchars($lead['source']); ?>'
         };
+        
+        // NEW: Function to highlight status changes with Philippine time notice
+        function highlightStatusChange(newStatus) {
+            const statusSelect = document.getElementById('status');
+            const indicator = document.querySelector('.status-change-indicator');
+            
+            if (newStatus !== originalStatus && newStatus !== '') {
+                statusSelect.style.borderColor = '#f59e0b';
+                statusSelect.style.backgroundColor = '#fef3c7';
+                indicator.innerHTML = `
+                    <i class="fas fa-exchange-alt"></i>
+                    <strong>Status Change Detected:</strong> Changing from "${originalStatus}" to "${newStatus}". This will be automatically logged with Philippine time (UTC+8) in the activity timeline.
+                `;
+                indicator.style.backgroundColor = '#fef3c7';
+                indicator.style.borderColor = '#f59e0b';
+            } else {
+                statusSelect.style.borderColor = '#d1d5db';
+                statusSelect.style.backgroundColor = '#fff';
+                indicator.innerHTML = `
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Automatic Activity Logging:</strong> Any status changes will be automatically recorded in the lead activity log with Philippine timestamp and your name.
+                `;
+                indicator.style.backgroundColor = '#f0f7ff';
+                indicator.style.borderColor = '#bae0ff';
+            }
+        }
         
         function toggleSourceOthers(value) {
             const othersDiv = document.getElementById('source-others');
@@ -903,13 +1129,25 @@ foreach ($projectModels as $model) {
                 });
             }
             
-            // Form submission handling
+            // Form submission handling with status change confirmation
             const form = document.getElementById('editLeadForm');
             const saveBtn = document.getElementById('saveBtn');
             
             if (form && saveBtn) {
                 form.addEventListener('submit', function(e) {
-                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+                    const currentStatus = document.getElementById('status').value;
+                    
+                    // Show confirmation if status is changing
+                    if (currentStatus !== originalStatus && currentStatus !== '') {
+                        const confirmMessage = `You are changing the status from "${originalStatus}" to "${currentStatus}". This change will be automatically logged with Philippine time (UTC+8) in the lead activity. Do you want to continue?`;
+                        
+                        if (!confirm(confirmMessage)) {
+                            e.preventDefault();
+                            return false;
+                        }
+                    }
+                    
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating with Philippine Time...';
                     saveBtn.disabled = true;
                     
                     // Clean price value for submission

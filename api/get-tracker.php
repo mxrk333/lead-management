@@ -1,36 +1,67 @@
 <?php
-session_start();
 require_once '../config/database.php';
-require_once '../includes/functions.php';
+require_once '../includes/functions.php'; // Assuming functions.php contains addLeadActivity and other necessary functions
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit();
-}
+header('Content-Type: application/json');
 
-// Check if lead_id is provided
+$response = ['success' => false, 'message' => ''];
+
 if (!isset($_GET['lead_id'])) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Lead ID is required']);
+    $response['message'] = 'Lead ID is required.';
+    echo json_encode($response);
     exit();
 }
 
 $lead_id = intval($_GET['lead_id']);
 $conn = getDbConnection();
 
-// Get tracker data
+if (!$conn) {
+    $response['message'] = 'Database connection failed.';
+    echo json_encode($response);
+    exit();
+}
+
+// Fetch tracker data
 $stmt = $conn->prepare("SELECT * FROM downpayment_tracker WHERE lead_id = ?");
+if (!$stmt) {
+    $response['message'] = 'Failed to prepare statement: ' . $conn->error;
+    echo json_encode($response);
+    exit();
+}
+
 $stmt->bind_param("i", $lead_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $tracker = $result->fetch_assoc();
 $stmt->close();
+$conn->close();
 
-header('Content-Type: application/json');
 if ($tracker) {
-    echo json_encode(['success' => true, 'tracker' => $tracker]);
+    $response['success'] = true;
+    $response['tracker'] = $tracker;
+
+    // Calculate progress details for the modal's edit button logic
+    $requirements_complete = $tracker['requirements_complete'] == 1;
+    $spot_dp = $tracker['spot_dp'] == 1;
+    $current_dp_stage = intval($tracker['current_dp_stage']);
+    $total_dp_stages = intval($tracker['total_dp_stages']);
+    $pagibig_bank_approval = $tracker['pagibig_bank_approval'] == 1;
+    $loan_takeout = $tracker['loan_takeout'] == 1;
+    $turnover = $tracker['turnover'] == 1;
+
+    $is_dp_stage_complete = $spot_dp || ($current_dp_stage > 0 && $current_dp_stage == $total_dp_stages);
+
+    $is_fully_complete = $requirements_complete && $is_dp_stage_complete && $pagibig_bank_approval && $loan_takeout && $turnover;
+
+    $response['tracker']['progress_details'] = [
+        'is_fully_complete' => $is_fully_complete
+    ];
+
 } else {
-    echo json_encode(['success' => false, 'message' => 'No tracker found for this lead']);
-} 
+    $response['success'] = true; // Still success, just no tracker data found
+    $response['message'] = 'No tracker data found for this lead.';
+    $response['tracker'] = null; // Explicitly set to null
+}
+
+echo json_encode($response);
+?>

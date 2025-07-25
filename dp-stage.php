@@ -1,5 +1,12 @@
 <?php
 session_start();
+// Add these lines right after `session_start();` and before `require_once 'config/database.php';`
+// This will display all PHP errors directly on the page for debugging.
+// REMOVE these lines in a production environment for security.
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
@@ -30,13 +37,17 @@ $query = "SELECT l.*, u.name as agent_name
           WHERE l.status = 'Downpayment Stage'";
 
 if ($show_completed) {
+    // A lead is considered fully completed if all 5 milestones are met
     $query .= " AND dt.requirements_complete = 1 
+                AND (dt.spot_dp = 1 OR dt.current_dp_stage = dt.total_dp_stages)
                 AND dt.pagibig_bank_approval = 1 
                 AND dt.loan_takeout = 1 
                 AND dt.turnover = 1";
 } else {
+    // A lead is in progress if it's not fully completed OR if there's no tracker data yet
     $query .= " AND (dt.id IS NULL OR 
                 NOT (dt.requirements_complete = 1 
+                    AND (dt.spot_dp = 1 OR dt.current_dp_stage = dt.total_dp_stages)
                     AND dt.pagibig_bank_approval = 1 
                     AND dt.loan_takeout = 1 
                     AND dt.turnover = 1))";
@@ -129,6 +140,23 @@ if (!empty($leads)) {
         
         if ($tracker_result) {
             while ($tracker = $tracker_result->fetch_assoc()) {
+                // Calculate progress details for the modal's edit button logic
+                $requirements_complete = $tracker['requirements_complete'] == 1;
+                $spot_dp = $tracker['spot_dp'] == 1;
+                $current_dp_stage = intval($tracker['current_dp_stage']);
+                $total_dp_stages = intval($tracker['total_dp_stages']);
+                $pagibig_bank_approval = $tracker['pagibig_bank_approval'] == 1;
+                $loan_takeout = $tracker['loan_takeout'] == 1;
+                $turnover = $tracker['turnover'] == 1;
+
+                $is_dp_stage_complete = $spot_dp || ($current_dp_stage > 0 && $current_dp_stage == $total_dp_stages);
+
+                $is_fully_complete = $requirements_complete && $is_dp_stage_complete && $pagibig_bank_approval && $loan_takeout && $turnover;
+
+                $tracker['progress_details'] = [
+                    'is_fully_complete' => $is_fully_complete
+                ];
+
                 $trackers[$tracker['lead_id']] = $tracker;
             }
         }
@@ -176,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_tracker'])) {
     $total_steps = 5; // requirements, dp stages, pagibig/bank approval, loan takeout, turnover
     
     if ($requirements_complete) $completed_steps++;
-    if ($spot_dp || $current_dp_stage == $total_dp_stages) $completed_steps++;
+    if ($spot_dp || $current_dp_stage == $total_dp_stages) $completed_steps++; // This is the DP stage completion
     if ($pagibig_bank_approval) $completed_steps++;
     if ($loan_takeout) $completed_steps++;
     if ($turnover) $completed_steps++;
@@ -654,7 +682,7 @@ if (isset($_GET['success'])) {
     }
     
     /* Modal styles */
-    #trackerModal, #DpModaviewl {
+    #dpDetailsModal {
         display: none;
         position: fixed;
         z-index: 1000;
@@ -874,72 +902,6 @@ if (isset($_GET['success'])) {
         border-color: var(--primary);
     }
     
-    .terms-header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .terms-icon {
-        width: 3rem;
-        height: 3rem;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        color: white;
-    }
-    
-    .terms-card.spot-dp .terms-icon {
-        background: var(--success);
-    }
-    
-    .terms-card.installment .terms-icon {
-        background: var(--primary);
-    }
-    
-    .terms-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 0;
-    }
-    
-    .terms-card.spot-dp .terms-title {
-        color: #065f46;
-    }
-    
-    .terms-card.installment .terms-title {
-        color: var(--primary);
-    }
-    
-    .terms-details {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .terms-detail-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        background: rgba(255, 255, 255, 0.7);
-        border-radius: 0.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-    }
-    
-    .terms-detail-label {
-        font-weight: 600;
-        color: var(--gray-700);
-    }
-    
-    .terms-detail-value {
-        font-weight: 700;
-        font-size: 1.125rem;
-    }
-    
     .reservation-card {
         background: white;
         border: 2px solid var(--gray-200);
@@ -1045,6 +1007,10 @@ if (isset($_GET['success'])) {
     
     .monthly-progress-item.current::before {
         background: var(--warning);
+    }
+    
+    .monthly-progress-item.pending::before {
+        background: var(--gray-300);
     }
     
     .month-number {
@@ -1364,6 +1330,13 @@ if (isset($_GET['success'])) {
     .view-toggle .btn {
         min-width: 140px;
     }
+
+    /* Added style for disabled button */
+    .btn:disabled, .btn[disabled] {
+        opacity: 0.6;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
     
     /* Responsive adjustments */
     @media (max-width: 768px) {
@@ -1574,7 +1547,10 @@ if (isset($_GET['success'])) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($leads as $lead): ?>
+                                    <?php foreach ($leads as $lead): 
+                                        $current_tracker = $trackers[$lead['id']] ?? null;
+                                        $tracker_json = json_encode($current_tracker);
+                                    ?>
                                     <tr>
                                         <td>
                                             <div class="client-name"><?= htmlspecialchars($lead['client_name']) ?></div>
@@ -1677,16 +1653,18 @@ if (isset($_GET['success'])) {
                                         </td>
                                         <td>
                                             <div class="action-buttons">
-                                                <!-- View DP Button -->
-                                                <button class="btn btn-success action-btn" onclick="openViewDpModal(<?= $lead['id'] ?>, '<?= htmlspecialchars($lead['client_name']) ?>', '<?= htmlspecialchars($lead['developer']) ?>', '<?= htmlspecialchars($lead['project_model']) ?>', <?= $lead['price'] ?? 0 ?>)">
-                                                    <i class="fas fa-eye"></i> <span>View DP</span>
+                                                <!-- Unified Manage DP Button -->
+                                                <button class="btn btn-primary action-btn" onclick="openDpDetailsModal(
+                                                    <?= $lead['id'] ?>, 
+                                                    '<?= htmlspecialchars($lead['client_name']) ?>', 
+                                                    '<?= htmlspecialchars($lead['developer']) ?>', 
+                                                    '<?= htmlspecialchars($lead['project_model']) ?>', 
+                                                    <?= $lead['price'] ?? 0 ?>, 
+                                                    <?= $current_tracker ? htmlspecialchars(json_encode($current_tracker)) : 'null' ?>, 
+                                                    'view'
+                                                )">
+                                                    <i class="fas fa-tasks"></i> <span>Manage DP</span>
                                                 </button>
-                                                
-                                                <?php if (!$show_completed): ?>
-                                                <button class="btn btn-primary action-btn" onclick="openTrackerModal(<?= $lead['id'] ?>, '<?= htmlspecialchars($lead['client_name']) ?>', '<?= htmlspecialchars($lead['developer']) ?>', '<?= htmlspecialchars($lead['project_model']) ?>')">
-                                                    <i class="fas fa-edit"></i> <span>Update</span>
-                                                </button>
-                                                <?php endif; ?>
                                                 
                                                 <a href="lead-details.php?id=<?= $lead['id'] ?>" class="btn btn-outline action-btn">
                                                     <i class="fas fa-user"></i> <span>Profile</span>
@@ -1705,218 +1683,203 @@ if (isset($_GET['success'])) {
         </div>
     </div>
     
-    <!-- View DP Modal -->
-    <div id="viewDpModal">
+    <!-- Unified DP Details Modal -->
+    <div id="dpDetailsModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-chart-pie"></i> Downpayment Progress Overview</h3>
-                <span class="close" onclick="closeViewDpModal()">&times;</span>
+                <h3 id="modal_title"><i class="fas fa-chart-pie"></i> Downpayment Details</h3>
+                <span class="close" onclick="closeDpDetailsModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <!-- Client Information Card -->
-                <div class="client-info-card">
-                    <div class="client-info-header">
-                        <div class="client-info-main">
-                            <div id="view_client_name" class="client-name-large"></div>
-                            <div class="project-info">
-                                <div class="project-detail">
-                                    <i class="fas fa-building"></i>
-                                    <span id="view_developer"></span>
-                                </div>
-                                <div class="project-detail">
-                                    <i class="fas fa-home"></i>
-                                    <span id="view_project_model"></span>
+                <!-- View Mode Content -->
+                <div id="view_mode_content">
+                    <!-- Client Information Card -->
+                    <div class="client-info-card">
+                        <div class="client-info-header">
+                            <div class="client-info-main">
+                                <div id="view_client_name" class="client-name-large"></div>
+                                <div class="project-info">
+                                    <div class="project-detail">
+                                        <i class="fas fa-building"></i>
+                                        <span id="view_developer"></span>
+                                    </div>
+                                    <div class="project-detail">
+                                        <i class="fas fa-home"></i>
+                                        <span id="view_project_model"></span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="price-display" id="view_price">
-                            <!-- Price will be populated by JavaScript -->
+                            <div class="price-display" id="view_price">
+                                <!-- Price will be populated by JavaScript -->
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- DP Terms Section -->
-                <div class="dp-terms-section">
-                    <div class="section-title">
-                        <i class="fas fa-credit-card"></i>
-                        Downpayment Terms
+                    <!-- DP Terms Section -->
+                    <div class="dp-terms-section">
+                        <div class="section-title">
+                            <i class="fas fa-credit-card"></i>
+                            Downpayment Terms
+                        </div>
+                        <div class="dp-terms-grid">
+                            <div id="dp_terms_card" class="terms-card">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            <div id="reservation_card" class="reservation-card">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
                     </div>
-                    <div class="dp-terms-grid">
-                        <div id="dp_terms_card" class="terms-card">
+
+                    <!-- Monthly Progress Section -->
+                    <div class="monthly-progress-section" id="monthly_progress_section" style="display: none;">
+                        <div class="section-title">
+                            <i class="fas fa-calendar-check"></i>
+                            Monthly Payment Progress
+                        </div>
+                        <div class="monthly-progress-grid" id="monthly_progress_grid">
                             <!-- Will be populated by JavaScript -->
                         </div>
-                        <div id="reservation_card" class="reservation-card">
-                            <!-- Will be populated by JavaScript -->
+                    </div>
+
+                    <!-- Overall Progress Section -->
+                    <div class="progress-section">
+                        <div class="section-title">
+                            <i class="fas fa-chart-line"></i>
+                            Overall Progress
                         </div>
-                    </div>
-                </div>
-
-                <!-- Monthly Progress Section -->
-                <div class="monthly-progress-section" id="monthly_progress_section" style="display: none;">
-                    <div class="section-title">
-                        <i class="fas fa-calendar-check"></i>
-                        Monthly Payment Progress
-                    </div>
-                    <div class="monthly-progress-grid" id="monthly_progress_grid">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-
-                <!-- Overall Progress Section -->
-                <div class="progress-section">
-                    <div class="section-title">
-                        <i class="fas fa-chart-line"></i>
-                        Overall Progress
-                    </div>
-                    <div class="progress-overview-card">
-                        <div class="progress-circle-container">
-                            <div class="progress-circle" id="progress_circle">
-                                <div class="progress-percentage" id="view_progress_percentage">0%</div>
-                            </div>
-                        </div>
-                        <div class="progress-label">Project Completion</div>
-                    </div>
-                </div>
-
-                <!-- Milestones Section -->
-                <div class="milestones-section">
-                    <div class="section-title">
-                        <i class="fas fa-tasks"></i>
-                        Project Milestones
-                    </div>
-                    <div class="milestones-list">
-                        <div class="milestone-card" id="milestone_requirements">
-                            <div class="milestone-content">
-                                <div class="milestone-icon-container">
-                                    <i class="fas fa-file-alt"></i>
-                                </div>
-                                <div class="milestone-info">
-                                    <div class="milestone-title">Requirements Complete</div>
-                                    <div class="milestone-description">All required documents submitted and verified by the processing team</div>
-                                </div>
-                                <div class="milestone-status-indicator">
-                                    <i class="fas fa-clock"></i>
+                        <div class="progress-overview-card">
+                            <div class="progress-circle-container">
+                                <div class="progress-circle" id="progress_circle">
+                                    <div class="progress-percentage" id="view_progress_percentage">0%</div>
                                 </div>
                             </div>
+                            <div class="progress-label">Project Completion</div>
                         </div>
+                    </div>
 
-                        <div class="milestone-card" id="milestone_dp_stage">
-                            <div class="milestone-content">
-                                <div class="milestone-icon-container">
-                                    <i class="fas fa-credit-card"></i>
-                                </div>
-                                <div class="milestone-info">
-                                    <div class="milestone-title">Downpayment Stage</div>
-                                    <div class="milestone-description" id="dp_stage_description">Monthly payment progress tracking</div>
-                                </div>
-                                <div class="milestone-status-indicator">
-                                    <i class="fas fa-clock"></i>
+                    <!-- Milestones Section -->
+                    <div class="milestones-section">
+                        <div class="section-title">
+                            <i class="fas fa-tasks"></i>
+                            Project Milestones
+                        </div>
+                        <div class="milestones-list">
+                            <div class="milestone-card" id="milestone_requirements">
+                                <div class="milestone-content">
+                                    <div class="milestone-icon-container">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="milestone-info">
+                                        <div class="milestone-title">Requirements Complete</div>
+                                        <div class="milestone-description">All required documents submitted and verified by the processing team</div>
+                                    </div>
+                                    <div class="milestone-status-indicator">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="milestone-card" id="milestone_approval">
-                            <div class="milestone-content">
-                                <div class="milestone-icon-container">
-                                    <i class="fas fa-stamp"></i>
-                                </div>
-                                <div class="milestone-info">
-                                    <div class="milestone-title">Pag-IBIG/Bank Approval</div>
-                                    <div class="milestone-description">Loan application approved by financial institution</div>
-                                </div>
-                                <div class="milestone-status-indicator">
-                                    <i class="fas fa-clock"></i>
+                            <div class="milestone-card" id="milestone_dp_stage">
+                                <div class="milestone-content">
+                                    <div class="milestone-icon-container">
+                                        <i class="fas fa-credit-card"></i>
+                                    </div>
+                                    <div class="milestone-info">
+                                        <div class="milestone-title">Downpayment Stage</div>
+                                        <div class="milestone-description" id="dp_stage_description">Monthly payment progress tracking</div>
+                                    </div>
+                                    <div class="milestone-status-indicator">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="milestone-card" id="milestone_takeout">
-                            <div class="milestone-content">
-                                <div class="milestone-icon-container">
-                                    <i class="fas fa-money-check-alt"></i>
-                                </div>
-                                <div class="milestone-info">
-                                    <div class="milestone-title">Loan Takeout</div>
-                                    <div class="milestone-description">Loan amount released and processed for property purchase</div>
-                                </div>
-                                <div class="milestone-status-indicator">
-                                    <i class="fas fa-clock"></i>
+                            <div class="milestone-card" id="milestone_approval">
+                                <div class="milestone-content">
+                                    <div class="milestone-icon-container">
+                                        <i class="fas fa-stamp"></i>
+                                    </div>
+                                    <div class="milestone-info">
+                                        <div class="milestone-title">Pag-IBIG/Bank Approval</div>
+                                        <div class="milestone-description">Loan application approved by financial institution</div>
+                                    </div>
+                                    <div class="milestone-status-indicator">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="milestone-card" id="milestone_turnover">
-                            <div class="milestone-content">
-                                <div class="milestone-icon-container">
-                                    <i class="fas fa-key"></i>
+                            <div class="milestone-card" id="milestone_takeout">
+                                <div class="milestone-content">
+                                    <div class="milestone-icon-container">
+                                        <i class="fas fa-money-check-alt"></i>
+                                    </div>
+                                    <div class="milestone-info">
+                                        <div class="milestone-title">Loan Takeout</div>
+                                        <div class="milestone-description">Loan amount released and processed for property purchase</div>
+                                    </div>
+                                    <div class="milestone-status-indicator">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
                                 </div>
-                                <div class="milestone-info">
-                                    <div class="milestone-title">Property Turnover</div>
-                                    <div class="milestone-description">Property keys and documents handed over to client</div>
-                                </div>
-                                <div class="milestone-status-indicator">
-                                    <i class="fas fa-clock"></i>
+                            </div>
+
+                            <div class="milestone-card" id="milestone_turnover">
+                                <div class="milestone-content">
+                                    <div class="milestone-icon-container">
+                                        <i class="fas fa-key"></i>
+                                    </div>
+                                    <div class="milestone-info">
+                                        <div class="milestone-title">Property Turnover</div>
+                                        <div class="milestone-description">Property keys and documents handed over to client</div>
+                                    </div>
+                                    <div class="milestone-status-indicator">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeViewDpModal()">
-                    <i class="fas fa-times"></i> Close
-                </button>
-                <button type="button" class="btn btn-primary" onclick="openEditFromView()">
-                    <i class="fas fa-edit"></i> Edit Details
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tracker Modal -->
-    <?php if (!$show_completed): ?>
-    <div id="trackerModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-chart-line"></i> Update Downpayment Tracker</h3>
-                <span class="close" onclick="closeTrackerModal()">&times;</span>
-            </div>
-            <form id="trackerForm" method="post">
-                <div class="modal-body">
-                    <input type="hidden" name="lead_id" id="lead_id">
+
+                <!-- Edit Mode Content (Form) -->
+                <form id="trackerForm" method="post" style="display: none;">
+                    <input type="hidden" name="lead_id" id="edit_lead_id">
                     <input type="hidden" name="update_tracker" value="1">
                     
                     <div class="form-section">
                         <div class="form-group">
-                            <label for="client_name">Client Name:</label>
-                            <input type="text" id="client_name" readonly>
+                            <label for="edit_client_name">Client Name:</label>
+                            <input type="text" id="edit_client_name" readonly>
                         </div>
                         
                         <div class="form-group">
-                            <label for="project_details">Project:</label>
-                            <input type="text" id="project_details" readonly>
+                            <label for="edit_project_details">Project:</label>
+                            <input type="text" id="edit_project_details" readonly>
                         </div>
                     </div>
                     
                     <div class="form-section">
                         <div class="form-group">
-                            <label for="reservation_date">Reservation Date:</label>
-                            <input type="date" id="reservation_date" name="reservation_date">
+                            <label for="edit_reservation_date">Reservation Date:</label>
+                            <input type="date" id="edit_reservation_date" name="reservation_date">
+                            <div id="reservation_date_error" style="color: var(--danger); font-size: 0.875rem; margin-top: 0.25rem; display: none;"></div>
                         </div>
                         
                         <div class="form-check">
-                            <input type="checkbox" id="spot_dp" name="spot_dp" class="form-check-input">
-                            <label for="spot_dp">
+                            <input type="checkbox" id="edit_spot_dp" name="spot_dp" class="form-check-input">
+                            <label for="edit_spot_dp">
                                 <i class="fas fa-lightning-bolt"></i>
                                 Spot Downpayment (Full payment upfront)
                             </label>
                         </div>
                     </div>
                     
-                    <div id="terms_section" class="form-section">
+                    <div id="edit_terms_section" class="form-section">
                         <div class="form-group">
-                            <label for="dp_terms">Downpayment Terms:</label>
-                            <select id="dp_terms" name="dp_terms" required>
+                            <label for="edit_dp_terms">Downpayment Terms:</label>
+                            <select id="edit_dp_terms" name="dp_terms" required>
                                 <option value="6">6 months</option>
                                 <option value="9">9 months</option>
                                 <option value="12" selected>12 months</option>
@@ -1928,8 +1891,8 @@ if (isset($_GET['success'])) {
                         </div>
                         
                         <div class="form-group">
-                            <label for="current_dp_stage">Current Downpayment Stage:</label>
-                            <select id="current_dp_stage" name="current_dp_stage" required>
+                            <label for="edit_current_dp_stage">Current Downpayment Stage:</label>
+                            <select id="edit_current_dp_stage" name="current_dp_stage" required>
                                 <!-- Options will be populated by JavaScript -->
                             </select>
                         </div>
@@ -1941,32 +1904,32 @@ if (isset($_GET['success'])) {
                         </label>
                         
                         <div class="form-check">
-                            <input type="checkbox" id="requirements_complete" name="requirements_complete" class="form-check-input">
-                            <label for="requirements_complete">
+                            <input type="checkbox" id="edit_requirements_complete" name="requirements_complete" class="form-check-input">
+                            <label for="edit_requirements_complete">
                                 <i class="fas fa-file-alt"></i>
                                 Requirements Complete
                             </label>
                         </div>
                         
                         <div class="form-check">
-                            <input type="checkbox" id="pagibig_bank_approval" name="pagibig_bank_approval" class="form-check-input">
-                            <label for="pagibig_bank_approval">
+                            <input type="checkbox" id="edit_pagibig_bank_approval" name="pagibig_bank_approval" class="form-check-input">
+                            <label for="edit_pagibig_bank_approval">
                                 <i class="fas fa-stamp"></i>
                                 Pag-IBIG/Bank Approval
                             </label>
                         </div>
                         
                         <div class="form-check">
-                            <input type="checkbox" id="loan_takeout" name="loan_takeout" class="form-check-input">
-                            <label for="loan_takeout">
+                            <input type="checkbox" id="edit_loan_takeout" name="loan_takeout" class="form-check-input">
+                            <label for="edit_loan_takeout">
                                 <i class="fas fa-money-check-alt"></i>
                                 Loan Takeout
                             </label>
                         </div>
                         
                         <div class="form-check">
-                            <input type="checkbox" id="turnover" name="turnover" class="form-check-input">
-                            <label for="turnover">
+                            <input type="checkbox" id="edit_turnover" name="turnover" class="form-check-input">
+                            <label for="edit_turnover">
                                 <i class="fas fa-key"></i>
                                 Property Turnover
                             </label>
@@ -1977,104 +1940,109 @@ if (isset($_GET['success'])) {
                         <i class="fas fa-info-circle"></i> 
                         Progress is automatically calculated based on completed milestones and current payment stage.
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closeTrackerModal()">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Save Changes
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeDpDetailsModal()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button type="button" class="btn btn-primary" id="edit_mode_btn" onclick="toggleMode('edit')">
+                    <i class="fas fa-edit"></i> Edit Details
+                </button>
+                <button type="button" class="btn btn-outline" id="cancel_edit_btn" onclick="toggleMode('view')" style="display: none;">
+                    <i class="fas fa-ban"></i> Cancel Edit
+                </button>
+                <button type="submit" form="trackerForm" class="btn btn-primary" id="save_changes_btn" style="display: none;">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
         </div>
     </div>
-    <?php endif; ?>
     
     <script>
     // Global variables
-    let currentViewData = null;
-    
-    // Function to open the View DP modal
-    function openViewDpModal(leadId, clientName, developer, projectModel, price) {
-        // Set basic info
+    let currentLeadData = null; // Stores lead info (clientName, developer, etc.)
+    let currentTrackerData = null; // Stores fetched tracker data
+    let initialReservationDate = null; // Stores the reservation date when modal opens
+
+    // Function to open the unified DP Details modal
+    function openDpDetailsModal(leadId, clientName, developer, projectModel, price, trackerData, mode = 'view') {
+        // Store basic lead info
+        currentLeadData = { leadId, clientName, developer, projectModel, price };
+        currentTrackerData = trackerData; // Directly assign the passed tracker data
+        initialReservationDate = trackerData ? trackerData.reservation_date : null; // Store initial date
+
+        // Set basic info for both view and edit sections
         document.getElementById('view_client_name').textContent = clientName;
         document.getElementById('view_developer').textContent = developer;
         document.getElementById('view_project_model').textContent = projectModel;
-        
+        document.getElementById('edit_client_name').value = clientName;
+        document.getElementById('edit_project_details').value = developer + ' - ' + projectModel;
+
         if (price && price > 0) {
-            document.getElementById('view_price').textContent = '₱' + parseFloat(price).toLocaleString('en-US', {
+            const formattedPrice = '₱' + parseFloat(price).toLocaleString('en-US', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
+            document.getElementById('view_price').textContent = formattedPrice;
         } else {
             document.getElementById('view_price').textContent = 'Price not set';
         }
-        
-        // Store lead data for potential edit action
-        currentViewData = {
-            leadId: leadId,
-            clientName: clientName,
-            developer: developer,
-            projectModel: projectModel,
-            price: price
-        };
-        
-        // Fetch and display tracker data
-        fetchViewTrackerData(leadId);
+
+        // Display in requested mode
+        toggleMode(mode);
         
         // Show the modal
-        document.getElementById('viewDpModal').style.display = 'block';
+        document.getElementById('dpDetailsModal').style.display = 'block';
         document.body.style.overflow = 'hidden';
     }
-    
-    // Function to close the View DP modal
-    function closeViewDpModal() {
-        document.getElementById('viewDpModal').style.display = 'none';
+
+    // Function to close the unified DP Details modal
+    function closeDpDetailsModal() {
+        document.getElementById('dpDetailsModal').style.display = 'none';
         document.body.style.overflow = '';
-        currentViewData = null;
+        currentLeadData = null;
+        currentTrackerData = null;
+        initialReservationDate = null; // Reset initial reservation date
+        document.getElementById('reservation_date_error').style.display = 'none'; // Hide any error messages
     }
-    
-    // Function to fetch tracker data for view modal
-    function fetchViewTrackerData(leadId) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'api/get-tracker.php?lead_id=' + leadId, true);
-        
-        xhr.onload = function() {
-            if (xhr.status >= 200 && xhr.status < 400) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success && response.tracker) {
-                        displayViewTrackerData(response.tracker);
-                    } else {
-                        displayEmptyViewTrackerData();
-                    }
-                } catch (e) {
-                    console.error('Error parsing JSON:', e);
-                    displayEmptyViewTrackerData();
-                }
-            } else {
-                console.error('Server returned an error');
-                displayEmptyViewTrackerData();
-            }
-        };
-        
-        xhr.onerror = function() {
-            console.error('Connection error');
-            displayEmptyViewTrackerData();
-        };
-        
-        xhr.send();
+
+    // Function to switch between view and edit modes
+    function toggleMode(mode) {
+        const viewContent = document.getElementById('view_mode_content');
+        const editForm = document.getElementById('trackerForm');
+        const editBtn = document.getElementById('edit_mode_btn');
+        const saveBtn = document.getElementById('save_changes_btn');
+        const cancelEditBtn = document.getElementById('cancel_edit_btn');
+        const modalTitle = document.getElementById('modal_title');
+
+        if (mode === 'edit') {
+            viewContent.style.display = 'none';
+            editForm.style.display = 'block';
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'inline-flex';
+            cancelEditBtn.style.display = 'inline-flex';
+            modalTitle.innerHTML = '<i class="fas fa-edit"></i> Update Downpayment Tracker';
+            populateEditForm(currentTrackerData); // Populate form when switching to edit
+        } else { // mode === 'view'
+            viewContent.style.display = 'block';
+            editForm.style.display = 'none';
+            editBtn.style.display = 'inline-flex';
+            saveBtn.style.display = 'none';
+            cancelEditBtn.style.display = 'none';
+            modalTitle.innerHTML = '<i class="fas fa-chart-pie"></i> Downpayment Progress Overview';
+            displayViewModeContent(currentTrackerData); // Re-display view data when switching back
+        }
     }
-    
-    // Function to display tracker data in view modal
-    function displayViewTrackerData(tracker) {
+
+    // Display functions for view mode content
+    function displayViewModeContent(tracker) {
         // Display DP Terms
         var termsCard = document.getElementById('dp_terms_card');
         var reservationCard = document.getElementById('reservation_card');
         var monthlyProgressSection = document.getElementById('monthly_progress_section');
         
-        if (tracker.spot_dp == 1) {
+        if (tracker && tracker.spot_dp == 1) {
             termsCard.className = 'terms-card spot-dp';
             termsCard.innerHTML = `
                 <div class="terms-header">
@@ -2095,7 +2063,7 @@ if (isset($_GET['success'])) {
                 </div>
             `;
             monthlyProgressSection.style.display = 'none';
-        } else {
+        } else if (tracker) {
             termsCard.className = 'terms-card installment';
             var progressPercentage = Math.round((tracker.current_dp_stage / tracker.total_dp_stages) * 100);
             termsCard.innerHTML = `
@@ -2124,10 +2092,12 @@ if (isset($_GET['success'])) {
             // Display monthly progress
             displayMonthlyProgress(tracker);
             monthlyProgressSection.style.display = 'block';
+        } else {
+            displayEmptyViewModeContent();
         }
         
         // Display reservation info
-        if (tracker.reservation_date) {
+        if (tracker && tracker.reservation_date) {
             var reservationDate = new Date(tracker.reservation_date);
             reservationCard.innerHTML = `
                 <div class="reservation-icon">
@@ -2153,73 +2123,53 @@ if (isset($_GET['success'])) {
         }
         
         // Display overall progress
-        var progress = parseFloat(tracker.progress_rate) || 0;
+        var progress = (tracker && parseFloat(tracker.progress_rate)) || 0;
         var progressCircle = document.getElementById('progress_circle');
         var progressText = document.getElementById('view_progress_percentage');
         
         var progressAngle = (progress / 100) * 360;
-        var progressClass = 'var(--danger)';
-        if (progress >= 75) progressClass = 'var(--success)';
-        else if (progress >= 50) progressClass = 'var(--warning)';
-        else if (progress >= 25) progressClass = 'var(--primary)';
+        var progressColor = 'var(--danger)';
+        if (progress >= 75) progressColor = 'var(--success)';
+        else if (progress >= 50) progressColor = 'var(--warning)';
+        else if (progress >= 25) progressColor = 'var(--primary)';
         
         progressCircle.style.setProperty('--progress-angle', progressAngle + 'deg');
-        progressCircle.style.background = `conic-gradient(${progressClass} 0deg, ${progressClass} ${progressAngle}deg, var(--gray-200) ${progressAngle}deg)`;
+        progressCircle.style.background = `conic-gradient(${progressColor} 0deg, ${progressColor} ${progressAngle}deg, var(--gray-200) ${progressAngle}deg)`;
         progressText.textContent = Math.round(progress) + '%';
         
         // Display milestones
-        updateViewMilestoneStatus('milestone_requirements', tracker.requirements_complete == 1);
+        updateViewMilestoneStatus('milestone_requirements', tracker && tracker.requirements_complete == 1);
         
         // DP Stage milestone
-        var dpStageCompleted = tracker.spot_dp == 1 || tracker.current_dp_stage == tracker.total_dp_stages;
+        var dpStageCompleted = tracker && (tracker.spot_dp == 1 || tracker.current_dp_stage == tracker.total_dp_stages);
         updateViewMilestoneStatus('milestone_dp_stage', dpStageCompleted);
         
         var dpStageDesc = document.getElementById('dp_stage_description');
-        if (tracker.spot_dp == 1) {
+        if (tracker && tracker.spot_dp == 1) {
             dpStageDesc.textContent = 'Spot downpayment completed successfully';
-        } else {
+        } else if (tracker) {
             dpStageDesc.textContent = `Monthly payment progress: ${tracker.current_dp_stage} of ${tracker.total_dp_stages} months completed`;
+        } else {
+            dpStageDesc.textContent = 'Monthly payment progress tracking';
         }
         
-        updateViewMilestoneStatus('milestone_approval', tracker.pagibig_bank_approval == 1);
-        updateViewMilestoneStatus('milestone_takeout', tracker.loan_takeout == 1);
-        updateViewMilestoneStatus('milestone_turnover', tracker.turnover == 1);
-    }
-    
-    // Function to display monthly progress
-    function displayMonthlyProgress(tracker) {
-        var grid = document.getElementById('monthly_progress_grid');
-        grid.innerHTML = '';
-        
-        for (var i = 1; i <= tracker.dp_terms; i++) {
-            var item = document.createElement('div');
-            var isCompleted = i < tracker.current_dp_stage;
-            var isCurrent = i == tracker.current_dp_stage;
-            var isPending = i > tracker.current_dp_stage;
-            
-            var statusClass = 'pending';
-            var statusText = 'Pending';
-            
-            if (isCompleted) {
-                statusClass = 'completed';
-                statusText = 'Paid';
-            } else if (isCurrent) {
-                statusClass = 'current';
-                statusText = 'Current';
-            }
-            
-            item.className = `monthly-progress-item ${statusClass}`;
-            item.innerHTML = `
-                <div class="month-number">Month ${i}</div>
-                <div class="month-status">${statusText}</div>
-            `;
-            
-            grid.appendChild(item);
+        updateViewMilestoneStatus('milestone_approval', tracker && tracker.pagibig_bank_approval == 1);
+        updateViewMilestoneStatus('milestone_takeout', tracker && tracker.loan_takeout == 1);
+        updateViewMilestoneStatus('milestone_turnover', tracker && tracker.turnover == 1);
+
+        // Disable edit button if lead is fully complete
+        const editDetailsBtn = document.getElementById('edit_mode_btn');
+        if (tracker && tracker.progress_details && tracker.progress_details.is_fully_complete) {
+            editDetailsBtn.disabled = true;
+            editDetailsBtn.title = 'Cannot edit completed leads.';
+        } else {
+            editDetailsBtn.disabled = false;
+            editDetailsBtn.title = '';
         }
     }
-    
-    // Function to display empty tracker data for view modal
-    function displayEmptyViewTrackerData() {
+
+    // Function to display empty tracker data for view mode
+    function displayEmptyViewModeContent() {
         var termsCard = document.getElementById('dp_terms_card');
         termsCard.className = 'terms-card';
         termsCard.innerHTML = `
@@ -2256,9 +2206,14 @@ if (isset($_GET['success'])) {
         updateViewMilestoneStatus('milestone_turnover', false);
         
         document.getElementById('dp_stage_description').textContent = 'Monthly payment progress tracking';
+
+        // Enable edit button if no tracker data
+        const editDetailsBtn = document.getElementById('edit_mode_btn');
+        editDetailsBtn.disabled = false;
+        editDetailsBtn.title = '';
     }
-    
-    // Function to update milestone status in view modal
+
+    // Function to update milestone status in view mode
     function updateViewMilestoneStatus(milestoneId, isCompleted) {
         var milestone = document.getElementById(milestoneId);
         var statusIndicator = milestone.querySelector('.milestone-status-indicator i');
@@ -2271,59 +2226,56 @@ if (isset($_GET['success'])) {
             statusIndicator.className = 'fas fa-clock';
         }
     }
-    
-    // Function to open edit modal from view modal
-    function openEditFromView() {
-        if (currentViewData) {
-            closeViewDpModal();
-            // Small delay to ensure view modal is closed before opening edit modal
-            setTimeout(function() {
-                openTrackerModal(
-                    currentViewData.leadId,
-                    currentViewData.clientName,
-                    currentViewData.developer,
-                    currentViewData.projectModel
-                );
-            }, 100);
+
+    // Function to populate the edit form fields
+    function populateEditForm(tracker) {
+        document.getElementById('edit_lead_id').value = currentLeadData.leadId;
+        
+        // Clear form fields first
+        document.getElementById('edit_reservation_date').value = '';
+        document.getElementById('edit_requirements_complete').checked = false;
+        document.getElementById('edit_spot_dp').checked = false;
+        document.getElementById('edit_dp_terms').value = '12'; // Default value
+        document.getElementById('edit_pagibig_bank_approval').checked = false;
+        document.getElementById('edit_loan_takeout').checked = false;
+        document.getElementById('edit_turnover').checked = false;
+        
+        // Populate DP stages dropdown with default terms
+        updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+
+        if (tracker) {
+            if (tracker.reservation_date) {
+                document.getElementById('edit_reservation_date').value = tracker.reservation_date;
+            }
+            
+            document.getElementById('edit_requirements_complete').checked = tracker.requirements_complete == 1;
+            document.getElementById('edit_spot_dp').checked = tracker.spot_dp == 1;
+            
+            // Set DP terms first, then update stages, then set current stage
+            document.getElementById('edit_dp_terms').value = tracker.dp_terms;
+            updateDpStages('edit_dp_terms', 'edit_current_dp_stage'); // Re-populate based on fetched terms
+            document.getElementById('edit_current_dp_stage').value = tracker.current_dp_stage;
+            
+            document.getElementById('edit_pagibig_bank_approval').checked = tracker.pagibig_bank_approval == 1;
+            document.getElementById('edit_loan_takeout').checked = tracker.loan_takeout == 1;
+            document.getElementById('edit_turnover').checked = tracker.turnover == 1;
+            
+            // Update terms section visibility
+            toggleTermsSection('edit_terms_section', 'edit_spot_dp', 'edit_dp_terms', 'edit_current_dp_stage');
+        } else {
+            // If no tracker data, ensure terms section is enabled and default values are set
+            toggleTermsSection('edit_terms_section', 'edit_spot_dp', 'edit_dp_terms', 'edit_current_dp_stage');
+            document.getElementById('edit_spot_dp').checked = false;
+            document.getElementById('edit_dp_terms').value = '12'; // Default back to 12 months
+            updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+            document.getElementById('edit_current_dp_stage').value = '1';
         }
     }
     
-    // Function to open the tracker modal
-    function openTrackerModal(leadId, clientName, developer, projectModel) {
-        document.getElementById('lead_id').value = leadId;
-        document.getElementById('client_name').value = clientName;
-        document.getElementById('project_details').value = developer + ' - ' + projectModel;
-        
-        // Clear form
-        document.getElementById('reservation_date').value = '';
-        document.getElementById('requirements_complete').checked = false;
-        document.getElementById('spot_dp').checked = false;
-        document.getElementById('dp_terms').value = '12';
-        document.getElementById('pagibig_bank_approval').checked = false;
-        document.getElementById('loan_takeout').checked = false;
-        document.getElementById('turnover').checked = false;
-        
-        // Populate DP stages dropdown
-        updateDpStages();
-        
-        // Fetch existing tracker data if available
-        fetchTrackerData(leadId);
-        
-        // Show the modal
-        document.getElementById('trackerModal').style.display = 'block';
-        document.body.style.overflow = 'hidden';
-    }
-    
-    // Function to close the tracker modal
-    function closeTrackerModal() {
-        document.getElementById('trackerModal').style.display = 'none';
-        document.body.style.overflow = '';
-    }
-    
     // Function to update DP stages dropdown based on selected terms
-    function updateDpStages() {
-        var terms = parseInt(document.getElementById('dp_terms').value);
-        var currentStage = document.getElementById('current_dp_stage');
+    function updateDpStages(termsSelectId, currentStageSelectId) {
+        var terms = parseInt(document.getElementById(termsSelectId).value);
+        var currentStage = document.getElementById(currentStageSelectId);
         var selectedValue = currentStage.value;
         
         // Clear current options
@@ -2345,62 +2297,12 @@ if (isset($_GET['success'])) {
         }
     }
     
-    // Function to fetch tracker data for edit modal
-    function fetchTrackerData(leadId) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'api/get-tracker.php?lead_id=' + leadId, true);
-        
-        xhr.onload = function() {
-            if (xhr.status >= 200 && xhr.status < 400) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success && response.tracker) {
-                        var tracker = response.tracker;
-                        
-                        if (tracker.reservation_date) {
-                            document.getElementById('reservation_date').value = tracker.reservation_date;
-                        }
-                        
-                        document.getElementById('requirements_complete').checked = tracker.requirements_complete == 1;
-                        document.getElementById('spot_dp').checked = tracker.spot_dp == 1;
-                        
-                        // Set DP terms first
-                        document.getElementById('dp_terms').value = tracker.dp_terms;
-                        
-                        // Update DP stages dropdown based on terms
-                        updateDpStages();
-                        
-                        // Then set the current stage
-                        document.getElementById('current_dp_stage').value = tracker.current_dp_stage;
-                        
-                        document.getElementById('pagibig_bank_approval').checked = tracker.pagibig_bank_approval == 1;
-                        document.getElementById('loan_takeout').checked = tracker.loan_takeout == 1;
-                        document.getElementById('turnover').checked = tracker.turnover == 1;
-                        
-                        // Update terms section visibility
-                        toggleTermsSection();
-                    }
-                } catch (e) {
-                    console.error('Error parsing JSON:', e);
-                }
-            } else {
-                console.error('Server returned an error');
-            }
-        };
-        
-        xhr.onerror = function() {
-            console.error('Connection error');
-        };
-        
-        xhr.send();
-    }
-    
     // Function to toggle terms section visibility
-    function toggleTermsSection() {
-        var termsSection = document.getElementById('terms_section');
-        var spotDpCheckbox = document.getElementById('spot_dp');
-        var dpTermsSelect = document.getElementById('dp_terms');
-        var currentDpStageSelect = document.getElementById('current_dp_stage');
+    function toggleTermsSection(termsSectionId, spotDpCheckboxId, dpTermsSelectId, currentDpStageSelectId) {
+        var termsSection = document.getElementById(termsSectionId);
+        var spotDpCheckbox = document.getElementById(spotDpCheckboxId);
+        var dpTermsSelect = document.getElementById(dpTermsSelectId);
+        var currentDpStageSelect = document.getElementById(currentDpStageSelectId);
         
         if (spotDpCheckbox.checked) {
             termsSection.style.opacity = '0.5';
@@ -2414,38 +2316,74 @@ if (isset($_GET['success'])) {
             currentDpStageSelect.disabled = false;
         }
     }
-    
-    // Event listeners
-    document.getElementById('spot_dp').addEventListener('change', function() {
-        toggleTermsSection();
+
+    // Event listeners for edit form
+    document.getElementById('edit_spot_dp').addEventListener('change', function() {
+        toggleTermsSection('edit_terms_section', 'edit_spot_dp', 'edit_dp_terms', 'edit_current_dp_stage');
         if (this.checked) {
-            document.getElementById('dp_terms').value = '1';
-            updateDpStages();
-            document.getElementById('current_dp_stage').value = '1';
+            document.getElementById('edit_dp_terms').value = '1';
+            updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+            document.getElementById('edit_current_dp_stage').value = '1';
         } else {
-            document.getElementById('dp_terms').value = '12';
-            updateDpStages();
+            document.getElementById('edit_dp_terms').value = '12'; // Default back to 12 months
+            updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
         }
     });
     
-    document.getElementById('dp_terms').addEventListener('change', function() {
-        updateDpStages();
+    document.getElementById('edit_dp_terms').addEventListener('change', function() {
+        updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
     });
     
     // Close modals when clicking outside
     window.addEventListener('click', function(event) {
-        var trackerModal = document.getElementById('trackerModal');
-        var viewDpModal = document.getElementById('viewDpModal');
+        var dpDetailsModal = document.getElementById('dpDetailsModal');
         
-        if (event.target == trackerModal) {
-            closeTrackerModal();
-        }
-        
-        if (event.target == viewDpModal) {
-            closeViewDpModal();
+        if (event.target == dpDetailsModal) {
+            closeDpDetailsModal();
         }
     });
-    
+
+    // Add validation for reservation_date on form submission
+    document.getElementById('trackerForm').addEventListener('submit', function(event) {
+        const reservationDateInput = document.getElementById('edit_reservation_date');
+        const reservationDateError = document.getElementById('reservation_date_error');
+        reservationDateError.style.display = 'none'; // Clear previous errors
+
+        const newReservationDate = reservationDateInput.value;
+
+        // 1. Validate if reservation date is empty
+        if (!newReservationDate) {
+            if (initialReservationDate) {
+                // If it had a value previously, it cannot be cleared
+                reservationDateError.textContent = 'Reservation Date cannot be cleared.';
+                reservationDateError.style.display = 'block';
+                event.preventDefault();
+                reservationDateInput.focus();
+                return;
+            } else {
+                // If it was initially empty, it must be filled
+                reservationDateError.textContent = 'Reservation Date is required.';
+                reservationDateError.style.display = 'block';
+                event.preventDefault();
+                reservationDateInput.focus();
+                return;
+            }
+        }
+
+        // 2. Validate if reservation date is in the future
+        const reservationDate = new Date(newReservationDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize today's date to compare only date part
+
+        if (reservationDate > today) {
+            reservationDateError.textContent = 'Reservation Date cannot be in the future.';
+            reservationDateError.style.display = 'block';
+            event.preventDefault(); // Prevent form submission
+            reservationDateInput.focus();
+            return;
+        }
+    });
+
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         // Highlight active filters
@@ -2467,9 +2405,48 @@ if (isset($_GET['success'])) {
             document.getElementById('progress').classList.add('filter-active');
         }
         
-        // Initialize DP stages dropdown
-        updateDpStages();
+        // Initialize DP stages dropdown for the edit form
+        updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
     });
-</script>   
+
+    // Function to display monthly progress
+    function displayMonthlyProgress(tracker) {
+        const monthlyProgressGrid = document.getElementById('monthly_progress_grid');
+        monthlyProgressGrid.innerHTML = ''; // Clear existing content
+
+        const totalMonths = parseInt(tracker.dp_terms);
+        const currentMonth = parseInt(tracker.current_dp_stage);
+
+        // Determine if the entire DP term is completed
+        const isDpTermFullyCompleted = (currentMonth === totalMonths);
+
+        for (let i = 1; i <= totalMonths; i++) {
+            const monthItem = document.createElement('div');
+            monthItem.classList.add('monthly-progress-item');
+
+            let monthStatus = 'pending';
+            if (isDpTermFullyCompleted) {
+                // If the entire term is completed, all months are 'completed'
+                monthStatus = 'completed';
+                monthItem.classList.add('completed');
+            } else if (i < currentMonth) {
+                monthStatus = 'completed';
+                monthItem.classList.add('completed');
+            } else if (i === currentMonth) {
+                monthStatus = 'current';
+                monthItem.classList.add('current');
+            } else {
+                monthItem.classList.add('pending');
+            }
+
+            monthItem.innerHTML = `
+                <div class="month-number">${i}</div>
+                <div class="month-status">${monthStatus.toUpperCase()}</div>
+            `;
+
+            monthlyProgressGrid.appendChild(monthItem);
+        }
+    }
+    </script>   
 </body>
 </html>
