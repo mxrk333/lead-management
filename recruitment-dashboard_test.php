@@ -66,6 +66,7 @@ if ($current_user['role'] != 'admin' && $current_user['role'] != 'manager') {
 }
 
 // Now include the sidebar after all dependencies are loaded
+$hide_add_button = true;
 require_once 'includes/sidebar.php';
 require_once 'includes/header.php';
 
@@ -94,11 +95,6 @@ echo '<style>
         z-index: 1300;
     }
 </style>';
-
-
-
-
-
 ?>
 
 <!DOCTYPE html>
@@ -117,169 +113,169 @@ echo '<style>
 
 
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'blue-primary': '#1e40af',
-                        'blue-secondary': '#3b82f6',
-                        'blue-light': '#dbeafe',
-                        'blue-dark': '#1e3a8a'
-                    }
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    'blue-primary': '#1e40af',
+                    'blue-secondary': '#3b82f6',
+                    'blue-light': '#dbeafe',
+                    'blue-dark': '#1e3a8a'
                 }
             }
         }
+    }
     </script>
     <style>
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #64748b;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+    }
+
+    /* Utility classes */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Smooth transitions */
+    .transition-all {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Card hover effects */
+    .property-card {
+        transform: translateY(0);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .property-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Focus states for accessibility */
+    .focus-ring:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+
+    /* Loading animation */
+    .loading-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
         }
 
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
+        50% {
+            opacity: .5;
         }
+    }
 
-        ::-webkit-scrollbar-thumb {
-            background: #64748b;
-            border-radius: 4px;
+    /* Modal backdrop */
+    .modal-backdrop {
+        backdrop-filter: blur(8px);
+        background-color: rgba(0, 0, 0, 0.6);
+    }
+
+    /* Responsive container */
+    @media (max-width: 640px) {
+        .container {
+            padding-left: 1rem;
+            padding-right: 1rem;
         }
+    }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+    /* Filter section responsive */
+    @media (max-width: 1024px) {
+        .filter-section {
+            position: relative !important;
+            top: 0 !important;
         }
+    }
 
-        /* Utility classes */
-        .line-clamp-2 {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
+    /* Search input focus effect */
+    .search-input:focus {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
 
-        /* Smooth transitions */
-        .transition-all {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+    /* Button hover effects */
+    .btn-primary {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        transition: all 0.3s ease;
+    }
 
-        /* Card hover effects */
-        .property-card {
-            transform: translateY(0);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        transform: translateY(-1px);
+    }
 
-        .property-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
+    /* Price badge styles */
+    .price-badge {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        color: #92400e;
+        font-weight: 700;
+    }
 
-        /* Focus states for accessibility */
-        .focus-ring:focus {
-            outline: 2px solid #3b82f6;
-            outline-offset: 2px;
-        }
+    /* Priority badge styles */
+    .priority-high {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
 
-        /* Loading animation */
-        .loading-pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
+    .priority-medium {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
 
-        @keyframes pulse {
+    .priority-low {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
 
-            0%,
-            100% {
-                opacity: 1;
-            }
+    /* Responsive adjustment for main container based on sidebar */
+    .main-container {
+        transition: margin-left 0.3s ease;
+    }
 
-            50% {
-                opacity: .5;
-            }
-        }
-
-        /* Modal backdrop */
-        .modal-backdrop {
-            backdrop-filter: blur(8px);
-            background-color: rgba(0, 0, 0, 0.6);
-        }
-
-        /* Responsive container */
-        @media (max-width: 640px) {
-            .container {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-        }
-
-        /* Filter section responsive */
-        @media (max-width: 1024px) {
-            .filter-section {
-                position: relative !important;
-                top: 0 !important;
-            }
-        }
-
-        /* Search input focus effect */
-        .search-input:focus {
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        /* Button hover effects */
-        .btn-primary {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-            transform: translateY(-1px);
-        }
-
-        /* Price badge styles */
-        .price-badge {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #92400e;
-            font-weight: 700;
-        }
-
-        /* Priority badge styles */
-        .priority-high {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-        }
-
-        .priority-medium {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-        }
-
-        .priority-low {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        /* Responsive adjustment for main container based on sidebar */
+    @media (min-width: 1024px) {
         .main-container {
-            transition: margin-left 0.3s ease;
+            margin-left: var(--sidebar-width);
         }
 
-        @media (min-width: 1024px) {
-            .main-container {
-                margin-left: var(--sidebar-width);
-            }
-
-            /* When sidebar is collapsed */
-            .sidebar-provider.collapsed~.main-container {
-                margin-left: var(--sidebar-width-collapsed);
-            }
+        /* When sidebar is collapsed */
+        .sidebar-provider.collapsed~.main-container {
+            margin-left: var(--sidebar-width-collapsed);
         }
+    }
 
-        @media (max-width: 1023.98px) {
-            .main-container {
-                margin-left: 0 !important;
-            }
+    @media (max-width: 1023.98px) {
+        .main-container {
+            margin-left: 0 !important;
         }
+    }
     </style>
 
 </head>
@@ -297,13 +293,13 @@ echo '<style>
                 <!-- Dashboard Header -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
                     <h1 class="text-[32px] font-semibold flex items-center gap-2 ">
-                        <i class="fas fa-user-plus"></i> Recruitment Management
+                        <i class="fas fa-user-plus text-blue-600"></i> Recruitment Management
                     </h1>
                     <div class="flex gap-2 mt-4 md:mt-0">
                         <button type="button"
                             class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
                             onclick="showAddModal()">
-                            <i class="fas fa-plus"></i> Add New Lead
+                            <i class="fas fa-plus"></i> New Agent
                         </button>
                         <button type="button"
                             class="border border-gray-400 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 flex items-center gap-2"
@@ -399,57 +395,62 @@ echo '<style>
                     </div>
                 </div>
 
-                <!-- Lead Table -->
-                <div class="rounded-xl shadow bg-white">
+                <!-- Agents Table -->
+                <div class="rounded-xl shadow bg-white pb-3">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h5 class="text-lg font-semibold mb-0">Recruitment Leads</h5>
+                        <h5 class="text-lg font-semibold mb-0">Recruited Agents</h5>
                     </div>
-                    <div class="p-0">
+                    <div class="">
                         <div class="overflow-x-auto">
-                            <table id="recruitmentTable"
-                                class="w-full min-w-[900px] border-separate border-spacing-0 rounded-xl text-left bg-white">
-                                <thead class="sticky top-0 z-10 bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
-                                            onclick="sortTable('created_at')">
-                                            Timestamp <i class="fas fa-sort"></i>
-                                        </th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Status</th>
-                                        <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
-                                            onclick="sortTable('full_name')">
-                                            Agent Details <i class="fas fa-sort"></i>
-                                        </th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Recruiter</th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Progress</th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Source</th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recruitmentTableBody">
-                                    <tr>
-                                        <td colspan="8" class="text-center py-8">
-                                            <svg class="animate-spin h-6 w-6 text-blue-600 mx-auto"
-                                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                                    stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z">
-                                                </path>
-                                            </svg>
-                                            <p class="mt-2 text-gray-500">Loading recruitment data...</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="max-h-[400px] overflow-y-auto">
+                                <!-- Recruitment Table -->
+                                <table id="recruitmentTable"
+                                    class="w-full min-w-[900px] border-separate border-spacing-0 rounded-xl text-left bg-white">
+                                    <thead class="sticky top-0 z-10 bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
+                                                onclick="sortTable('created_at')">
+                                                Timestamp <i class="fas fa-sort"></i>
+                                            </th>
+                                            <th
+                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                                Status</th>
+                                            <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
+                                                onclick="sortTable('full_name')">
+                                                Agent Details <i class="fas fa-sort"></i>
+                                            </th>
+                                            <th
+                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                                Recruiter</th>
+                                            <th
+                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                                Progress</th>
+                                            <th
+                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                                Source</th>
+                                            <th
+                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                                Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recruitmentTableBody">
+                                        <tr>
+                                            <td colspan="8" class="text-center py-8">
+                                                <svg class="animate-spin h-6 w-6 text-blue-600 mx-auto"
+                                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                        stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8v8z">
+                                                    </path>
+                                                </svg>
+                                                <p class="mt-2 text-gray-500">Loading recruitment data...</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
                         </div>
                         <!-- Loading indicator -->
                         <div id="loadingIndicator" class="text-center py-4 hidden">
@@ -459,6 +460,66 @@ echo '<style>
                                     stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
                             </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onboard Modal -->
+                <div id="onboardModal"
+                    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+                    <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90%] mx-4 overflow-y-auto">
+                        <div class="flex justify-between items-center border-b px-6 py-4">
+                            <h5 class="text-lg font-semibold" id="onboardTitle">Onboarding</h5>
+                            <i class="fa-solid fa-user-hat-tie"></i>
+                            <button type="button" class="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                                onclick="hideOnboardModal()">&times;</button>
+                        </div>
+                        <div class="p-0">
+                            <i class="fa-solid fa-magnet"></i>
+                            <!-- Inside your onboardModal .p-6 div -->
+                            <form id="onboardUserForm">
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Full Name</label>
+                                    <input type="text" id="onboard_name" name="name"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Email</label>
+                                    <input type="email" id="onboard_email" name="email"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Phone</label>
+                                    <input type="text" id="onboard_phone" name="phone"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Recruiter</label>
+                                    <input type="text" id="onboard_recruiter"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Recruiter Team</label>
+                                    <input type="text" id="onboard_recruiter_team"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Username (Automatic)</label>
+                                    <input type="text" id="onboard_username" name="username"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                    <small class="text-gray-500" id="onboard_username_preview"></small>
+                                </div>
+                                <div class="mb-4">
+                                    hi
+                                    <label class="block text-sm font-medium mb-1">Default Password</label>
+                                    <input type="text" value="123456789innersparc"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <button class="">Onboard</button>
+                                </div>
+                            </form>
+                            <div id="onboardLoading" class="text-center text-gray-400">Loading agent details...</div>
                         </div>
                     </div>
                 </div>
@@ -529,7 +590,7 @@ echo '<style>
                                                 class="px-4 py-2 border-b text-xs uppercase tracking-wider text-gray-600">
                                                 Team</th>
                                             <th
-                                                class="px-4 py-2 border-b text-xs uppercase tracking-wider text-gray-600">
+                                                class="px-4 py-2 text-center border-b text-xs uppercase tracking-wider text-gray-600">
                                                 Total Active Count</th>
                                         </tr>
                                     </thead>
@@ -561,7 +622,7 @@ echo '<style>
                                                 class="px-4 py-2 border-b text-xs uppercase tracking-wider text-gray-600">
                                                 Team</th>
                                             <th
-                                                class="px-4 py-2 border-b text-xs uppercase tracking-wider text-gray-600">
+                                                class="px-4 py-2 text-center border-b text-xs uppercase tracking-wider text-gray-600">
                                                 Total Inactive Count</th>
                                         </tr>
                                     </thead>
@@ -579,524 +640,565 @@ echo '<style>
             <!-- Add/Edit Modal (Tailwind) -->
             <div id="recruitmentModal"
                 class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
-                <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90%] mx-4 overflow-y-auto">
-                    <div class="flex justify-between items-center border-b px-6 py-4">
-                        <h5 class="text-lg font-semibold" id="modalTitle">Add New Recruitment Lead</h5>
-                        <button type="button" class="text-gray-500 hover:text-gray-700 text-2xl font-bold"
-                            onclick="hideRecruitmentModal()">&times;</button>
-                    </div>
-                    <div class="p-6">
-                        <form id="recruitmentForm">
-                            <?php
-
-                            $required_mark = '<span class="text-[12px] text-red-500">*</span>';
-                            $automatic_mark = '<span class="text-[12px] text-gray-500">(Automatic)</span>';
-                            $optional_mark = '<span class="text-[12px] text-gray-500">(Optional)</span>';
-
-                            ?>
-                            <input type="hidden" id="leadId" name="id">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label for="fullName" class="block text-sm font-medium mb-1">Full Name
-                                        <?= $required_mark; ?></label>
-                                    <input type="text"
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="fullName" name="full_name" required>
-                                </div>
-                                <div>
-                                    <label for="contactNumber" class="block text-sm font-medium mb-1">Contact Number
-                                        <?= $required_mark; ?></label>
-                                    <input type="text"
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="contactNumber" name="contact_number" required>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label for="email" class="block text-sm font-medium mb-1">Email
-                                        <?= $required_mark; ?></label>
-                                    <input type="email"
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="email" name="email" required>
-                                </div>
-
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label for="recruiterName" class="block text-sm font-medium mb-1">Recruiter
-                                        Name <?= $automatic_mark; ?></label>
-                                    <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
-                                        id="recruiterName" name="recruiter_name"
-                                        value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" readonly
-                                        aria-readonly="true">
-                                </div>
-                                <div>
-                                    <label for="teamName" class="block text-sm font-medium mb-1">Team
-                                        <?= $automatic_mark; ?></label>
-                                    <?php
-                                    $teamName = "No Team";
-                                    // Edit mode: show the team of the recruiter who added the lead
-                                    if (!empty($lead['recruiter_team_id'])) {
-                                        $conn = getDbConnection();
-                                        $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ? LIMIT 1");
-                                        $stmt->bind_param("i", $lead['recruiter_team_id']);
-                                        $stmt->execute();
-                                        $stmt->bind_result($foundTeamName);
-                                        if ($stmt->fetch() && $foundTeamName) {
-                                            $teamName = $foundTeamName;
-                                        }
-                                        $stmt->close();
-                                        $conn->close();
-                                    }
-                                    // Add mode: show the current user's team
-                                    elseif (!empty($current_user['team_id'])) {
-                                        $conn = getDbConnection();
-                                        $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ? LIMIT 1");
-                                        $stmt->bind_param("i", $current_user['team_id']);
-                                        $stmt->execute();
-                                        $stmt->bind_result($foundTeamName);
-                                        if ($stmt->fetch() && $foundTeamName) {
-                                            $teamName = $foundTeamName;
-                                        }
-                                        $stmt->close();
-                                        $conn->close();
-                                    }
-                                    ?>
-                                    <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100" id="teamName"
-                                        name="team_name" value="<?php echo htmlspecialchars($teamName); ?>" readonly
-                                        aria-readonly="true">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label for="status" class="block text-sm font-medium mb-1">Status
-                                        <?= $required_mark; ?></label>
-                                    <select
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="status" name="status" required>
-                                        <!-- <option value="">Select Status</option>
-                                        <option value="Accreditation">Accreditation</option>
-                                        <option value="Assessment">Assessment</option>
-                                        <option value="Product Knowledge System">Product Knowledge Seminar</option>
-                                        <option value="Site tour">Site tour</option>
-                                        <option value="Onboarding">Onboarding</option> -->
-
-                                        <option value="Active">Active</option>
-                                        <option value="Inactive">Inactive</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="source" class="block text-sm font-medium mb-1">Source
-                                        <?= $required_mark; ?></label>
-                                    <select
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="source" name="source" required>
-                                        <option value="">Select Source</option>
-                                        <option value="Facebook Ads">Facebook Ads</option>
-                                        <option value="TikTok ads">TikTok ads</option>
-                                        <option value="Google Ads">Google Ads</option>
-                                        <option value="Referral">Referral</option>
-                                        <option value="Teleprospecting">Teleprospecting</option>
-                                        <option value="Video Message">Video Message</option>
-                                        <option value="Organic Posting">Organic Posting</option>
-                                        <option value="Email Marketing">Email Marketing</option>
-                                        <option value="Follow up">Follow up</option>
-                                        <option value="Manning">Manning</option>
-                                        <option value="Walk in">Walk in</option>
-                                        <option value="Flyering">Flyering</option>
-                                        <option value="Facebook Groups">Facebook Groups</option>
-                                        <option value="KKK">KKK</option>
-                                        <option value="Chat Messaging">Chat Messaging</option>
-                                        <option value="Landing Page">Landing Page</option>
-                                        <option value="Networking Events">Networking Events</option>
-                                        <option value="Organic Sharing">Organic Sharing</option>
-                                        <option value="Youtube Marketing">Youtube Marketing</option>
-                                        <option value="LinkedIn">LinkedIn</option>
-                                        <option value="Open House">Open House</option>
-                                        <option value="Tiktok">Tiktok</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="recruitment_progress" class="block text-sm font-medium mb-1">Recruitment
-                                    Progress
-                                    <?= $required_mark; ?></label>
-
+                <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90%] mx-4">
+                    <div class="max-h-[90%]">
+                        <div class="flex justify-between items-center border-b px-6 py-4">
+                            <h5 class="text-lg font-semibold" id="modalTitle">Add New Recruited Agent</h5>
+                            <button type="button" class="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                                onclick="hideRecruitmentModal()">&times;</button>
+                        </div>
+                        <div class="p-6 overflow-y-auto max-h-[76vh]">
+                            <form id="recruitmentForm">
                                 <?php
 
-                                $checklist_style = 'w-full text-center py-2 px-3 border rounded-lg transition-all duration-300 cursor-pointer bg-white text-gray-800';
+                                $required_mark = '<span class="text-[12px] text-red-500">*</span>';
+                                $automatic_mark = '<span class="text-[12px] text-gray-500">(Automatic)</span>';
+                                $optional_mark = '<span class="text-[12px] text-gray-500">(Optional)</span>';
 
-                                $label_style = 'text-gray-600 text-sm';
-
-                                $label_subsection_style = 'space-y-2 border-l border-gray-300 pl-2 w-[97%]';
                                 ?>
-                                <div id="progressChecklist" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="space-y-2">
-                                        <div class="flex flex-row justify-center items-center gap-2">
-                                            <label for="pre-recruitment"
-                                                class="<?php echo htmlspecialchars($label_style) ?> whitespace-nowrap">Pre-recruitment
-                                            </label>
-                                            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                                                <div id="preRecruitmentProgressBar"
-                                                    class="h-3 bg-blue-500 transition-all duration-300"
-                                                    style="width: 0%;">
+                                <input type="hidden" id="leadId" name="id">
+
+                                <div class="pb-2 capitalize">
+                                    <span for="agentType" class="block text-sm text-gray-400">Agent
+                                        Information
+                                    </span>
+                                    <hr class="border-gray-300 my-1">
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="fullName" class="block text-sm font-medium mb-1">Full Name
+                                            <?= $required_mark; ?></label>
+                                        <input type="text"
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="fullName" name="full_name" required>
+                                    </div>
+                                    <div>
+                                        <label for="contactNumber" class="block text-sm font-medium mb-1">Contact Number
+                                            <?= $required_mark; ?></label>
+                                        <input type="text"
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="contactNumber" name="contact_number" required>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium mb-1">Email
+                                            <?= $required_mark; ?></label>
+                                        <input type="email"
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="email" name="email" required>
+                                    </div>
+
+                                </div>
+
+                                <div class="pb-2 capitalize">
+                                    <span for="recruiterType" class="block text-sm text-gray-400">Recruiter Information
+                                    </span>
+                                    <hr class="border-gray-300 my-1">
+                                </div>
+                                <!-- <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="recruiterName" class="block text-sm font-medium mb-1">Recruiter
+                                            Name <?= $automatic_mark; ?></label>
+                                        <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
+                                            id="recruiterName" name="recruiter_name"
+                                            value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" readonly
+                                            aria-readonly="true">
+                                    </div>
+                                    <div>
+                                        <label for="teamName" class="block text-sm font-medium mb-1">Team
+                                            <?= $automatic_mark; ?></label>
+                                        <?php
+                                        $teamName = "No Team";
+                                        // Edit mode: show the team of the recruiter who added the lead
+                                        if (!empty($lead['recruiter_team_id'])) {
+                                            $conn = getDbConnection();
+                                            $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ? LIMIT 1");
+                                            $stmt->bind_param("i", $lead['recruiter_team_id']);
+                                            $stmt->execute();
+                                            $stmt->bind_result($foundTeamName);
+                                            if ($stmt->fetch() && $foundTeamName) {
+                                                $teamName = $foundTeamName;
+                                            }
+                                            $stmt->close();
+                                            $conn->close();
+                                        }
+                                        // Add mode: show the current user's team
+                                        elseif (!empty($current_user['team_id'])) {
+                                            $conn = getDbConnection();
+                                            $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ? LIMIT 1");
+                                            $stmt->bind_param("i", $current_user['team_id']);
+                                            $stmt->execute();
+                                            $stmt->bind_result($foundTeamName);
+                                            if ($stmt->fetch() && $foundTeamName) {
+                                                $teamName = $foundTeamName;
+                                            }
+                                            $stmt->close();
+                                            $conn->close();
+                                        }
+                                        ?>
+                                        <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
+                                            id="teamName" name="team_name"
+                                            value="<?php echo htmlspecialchars($teamName); ?>" readonly
+                                            aria-readonly="true">
+                                    </div>
+                                </div> -->
+
+                                <!-- Recruitment Info Section -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="recruiterName" class="block text-sm font-medium mb-1">Recruiter Name
+                                            <?= $automatic_mark; ?></label>
+                                        <?php if ($current_user['role'] === 'admin'): ?>
+                                        <select id="recruiterName" name="recruiter_id"
+                                            class="border rounded px-3 py-2 w-full bg-white"></select>
+                                        <?php else: ?>
+                                        <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
+                                            id="recruiterName" name="recruiter_name"
+                                            value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" readonly
+                                            aria-readonly="true">
+                                        <?php endif; ?>
+                                    </div>
+                                    <div>
+                                        <label for="teamName" class="block text-sm font-medium mb-1">Team
+                                            <?= $automatic_mark; ?></label>
+                                        <?php if ($current_user['role'] === 'admin'): ?>
+                                        <select id="teamName" name="team_id"
+                                            class="border rounded px-3 py-2 w-full bg-white"></select>
+                                        <?php else: ?>
+                                        <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
+                                            id="teamName" name="team_name"
+                                            value="<?php echo htmlspecialchars($teamName); ?>" readonly
+                                            aria-readonly="true">
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="pb-2 capitalize">
+                                    <span for="agentProgress" class="block text-sm text-gray-400">Recruitment Details
+                                    </span>
+                                    <hr class="border-gray-300 my-1">
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="status" class="block text-sm font-medium mb-1">Status
+                                            <?= $required_mark; ?></label>
+                                        <select
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="status" name="status" required>
+                                            <option value="Active">Active</option>
+                                            <option value="Inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="source" class="block text-sm font-medium mb-1">Source
+                                            <?= $required_mark; ?></label>
+                                        <select
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="source" name="source" required>
+                                            <option value="">Select Source</option>
+                                            <option value="Facebook Ads">Facebook Ads</option>
+                                            <option value="TikTok ads">TikTok ads</option>
+                                            <option value="Google Ads">Google Ads</option>
+                                            <option value="Referral">Referral</option>
+                                            <option value="Teleprospecting">Teleprospecting</option>
+                                            <option value="Video Message">Video Message</option>
+                                            <option value="Organic Posting">Organic Posting</option>
+                                            <option value="Email Marketing">Email Marketing</option>
+                                            <option value="Follow up">Follow up</option>
+                                            <option value="Manning">Manning</option>
+                                            <option value="Walk in">Walk in</option>
+                                            <option value="Flyering">Flyering</option>
+                                            <option value="Facebook Groups">Facebook Groups</option>
+                                            <option value="KKK">KKK</option>
+                                            <option value="Chat Messaging">Chat Messaging</option>
+                                            <option value="Landing Page">Landing Page</option>
+                                            <option value="Networking Events">Networking Events</option>
+                                            <option value="Organic Sharing">Organic Sharing</option>
+                                            <option value="Youtube Marketing">Youtube Marketing</option>
+                                            <option value="LinkedIn">LinkedIn</option>
+                                            <option value="Open House">Open House</option>
+                                            <option value="Tiktok">Tiktok</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="recruitment_progress" class="block text-sm font-medium mb-1">Recruitment
+                                        Progress
+                                        <?= $required_mark; ?></label>
+
+                                    <?php
+
+                                    $checklist_style = 'w-full text-center py-2 px-3 border rounded-lg transition-all duration-300 cursor-pointer bg-white text-gray-800';
+
+                                    $label_style = 'text-gray-600 text-sm';
+
+                                    $label_subsection_style = 'space-y-2 border-l border-gray-300 pl-2 w-[97%]';
+                                    ?>
+                                    <div id="progressChecklist" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div class="space-y-2">
+                                            <div class="flex flex-row justify-center items-center gap-2">
+                                                <label for="pre-recruitment"
+                                                    class="<?php echo htmlspecialchars($label_style) ?> whitespace-nowrap">Pre-recruitment
+                                                </label>
+                                                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                                    <div id="preRecruitmentProgressBar"
+                                                        class="h-3 bg-blue-500 transition-all duration-300"
+                                                        style="width: 0%;">
+                                                    </div>
+                                                </div>
+                                                <div class="text-xs text-right text-gray-600"
+                                                    id="preRecruitmentProgressText">0%
                                                 </div>
                                             </div>
-                                            <div class="text-xs text-right text-gray-600"
-                                                id="preRecruitmentProgressText">0%
-                                            </div>
-                                        </div>
 
 
-                                        <!-- Pre-recruitment checkboxes -->
-                                        <label class="block">
-                                            <input type="checkbox" id="pre-assessment" name="pre-assessment" value="1"
-                                                class="peer hidden">
-                                            <div
-                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                Pre-Assessment
-                                            </div>
-                                        </label>
-                                        <label class="block">
-                                            <input type="checkbox" id="accreditation" name="accreditation" value="1"
-                                                class="peer hidden">
-                                            <div
-                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                Accreditation
-                                            </div>
-                                        </label>
-                                        <label class="block">
-                                            <input type="checkbox" id="assessment" name="assessment" value="1"
-                                                class="peer hidden">
-                                            <div
-                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                Assessment
-                                            </div>
-                                        </label>
-                                        <label class="block">
-                                            <input type="checkbox" id="sales_training" name="sales_training" value="1"
-                                                class="peer hidden">
-                                            <div
-                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                Sales 101
-                                            </div>
-                                        </label>
-                                        <label class="block">
-                                            <input type="checkbox" id="site_tour" name="site_tour" value="1"
-                                                class="peer hidden">
-                                            <div
-                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                Site Tour
-                                            </div>
-                                        </label>
-                                        <label class="block">
-                                            <input type="checkbox" id="focus_projects" name="focus_projects" value="1"
-                                                class="peer hidden">
-                                            <div
-                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                Focus Projects
-                                            </div>
-                                        </label>
-                                        <!-- Pre-recruitment progress bar -->
-                                        <!-- <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-2">
+                                            <!-- Pre-recruitment checkboxes -->
+                                            <label class="block">
+                                                <input type="checkbox" id="pre-assessment" name="pre-assessment"
+                                                    value="1" class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Pre-Assessment
+                                                </div>
+                                            </label>
+                                            <label class="block">
+                                                <input type="checkbox" id="accreditation" name="accreditation" value="1"
+                                                    class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Accreditation
+                                                </div>
+                                            </label>
+                                            <label class="block">
+                                                <input type="checkbox" id="assessment" name="assessment" value="1"
+                                                    class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Assessment
+                                                </div>
+                                            </label>
+                                            <label class="block">
+                                                <input type="checkbox" id="sales_training" name="sales_training"
+                                                    value="1" class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Sales 101
+                                                </div>
+                                            </label>
+                                            <label class="block">
+                                                <input type="checkbox" id="site_tour" name="site_tour" value="1"
+                                                    class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Site Tour
+                                                </div>
+                                            </label>
+                                            <label class="block">
+                                                <input type="checkbox" id="focus_projects" name="focus_projects"
+                                                    value="1" class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Focus Projects
+                                                </div>
+                                            </label>
+                                            <!-- Pre-recruitment progress bar -->
+                                            <!-- <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-2">
                                             <div id="preRecruitmentProgressBar"
                                                 class="h-3 bg-blue-500 transition-all duration-300" style="width: 0%;">
                                             </div>
                                         </div>
                                         <div class="text-xs text-right text-gray-600" id="preRecruitmentProgressText">0%
                                         </div> -->
-                                    </div>
-
-                                    <div class="space-y-2">
-
-
-
-
-                                        <div class="flex flex-row justify-center items-center gap-2">
-                                            <label for="post-recruitment"
-                                                class="<?php echo htmlspecialchars($label_style) ?> whitespace-nowrap">Post-recruitment</label>
-                                            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                                                <div id="postRecruitmentProgressBar"
-                                                    class="h-3 bg-orange-500 transition-all duration-300"
-                                                    style="width: 0%;">
-                                                </div>
-                                            </div>
-                                            <div class="text-xs text-right text-gray-600"
-                                                id="postRecruitmentProgressText">
-                                                0%</div>
                                         </div>
 
-                                        <!-- Post-recruitment checkboxes -->
-                                        <label class="block">
-                                            <input type="checkbox" id="habit_forming" name="habit_forming" value="1"
-                                                class="peer hidden">
-                                            <div
-                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                Habit Forming
-                                            </div>
-                                        </label>
                                         <div class="space-y-2">
-                                            <label for="training_materials"
-                                                class="<?php echo htmlspecialchars($label_style) ?> text-xs">
-                                                Training Materials
+                                            <div class="flex flex-row justify-center items-center gap-2">
+                                                <label for="post-recruitment"
+                                                    class="<?php echo htmlspecialchars($label_style) ?> whitespace-nowrap">Post-recruitment</label>
+                                                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                                    <div id="postRecruitmentProgressBar"
+                                                        class="h-3 bg-orange-500 transition-all duration-300"
+                                                        style="width: 0%;">
+                                                    </div>
+                                                </div>
+                                                <div class="text-xs text-right text-gray-600"
+                                                    id="postRecruitmentProgressText">
+                                                    0%</div>
+                                            </div>
+
+                                            <!-- Post-recruitment checkboxes -->
+                                            <label class="block">
+                                                <input type="checkbox" id="habit_forming" name="habit_forming" value="1"
+                                                    class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                    Habit Forming
+                                                </div>
                                             </label>
-                                            <div class="flex justify-end">
-                                                <div class="<?php echo htmlspecialchars($label_subsection_style) ?>">
-                                                    <label class="block">
-                                                        <input type="checkbox" id="digital_training"
-                                                            name="digital_training" value="1" class="peer hidden">
-                                                        <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                            Digital Marketing Training
-                                                        </div>
-                                                    </label>
-                                                    <label class="block">
-                                                        <input type="checkbox" id="sales_training_materials"
-                                                            name="sales_training_materials" value="1"
-                                                            class="peer hidden">
-                                                        <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                            Sales Training
-                                                        </div>
-                                                    </label>
-                                                    <label class="block">
-                                                        <input type="checkbox" id="objection_handling"
-                                                            name="objection_handling" value="1" class="peer hidden">
-                                                        <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                            Objection Handling
-                                                        </div>
-                                                    </label>
+                                            <div class="space-y-2">
+                                                <label for="training_materials"
+                                                    class="<?php echo htmlspecialchars($label_style) ?> text-xs">
+                                                    Training Materials
+                                                </label>
+                                                <div class="flex justify-end">
+                                                    <div
+                                                        class="<?php echo htmlspecialchars($label_subsection_style) ?>">
+                                                        <label class="block">
+                                                            <input type="checkbox" id="digital_training"
+                                                                name="digital_training" value="1" class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Digital Marketing Training
+                                                            </div>
+                                                        </label>
+                                                        <label class="block">
+                                                            <input type="checkbox" id="sales_training_materials"
+                                                                name="sales_training_materials" value="1"
+                                                                class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Sales Training
+                                                            </div>
+                                                        </label>
+                                                        <label class="block">
+                                                            <input type="checkbox" id="objection_handling"
+                                                                name="objection_handling" value="1" class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Objection Handling
+                                                            </div>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="space-y-2">
-                                            <label for="tools_familiarization"
-                                                class="<?php echo htmlspecialchars($label_style) ?> text-xs">
-                                                Tools Familiarization
-                                            </label>
-                                            <div class="flex justify-end">
-                                                <div class="<?php echo htmlspecialchars($label_subsection_style) ?>">
-                                                    <label class="block">
-                                                        <input type="checkbox" id="VAST" name="VAST" value="1"
-                                                            class="peer hidden">
-                                                        <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                            VAST Training
-                                                        </div>
-                                                    </label>
-                                                    <label class="block">
-                                                        <input type="checkbox" id="sales_monitoring"
-                                                            name="sales_monitoring" value="1" class="peer hidden">
-                                                        <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                            Google Site (Sales Monitoring)
-                                                        </div>
-                                                    </label>
-                                                    <label class="block">
-                                                        <input type="checkbox" id="LMS" name="LMS" value="1"
-                                                            class="peer hidden">
-                                                        <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                            Lead Management System
-                                                        </div>
-                                                    </label>
-                                                    <label class="block">
-                                                        <input type="checkbox" id="comm_structure" name="comm_structure"
-                                                            value="1" class="peer hidden">
-                                                        <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                            Comm Structure
-                                                        </div>
-                                                    </label>
+                                            <div class="space-y-2">
+                                                <label for="tools_familiarization"
+                                                    class="<?php echo htmlspecialchars($label_style) ?> text-xs">
+                                                    Tools Familiarization
+                                                </label>
+                                                <div class="flex justify-end">
+                                                    <div
+                                                        class="<?php echo htmlspecialchars($label_subsection_style) ?>">
+                                                        <label class="block">
+                                                            <input type="checkbox" id="VAST" name="VAST" value="1"
+                                                                class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                VAST Training
+                                                            </div>
+                                                        </label>
+                                                        <label class="block">
+                                                            <input type="checkbox" id="sales_monitoring"
+                                                                name="sales_monitoring" value="1" class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Google Site (Sales Monitoring)
+                                                            </div>
+                                                        </label>
+                                                        <label class="block">
+                                                            <input type="checkbox" id="LMS" name="LMS" value="1"
+                                                                class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Lead Management System
+                                                            </div>
+                                                        </label>
+                                                        <label class="block">
+                                                            <input type="checkbox" id="comm_structure"
+                                                                name="comm_structure" value="1" class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Comm Structure
+                                                            </div>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <!-- Post-recruitment progress bar -->
-                                        <!-- <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-2">
+                                            <!-- Post-recruitment progress bar -->
+                                            <!-- <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-2">
                                             <div id="postRecruitmentProgressBar"
                                                 class="h-3 bg-green-500 transition-all duration-300" style="width: 0%;">
                                             </div>
                                         </div>
                                         <div class="text-xs text-right text-gray-600" id="postRecruitmentProgressText">
                                             0%</div> -->
+                                        </div>
                                     </div>
-                                </div>
-                                <!-- Overall progress bar -->
-                                <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden mt-6">
-                                    <div id="progressBar" class="h-6 bg-green-500 transition-all duration-300"
-                                        style="width: 0%;"></div>
-                                </div>
-                                <div class="text-sm text-right text-gray-600" id="progressText">0%</div>
-                                <div class="mb-4">
-                                    <label for="remarks" class="block text-sm font-medium mb-1">Remarks
-                                        <?= $optional_mark; ?>
-                                    </label>
-                                    <textarea
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="remarks" name="remarks" rows="3"></textarea>
-                                </div>
-                        </form>
+                                    <!-- Overall progress bar -->
+                                    <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden mt-6">
+                                        <div id="progressBar" class="h-6 bg-green-500 transition-all duration-300"
+                                            style="width: 0%;"></div>
+                                    </div>
+                                    <div class="text-sm text-right text-gray-600" id="progressText">0%</div>
+                                    <div class="mb-4">
+                                        <label for="remarks" class="block text-sm font-medium mb-1">Remarks
+                                            <?= $optional_mark; ?>
+                                        </label>
+                                        <textarea
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="remarks" name="remarks" rows="3"></textarea>
+                                    </div>
+                            </form>
+                        </div>
+                        <div class="flex justify-end gap-2 border-t px-6 py-4">
+                            <button type="button" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                                onclick="saveRecruitmentLead()">Save</button>
+                            <button type="button" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                                onclick="hideRecruitmentModal()">Cancel</button>
+                        </div>
                     </div>
-                    <div class="flex justify-end gap-2 border-t px-6 py-4">
-                        <button type="button" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                            onclick="saveRecruitmentLead()">Save</button>
-                        <button type="button" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
-                            onclick="hideRecruitmentModal()">Cancel</button>
-                    </div>
+
                 </div>
             </div>
-
         </div>
     </div>
 
 
     <script>
-        // Show notification function (Tailwind)
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            let bg = 'bg-green-500',
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
-            if (type === 'error') {
-                bg = 'bg-red-500';
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
-            } else if (type === 'info') {
-                bg = 'bg-blue-500';
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
-            }
-            notification.className =
-                `fixed top-6 right-6 flex items-center px-6 py-3 rounded-lg text-white shadow-lg z-[99999] text-base font-medium gap-2 ${bg} animate-fade-in`;
-            notification.innerHTML = `${icon}<span>${message}</span>`;
-            notification.setAttribute('role', 'alert');
-            document.body.appendChild(notification);
-            setTimeout(() => {
-                notification.classList.add('opacity-0');
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 3000);
+    // Show notification function (Tailwind)
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        let bg = 'bg-green-500',
+            icon =
+            '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
+        if (type === 'error') {
+            bg = 'bg-red-500';
+            icon =
+                '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
+        } else if (type === 'info') {
+            bg = 'bg-blue-500';
+            icon =
+                '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
         }
-        // Fade-in animation for notification
-        const style = document.createElement('style');
-        style.innerHTML =
-            `@keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} } .animate-fade-in { animation: fade-in 0.3s ease; }`;
-        document.head.appendChild(style);
+        notification.className =
+            `fixed top-6 right-6 flex items-center px-6 py-3 rounded-lg text-white shadow-lg z-[99999] text-base font-medium gap-2 ${bg} animate-fade-in`;
+        notification.innerHTML = `${icon}<span>${message}</span>`;
+        notification.setAttribute('role', 'alert');
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.classList.add('opacity-0');
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
+    // Fade-in animation for notification
+    const style = document.createElement('style');
+    style.innerHTML =
+        `@keyframes fade-in { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} } .animate-fade-in { animation: fade-in 0.3s ease; }`;
+    document.head.appendChild(style);
 
-        // -------- Layout responsiveness enhancements --------
-        (function () {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.getElementById('main-container');
-            const headerEl = document.querySelector('.main-header');
+    // -------- Layout responsiveness enhancements --------
+    (function() {
+        const sidebar = document.getElementById('sidebar');
+        const container = document.getElementById('main-container');
+        const headerEl = document.querySelector('.main-header');
 
-            if (!sidebar || !container) return;
+        if (!sidebar || !container) return;
 
-            function adjustLayout() {
-                const desktop = window.innerWidth >= 1024;
-                if (desktop) {
-                    const sideWidth = sidebar.getBoundingClientRect().width;
-                    container.style.marginLeft = sideWidth + 'px';
-                    if (headerEl) {
-                        headerEl.style.left = sideWidth + 'px';
-                        headerEl.style.width = `calc(100% - ${sideWidth}px)`;
-                    }
-                } else {
-                    container.style.marginLeft = '0';
-                    if (headerEl) {
-                        headerEl.style.left = '0';
-                        headerEl.style.width = '100%';
-                    }
+        function adjustLayout() {
+            const desktop = window.innerWidth >= 1024;
+            if (desktop) {
+                const sideWidth = sidebar.getBoundingClientRect().width;
+                container.style.marginLeft = sideWidth + 'px';
+                if (headerEl) {
+                    headerEl.style.left = sideWidth + 'px';
+                    headerEl.style.width = `calc(100% - ${sideWidth}px)`;
+                }
+            } else {
+                container.style.marginLeft = '0';
+                if (headerEl) {
+                    headerEl.style.left = '0';
+                    headerEl.style.width = '100%';
                 }
             }
+        }
 
-            // Observe sidebar width changes to capture collapse/expand.
-            if ('ResizeObserver' in window) {
-                const resizeObserver = new ResizeObserver(adjustLayout);
-                resizeObserver.observe(sidebar);
-            }
+        // Observe sidebar width changes to capture collapse/expand.
+        if ('ResizeObserver' in window) {
+            const resizeObserver = new ResizeObserver(adjustLayout);
+            resizeObserver.observe(sidebar);
+        }
 
-            // Adjust on viewport resize as well.
-            window.addEventListener('resize', adjustLayout);
+        // Adjust on viewport resize as well.
+        window.addEventListener('resize', adjustLayout);
 
-            // Initial call
-            adjustLayout();
-        })();
+        // Initial call
+        adjustLayout();
+    })();
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Recruitment Dashboard JavaScript - Clean and Working Version
-        const currentSort = {
-            column: "created_at",
-            order: "DESC"
+    // Recruitment Dashboard JavaScript - Clean and Working Version
+    const currentSort = {
+        column: "created_at",
+        order: "DESC"
+    }
+    let currentFilters = {}
+    let allLeads = []
+
+    // Inject current user info from PHP
+    const CURRENT_USER_ID = <?php echo json_encode($current_user['id']); ?>;
+    const CURRENT_USER_ROLE = <?php echo json_encode($current_user['role']); ?>;
+
+    // Debounce function to limit how often a function is called
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), delay);
+        };
+    }
+
+    // Create a debounced version of applyFilters
+    const debouncedApplyFilters = debounce(applyFilters, 500); // 500ms delay
+
+    // REMOVE THIS ENTIRE BLOCK:
+    // New debounced function for header search
+    // const debouncedHeaderSearch = debounce(function() {
+    //     const headerSearchInput = document.getElementById('headerSearchInput');
+    //     const mainSearchInput = document.getElementById('searchInput');
+    //     if (headerSearchInput && mainSearchInput) {
+    //         mainSearchInput.value = headerSearchInput.value; // Sync header search to main filter search
+    //     }
+    //     applyFilters();
+    // }, 500);
+
+
+    // Initialize dashboard
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log('Recruitment dashboard loading...');
+        // Removed loadStats() call
+        loadRecruitmentData()
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', handleKeyboardShortcuts)
+    })
+
+    // Handle keyboard shortcuts
+    function handleKeyboardShortcuts(e) {
+        // Keep Ctrl/Cmd + Enter for explicit search if desired, or remove if live search is preferred
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault()
+            applyFilters()
         }
-        let currentFilters = {}
-        let allLeads = []
-
-        // Inject current user info from PHP
-        const CURRENT_USER_ID = <?php echo json_encode($current_user['id']); ?>;
-        const CURRENT_USER_ROLE = <?php echo json_encode($current_user['role']); ?>;
-
-        // Debounce function to limit how often a function is called
-        function debounce(func, delay) {
-            let timeout;
-            return function (...args) {
-                const context = this;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(context, args), delay);
-            };
+        if (e.key === 'Escape') {
+            clearFilters()
         }
+    }
 
-        // Create a debounced version of applyFilters
-        const debouncedApplyFilters = debounce(applyFilters, 500); // 500ms delay
+    // Load recruitment data
+    function loadRecruitmentData() {
+        console.log('Loading recruitment data with filters:', currentFilters);
+        const startTime = Date.now()
+        document.getElementById("loadingIndicator").style.display = "block"
 
-        // REMOVE THIS ENTIRE BLOCK:
-        // New debounced function for header search
-        // const debouncedHeaderSearch = debounce(function() {
-        //     const headerSearchInput = document.getElementById('headerSearchInput');
-        //     const mainSearchInput = document.getElementById('searchInput');
-        //     if (headerSearchInput && mainSearchInput) {
-        //         mainSearchInput.value = headerSearchInput.value; // Sync header search to main filter search
-        //     }
-        //     applyFilters();
-        // }, 500);
-
-
-        // Initialize dashboard
-        document.addEventListener("DOMContentLoaded", function () {
-            console.log('Recruitment dashboard loading...');
-            // Removed loadStats() call
-            loadRecruitmentData()
-
-            // Add keyboard shortcuts
-            document.addEventListener('keydown', handleKeyboardShortcuts)
-        })
-
-        // Handle keyboard shortcuts
-        function handleKeyboardShortcuts(e) {
-            // Keep Ctrl/Cmd + Enter for explicit search if desired, or remove if live search is preferred
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault()
-                applyFilters()
-            }
-            if (e.key === 'Escape') {
-                clearFilters()
-            }
-        }
-
-        // Load recruitment data
-        function loadRecruitmentData() {
-            console.log('Loading recruitment data with filters:', currentFilters);
-            const startTime = Date.now()
-            document.getElementById("loadingIndicator").style.display = "block"
-
-            // Show loading state in table
-            document.getElementById("recruitmentTableBody").innerHTML = `
+        // Show loading state in table
+        document.getElementById("recruitmentTableBody").innerHTML = `
     <tr>
         <td colspan="8" class="text-center">
             <div class="spinner-border spinner-border-sm" role="status">
@@ -1107,109 +1209,115 @@ echo '<style>
     </tr>
 `
 
-            const formData = new FormData()
-            formData.append("action", "get_recruitment_leads")
-            formData.append("filters", JSON.stringify(currentFilters))
-            formData.append("sort_by", currentSort.column)
-            formData.append("sort_order", currentSort.order)
+        const formData = new FormData()
+        formData.append("action", "get_recruitment_leads")
+        formData.append("filters", JSON.stringify(currentFilters))
+        formData.append("sort_by", currentSort.column)
+        formData.append("sort_order", currentSort.order)
 
-            fetch("recruitment-api-debug.php", {
+        fetch("recruitment-api-debug.php", {
                 method: "POST",
                 body: formData,
             })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const loadTime = Date.now() - startTime
-                    document.getElementById("loadingIndicator").style.display = "none"
-                    console.log('Data response:', data);
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const loadTime = Date.now() - startTime
+                document.getElementById("loadingIndicator").style.display = "none"
+                console.log('Data response:', data);
 
-                    // Add debug information
-                    if (data.debug) {
-                        console.log('Debug info:', data.debug);
-                        console.log('SQL Query:', data.debug.sql);
-                        console.log('Parameters:', data.debug.params);
-                        console.log('Filters sent:', data.debug.filters);
-                    }
+                // Add debug information
+                if (data.debug) {
+                    console.log('Debug info:', data.debug);
+                    console.log('SQL Query:', data.debug.sql);
+                    console.log('Parameters:', data.debug.params);
+                    console.log('Filters sent:', data.debug.filters);
+                }
 
-                    if (data.success) {
-                        allLeads = data.data || []
-                        displayRecruitmentData(allLeads)
-                        updateActiveFilters()
-                        updateResultsInfo(allLeads.length, loadTime)
-                    } else {
-                        console.error('Data error:', data.message);
-                        showNotification("Error loading data: " + data.message, "error")
-                        document.getElementById("recruitmentTableBody").innerHTML =
-                            '<tr><td colspan="8" class="text-center text-danger">Error loading data: ' + data.message +
-                            '</td></tr>'
-                    }
-                })
-                .catch(error => {
-                    document.getElementById("loadingIndicator").style.display = "none"
-                    console.error("Error loading data:", error)
-                    showNotification("Error connecting to server: " + error.message, "error")
+                if (data.success) {
+                    allLeads = data.data || []
+                    displayRecruitmentData(allLeads)
+                    updateActiveFilters()
+                    updateResultsInfo(allLeads.length, loadTime)
+                } else {
+                    console.error('Data error:', data.message);
+                    showNotification("Error loading data: " + data.message, "error")
                     document.getElementById("recruitmentTableBody").innerHTML =
-                        '<tr><td colspan="8" class="text-center text-danger">Connection error: ' + error.message +
+                        '<tr><td colspan="8" class="text-center text-danger">Error loading data: ' + data.message +
                         '</td></tr>'
-                })
+                }
+            })
+            .catch(error => {
+                document.getElementById("loadingIndicator").style.display = "none"
+                console.error("Error loading data:", error)
+                showNotification("Error connecting to server: " + error.message, "error")
+                document.getElementById("recruitmentTableBody").innerHTML =
+                    '<tr><td colspan="8" class="text-center text-danger">Connection error: ' + error.message +
+                    '</td></tr>'
+            })
+    }
+
+    // Display recruitment data in table
+    function displayRecruitmentData(leads) {
+        // Only show all leads for admin, else filter by recruiter_id
+        let visibleLeads = leads;
+        if (CURRENT_USER_ROLE === 'manager') {
+            visibleLeads = leads.filter(lead => lead.recruiter_id == CURRENT_USER_ID);
         }
 
-        // Display recruitment data in table
-        function displayRecruitmentData(leads) {
-            const tbody = document.getElementById("recruitmentTableBody")
-            tbody.innerHTML = ""
+        const tbody = document.getElementById("recruitmentTableBody");
+        tbody.innerHTML = "";
 
-            if (!leads || leads.length === 0) {
-                tbody.innerHTML = `
+        if (!visibleLeads || visibleLeads.length === 0) {
+            tbody.innerHTML = `
         <tr>
-            <td colspan="8" class="text-center text-muted py-4 text-gray-500">
+            <td colspan="8" class="text-center text-muted py-4">
                 <i class="fas fa-search fa-2x mb-2 d-block"></i>
                 <p class="mb-0">No recruitment leads found</p>
                 <small>Try adjusting your filters or search terms</small>
             </td>
         </tr>
-    `
-                return
+    `;
+            return;
+        }
+
+        visibleLeads.forEach((lead, index) => {
+            const row = document.createElement("tr")
+            const dateObj = new Date(lead.created_at);
+            const timestamp = dateObj.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }).replace(',', '').replace(/(\d{4}) (\d{1,2}):/, '$1 at $2:');
+
+            // Masking logic: only recruiter or admin can see full details
+            const isOwnLead = (CURRENT_USER_ID == lead.recruiter_id);
+            const isAdmin = (CURRENT_USER_ROLE === 'admin');
+            const canSeeDetails = isOwnLead || isAdmin;
+            const canEditDelete = isOwnLead || isAdmin;
+
+            row.style.animationDelay = `${index * 50}ms`
+            row.className = 'fade-in hover:bg-gray-50 transition-colors';
+
+            function maskWord(word) {
+                if (word.length <= 2) return word[0] + '*'.repeat(word.length - 1);
+                if (word.length <= 4) return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1];
+                return word.slice(0, 2) + '*'.repeat(word.length - 4) + word.slice(-2);
             }
 
-            leads.forEach((lead, index) => {
-                const row = document.createElement("tr")
-                const dateObj = new Date(lead.created_at);
-                const timestamp = dateObj.toLocaleString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                }).replace(',', '').replace(/(\d{4}) (\d{1,2}):/, '$1 at $2:');
+            function maskText(text) {
+                if (!text) return '';
+                return text.split(' ').map(maskWord).join(' ');
+            }
 
-                // Masking logic: only recruiter or admin can see full details
-                const isOwnLead = (CURRENT_USER_ID == lead.recruiter_id);
-                const isAdmin = (CURRENT_USER_ROLE === 'admin');
-                const canSeeDetails = isOwnLead || isAdmin;
-                const canEditDelete = isOwnLead || isAdmin;
-
-                row.style.animationDelay = `${index * 50}ms`
-                row.className = 'fade-in hover:bg-gray-50 transition-colors';
-
-                function maskWord(word) {
-                    if (word.length <= 2) return word[0] + '*'.repeat(word.length - 1);
-                    if (word.length <= 4) return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1];
-                    return word.slice(0, 2) + '*'.repeat(word.length - 4) + word.slice(-2);
-                }
-
-                function maskText(text) {
-                    if (!text) return '';
-                    return text.split(' ').map(maskWord).join(' ');
-                }
-
-                row.innerHTML = `
+            row.innerHTML = `
         <td class="px-6 py-4 align-middle">${timestamp}</td>
         <td class="px-6 py-4 align-middle">
   ${lead.status === 'Active' ? `<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span>` :
@@ -1220,7 +1328,13 @@ echo '<style>
         <div class="align-middle opacity-50 text-sm"><i class="fa fa-phone" aria-hidden="true"></i> ${canSeeDetails ? (lead.contact_number || 'N/A') : maskText(lead.contact_number || '')}</div>
         <div class="align-middle opacity-50 text-sm"><i class="fa fa-envelope" aria-hidden="true"></i> ${canSeeDetails ? (lead.email || 'N/A') : maskText(lead.email || '')}</div>
         </td>
-        <td class="px-6 py-4 align-middle">${lead.recruiter_name || 'N/A'}</td>
+        <td class="px-6 py-4 align-middle">
+            <div>
+                <span>${lead.recruiter_name || 'N/A'}</span>
+                <br>
+                <span class="text-xs text-gray-500">${lead.recruiter_team || 'No Team'}</span>
+            </div>
+        </td>
         <td class="px-6 py-4 align-middle">
         <div class='flex flex-col items-start gap-2 w-full'>
             
@@ -1245,674 +1359,959 @@ echo '<style>
         <td class="px-6 py-4 align-middle">
             <div class="btn-group btn-group-sm flex items-center justify-center gap-2">
                 ${canEditDelete ? `
+                <button class="btn btn-outline-onboard text-blue-500 border-2 p-1 rounded-md border-blue-500    hover:border-blue-500 hover:bg-blue-500 hover:text-white transition-all hidden"
+                onclick="showOnboardModal(${lead.id})"
+                    title="Onboard this Agent"
+                    id="onboardBtn-${lead.id}">
+                    <i class="fa fa-rocket" aria-hidden="true"></i>
+                </button>
                 <button class="btn btn-outline-primary text-yellow-500 border-2 p-1 rounded-md border-yellow-500 hover:border-yellow-500 hover:bg-yellow-500 hover:text-white transition-all" onclick="editLead(${lead.id})" title="Edit">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn btn-outline-danger text-red-500 border-2 p-1 rounded-md border-red-500 hover:border-red-500 hover:bg-red-500 hover:text-white transition-all" onclick="deleteLead(${lead.id})" title="Delete">
+                     <button class="btn btn-outline-danger text-red-500 border-2 p-1 rounded-md border-red-500 hover:border-red-500 hover:bg-red-500 hover:text-white transition-all" onclick="deleteLead(${lead.id})" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
                 ` : ''}
             </div>
         </td>
     `
-                tbody.appendChild(row)
-            })
-        }
+            tbody.appendChild(row);
 
-        // Apply filters - Main function
-        function applyFilters() {
-            console.log('Applying filters...');
-
-            // Show loading feedback
-            const searchBtn = document.querySelector('button[onclick="applyFilters()"]')
-            const originalText = searchBtn.innerHTML
-            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...'
-            searchBtn.disabled = true
-
-            // Collect filter values
-            currentFilters = {}
-            const status = document.getElementById("filterStatus").value.trim()
-            const source = document.getElementById("filterSource").value.trim()
-            const search = document.getElementById("searchInput").value.trim() // Get value from main search input
-
-            if (status) currentFilters.status = status
-            if (source) currentFilters.source = source
-            if (search) currentFilters.search = search
-
-            console.log('Applied filters:', currentFilters);
-
-            // Load data with filters
-            loadRecruitmentData()
-
-            // Restore button state
-            setTimeout(() => {
-                searchBtn.innerHTML = originalText
-                searchBtn.disabled = false
-            }, 500)
-
-            // Show success message
-            loadRecruitmentData()
-
-            // Restore button state
-            setTimeout(() => {
-                searchBtn.innerHTML = originalText
-                searchBtn.disabled = false
-            }, 500)
-
-            // Show success message
-            const filterCount = Object.keys(currentFilters).length
-            if (filterCount > 0) {
-                showNotification(`Applied ${filterCount} filter${filterCount > 1 ? 's' : ''}`, "success")
+            // Show the onboard button if pre-recruitment progress is 100%
+            const prePercent = getPreRecruitmentPercent(lead);
+            if (prePercent === 100) {
+                const onboardBtn = document.getElementById(`onboardBtn-${lead.id}`);
+                if (onboardBtn) {
+                    onboardBtn.classList.remove("hidden");
+                    onboardBtn.classList.add("inline-block"); // or "block" if needed
+                }
             }
+        })
+    }
+
+    // Apply filters - Main function
+    function applyFilters() {
+        console.log('Applying filters...');
+
+        // Show loading feedback
+        const searchBtn = document.querySelector('button[onclick="applyFilters()"]')
+        const originalText = searchBtn.innerHTML
+        searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...'
+        searchBtn.disabled = true
+
+        // Collect filter values
+        currentFilters = {}
+        const status = document.getElementById("filterStatus").value.trim()
+        const source = document.getElementById("filterSource").value.trim()
+        const search = document.getElementById("searchInput").value.trim() // Get value from main search input
+
+        if (status) currentFilters.status = status
+        if (source) currentFilters.source = source
+        if (search) currentFilters.search = search
+
+        console.log('Applied filters:', currentFilters);
+
+        // Load data with filters
+        loadRecruitmentData()
+
+        // Restore button state
+        setTimeout(() => {
+            searchBtn.innerHTML = originalText
+            searchBtn.disabled = false
+        }, 500)
+
+        // Show success message
+        loadRecruitmentData()
+
+        // Restore button state
+        setTimeout(() => {
+            searchBtn.innerHTML = originalText
+            searchBtn.disabled = false
+        }, 500)
+
+        // Show success message
+        const filterCount = Object.keys(currentFilters).length
+        if (filterCount > 0) {
+            showNotification(`Applied ${filterCount} filter${filterCount > 1 ? 's' : ''}`, "success")
         }
+    }
 
-        // Clear filters
-        function clearFilters() {
-            console.log('Clearing all filters...');
+    // Clear filters
+    function clearFilters() {
+        console.log('Clearing all filters...');
 
-            currentFilters = {}
-            document.getElementById("filterStatus").value = ""
+        currentFilters = {}
+        document.getElementById("filterStatus").value = ""
+        document.getElementById("filterSource").value = ""
+        document.getElementById("searchInput").value = ""
+        // REMOVE THIS LINE: const headerSearchInput = document.getElementById("headerSearchInput").value = "";
+
+        document.getElementById("activeFilters").style.display = "none"
+        document.getElementById("filterResults").style.display = "none"
+
+        loadRecruitmentData()
+        showNotification("All filters cleared", "info")
+    }
+
+    // Quick filter function
+    function quickFilter(field, value) {
+        console.log('Quick filter:', field, value);
+
+        currentFilters = {}
+        currentFilters[field] = value
+
+        if (field === 'status') {
+            document.getElementById("filterStatus").value = value
             document.getElementById("filterSource").value = ""
-            document.getElementById("searchInput").value = ""
-            // REMOVE THIS LINE: const headerSearchInput = document.getElementById("headerSearchInput").value = "";
+        }
+        document.getElementById("searchInput").value = ""
+        // REMOVE THIS LINE: document.getElementById("headerSearchInput").value = "";
 
-            document.getElementById("activeFilters").style.display = "none"
-            document.getElementById("filterResults").style.display = "none"
+        loadRecruitmentData()
+        showNotification(`Showing ${value} leads`, "info")
+    }
 
-            loadRecruitmentData()
-            showNotification("All filters cleared", "info")
+    // Update active filters display
+    function updateActiveFilters() {
+        const activeFiltersDiv = document.getElementById("activeFilters")
+        const activeFilterTags = document.getElementById("activeFilterTags")
+
+        if (Object.keys(currentFilters).length === 0) {
+            activeFiltersDiv.style.display = "none"
+            return
         }
 
-        // Quick filter function
-        function quickFilter(field, value) {
-            console.log('Quick filter:', field, value);
+        activeFiltersDiv.style.display = "block"
+        activeFilterTags.innerHTML = ""
 
-            currentFilters = {}
-            currentFilters[field] = value
+        Object.entries(currentFilters).forEach(([key, value]) => {
+            const tag = document.createElement("span")
+            tag.className = "badge bg-primary me-2 mb-1"
+            tag.style.cursor = "pointer"
 
-            if (field === 'status') {
-                document.getElementById("filterStatus").value = value
-                document.getElementById("filterSource").value = ""
-            }
-            document.getElementById("searchInput").value = ""
-            // REMOVE THIS LINE: document.getElementById("headerSearchInput").value = "";
+            const displayKey = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+            tag.innerHTML =
+                `${displayKey}: ${value} <i class="fas fa-times ms-1" onclick="removeFilter('${key}')"></i>`
+            activeFilterTags.appendChild(tag)
+        })
+    }
 
-            loadRecruitmentData()
-            showNotification(`Showing ${value} leads`, "info")
+    // Remove individual filter
+    function removeFilter(key) {
+        delete currentFilters[key];
+
+        const fieldMap = {
+            'status': 'filterStatus',
+            'source': 'filterSource',
+            'search': 'searchInput'
+        };
+
+        if (fieldMap[key]) {
+            document.getElementById(fieldMap[key]).value = "";
+        }
+        // REMOVE THIS BLOCK:
+        // If the removed filter was 'search', also clear the header search input
+        // if (key === 'search') {
+        //     document.getElementById('headerSearchInput').value = '';
+        // }
+
+        loadRecruitmentData();
+        showNotification("Filter removed", "info");
+    }
+
+    // Update results info
+    function updateResultsInfo(count, loadTime) {
+        const resultsDiv = document.getElementById("filterResults")
+        const resultsCount = document.getElementById("resultsCount")
+        const filterTime = document.getElementById("filterTime")
+
+        resultsCount.textContent = count
+        filterTime.textContent = `(loaded in ${loadTime}ms)`
+        resultsDiv.style.display = "block"
+    }
+
+    // Modal and CRUD functions
+    function showAddModal() {
+
+        if (CURRENT_USER_ROLE === 'admin') {
+            fetch('get_teams_and_managers.php')
+                .then(res => res.json())
+                .then(data => {
+                    // Populate team dropdown
+                    const teamSelect = document.getElementById('teamName');
+                    teamSelect.innerHTML = '<option value="">Select Team</option>';
+                    data.teams.forEach(team => {
+                        teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+                    });
+
+                    // When team changes, populate recruiter dropdown
+                    teamSelect.addEventListener('change', function() {
+                        const selectedTeam = data.teams.find(t => t.id == this.value);
+                        const recruiterSelect = document.getElementById('recruiterName');
+                        recruiterSelect.innerHTML = '<option value="">Select Recruiter</option>';
+                        if (selectedTeam && selectedTeam.managers) {
+                            selectedTeam.managers.forEach(manager => {
+                                recruiterSelect.innerHTML +=
+                                    `<option value="${manager.id}">${manager.name}</option>`;
+                            });
+                        }
+                    });
+                });
         }
 
-        // Update active filters display
-        function updateActiveFilters() {
-            const activeFiltersDiv = document.getElementById("activeFilters")
-            const activeFilterTags = document.getElementById("activeFilterTags")
+        document.getElementById('modalTitle').textContent = 'Add New Recruited Agent';
+        document.getElementById('recruitmentForm').reset();
+        document.getElementById('leadId').value = '';
+        document.getElementById('recruiterName').value = "<?php echo htmlspecialchars($user['name'] ?? ''); ?>";
+        // Reset all checklist checkboxes and progress bar
+        const checklistKeys = allKeys;
+        checklistKeys.forEach(id => {
+            const cb = document.getElementById(id);
+            if (cb) cb.checked = false;
+        });
+        updateProgress(); // Ensure progress bars reset
+        document.getElementById('recruitmentModal').classList.remove('hidden');
+    }
 
-            if (Object.keys(currentFilters).length === 0) {
-                activeFiltersDiv.style.display = "none"
-                return
-            }
+    function hideRecruitmentModal() {
+        document.getElementById('recruitmentModal').classList.add('hidden');
+    }
 
-            activeFiltersDiv.style.display = "block"
-            activeFilterTags.innerHTML = ""
+    function showOnboardModal(id) {
+        document.getElementById('onboardModal').classList.remove('hidden');
+        const modalContent = document.querySelector('#onboardModal .p-0');
+        modalContent.innerHTML = `
+        <div class="p-6 overflow-y-auto max-h-[70vh]">
+            <form id="onboardUserForm">
 
-            Object.entries(currentFilters).forEach(([key, value]) => {
-                const tag = document.createElement("span")
-                tag.className = "badge bg-primary me-2 mb-1"
-                tag.style.cursor = "pointer"
+            <div class="flex flex-col items-center justify-center gap-2">
+                            <i class="fa-solid fa-circle-user text-[100px] bg-gradient-to-br from-blue-500 via-green-500 to-yellow-500 bg-clip-text text-transparent"></i>
+                            <div class="mb-4 mx-8">
+                                <div class="">
+                                    <div>
+                                        <input type="text" id="onboard_name" name="name"
+                                            class="text-center w-full focus:outline-none text-2xl font-bold" placeholder="Full Name" readonly>
+                                    </div>
+                                    <input type="text" id="onboard_username" name="username"
+                                        class=" w-full focus:outline-none text-center text-sm " placeholder="user.name.innersparc" readonly>
+                                </div>
+                                <hr class="my-3">
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 bg-red-5001 p-2 pt-0 text-gray-500 text-sm">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-envelope"></i>
+                                        <input type="email" id="onboard_email" name="email"
+                                            class="w-full whitespace-nowrap focus:outline-none" placeholder="yourname@gmail.com" readonly>
+                                    </div>
 
-                const displayKey = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
-                tag.innerHTML =
-                    `${displayKey}: ${value} <i class="fas fa-times ms-1" onclick="removeFilter('${key}')"></i>`
-                activeFilterTags.appendChild(tag)
-            })
-        }
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-key"></i>
+                                        <input type="text" value="123456789innersparc"
+                                            class="w-full whitespace-nowrap focus:outline-none " placeholder="123456789innersparc" readonly>
+                                    </div>
 
-        // Remove individual filter
-        function removeFilter(key) {
-            delete currentFilters[key];
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-phone"></i>
+                                        <input type="text" id="onboard_phone" name="phone"
+                                            class="w-full whitespace-nowrap focus:outline-none " placeholder="09123456789" readonly>
+                                    </div>
 
-            const fieldMap = {
-                'status': 'filterStatus',
-                'source': 'filterSource',
-                'search': 'searchInput'
-            };
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-user-tie"></i>
+                                        <input type="text" value="Agent"
+                                            class="w-full whitespace-nowrap focus:outline-none " placeholder="Agent" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-            if (fieldMap[key]) {
-                document.getElementById(fieldMap[key]).value = "";
-            }
-            // REMOVE THIS BLOCK:
-            // If the removed filter was 'search', also clear the header search input
-            // if (key === 'search') {
-            //     document.getElementById('headerSearchInput').value = '';
-            // }
+            <div class="mb-4">
+                
+                <small class="text-gray-500 hidden" id="onboard_username_preview"></small>
+            </div>
 
-            loadRecruitmentData();
-            showNotification("Filter removed", "info");
-        }
+            <div class="flex flex-col items-center justify-center gap-3 border  rounded-lg p-4 mb-4">
 
-        // Update results info
-        function updateResultsInfo(count, loadTime) {
-            const resultsDiv = document.getElementById("filterResults")
-            const resultsCount = document.getElementById("resultsCount")
-            const filterTime = document.getElementById("filterTime")
+                            <input type="text" id="onboard_recruiter"
+                                class="w-full focus:outline-none text-center font-semibold"
+                                placeholder="Your name should appear here" readonly>
 
-            resultsCount.textContent = count
-            filterTime.textContent = `(loaded in ${loadTime}ms)`
-            resultsDiv.style.display = "block"
-        }
+                            <p class="text-center">Do you want to officially <span
+                                    class="text-blue-600 font-semibold">onboard</span>
+                                this agent to your
+                                team, <input type="text" id="onboard_recruiter_team"
+                                    class="inline-block mx-1 rounded-lg bg-blue-500 text-white italic font-semibold focus:outline-none text-center"
+                                    value="Your Team should appear here" oninput="this.style.width = (this.value.length + 1) + 'ch';"
+                                    style="width: auto;" readonly>?</p>
 
-        // Modal and CRUD functions
-        function showAddModal() {
-            document.getElementById('modalTitle').textContent = 'Add New Recruitment Lead';
-            document.getElementById('recruitmentForm').reset();
-            document.getElementById('leadId').value = '';
-            document.getElementById('recruiterName').value = "<?php echo htmlspecialchars($user['name'] ?? ''); ?>";
-            // Reset all checklist checkboxes and progress bar
-            const checklistKeys = allKeys;
-            checklistKeys.forEach(id => {
-                const cb = document.getElementById(id);
-                if (cb) cb.checked = false;
-            });
-            updateProgress(); // Ensure progress bars reset
-            document.getElementById('recruitmentModal').classList.remove('hidden');
-        }
+                            <div class="flex flex-col md:flex-row items-center mt-2 gap-2 w-full">
+                                <button type="submit" id="onboardSubmitBtn"
+                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full font-semibold">
+                                    Onboard Agent!
+                                </button>
+                                <button type="button"
+                                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 w-full"
+                                    onclick="hideOnboardModal()">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
 
-        function hideRecruitmentModal() {
-            document.getElementById('recruitmentModal').classList.add('hidden');
-        }
+                        <div class="text-sm text-gray-500 mb-4 text-sm text-center">
+                            <p>Note: The agent will be created with the default password
+                                <strong>123456789innersparc</strong>. Ensure to change the password after onboarding.
+                            </p>
+                        </div>
+            </form>
+                <div id="onboardLoading" class="text-center text-gray-400">Loading agent details...</div>
+        </div>
+    `;
 
-        // FIXED: Working edit function
-        function editLead(id) {
-            console.log('Editing lead with ID:', id);
+        let onboardLead = null;
 
-            // Show loading state
-            showNotification("Loading lead data...", "info")
+        // Fetch the agent details
+        const formData = new FormData();
+        formData.append("action", "get_recruitment_leads");
+        formData.append("filters", JSON.stringify({
+            id: id
+        }));
 
-            // Fetch the specific lead data
-            const formData = new FormData()
-            formData.append("action", "get_recruitment_leads")
-            formData.append("filters", JSON.stringify({
-                id: id
-            }))
-
-            fetch("recruitment-api-debug.php", {
+        fetch("recruitment-api-debug.php", {
                 method: "POST",
                 body: formData,
             })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('onboardLoading').remove();
+                if (data.success && data.data && data.data.length > 0) {
+                    const lead = data.data[0];
+                    onboardLead = lead;
+
+                    document.getElementById('onboard_name').value = lead.full_name || '';
+                    document.getElementById('onboard_email').value = lead.email || '';
+                    document.getElementById('onboard_phone').value = lead.contact_number || '';
+                    document.getElementById('onboard_recruiter').value = lead.recruiter_name || '';
+                    document.getElementById('onboard_recruiter_team').value = lead.recruiter_team || 'No Team';
+
+                    // Generate automatic username
+                    let username = '';
+                    if (lead.full_name) {
+                        username = lead.full_name.toLowerCase()
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '')
+                            .replace(/[^a-z0-9\s]/g, '')
+                            .replace(/\s+/g, '.');
+                        username = username + '.innersparc';
                     }
-                    return response.json();
-                })
+                    document.getElementById('onboard_username').value = username;
+                    document.getElementById('onboard_username_preview').textContent = lead.full_name || '';
+                } else {
+                    modalContent.innerHTML +=
+                        '<div class="text-center text-red-500">Agent details not found.</div>';
+                }
+            })
+            .catch(() => {
+                modalContent.innerHTML +=
+                    '<div class="text-center text-red-500">Error loading agent details.</div>';
+            });
+
+        // Attach the submit handler AFTER the form is in the DOM
+        setTimeout(() => {
+            const onboardForm = document.getElementById('onboardUserForm');
+            if (onboardForm) {
+                onboardForm.onsubmit = function(e) {
+                    e.preventDefault();
+
+                    // Collect values
+                    const name = document.getElementById('onboard_name').value;
+                    const email = document.getElementById('onboard_email').value;
+                    const phone = document.getElementById('onboard_phone').value;
+                    const username = document.getElementById('onboard_username').value;
+                    const recruiter = document.getElementById('onboard_recruiter').value;
+                    const recruiter_team = document.getElementById('onboard_recruiter_team').value;
+                    const password = '123456789innersparc';
+                    const role = 'agent';
+                    const team_id = onboardLead ? onboardLead.recruiter_team_id || '' : '';
+
+                    const formData = new FormData();
+                    formData.append('action', 'onboard_agent');
+                    formData.append('name', name);
+                    formData.append('email', email);
+                    formData.append('phone', phone);
+                    formData.append('username', username);
+                    formData.append('password', password);
+                    formData.append('role', role);
+                    formData.append('team_id', team_id);
+
+                    fetch('recruitment-api-debug.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            console.log('Onboard agent response:', data); // Add this line
+                            if (data.success) {
+                                showNotification('Agent onboarded successfully!', 'success');
+                                hideOnboardModal();
+                                loadRecruitmentData();
+                            } else {
+                                showNotification('Error: ' + data.message, 'error');
+                            }
+                        })
+                        .catch(() => {
+                            showNotification('Error onboarding agent.', 'error');
+                        });
+                };
+            }
+        }, 0);
+    }
+
+    function generateUsername() {
+        const fullName = document.getElementById('user_name').value.trim();
+        if (fullName) {
+            let username = fullName.toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+                .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+                .replace(/\s+/g, '.'); // Replace spaces with dots
+            username = username + '.innersparc';
+            document.getElementById('user_username').value = username;
+            document.getElementById('usernamePreview').textContent = username;
+        } else {
+            document.getElementById('user_username').value = '';
+            document.getElementById('usernamePreview').textContent = '';
+        }
+    }
+
+    function hideOnboardModal() {
+        document.getElementById('onboardModal').classList.add('hidden');
+    }
+
+    // FIXED: Working edit function
+    function editLead(id) {
+
+        if (CURRENT_USER_ROLE === 'admin') {
+            fetch('get_teams_and_managers.php')
+                .then(res => res.json())
                 .then(data => {
-                    console.log('Edit lead response:', data);
+                    // Populate team dropdown
+                    const teamSelect = document.getElementById('teamName');
+                    teamSelect.innerHTML = '<option value="">Select Team</option>';
+                    data.teams.forEach(team => {
+                        teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+                    });
 
-                    if (data.success && data.data && data.data.length > 0) {
-                        const lead = data.data[0]
+                    // When team changes, populate recruiter dropdown
+                    teamSelect.addEventListener('change', function() {
+                        const selectedTeam = data.teams.find(t => t.id == this.value);
+                        const recruiterSelect = document.getElementById('recruiterName');
+                        recruiterSelect.innerHTML = '<option value="">Select Recruiter</option>';
+                        if (selectedTeam && selectedTeam.managers) {
+                            selectedTeam.managers.forEach(manager => {
+                                recruiterSelect.innerHTML +=
+                                    `<option value="${manager.id}">${manager.name}</option>`;
+                            });
+                        }
+                    });
+                });
+        }
 
-                        // Update modal title
-                        document.getElementById("modalTitle").textContent = "Edit Recruitment Lead"
+        console.log('Editing lead with ID:', id);
 
-                        // Populate form fields
-                        document.getElementById("leadId").value = lead.id
-                        document.getElementById("fullName").value = lead.full_name || ""
-                        document.getElementById("contactNumber").value = lead.contact_number || ""
-                        document.getElementById("email").value = lead.email || ""
-                        document.getElementById("recruiterName").value = lead.recruiter_name || ""
-                        document.getElementById("status").value = lead.status || ""
-                        document.getElementById("source").value = lead.source || ""
-                        document.getElementById("remarks").value = lead.remarks || ""
+        // Show loading state
+        showNotification("Loading lead data...", "info")
 
-                        // Fetch and display the team name dynamically
-                        const teamNameInput = document.getElementById("teamName");
-                        teamNameInput.value = "Loading...";
-                        if (lead.recruiter_team_id) {
-                            fetch('get_team_name.php?team_id=' + lead.recruiter_team_id)
-                                .then(res => res.json())
-                                .then(teamData => {
-                                    teamNameInput.value = teamData.name || "No Team";
-                                })
-                                .catch(() => {
-                                    teamNameInput.value = "No Team";
-                                });
-                        } else {
-                            teamNameInput.value = "No Team";
+        // Fetch the specific lead data
+        const formData = new FormData()
+        formData.append("action", "get_recruitment_leads")
+        formData.append("filters", JSON.stringify({
+            id: id
+        }))
+
+        fetch("recruitment-api-debug.php", {
+                method: "POST",
+                body: formData,
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Edit lead response:', data);
+
+                if (data.success && data.data && data.data.length > 0) {
+                    const lead = data.data[0]
+
+                    // Update modal title
+                    document.getElementById("modalTitle").textContent = "Edit Recruited Agent";
+
+                    // Populate form fields
+                    document.getElementById("leadId").value = lead.id
+                    document.getElementById("fullName").value = lead.full_name || ""
+                    document.getElementById("contactNumber").value = lead.contact_number || ""
+                    document.getElementById("email").value = lead.email || ""
+                    document.getElementById("recruiterName").value = lead.recruiter_name || ""
+
+                    document.getElementById("teamName").value = lead.recruiter_team || ""
+
+                    document.getElementById("status").value = lead.status || ""
+                    document.getElementById("source").value = lead.source || ""
+                    document.getElementById("remarks").value = lead.remarks || ""
+
+                    // Fetch and display the team name dynamically
+                    const teamNameInput = document.getElementById("teamName");
+                    teamNameInput.value = "Loading...";
+                    if (lead.recruiter_team_id) {
+                        fetch('get_team_name.php?team_id=' + lead.recruiter_team_id)
+                            .then(res => res.json())
+                            .then(teamData => {
+                                teamNameInput.value = teamData.name || "No Team";
+                            })
+                            .catch(() => {
+                                teamNameInput.value = "No Team";
+                            });
+                    } else {
+                        teamNameInput.value = "No Team";
+                    }
+
+                    // Set checklist checkboxes and progress bar from lead data
+                    allKeys.forEach(id => {
+                        const cb = document.getElementById(id);
+                        // Use snake_case for DB fields, kebab-case for IDs
+                        const dbKey = id.replace(/-/g, '_');
+                        if (cb) cb.checked = !!lead[dbKey];
+                    });
+                    updateProgress(); // Ensure progress bars reflect loaded state
+
+                    // For admin users, set the selected recruiter and team
+                    if (CURRENT_USER_ROLE === 'admin') {
+                        // Set the selected recruiter
+                        if (lead.recruiter_id) {
+                            document.getElementById('recruiterName').value = lead.recruiter_id;
                         }
 
-                        // Set checklist checkboxes and progress bar from lead data
-                        allKeys.forEach(id => {
-                            const cb = document.getElementById(id);
-                            // Use snake_case for DB fields, kebab-case for IDs
-                            const dbKey = id.replace(/-/g, '_');
-                            if (cb) cb.checked = !!lead[dbKey];
-                        });
-                        updateProgress(); // Ensure progress bars reflect loaded state
+                        // Set the selected team
+                        if (lead.recruiter_team_id) {
+                            document.getElementById('teamName').value = lead.recruiter_team_id;
 
-                        // Show the modal
-                        document.getElementById('recruitmentModal').classList.remove('hidden');
+                            // Trigger the team change event to populate recruiters
+                            const teamChangeEvent = new Event('change');
+                            document.getElementById('teamName').dispatchEvent(teamChangeEvent);
 
-                        showNotification("Lead data loaded successfully", "success")
-                    } else {
-                        showNotification("Error: Lead not found or no data returned", "error")
-                        console.error('No lead data found:', data)
+                            // After a short delay, set the recruiter (to ensure dropdown is populated)
+                            setTimeout(() => {
+                                if (lead.recruiter_id) {
+                                    document.getElementById('recruiterName').value = lead.recruiter_id;
+                                }
+                            }, 100);
+                        }
                     }
-                })
-                .catch(error => {
-                    console.error("Error fetching lead data:", error)
-                    showNotification("Error loading lead data: " + error.message, "error")
-                })
+
+                    // Show the modal
+                    document.getElementById('recruitmentModal').classList.remove('hidden');
+
+                    showNotification("Lead data loaded successfully", "success")
+                } else {
+                    showNotification("Error: Lead not found or no data returned", "error")
+                    console.error('No lead data found:', data)
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching lead data:", error)
+                showNotification("Error loading lead data: " + error.message, "error")
+            })
+    }
+
+    // Save recruitment lead (add or update)
+    function saveRecruitmentLead() {
+        const form = document.getElementById("recruitmentForm")
+        const formData = new FormData(form)
+
+        // Get the lead ID to determine if this is an add or update
+        const leadId = document.getElementById("leadId").value
+        const isUpdate = leadId && leadId.trim() !== ""
+        const action = isUpdate ? "update_recruitment_lead" : "add_recruitment_lead"
+
+        formData.append("action", action)
+        if (isUpdate) {
+            formData.append("id", leadId)
         }
 
-        // Save recruitment lead (add or update)
-        function saveRecruitmentLead() {
-            const form = document.getElementById("recruitmentForm")
-            const formData = new FormData(form)
+        // Show loading state
+        const saveBtn = document.querySelector('button[onclick="saveRecruitmentLead()"]')
+        const originalText = saveBtn.innerHTML
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'
+        saveBtn.disabled = true;
 
-            // Get the lead ID to determine if this is an add or update
-            const leadId = document.getElementById("leadId").value
-            const isUpdate = leadId && leadId.trim() !== ""
-            const action = isUpdate ? "update_recruitment_lead" : "add_recruitment_lead"
+        console.log('Saving lead with action:', action, 'ID:', leadId);
 
-            formData.append("action", action)
-            if (isUpdate) {
-                formData.append("id", leadId)
-            }
-
-            // Show loading state
-            const saveBtn = document.querySelector('button[onclick="saveRecruitmentLead()"]')
-            const originalText = saveBtn.innerHTML
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'
-            saveBtn.disabled = true;
-
-            console.log('Saving lead with action:', action, 'ID:', leadId);
-
-            fetch("recruitment-api-debug.php", {
+        fetch("recruitment-api-debug.php", {
                 method: "POST",
                 body: formData,
             })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Save response:', data);
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Save response:', data);
 
-                    // Restore button state
-                    saveBtn.innerHTML = originalText
-                    saveBtn.disabled = false
+                // Restore button state
+                saveBtn.innerHTML = originalText
+                saveBtn.disabled = false
 
-                    if (data.success) {
-                        const message = isUpdate ? "Lead updated successfully!" : "Lead added successfully!"
-                        showNotification(message, "success")
+                if (data.success) {
+                    const message = isUpdate ? "Agent updated successfully!" : "Agent added successfully!"
+                    showNotification(message, "success")
 
-                        // Hide the modal
-                        hideRecruitmentModal();
+                    // Hide the modal
+                    hideRecruitmentModal();
 
-                        // Refresh the data
-                        loadRecruitmentData()
-                    } else {
-                        showNotification("Error: " + (data.message || "Unknown error occurred"), "error")
-                    }
-                })
-                .catch(error => {
-                    // Restore button state
-                    saveBtn.innerHTML = originalText
-                    saveBtn.disabled = false
+                    // Refresh the data
+                    loadRecruitmentData()
+                } else {
+                    showNotification("Error: " + (data.message || "Unknown error occurred"), "error")
+                }
+            })
+            .catch(error => {
+                // Restore button state
+                saveBtn.innerHTML = originalText
+                saveBtn.disabled = false
 
-                    console.error("Error saving lead:", error)
-                    showNotification("Error saving lead: " + error.message, "error")
-                })
-        }
+                console.error("Error saving lead:", error)
+                showNotification("Error saving lead: " + error.message, "error")
+            })
+    }
 
-        function deleteLead(id) {
-            if (confirm("Are you sure you want to delete this recruitment lead?")) {
-                const formData = new FormData()
-                formData.append("action", "delete_recruitment_lead")
-                formData.append("id", id)
+    function deleteLead(id) {
+        if (confirm("Are you sure you want to delete this recruited agent?")) {
+            const formData = new FormData()
+            formData.append("action", "delete_recruitment_lead")
+            formData.append("id", id)
 
-                fetch("recruitment-api-debug.php", {
+            fetch("recruitment-api-debug.php", {
                     method: "POST",
                     body: formData,
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showNotification(data.message, "success")
-                            loadRecruitmentData()
-                        } else {
-                            showNotification("Error: " + data.message, "error")
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error deleting lead:", error)
-                        showNotification("Error deleting lead", "error")
-                    })
-            }
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message, "success")
+                        loadRecruitmentData()
+                    } else {
+                        showNotification("Error: " + data.message, "error")
+                    }
+                })
+                .catch(error => {
+                    console.error("Error deleting lead:", error)
+                    showNotification("Error deleting lead", "error")
+                })
         }
+    }
 
-        function sortTable(column) {
-            if (currentSort.column === column) {
-                currentSort.order = currentSort.order === "ASC" ? "DESC" : "ASC"
-            } else {
-                currentSort.column = column
-                currentSort.order = "ASC"
-            }
-            loadRecruitmentData()
+    function sortTable(column) {
+        if (currentSort.column === column) {
+            currentSort.order = currentSort.order === "ASC" ? "DESC" : "ASC"
+        } else {
+            currentSort.column = column
+            currentSort.order = "ASC"
         }
+        loadRecruitmentData()
+    }
 
-        function refreshData() {
-            console.log('Refreshing all data...');
-            loadRecruitmentData()
-            showNotification("Data refreshed successfully", "success")
+    function refreshData() {
+        console.log('Refreshing all data...');
+        loadRecruitmentData()
+        showNotification("Data refreshed successfully", "success")
+    }
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        let bg = 'bg-green-500',
+            icon =
+            '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
+        if (type === 'error') {
+            bg = 'bg-red-500';
+            icon =
+                '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
+        } else if (type === 'info') {
+            bg = 'bg-blue-500';
+            icon =
+                '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
         }
-
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            let bg = 'bg-green-500',
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>';
-            if (type === 'error') {
-                bg = 'bg-red-500';
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>';
-            } else if (type === 'info') {
-                bg = 'bg-blue-500';
-                icon =
-                    '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01" /></svg>';
-            }
-            notification.className =
-                `fixed bottom-6 right-6 flex items-center px-6 py-3 rounded-lg text-white shadow-lg z-[99999] text-base font-medium gap-2 ${bg} animate-fade-in`;
-            notification.innerHTML = `${icon}<span>${message}</span>`;
-            notification.setAttribute('role', 'alert');
-            document.body.appendChild(notification);
+        notification.className =
+            `fixed bottom-6 right-6 flex items-center px-6 py-3 rounded-lg text-white shadow-lg z-[99999] text-base font-medium gap-2 ${bg} animate-fade-in`;
+        notification.innerHTML = `${icon}<span>${message}</span>`;
+        notification.setAttribute('role', 'alert');
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.classList.add('opacity-0');
             setTimeout(() => {
-                notification.classList.add('opacity-0');
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 3000);
-        }
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
 
-        function getProgressPercent(lead) {
-            const keys = [
-                'pre_assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects',
-                'habit_forming', 'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
-                'sales_monitoring',
-                'LMS', 'comm_structure'
-            ];
-            let checked = 0;
-            keys.forEach(k => {
-                if (lead[k]) checked++;
-            });
-            return Math.round((checked / keys.length) * 100);
-        }
-
-        function getPreRecruitmentPercent(lead) {
-            const keys = [
-                'pre_assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects'
-            ];
-            let checked = 0;
-            keys.forEach(k => {
-                if (lead[k]) checked++;
-            });
-            return Math.round((checked / keys.length) * 100);
-        }
-
-        function getPostRecruitmentPercent(lead) {
-            const keys = [
-                'habit_forming', 'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
-                'sales_monitoring',
-                'LMS', 'comm_structure'
-            ];
-            let checked = 0;
-            keys.forEach(k => {
-                if (lead[k]) checked++;
-            });
-            return Math.round((checked / keys.length) * 100);
-        }
-    </script>
-    <script>
-        // Checklist keys for each section (make global)
-        const preRecruitmentKeys = [
-            'pre-assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects'
-        ];
-        const postRecruitmentKeys = [
+    function getProgressPercent(lead) {
+        const keys = [
+            'pre_assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects',
             'habit_forming', 'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
-            'sales_monitoring', 'LMS', 'comm_structure'
+            'sales_monitoring',
+            'LMS', 'comm_structure'
         ];
-        const allKeys = preRecruitmentKeys.concat(postRecruitmentKeys);
-        let checkboxes = [];
-        let progressBar, progressText, preRecruitmentProgressBar, preRecruitmentProgressText, postRecruitmentProgressBar,
-            postRecruitmentProgressText;
+        let checked = 0;
+        keys.forEach(k => {
+            if (lead[k]) checked++;
+        });
+        return Math.round((checked / keys.length) * 100);
+    }
 
-        function updateProgress() {
-            // Re-query checkboxes in case DOM changed
-            checkboxes = allKeys.map(id => document.getElementById(id)).filter(Boolean);
-            progressBar = document.getElementById('progressBar');
-            progressText = document.getElementById('progressText');
-            preRecruitmentProgressBar = document.getElementById('preRecruitmentProgressBar');
-            preRecruitmentProgressText = document.getElementById('preRecruitmentProgressText');
-            postRecruitmentProgressBar = document.getElementById('postRecruitmentProgressBar');
-            postRecruitmentProgressText = document.getElementById('postRecruitmentProgressText');
-            // Overall
-            let checked = 0;
-            checkboxes.forEach(cb => {
-                if (cb && cb.checked) checked++;
-            });
-            const percent = Math.round((checked / checkboxes.length) * 100);
-            if (progressBar) progressBar.style.width = percent + '%';
-            if (progressText) progressText.textContent = percent + '%';
-            // Pre-recruitment
-            let preChecked = 0;
-            preRecruitmentKeys.forEach(id => {
-                const cb = document.getElementById(id);
-                if (cb && cb.checked) preChecked++;
-            });
-            const prePercent = Math.round((preChecked / preRecruitmentKeys.length) * 100);
-            if (preRecruitmentProgressBar) preRecruitmentProgressBar.style.width = prePercent + '%';
-            if (preRecruitmentProgressText) preRecruitmentProgressText.textContent = prePercent + '%';
-            // Post-recruitment
-            let postChecked = 0;
-            postRecruitmentKeys.forEach(id => {
-                const cb = document.getElementById(id);
-                if (cb && cb.checked) postChecked++;
-            });
-            const postPercent = Math.round((postChecked / postRecruitmentKeys.length) * 100);
-            if (postRecruitmentProgressBar) postRecruitmentProgressBar.style.width = postPercent + '%';
-            if (postRecruitmentProgressText) postRecruitmentProgressText.textContent = postPercent + '%';
+    function getPreRecruitmentPercent(lead) {
+        const keys = [
+            'pre_assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects'
+        ];
+        let checked = 0;
+        keys.forEach(k => {
+            if (lead[k]) checked++;
+        });
+
+        const percent = Math.round((checked / keys.length) * 100);
+
+        // Show button if 100%, hide otherwise
+        const btn = document.getElementById(`onboardBtn-${lead.id}`);
+        if (btn) {
+            if (percent === 100) {
+                btn.classList.remove("hidden");
+                btn.classList.add("inline-block");
+            } else {
+                btn.classList.add("hidden");
+                btn.classList.remove("inline-block");
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            checkboxes = allKeys.map(id => document.getElementById(id)).filter(Boolean);
-            checkboxes.forEach(cb => cb && cb.addEventListener('change', updateProgress));
-            updateProgress();
+        return percent;
+    }
+
+
+    function getPostRecruitmentPercent(lead) {
+        const keys = [
+            'habit_forming', 'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
+            'sales_monitoring',
+            'LMS', 'comm_structure'
+        ];
+        let checked = 0;
+        keys.forEach(k => {
+            if (lead[k]) checked++;
         });
+        return Math.round((checked / keys.length) * 100);
+    }
     </script>
     <script>
-        // --- Team Status Summary Section ---
-        let teamStatusGrouping = 'year';
-        let teamStatusFilters = {
-            year: new Date().getFullYear()
-        };
+    // Checklist keys for each section (make global)
+    const preRecruitmentKeys = [
+        'pre-assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects'
+    ];
+    const postRecruitmentKeys = [
+        'habit_forming', 'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
+        'sales_monitoring', 'LMS', 'comm_structure'
+    ];
+    const allKeys = preRecruitmentKeys.concat(postRecruitmentKeys);
+    let checkboxes = [];
+    let progressBar, progressText, preRecruitmentProgressBar, preRecruitmentProgressText, postRecruitmentProgressBar,
+        postRecruitmentProgressText;
 
-        function setGrouping(grouping) {
-            teamStatusGrouping = grouping;
-            // Toggle button styles
-            document.querySelectorAll('.grouping-toggle').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
-            document.getElementById('grouping-' + grouping).classList.add('bg-blue-600', 'text-white');
-            // Show/hide filters
-            document.getElementById('filterYear').classList.remove('hidden');
-            document.getElementById('filterMonth').classList.toggle('hidden', grouping !== 'month');
-            document.getElementById('filterQuarter').classList.toggle('hidden', grouping !== 'quarter');
-            // Reset filters
-            if (grouping === 'year') {
-                teamStatusFilters = {
-                    year: document.getElementById('filterYear').value
-                };
-            } else if (grouping === 'month') {
-                teamStatusFilters = {
-                    year: document.getElementById('filterYear').value,
-                    month: document.getElementById('filterMonth').value
-                };
-            } else if (grouping === 'quarter') {
-                teamStatusFilters = {
-                    year: document.getElementById('filterYear').value,
-                    quarter: document.getElementById('filterQuarter').value
-                };
+    function updateProgress() {
+        // Re-query checkboxes in case DOM changed
+        checkboxes = allKeys.map(id => document.getElementById(id)).filter(Boolean);
+        progressBar = document.getElementById('progressBar');
+        progressText = document.getElementById('progressText');
+        preRecruitmentProgressBar = document.getElementById('preRecruitmentProgressBar');
+        preRecruitmentProgressText = document.getElementById('preRecruitmentProgressText');
+        postRecruitmentProgressBar = document.getElementById('postRecruitmentProgressBar');
+        postRecruitmentProgressText = document.getElementById('postRecruitmentProgressText');
+        // Overall
+        let checked = 0;
+        checkboxes.forEach(cb => {
+            if (cb && cb.checked) checked++;
+        });
+        const percent = checkboxes.length > 0 ? Math.round((checked / checkboxes.length) * 100) : 0;
+        if (progressBar) progressBar.style.width = percent + '%';
+        if (progressText) progressText.textContent = percent + '%';
+        // Pre-recruitment
+        let preChecked = 0;
+        preRecruitmentKeys.forEach(id => {
+            const cb = document.getElementById(id);
+            if (cb && cb.checked) preChecked++;
+        });
+        const prePercent = preRecruitmentKeys.length > 0 ? Math.round((preChecked / preRecruitmentKeys.length) * 100) :
+            0;
+        if (preRecruitmentProgressBar) preRecruitmentProgressBar.style.width = prePercent + '%';
+        if (preRecruitmentProgressText) preRecruitmentProgressText.textContent = prePercent + '%';
+        // Post-recruitment
+        let postChecked = 0;
+        postRecruitmentKeys.forEach(id => {
+            const cb = document.getElementById(id);
+            if (cb && cb.checked) postChecked++;
+        });
+        const postPercent = postRecruitmentKeys.length > 0 ? Math.round((postChecked / postRecruitmentKeys.length) *
+            100) : 0;
+        if (postRecruitmentProgressBar) postRecruitmentProgressBar.style.width = postPercent + '%';
+        if (postRecruitmentProgressText) postRecruitmentProgressText.textContent = postPercent + '%';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        checkboxes = allKeys.map(id => document.getElementById(id)).filter(Boolean);
+        checkboxes.forEach(cb => cb && cb.addEventListener('change', updateProgress));
+        updateProgress();
+    });
+    </script>
+    <script>
+    // --- Team Status Summary Section ---
+    let teamStatusGrouping = 'year';
+    let teamStatusFilters = {
+        year: new Date().getFullYear()
+    };
+
+    function setGrouping(grouping) {
+        teamStatusGrouping = grouping;
+        // Toggle button styles
+        document.querySelectorAll('.grouping-toggle').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
+        document.getElementById('grouping-' + grouping).classList.add('bg-blue-600', 'text-white');
+        // Show/hide filters
+        document.getElementById('filterYear').classList.remove('hidden');
+        document.getElementById('filterMonth').classList.toggle('hidden', grouping !== 'month');
+        document.getElementById('filterQuarter').classList.toggle('hidden', grouping !== 'quarter');
+        // Reset filters
+        if (grouping === 'year') {
+            teamStatusFilters = {
+                year: document.getElementById('filterYear').value
+            };
+        } else if (grouping === 'month') {
+            teamStatusFilters = {
+                year: document.getElementById('filterYear').value,
+                month: document.getElementById('filterMonth').value
+            };
+        } else if (grouping === 'quarter') {
+            teamStatusFilters = {
+                year: document.getElementById('filterYear').value,
+                quarter: document.getElementById('filterQuarter').value
+            };
+        }
+        updateTeamStatusTitle();
+        refreshTeamStatus();
+    }
+
+    function populateYearMonthFilters() {
+        // Populate year dropdown (last 5 years)
+        const yearSel = document.getElementById('filterYear');
+        const now = new Date();
+        const thisYear = now.getFullYear();
+        yearSel.innerHTML = '';
+        for (let y = thisYear; y >= thisYear - 4; y--) {
+            yearSel.innerHTML += `<option value="${y}">${y}</option>`;
+        }
+        // Populate month dropdown
+        const monthSel = document.getElementById('filterMonth');
+        monthSel.innerHTML = '<option value="">All Months</option>';
+        ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November",
+            "December"
+        ].forEach((m, i) => {
+            monthSel.innerHTML += `<option value="${i + 1}">${m}</option>`;
+        });
+    }
+
+    function updateTeamStatusTitle() {
+        const titleEl = document.getElementById('teamStatusTitle');
+        let title = ' Recruited Agents';
+        const year = document.getElementById('filterYear').value;
+        if (teamStatusGrouping === 'year') {
+            title = `Recruited Agents in <span class='text-blue-700'>${year}</span> `;
+        } else if (teamStatusGrouping === 'month') {
+            const monthVal = document.getElementById('filterMonth').value;
+            const monthName = monthVal ? ["January", "February", "March", "April", "May", "June", "July", "August",
+                "September", "October", "November", "December"
+            ][parseInt(monthVal, 10) - 1] : '';
+            title =
+                `Recruited Agents${monthName ? ' in <span class="text-blue-700">' + monthName + '</span>' : ''} <span class='text-blue-700'>${year}</span>`;
+        } else if (teamStatusGrouping === 'quarter') {
+            const quarterVal = document.getElementById('filterQuarter').value;
+            title =
+                `Recruited Agents in <span class='text-blue-700'>Quarter ${quarterVal}</span>of <span class='text-blue-700'>${year}</span>`;
+        }
+        titleEl.innerHTML = title;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        populateYearMonthFilters();
+        setGrouping('year');
+        document.getElementById('filterYear').addEventListener('change', function() {
+            teamStatusFilters.year = this.value;
+            if (teamStatusGrouping === 'month') {
+                teamStatusFilters.month = document.getElementById('filterMonth').value;
+            } else if (teamStatusGrouping === 'quarter') {
+                teamStatusFilters.quarter = document.getElementById('filterQuarter').value;
             }
             updateTeamStatusTitle();
             refreshTeamStatus();
-        }
-
-        function populateYearMonthFilters() {
-            // Populate year dropdown (last 5 years)
-            const yearSel = document.getElementById('filterYear');
-            const now = new Date();
-            const thisYear = now.getFullYear();
-            yearSel.innerHTML = '';
-            for (let y = thisYear; y >= thisYear - 4; y--) {
-                yearSel.innerHTML += `<option value="${y}">${y}</option>`;
-            }
-            // Populate month dropdown
-            const monthSel = document.getElementById('filterMonth');
-            monthSel.innerHTML = '<option value="">All Months</option>';
-            ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November",
-                "December"
-            ].forEach((m, i) => {
-                monthSel.innerHTML += `<option value="${i + 1}">${m}</option>`;
-            });
-        }
-
-        function updateTeamStatusTitle() {
-            const titleEl = document.getElementById('teamStatusTitle');
-            let title = ' Recruited Leads';
-            const year = document.getElementById('filterYear').value;
-            if (teamStatusGrouping === 'year') {
-                title = `Recruited Leads in <span class='text-blue-700'>${year}</span> `;
-            } else if (teamStatusGrouping === 'month') {
-                const monthVal = document.getElementById('filterMonth').value;
-                const monthName = monthVal ? ["January", "February", "March", "April", "May", "June", "July", "August",
-                    "September", "October", "November", "December"
-                ][parseInt(monthVal, 10) - 1] : '';
-                title =
-                    `Recruited Leads${monthName ? ' in <span class="text-blue-700">' + monthName + '</span>' : ''} <span class='text-blue-700'>${year}</span>`;
-            } else if (teamStatusGrouping === 'quarter') {
-                const quarterVal = document.getElementById('filterQuarter').value;
-                title =
-                    `Recruited Leads in <span class='text-blue-700'>Quarter ${quarterVal}</span>of <span class='text-blue-700'>${year}</span>`;
-            }
-            titleEl.innerHTML = title;
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            populateYearMonthFilters();
-            setGrouping('year');
-            document.getElementById('filterYear').addEventListener('change', function () {
-                teamStatusFilters.year = this.value;
-                if (teamStatusGrouping === 'month') {
-                    teamStatusFilters.month = document.getElementById('filterMonth').value;
-                } else if (teamStatusGrouping === 'quarter') {
-                    teamStatusFilters.quarter = document.getElementById('filterQuarter').value;
-                }
-                updateTeamStatusTitle();
-                refreshTeamStatus();
-            });
-            document.getElementById('filterMonth').addEventListener('change', function () {
-                teamStatusFilters.month = this.value;
-                updateTeamStatusTitle();
-                refreshTeamStatus();
-            });
-            document.getElementById('filterQuarter').addEventListener('change', function () {
-                teamStatusFilters.quarter = this.value;
-                updateTeamStatusTitle();
-                refreshTeamStatus();
-            });
-            updateTeamStatusTitle();
         });
+        document.getElementById('filterMonth').addEventListener('change', function() {
+            teamStatusFilters.month = this.value;
+            updateTeamStatusTitle();
+            refreshTeamStatus();
+        });
+        document.getElementById('filterQuarter').addEventListener('change', function() {
+            teamStatusFilters.quarter = this.value;
+            updateTeamStatusTitle();
+            refreshTeamStatus();
+        });
+        updateTeamStatusTitle();
+    });
 
-        function refreshTeamStatus() {
-            // Show loading in tables
-            document.getElementById('activeAgentsTableBody').innerHTML =
-                '<tr><td colspan="2" class="text-center text-gray-400 py-4">Loading...</td></tr>';
-            document.getElementById('inactiveAgentsTableBody').innerHTML =
-                '<tr><td colspan="2" class="text-center text-gray-400 py-4">Loading...</td></tr>';
-            // Fetch data
-            const formData = new FormData();
-            formData.append('action', 'get_team_status_summary');
-            formData.append('filters', JSON.stringify(teamStatusFilters));
-            fetch('recruitment-api-debug.php', {
+    function refreshTeamStatus() {
+        // Show loading in tables
+        document.getElementById('activeAgentsTableBody').innerHTML =
+            '<tr><td colspan="2" class="text-center text-gray-400 py-4">Loading...</td></tr>';
+        document.getElementById('inactiveAgentsTableBody').innerHTML =
+            '<tr><td colspan="2" class="text-center text-gray-400 py-4">Loading...</td></tr>';
+        // Fetch data
+        const formData = new FormData();
+        formData.append('action', 'get_team_status_summary');
+        formData.append('filters', JSON.stringify(teamStatusFilters));
+        fetch('recruitment-api-debug.php', {
                 method: 'POST',
                 body: formData
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.success) throw new Error(data.message || 'Failed to load');
-                    renderTeamStatusTables(data.data);
-                    renderTeamStatusCharts(data.data);
-                })
-                .catch(err => {
-                    document.getElementById('activeAgentsTableBody').innerHTML =
-                        `<tr><td colspan="2" class="text-center text-red-400 py-4">Error: ${err.message}</td></tr>`;
-                    document.getElementById('inactiveAgentsTableBody').innerHTML =
-                        `<tr><td colspan="2" class="text-center text-red-400 py-4">Error: ${err.message}</td></tr>`;
-                });
-        }
-
-        function renderTeamStatusTables(data) {
-            // Group by status
-            const active = {},
-                inactive = {};
-            data.forEach(row => {
-                if (row.status === 'Active') {
-                    active[row.team_name || 'No Team'] = row.count;
-                } else if (row.status === 'Inactive') {
-                    inactive[row.team_name || 'No Team'] = row.count;
-                }
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) throw new Error(data.message || 'Failed to load');
+                renderTeamStatusTables(data.data);
+                renderTeamStatusCharts(data.data);
+            })
+            .catch(err => {
+                document.getElementById('activeAgentsTableBody').innerHTML =
+                    `<tr><td colspan="2" class="text-center text-red-400 py-4">Error: ${err.message}</td></tr>`;
+                document.getElementById('inactiveAgentsTableBody').innerHTML =
+                    `<tr><td colspan="2" class="text-center text-red-400 py-4">Error: ${err.message}</td></tr>`;
             });
-            // Helper to sort teams alphabetically, but keep 'OJT (Intern)' at the bottom
-            function getSortedTeams(obj) {
-                let teams = Object.keys(obj);
-                const ojtIndex = teams.indexOf('OJT (Intern)');
-                let ojtTeam = null;
-                if (ojtIndex !== -1) {
-                    ojtTeam = teams.splice(ojtIndex, 1)[0];
-                }
-                teams = teams.sort((a, b) => a.localeCompare(b));
-                if (ojtTeam) teams.push(ojtTeam);
-                return teams;
-            }
-            // Render Active table
-            const activeBody = document.getElementById('activeAgentsTableBody');
-            activeBody.innerHTML = '';
-            const sortedActiveTeams = getSortedTeams(active);
-            if (sortedActiveTeams.length === 0) {
-                activeBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-400 py-4">No data</td></tr>';
-            } else {
-                sortedActiveTeams.forEach(team => {
-                    activeBody.innerHTML +=
-                        `<tr><td class="px-4 py-2 border-b">${team}</td><td class="px-4 py-2 border-b text-green-700 font-bold text-center">${active[team]}</td></tr>`;
-                });
-            }
-            // Render Inactive table
-            const inactiveBody = document.getElementById('inactiveAgentsTableBody');
-            inactiveBody.innerHTML = '';
-            const sortedInactiveTeams = getSortedTeams(inactive);
-            if (sortedInactiveTeams.length === 0) {
-                inactiveBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-400 py-4">No data</td></tr>';
-            } else {
-                sortedInactiveTeams.forEach(team => {
-                    inactiveBody.innerHTML +=
-                        `<tr><td class="px-4 py-2 border-b">${team}</td><td class="px-4 py-2 border-b text-red-700 font-bold text-center">${inactive[team]}</td></tr>`;
-                });
-            }
-        }
+    }
 
-        function renderTeamStatusCharts(data) {
-            // Prepare data for charts
-            let teams = [...new Set(data.map(row => row.team_name || 'No Team'))];
-            // Sort teams alphabetically, but keep 'OJT (Intern)' at the bottom if present
+    function renderTeamStatusTables(data) {
+        // Group by status
+        const active = {},
+            inactive = {};
+        data.forEach(row => {
+            if (row.status === 'Active') {
+                active[row.team_name || 'No Team'] = row.count;
+            } else if (row.status === 'Inactive') {
+                inactive[row.team_name || 'No Team'] = row.count;
+            }
+        });
+        // Helper to sort teams alphabetically, but keep 'OJT (Intern)' at the bottom
+        function getSortedTeams(obj) {
+            let teams = Object.keys(obj);
             const ojtIndex = teams.indexOf('OJT (Intern)');
             let ojtTeam = null;
             if (ojtIndex !== -1) {
@@ -1920,70 +2319,109 @@ echo '<style>
             }
             teams = teams.sort((a, b) => a.localeCompare(b));
             if (ojtTeam) teams.push(ojtTeam);
-            const activeCounts = teams.map(team => {
-                const found = data.find(row => (row.team_name || 'No Team') === team && row.status === 'Active');
-                return found ? found.count : 0;
-            });
-            const inactiveCounts = teams.map(team => {
-                const found = data.find(row => (row.team_name || 'No Team') === team && row.status === 'Inactive');
-                return found ? found.count : 0;
-            });
-            // Destroy previous charts if any
-            if (window.activeAgentsChartObj) window.activeAgentsChartObj.destroy();
-            if (window.inactiveAgentsChartObj) window.inactiveAgentsChartObj.destroy();
-            // Active chart
-            const ctxA = document.getElementById('activeAgentsChart').getContext('2d');
-            window.activeAgentsChartObj = new Chart(ctxA, {
-                type: 'bar',
-                data: {
-                    labels: teams,
-                    datasets: [{
-                        label: 'Active Agents',
-                        data: activeCounts,
-                        backgroundColor: '#22c55e',
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-            // Inactive chart
-            const ctxI = document.getElementById('inactiveAgentsChart').getContext('2d');
-            window.inactiveAgentsChartObj = new Chart(ctxI, {
-                type: 'bar',
-                data: {
-                    labels: teams,
-                    datasets: [{
-                        label: 'Inactive Agents',
-                        data: inactiveCounts,
-                        backgroundColor: '#ef4444',
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
+            return teams;
+        }
+        // Render Active table
+        const activeBody = document.getElementById('activeAgentsTableBody');
+        activeBody.innerHTML = '';
+        const sortedActiveTeams = getSortedTeams(active);
+        if (sortedActiveTeams.length === 0) {
+            activeBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-400 py-4">No data</td></tr>';
+        } else {
+            sortedActiveTeams.forEach(team => {
+                activeBody.innerHTML +=
+                    `<tr><td class="px-4 py-2 border-b">${team}</td><td class="px-4 py-2 border-b text-green-700 font-bold text-center">${active[team]}</td></tr>`;
             });
         }
+        // Render Inactive table
+        const inactiveBody = document.getElementById('inactiveAgentsTableBody');
+        inactiveBody.innerHTML = '';
+        const sortedInactiveTeams = getSortedTeams(inactive);
+        if (sortedInactiveTeams.length === 0) {
+            inactiveBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-400 py-4">No data</td></tr>';
+        } else {
+            sortedInactiveTeams.forEach(team => {
+                inactiveBody.innerHTML +=
+                    `<tr><td class="px-4 py-2 border-b">${team}</td><td class="px-4 py-2 border-b text-red-700 font-bold text-center">${inactive[team]}</td></tr>`;
+            });
+        }
+    }
+
+    function renderTeamStatusCharts(data) {
+        // Prepare data for charts
+        let teams = [...new Set(data.map(row => row.team_name || 'No Team'))];
+        // Sort teams alphabetically, but keep 'OJT (Intern)' at the bottom if present
+        const ojtIndex = teams.indexOf('OJT (Intern)');
+        let ojtTeam = null;
+        if (ojtIndex !== -1) {
+            ojtTeam = teams.splice(ojtIndex, 1)[0];
+        }
+        teams = teams.sort((a, b) => a.localeCompare(b));
+        if (ojtTeam) teams.push(ojtTeam);
+        const activeCounts = teams.map(team => {
+            const found = data.find(row => (row.team_name || 'No Team') === team && row.status === 'Active');
+            return found ? found.count : 0;
+        });
+        const inactiveCounts = teams.map(team => {
+            const found = data.find(row => (row.team_name || 'No Team') === team && row.status === 'Inactive');
+            return found ? found.count : 0;
+        });
+        // Destroy previous charts if any
+        if (window.activeAgentsChartObj) window.activeAgentsChartObj.destroy();
+        if (window.inactiveAgentsChartObj) window.inactiveAgentsChartObj.destroy();
+        // Active chart
+        const ctxA = document.getElementById('activeAgentsChart').getContext('2d');
+        window.activeAgentsChartObj = new Chart(ctxA, {
+            type: 'bar',
+            data: {
+                labels: teams,
+                datasets: [{
+                    label: 'Active Agents',
+                    data: activeCounts,
+                    backgroundColor: '#22c55e',
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        // Inactive chart
+        const ctxI = document.getElementById('inactiveAgentsChart').getContext('2d');
+        window.inactiveAgentsChartObj = new Chart(ctxI, {
+            type: 'bar',
+            data: {
+                labels: teams,
+                datasets: [{
+                    label: 'Inactive Agents',
+                    data: inactiveCounts,
+                    backgroundColor: '#ef4444',
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
     </script>
     <script src="assets/js/script.js"></script>
 </body>

@@ -22,111 +22,90 @@ function debugLog($message, $data = null)
     error_log("RECRUITMENT API DEBUG: " . $message . ($data ? " - " . json_encode($data) : ""));
 }
 
-// --- Start of new code for automatic recruiter name and id ---
+// Get current user info from session
+$current_user_role = $_SESSION['role'] ?? '';
+$current_user_id = $_SESSION['user_id'] ?? null;
 $current_recruiter_name = '';
 $current_recruiter_id = null;
-if (isset($_SESSION['user_id']) && $pdo !== null) {
+
+if ($current_user_id && $pdo !== null) {
     try {
         $stmt = $pdo->prepare("SELECT id, name FROM users WHERE id = :user_id");
-        $stmt->execute([':user_id' => $_SESSION['user_id']]);
+        $stmt->execute([':user_id' => $current_user_id]);
         $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($user_data) {
             $current_recruiter_name = $user_data['name'];
             $current_recruiter_id = $user_data['id'];
         }
     } catch (Exception $e) {
-        error_log("Error fetching recruiter info from session in debug API: " . $e->getMessage());
-        $current_recruiter_name = '';
-        $current_recruiter_id = null;
+        error_log("Error fetching recruiter info from session: " . $e->getMessage());
     }
-}
-// --- End of new code ---
-
-// DEBUG: Log entry at top of file
-error_log('DEBUG: recruitment-api-debug.php loaded, REQUEST_METHOD=' . (isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'N/A') . ', POST action=' . (isset($_POST['action']) ? $_POST['action'] : 'N/A'));
-
-// If this is a get_recruitment_leads request, echo a debug message (for troubleshooting only)
-if (isset($_POST['action']) && $_POST['action'] === 'get_recruitment_leads') {
-    error_log('DEBUG: get_recruitment_leads POST received. Raw POST: ' . print_r($_POST, true));
 }
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0); // Exit immediately for OPTIONS requests
+    exit(0);
 }
-
-// Debug: Log all incoming data
-debugLog("Request Method", $_SERVER['REQUEST_METHOD']);
-debugLog("POST data", $_POST);
 
 // Check if PDO connection exists
 if (!isset($pdo) || $pdo === null) {
     debugLog("Database connection failed: PDO object is null or not set.");
-    echo json_encode(['success' => false, 'message' => 'Database connection not available. Please check server logs.']);
-    exit; // Exit if no database connection
+    echo json_encode(['success' => false, 'message' => 'Database connection not available.']);
+    exit;
 }
 
 /**
  * Fetches recruitment leads based on filters and sorting.
- *
- * @param PDO $pdo The PDO database connection object.
- * @param array $filters An associative array of filters.
- * @return array An associative array containing success status, data, and debug info.
  */
 function get_recruitment_leads(PDO $pdo, array $filters = [])
 {
     debugLog("get_recruitment_leads called", $filters);
 
     try {
-        // Build base query
-        $sql = "SELECT id, timestamp, full_name, contact_number, email, recruiter_name, status, source, agent_onboarding_status, remarks, created_at, updated_at, recruiter_id, recruiter_team_id, pre_assessment, accreditation, assessment, sales_training, site_tour, onboarding, habit_forming, digital_training, sales_training_materials, objection_handling, VAST, sales_monitoring, LMS, comm_structure, terminologies, focus_projects FROM recruitment_leads WHERE 1=1";
+        $sql = "SELECT rl.id, rl.timestamp, rl.full_name, rl.contact_number, rl.email, rl.recruiter_name, rl.status, rl.source, rl.agent_onboarding_status, rl.remarks, rl.created_at, rl.updated_at, rl.recruiter_id, rl.recruiter_team_id, t.name AS recruiter_team, rl.pre_assessment, rl.accreditation, rl.assessment, rl.sales_training, rl.site_tour, rl.onboarding, rl.habit_forming, rl.digital_training, rl.sales_training_materials, rl.objection_handling, rl.VAST, rl.sales_monitoring, rl.LMS, rl.comm_structure, rl.terminologies, rl.focus_projects
+        FROM recruitment_leads rl
+        LEFT JOIN teams t ON rl.recruiter_team_id = t.id
+        WHERE 1=1";
+
         $params = [];
 
         // Add filter conditions
         if (!empty($filters['id'])) {
-            $sql .= " AND id = :id";
+            $sql .= " AND rl.id = :id";
             $params[':id'] = $filters['id'];
-            debugLog("Added ID filter", $filters['id']);
         }
 
         if (!empty($filters['status'])) {
             $sql .= " AND status = :status";
             $params[':status'] = $filters['status'];
-            debugLog("Added status filter", $filters['status']);
         }
 
         if (!empty($filters['source'])) {
             $sql .= " AND source = :source";
             $params[':source'] = $filters['source'];
-            debugLog("Added source filter", $filters['source']);
         }
 
         if (!empty($filters['search'])) {
-            $searchTerm = '%' . $filters['search'] . '%'; // Define search term once
+            $searchTerm = '%' . $filters['search'] . '%';
             $sql .= " AND (full_name LIKE :search_name OR email LIKE :search_email OR contact_number LIKE :search_contact)";
             $params[':search_name'] = $searchTerm;
             $params[':search_email'] = $searchTerm;
             $params[':search_contact'] = $searchTerm;
-            debugLog("Added search filter", $filters['search']);
         }
 
-        // Add sorting (with whitelisting for security)
+        // Add sorting
         $allowed_sort_columns = ['created_at', 'full_name', 'contact_number', 'email', 'recruiter_name', 'status', 'source'];
         $allowed_sort_orders = ['ASC', 'DESC'];
 
         $sort_by = $_POST['sort_by'] ?? 'created_at';
         $sort_order = $_POST['sort_order'] ?? 'DESC';
 
-        // Validate sort_by column
         if (!in_array($sort_by, $allowed_sort_columns)) {
-            $sort_by = 'created_at'; // Default to a safe column
-            debugLog("Invalid sort_by column, defaulting to created_at", $_POST['sort_by']);
+            $sort_by = 'created_at';
         }
 
-        // Validate sort_order
         if (!in_array(strtoupper($sort_order), $allowed_sort_orders)) {
-            $sort_order = 'DESC'; // Default to a safe order
-            debugLog("Invalid sort_order, defaulting to DESC", $_POST['sort_order']);
+            $sort_order = 'DESC';
         }
 
         $sql .= " ORDER BY {$sort_by} " . strtoupper($sort_order);
@@ -134,8 +113,7 @@ function get_recruitment_leads(PDO $pdo, array $filters = [])
         debugLog("Final SQL", $sql);
         debugLog("SQL Parameters", $params);
 
-        // Execute query
-        $stmt = $pdo->prepare($sql); // Line 123
+        $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $leads = $stmt->fetchAll();
 
@@ -159,15 +137,15 @@ function get_recruitment_leads(PDO $pdo, array $filters = [])
 
 /**
  * Adds a new recruitment lead to the database.
- *
- * @param PDO $pdo The PDO database connection object.
- * @param array $data An associative array of lead data.
- * @param string $recruiter_name_override Optional: Override recruiter name from session.
- * @return array An associative array containing success status and message.
+ * FIXED: Now properly handles admin recruiter/team selection
  */
-function add_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_override = '', $recruiter_id_override = null)
+function add_recruitment_lead(PDO $pdo, array $data)
 {
+    global $current_user_role, $current_user_id, $current_recruiter_name, $current_recruiter_id;
+
     debugLog("add_recruitment_lead called", $data);
+    debugLog("Current user role", $current_user_role);
+
     try {
         // Validate required fields
         $required_fields = ['full_name', 'contact_number', 'status', 'source'];
@@ -177,20 +155,51 @@ function add_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_over
             }
         }
 
-        // Use override if provided, otherwise use data['recruiter_name'] (which will be ignored from POST)
-        $final_recruiter_name = $recruiter_name_override ?: ($data['recruiter_name'] ?? '');
-        $final_recruiter_id = $recruiter_id_override ?: null;
+        // Determine recruiter info based on user role
+        $final_recruiter_name = '';
+        $final_recruiter_id = null;
         $final_recruiter_team_id = null;
 
-        // Fetch the recruiter's team_id at insert time
-        if ($final_recruiter_id) {
-            $stmt = $pdo->prepare("SELECT team_id FROM users WHERE id = :id LIMIT 1");
-            $stmt->execute([':id' => $final_recruiter_id]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row && $row['team_id']) {
-                $final_recruiter_team_id = $row['team_id'];
+        if ($current_user_role === 'admin') {
+            // Admin can select any recruiter
+            if (!empty($data['recruiter_id'])) {
+                $final_recruiter_id = $data['recruiter_id'];
+
+                // Get recruiter name and team from database
+                $stmt = $pdo->prepare("SELECT name, team_id FROM users WHERE id = :id LIMIT 1");
+                $stmt->execute([':id' => $final_recruiter_id]);
+                $recruiter_data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($recruiter_data) {
+                    $final_recruiter_name = $recruiter_data['name'];
+                    $final_recruiter_team_id = $recruiter_data['team_id'];
+                } else {
+                    return ['success' => false, 'message' => 'Selected recruiter not found'];
+                }
+            } else {
+                return ['success' => false, 'message' => 'Recruiter selection is required for admin'];
+            }
+        } else {
+            // Non-admin users use their own info
+            $final_recruiter_name = $current_recruiter_name;
+            $final_recruiter_id = $current_recruiter_id;
+
+            // Get current user's team
+            if ($current_user_id) {
+                $stmt = $pdo->prepare("SELECT team_id FROM users WHERE id = :id LIMIT 1");
+                $stmt->execute([':id' => $current_user_id]);
+                $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($user_data) {
+                    $final_recruiter_team_id = $user_data['team_id'];
+                }
             }
         }
+
+        debugLog("Final recruiter info", [
+            'name' => $final_recruiter_name,
+            'id' => $final_recruiter_id,
+            'team_id' => $final_recruiter_team_id
+        ]);
 
         $sql = "INSERT INTO recruitment_leads (
                   full_name, contact_number, email, recruiter_name, recruiter_id, recruiter_team_id,
@@ -207,7 +216,7 @@ function add_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_over
             ':full_name' => $data['full_name'],
             ':contact_number' => $data['contact_number'],
             ':email' => $data['email'] ?? '',
-            ':recruiter_name' => $final_recruiter_name, // Use the determined recruiter name
+            ':recruiter_name' => $final_recruiter_name,
             ':recruiter_id' => $final_recruiter_id,
             ':recruiter_team_id' => $final_recruiter_team_id,
             ':status' => $data['status'],
@@ -246,15 +255,15 @@ function add_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_over
 
 /**
  * Updates an existing recruitment lead in the database.
- *
- * @param PDO $pdo The PDO database connection object.
- * @param array $data An associative array of lead data including 'id'.
- * @param string $recruiter_name_override Optional: Override recruiter name from session.
- * @return array An associative array containing success status and message.
+ * FIXED: Now properly handles admin recruiter/team selection
  */
-function update_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_override = '', $recruiter_id_override = null)
+function update_recruitment_lead(PDO $pdo, array $data)
 {
+    global $current_user_role, $current_user_id;
+
     debugLog("update_recruitment_lead called", $data);
+    debugLog("Current user role", $current_user_role);
+
     try {
         // Validate required fields
         $required_fields = ['id', 'full_name', 'contact_number', 'status', 'source'];
@@ -264,20 +273,45 @@ function update_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_o
             }
         }
 
-        // Use override if provided, otherwise use data['recruiter_name'] (which will be ignored from POST)
-        $final_recruiter_name = $recruiter_name_override ?: ($data['recruiter_name'] ?? '');
-        $final_recruiter_id = $recruiter_id_override ?: null;
+        // Get existing lead data
+        $stmt = $pdo->prepare("SELECT recruiter_name, recruiter_id, recruiter_team_id FROM recruitment_leads WHERE id = :id LIMIT 1");
+        $stmt->execute([':id' => $data['id']]);
+        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Ensure recruiter_team_id is set
-        $final_recruiter_team_id = $data['recruiter_team_id'] ?? null;
-        if (!$final_recruiter_team_id && $final_recruiter_id) {
-            $stmt = $pdo->prepare("SELECT team_id FROM users WHERE id = :id LIMIT 1");
-            $stmt->execute([':id' => $final_recruiter_id]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row && $row['team_id']) {
-                $final_recruiter_team_id = $row['team_id'];
+        if (!$existing) {
+            return ['success' => false, 'message' => 'Lead not found'];
+        }
+
+        // Determine recruiter info based on user role
+        $final_recruiter_name = $existing['recruiter_name'];
+        $final_recruiter_id = $existing['recruiter_id'];
+        $final_recruiter_team_id = $existing['recruiter_team_id'];
+
+        if ($current_user_role === 'admin') {
+            // Admin can change recruiter if provided
+            if (!empty($data['recruiter_id'])) {
+                $final_recruiter_id = $data['recruiter_id'];
+
+                // Get new recruiter name and team from database
+                $stmt = $pdo->prepare("SELECT name, team_id FROM users WHERE id = :id LIMIT 1");
+                $stmt->execute([':id' => $final_recruiter_id]);
+                $recruiter_data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($recruiter_data) {
+                    $final_recruiter_name = $recruiter_data['name'];
+                    $final_recruiter_team_id = $recruiter_data['team_id'];
+                } else {
+                    return ['success' => false, 'message' => 'Selected recruiter not found'];
+                }
             }
         }
+        // For non-admin users, keep existing recruiter info (no changes allowed)
+
+        debugLog("Final recruiter info for update", [
+            'name' => $final_recruiter_name,
+            'id' => $final_recruiter_id,
+            'team_id' => $final_recruiter_team_id
+        ]);
 
         $sql = "UPDATE recruitment_leads SET 
                   full_name = :full_name,
@@ -315,7 +349,7 @@ function update_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_o
             ':full_name' => $data['full_name'],
             ':contact_number' => $data['contact_number'],
             ':email' => $data['email'] ?? '',
-            ':recruiter_name' => $final_recruiter_name, // Use the determined recruiter name
+            ':recruiter_name' => $final_recruiter_name,
             ':recruiter_id' => $final_recruiter_id,
             ':recruiter_team_id' => $final_recruiter_team_id,
             ':status' => $data['status'],
@@ -359,10 +393,6 @@ function update_recruitment_lead(PDO $pdo, array $data, string $recruiter_name_o
 
 /**
  * Deletes a recruitment lead from the database.
- *
- * @param PDO $pdo The PDO database connection object.
- * @param int $id The ID of the lead to delete.
- * @return array An associative array containing success status and message.
  */
 function delete_recruitment_lead(PDO $pdo, int $id)
 {
@@ -392,7 +422,6 @@ function delete_recruitment_lead(PDO $pdo, int $id)
         return ['success' => false, 'message' => 'Error deleting lead: ' . $e->getMessage()];
     }
 }
-
 
 // Main request handling logic
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -431,13 +460,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $filters = json_decode($_POST['filters'], true);
                     if (json_last_error() !== JSON_ERROR_NONE) {
                         debugLog("JSON decode error for filters", json_last_error_msg());
-                        $filters = []; // Reset if JSON decoding fails
+                        $filters = [];
                     }
                 }
 
                 debugLog("Filters received", $filters);
 
-                // Pass the $pdo object to the function
+                // Restrict data for managers
+                if ($current_user_role === 'manager' && $current_user_id) {
+                    $filters['recruiter_id'] = $current_user_id;
+                }
+
                 $result = get_recruitment_leads($pdo, $filters);
                 echo json_encode($result);
 
@@ -448,22 +481,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             break;
 
         case 'add_recruitment_lead':
-            // Pass the $pdo object and $_POST data to the function
-            $result = add_recruitment_lead($pdo, $_POST, $current_recruiter_name, $current_recruiter_id);
+            // FIXED: Remove the override parameters, let the function handle role-based logic
+            $result = add_recruitment_lead($pdo, $_POST);
             echo json_encode($result);
             break;
 
         case 'update_recruitment_lead':
-            // Pass the $pdo object and $_POST data to the function
-            $result = update_recruitment_lead($pdo, $_POST, $current_recruiter_name, $current_recruiter_id);
+            // FIXED: Remove the override parameters, let the function handle role-based logic
+            $result = update_recruitment_lead($pdo, $_POST);
             echo json_encode($result);
             break;
 
         case 'delete_recruitment_lead':
-            // Pass the $pdo object and the ID to the function
             $id = $_POST['id'] ?? null;
-            $result = delete_recruitment_lead($pdo, (int) $id); // Cast to int for type hint
+            $result = delete_recruitment_lead($pdo, (int) $id);
             echo json_encode($result);
+            break;
+
+        case 'onboard_agent':
+            // Collect and sanitize input
+            $name = $_POST['name'];
+            $email = $_POST['email'];
+            $phone = $_POST['phone'];
+            $username = $_POST['username'];
+            $team_id = $_POST['team_id'];
+            $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+            $role = $_POST['role'];
+
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ? OR email = ?");
+            $stmt->execute([$username, $email]);
+            if ($stmt->fetchColumn() > 0) {
+                echo json_encode(['success' => false, 'message' => 'Username or email already exists.']);
+                exit;
+            }
+
+            // Insert into users table
+            $stmt = $pdo->prepare("INSERT INTO users (team_id, username, password, name, email, phone, role, is_active, position) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'Agent')");
+            $success = $stmt->execute([$team_id, $username, $password, $name, $email, $phone, $role]);
+
+            if ($success) {
+                echo json_encode(['success' => true]);
+            } else {
+                $errorInfo = $stmt->errorInfo();
+                echo json_encode(['success' => false, 'message' => 'Failed to insert user', 'error' => $errorInfo]);
+            }
+            exit;
             break;
 
         case 'get_team_status_summary':
@@ -477,7 +539,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             $where = [];
             $params = [];
-            // Date filtering (use positional params)
+            // Date filtering
             if (!empty($filters['year'])) {
                 $where[] = 'YEAR(rl.created_at) = ?';
                 $params[] = $filters['year'];
@@ -492,11 +554,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             $where_sql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
 
-            // Only Active/Inactive
             $status_list = ['Active', 'Inactive'];
             $status_placeholders = implode(',', array_fill(0, count($status_list), '?'));
 
-            // LEFT JOIN all teams, then LEFT JOIN recruitment_leads filtered by date/status
             $sql = "SELECT t.id as team_id, t.name as team_name, rl.status, COUNT(rl.id) as count
                     FROM teams t
                     LEFT JOIN recruitment_leads rl ON rl.recruiter_team_id = t.id
@@ -504,7 +564,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     GROUP BY t.id, rl.status
                     ORDER BY t.name, rl.status";
 
-            // Merge params for status
             foreach ($status_list as $s)
                 $params[] = $s;
 
@@ -512,10 +571,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($params);
                 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                // Ensure every team has both statuses (Active/Inactive), fill missing with 0
+
+                // Ensure every team has both statuses
                 $all_teams_stmt = $pdo->query('SELECT id, name FROM teams');
                 $all_teams = $all_teams_stmt->fetchAll(PDO::FETCH_ASSOC);
                 $output = [];
+
                 foreach ($all_teams as $team) {
                     foreach ($status_list as $status) {
                         $found = false;
