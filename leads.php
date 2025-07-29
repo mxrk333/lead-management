@@ -55,7 +55,16 @@ function getTotalActiveLeadsCount($user_id, $role, $username = null) {
             $whereClause .= " AND u.team_id = " . $team_data['team_id'];
         }
     }
-    
+    $user_query = "SELECT role FROM users WHERE id = $user_id";
+    $user_result = mysqli_query($conn, $user_query);
+    $user_data = mysqli_fetch_assoc($user_result);
+    $user_role = $user_data ? $user_data['role'] : null;
+
+    // Only allow non-agents (admin, supervisor, manager, superuser) to see all leads count
+    if ($user_role === 'agent' && !($username && isSuperUser($username))) {
+        // Agents should only see their own leads
+        $whereClause .= " AND l.user_id = $user_id";
+    }
     $query = "
         SELECT COUNT(*) as total
         FROM leads l
