@@ -66,6 +66,7 @@ if ($current_user['role'] != 'admin' && $current_user['role'] != 'manager') {
 }
 
 // Now include the sidebar after all dependencies are loaded
+$hide_add_button = true;
 require_once 'includes/sidebar.php';
 require_once 'includes/header.php';
 
@@ -94,11 +95,6 @@ echo '<style>
         z-index: 1300;
     }
 </style>';
-
-
-
-
-
 ?>
 
 <!DOCTYPE html>
@@ -296,14 +292,14 @@ echo '<style>
             <div class="recruitment-dashboard p-[3%]">
                 <!-- Dashboard Header -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                    <h1 class="text-[32px] font-bold flex items-center gap-2 ">
-                        <i class="fas fa-user-plus"></i> Recruitment Management
+                    <h1 class="text-[32px] font-semibold flex items-center gap-2 ">
+                        <i class="fas fa-user-plus text-blue-600"></i> Recruitment Management
                     </h1>
                     <div class="flex gap-2 mt-4 md:mt-0">
                         <button type="button"
                             class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
                             onclick="showAddModal()">
-                            <i class="fas fa-plus"></i> Add New Lead
+                            <i class="fas fa-plus"></i> New Agent
                         </button>
                         <button type="button"
                             class="border border-gray-400 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 flex items-center gap-2"
@@ -399,63 +395,62 @@ echo '<style>
                     </div>
                 </div>
 
-                <!-- Lead Table -->
-                <div class="rounded-xl shadow bg-white">
+                <!-- Agents Table -->
+                <div class="rounded-xl shadow bg-white pb-3">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h5 class="text-lg font-semibold mb-0">Recruitment Leads</h5>
+                        <h5 class="text-lg font-semibold mb-0">Recruited Agents</h5>
                     </div>
-                    <div class="p-0">
+                    <div class="">
                         <div class="overflow-x-auto">
-                            <table id="recruitmentTable"
-                                class="w-full min-w-[900px] border-separate border-spacing-0 rounded-xl text-left bg-white">
-                                <thead class="sticky top-0 z-10 bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
-                                            onclick="sortTable('created_at')">
-                                            Timestamp <i class="fas fa-sort"></i>
-                                        </th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Status</th>
-                                        <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
-                                            onclick="sortTable('full_name')">
-                                            Name <i class="fas fa-sort"></i>
-                                        </th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Contact</th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Email</th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Recruiter</th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Progress</th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Source</th>
-                                        <th
-                                            class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                            Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recruitmentTableBody">
-                                    <tr>
-                                        <td colspan="8" class="text-center py-8">
-                                            <svg class="animate-spin h-6 w-6 text-blue-600 mx-auto"
-                                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                                    stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z">
-                                                </path>
-                                            </svg>
-                                            <p class="mt-2 text-gray-500">Loading recruitment data...</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="max-h-[400px] overflow-y-auto">
+                                <!-- Recruitment Table -->
+                                <table id="recruitmentTable"
+                                    class="w-full min-w-[900px] border-separate border-spacing-0 rounded-xl text-left bg-white">
+                                    <thead class="sticky top-0 z-10 bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
+                                                onclick="sortTable('created_at')">
+                                                Timestamp <i class="fas fa-sort"></i>
+                                            </th>
+                                            <th
+                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                                Status</th>
+                                            <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
+                                                onclick="sortTable('full_name')">
+                                                Agent Details <i class="fas fa-sort"></i>
+                                            </th>
+                                            <th
+                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                                Recruiter</th>
+                                            <th
+                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                                Progress</th>
+                                            <th
+                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                                Source</th>
+                                            <th
+                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
+                                                Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recruitmentTableBody">
+                                        <tr>
+                                            <td colspan="8" class="text-center py-8">
+                                                <svg class="animate-spin h-6 w-6 text-blue-600 mx-auto"
+                                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                        stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8v8z">
+                                                    </path>
+                                                </svg>
+                                                <p class="mt-2 text-gray-500">Loading recruitment data...</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
                         </div>
                         <!-- Loading indicator -->
                         <div id="loadingIndicator" class="text-center py-4 hidden">
@@ -468,338 +463,595 @@ echo '<style>
                         </div>
                     </div>
                 </div>
-            </div>
 
+                <!-- Onboard Modal -->
+                <div id="onboardModal"
+                    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+                    <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90%] mx-4 overflow-y-auto">
+                        <div class="flex justify-between items-center border-b px-6 py-4">
+                            <h5 class="text-lg font-semibold" id="onboardTitle">Onboarding</h5>
+                            <i class="fa-solid fa-user-hat-tie"></i>
+                            <button type="button" class="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                                onclick="hideOnboardModal()">&times;</button>
+                        </div>
+                        <div class="p-0">
+                            <i class="fa-solid fa-magnet"></i>
+                            <!-- Inside your onboardModal .p-6 div -->
+                            <form id="onboardUserForm">
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Full Name</label>
+                                    <input type="text" id="onboard_name" name="name"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Email</label>
+                                    <input type="email" id="onboard_email" name="email"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Phone</label>
+                                    <input type="text" id="onboard_phone" name="phone"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Recruiter</label>
+                                    <input type="text" id="onboard_recruiter"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Recruiter Team</label>
+                                    <input type="text" id="onboard_recruiter_team"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium mb-1">Username (Automatic)</label>
+                                    <input type="text" id="onboard_username" name="username"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                    <small class="text-gray-500" id="onboard_username_preview"></small>
+                                </div>
+                                <div class="mb-4">
+                                    hi
+                                    <label class="block text-sm font-medium mb-1">Default Password</label>
+                                    <input type="text" value="123456789innersparc"
+                                        class="border rounded px-3 py-2 w-full bg-gray-100" readonly>
+                                </div>
+                                <div class="mb-4">
+                                    <button class="">Onboard</button>
+                                </div>
+                            </form>
+                            <div id="onboardLoading" class="text-center text-gray-400">Loading agent details...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active/Inactive Agents by Team Section -->
+                <div class="mt-6 p-6 py-4 rounded-xl shadow bg-white" id="team-status-section">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between mb-4 gap-4">
+                        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 w-full">
+                            <span id="teamStatusTitle"
+                                class="text-lg font-semibold flex items-center gap-2 whitespace-nowrap">
+                                <!-- Title will be set by JS -->
+                            </span>
+                            <div class="flex flex-col items-end gap-2">
+                                <div class="flex gap-2 bg-gray-100 rounded-md p-1.5">
+                                    <?php
+                                    $filter_style = 'grouping-toggle px-3 py-1.5 rounded-md text-xs font-medium tracking-wider focus:ring-2 focus:ring-blue-500 hover:bg-blue-600 hover:text-white active:bg-blue-700 active:text-white uppercase transition-colors duration-200';
+                                    ?>
+                                    <button id="grouping-year"
+                                        class="<?php echo htmlspecialchars($filter_style); ?> bg-blue-600 text-white"
+                                        onclick="setGrouping('year')">Year</button>
+                                    <button id="grouping-month"
+                                        class="<?php echo htmlspecialchars($filter_style); ?> bg-blue-600 text-white"
+                                        onclick="setGrouping('month')">Month</button>
+                                    <button id="grouping-quarter"
+                                        class="<?php echo htmlspecialchars($filter_style); ?> bg-blue-600 text-white"
+                                        onclick="setGrouping('quarter')">Quarter</button>
+                                </div>
+                                <div>
+                                    <select id="filterYear" class="border rounded-md px-3 py-1.5 text-sm ml-2"></select>
+                                    <select id="filterMonth"
+                                        class="border rounded-md px-3 py-1.5 text-sm ml-2 hidden"></select>
+                                    <select id="filterQuarter"
+                                        class="border rounded-md px-3 py-1.5 text-sm ml-2 hidden">
+                                        <option value="1">Quarter 1 (January - March)</option>
+                                        <option value="2">Quarter 2 (April - June)</option>
+                                        <option value="3">Quarter 3 (July - September)</option>
+                                        <option value="4">Quarter 4 (October - December)</option>
+                                    </select>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="flex flex-row items-center justify-end gap-2 md:mt-0">
+                            <button type="button"
+                                class="bg-white border border-gray-300 text-gray-500 px-4 py-2 rounded-md hover:border-gray-500 hover:text-gray-700 flex items-center gap-2"
+                                onclick="refreshTeamStatus()" title="Refresh Team Status">
+                                <i class="fas fa-refresh"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                        <!-- Active Table & Chart -->
+                        <div
+                            class="border hover:border-green-500 bg-gradient-to-br from-gray-100 via-white to-gray-100 hover:from-gray-100 hover:via-green-100 hover:to-gray-100 p-6 rounded-xl transition-colors transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg group">
+                            <h3
+                                class="text-lg font-medium mb-2 text-green-700 flex items-center gap-2 pb-2 border-b border-gray-300 uppercase font-medium tracking-wider">
+                                <i class="fas fa-user-check"></i> Active Agents
+                            </h3>
+                            <!-- Active Chart -->
+                            <canvas id="activeAgentsChart" height="180"></canvas>
+                            <!-- Active Teams Table -->
+                            <div class="overflow-x-auto mt-4 rounded-xl">
+                                <table
+                                    class="w-full min-w-[300px] border-separate border-spacing-0  text-left bg-white">
+                                    <thead>
+                                        <tr>
+                                            <th
+                                                class="px-4 py-2 border-b text-xs uppercase tracking-wider text-gray-600">
+                                                Team</th>
+                                            <th
+                                                class="px-4 py-2 text-center border-b text-xs uppercase tracking-wider text-gray-600">
+                                                Total Active Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="activeAgentsTableBody">
+                                        <tr>
+                                            <td colspan="2" class="text-center text-gray-400 py-4">No data</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Inactive Table & Chart -->
+                        <div
+                            class="border hover:border-red-500 bg-gradient-to-br from-gray-100 via-white to-gray-100 hover:from-gray-100 hover:via-red-100 hover:to-gray-100 p-6 rounded-xl transition-all transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg group">
+                            <h3
+                                class="text-lg font-medium mb-2 text-red-700 flex items-center gap-2 pb-2 border-b border-gray-300 uppercase font-medium tracking-wider">
+                                <i class="fas fa-user-times"></i>
+                                Inactive Agents
+                            </h3>
+                            <!-- Inactive Chart -->
+                            <canvas id="inactiveAgentsChart" height="180"></canvas>
+                            <!-- Inactive Teams Table -->
+                            <div class="overflow-x-auto mt-4 rounded-xl">
+                                <table
+                                    class="w-full min-w-[300px] border-separate border-spacing-0  text-left bg-white">
+                                    <thead>
+                                        <tr>
+                                            <th
+                                                class="px-4 py-2 border-b text-xs uppercase tracking-wider text-gray-600">
+                                                Team</th>
+                                            <th
+                                                class="px-4 py-2 text-center border-b text-xs uppercase tracking-wider text-gray-600">
+                                                Total Inactive Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inactiveAgentsTableBody">
+                                        <tr>
+                                            <td colspan="2" class="text-center text-gray-400 py-4">No data</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Add/Edit Modal (Tailwind) -->
             <div id="recruitmentModal"
                 class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
-                <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90%] mx-4 overflow-y-auto">
-                    <div class="flex justify-between items-center border-b px-6 py-4">
-                        <h5 class="text-lg font-semibold" id="modalTitle">Add New Recruitment Lead</h5>
-                        <button type="button" class="text-gray-500 hover:text-gray-700 text-2xl font-bold"
-                            onclick="hideRecruitmentModal()">&times;</button>
-                    </div>
-                    <div class="p-6">
-                        <form id="recruitmentForm">
-                            <?php
-
-                            $required_mark = '<span class="text-[12px] text-red-500">*</span>';
-                            $automatic_mark = '<span class="text-[12px] text-gray-500">(Automatic)</span>';
-                            $optional_mark = '<span class="text-[12px] text-gray-500">(Optional)</span>';
-
-                            ?>
-                            <input type="hidden" id="leadId" name="id">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label for="fullName" class="block text-sm font-medium mb-1">Full Name
-                                        <?= $required_mark; ?></label>
-                                    <input type="text"
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="fullName" name="full_name" required>
-                                </div>
-                                <div>
-                                    <label for="contactNumber" class="block text-sm font-medium mb-1">Contact Number
-                                        <?= $required_mark; ?></label>
-                                    <input type="text"
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="contactNumber" name="contact_number" required>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label for="email" class="block text-sm font-medium mb-1">Email
-                                        <?= $required_mark; ?></label>
-                                    <input type="email"
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="email" name="email" required>
-                                </div>
-
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label for="recruiterName" class="block text-sm font-medium mb-1">Recruiter
-                                        Name <?= $automatic_mark; ?></label>
-                                    <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
-                                        id="recruiterName" name="recruiter_name"
-                                        value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" readonly
-                                        aria-readonly="true">
-                                </div>
-                                <div>
-                                    <label for="teamName" class="block text-sm font-medium mb-1">Team
-                                        <?= $automatic_mark; ?></label>
-                                    <?php
-                                    $teamName = "No Team";
-                                    // Edit mode: show the team of the recruiter who added the lead
-                                    if (!empty($lead['recruiter_team_id'])) {
-                                        $conn = getDbConnection();
-                                        $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ? LIMIT 1");
-                                        $stmt->bind_param("i", $lead['recruiter_team_id']);
-                                        $stmt->execute();
-                                        $stmt->bind_result($foundTeamName);
-                                        if ($stmt->fetch() && $foundTeamName) {
-                                            $teamName = $foundTeamName;
-                                        }
-                                        $stmt->close();
-                                        $conn->close();
-                                    }
-                                    // Add mode: show the current user's team
-                                    elseif (!empty($current_user['team_id'])) {
-                                        $conn = getDbConnection();
-                                        $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ? LIMIT 1");
-                                        $stmt->bind_param("i", $current_user['team_id']);
-                                        $stmt->execute();
-                                        $stmt->bind_result($foundTeamName);
-                                        if ($stmt->fetch() && $foundTeamName) {
-                                            $teamName = $foundTeamName;
-                                        }
-                                        $stmt->close();
-                                        $conn->close();
-                                    }
-                                    ?>
-                                    <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100" id="teamName"
-                                        name="team_name" value="<?php echo htmlspecialchars($teamName); ?>" readonly
-                                        aria-readonly="true">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label for="status" class="block text-sm font-medium mb-1">Status
-                                        <?= $required_mark; ?></label>
-                                    <select
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="status" name="status" required>
-                                        <!-- <option value="">Select Status</option>
-                                        <option value="Accreditation">Accreditation</option>
-                                        <option value="Assessment">Assessment</option>
-                                        <option value="Product Knowledge System">Product Knowledge Seminar</option>
-                                        <option value="Site tour">Site tour</option>
-                                        <option value="Onboarding">Onboarding</option> -->
-
-                                        <option value="Active">Active</option>
-                                        <option value="Inactive">Inactive</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="source" class="block text-sm font-medium mb-1">Source
-                                        <?= $required_mark; ?></label>
-                                    <select
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="source" name="source" required>
-                                        <option value="">Select Source</option>
-                                        <option value="Facebook Ads">Facebook Ads</option>
-                                        <option value="TikTok ads">TikTok ads</option>
-                                        <option value="Google Ads">Google Ads</option>
-                                        <option value="Referral">Referral</option>
-                                        <option value="Teleprospecting">Teleprospecting</option>
-                                        <option value="Video Message">Video Message</option>
-                                        <option value="Organic Posting">Organic Posting</option>
-                                        <option value="Email Marketing">Email Marketing</option>
-                                        <option value="Follow up">Follow up</option>
-                                        <option value="Manning">Manning</option>
-                                        <option value="Walk in">Walk in</option>
-                                        <option value="Flyering">Flyering</option>
-                                        <option value="Facebook Groups">Facebook Groups</option>
-                                        <option value="KKK">KKK</option>
-                                        <option value="Chat Messaging">Chat Messaging</option>
-                                        <option value="Landing Page">Landing Page</option>
-                                        <option value="Networking Events">Networking Events</option>
-                                        <option value="Organic Sharing">Organic Sharing</option>
-                                        <option value="Youtube Marketing">Youtube Marketing</option>
-                                        <option value="LinkedIn">LinkedIn</option>
-                                        <option value="Open House">Open House</option>
-                                        <option value="Tiktok">Tiktok</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="recruitment_progress" class="block text-sm font-medium mb-1">Recruitment
-                                    Progress
-                                    <?= $required_mark; ?></label>
-
+                <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90%] mx-4">
+                    <div class="max-h-[90%]">
+                        <div class="flex justify-between items-center border-b px-6 py-4">
+                            <h5 class="text-lg font-semibold" id="modalTitle">Add New Recruited Agent</h5>
+                            <button type="button" class="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                                onclick="hideRecruitmentModal()">&times;</button>
+                        </div>
+                        <div class="p-6 overflow-y-auto max-h-[76vh]">
+                            <form id="recruitmentForm">
                                 <?php
 
-                                $checklist_style = 'w-full text-center py-2 px-3 border rounded-lg transition-all duration-300 cursor-pointer bg-white text-gray-800 peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600';
+                                $required_mark = '<span class="text-[12px] text-red-500">*</span>';
+                                $automatic_mark = '<span class="text-[12px] text-gray-500">(Automatic)</span>';
+                                $optional_mark = '<span class="text-[12px] text-gray-500">(Optional)</span>';
 
-                                $label_style = 'text-gray-600 text-sm';
-
-                                $label_subsection_style = 'space-y-2 border-l border-gray-300 pl-2 w-[97%]';
                                 ?>
-                                <div id="progressChecklist" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="space-y-2">
-                                        <label for="pre-recruitment"
-                                            class="<?php echo htmlspecialchars($label_style) ?>">Pre-recruitment</label>
-                                        <!-- Pre-recruitment checkboxes -->
-                                        <label class="block">
-                                            <input type="checkbox" id="pre-assessment" name="pre-assessment" value="1"
-                                                class="peer hidden">
-                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                Pre-Assessment
+                                <input type="hidden" id="leadId" name="id">
+
+                                <div class="pb-2 capitalize">
+                                    <span for="agentType" class="block text-sm text-gray-400">Agent
+                                        Information
+                                    </span>
+                                    <hr class="border-gray-300 my-1">
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="fullName" class="block text-sm font-medium mb-1">Full Name
+                                            <?= $required_mark; ?></label>
+                                        <input type="text"
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="fullName" name="full_name" required>
+                                    </div>
+                                    <div>
+                                        <label for="contactNumber" class="block text-sm font-medium mb-1">Contact Number
+                                            <?= $required_mark; ?></label>
+                                        <input type="text"
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="contactNumber" name="contact_number" required>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium mb-1">Email
+                                            <?= $required_mark; ?></label>
+                                        <input type="email"
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="email" name="email" required>
+                                    </div>
+
+                                </div>
+
+                                <div class="pb-2 capitalize">
+                                    <span for="recruiterType" class="block text-sm text-gray-400">Recruiter Information
+                                    </span>
+                                    <hr class="border-gray-300 my-1">
+                                </div>
+                                <!-- <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="recruiterName" class="block text-sm font-medium mb-1">Recruiter
+                                            Name <?= $automatic_mark; ?></label>
+                                        <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
+                                            id="recruiterName" name="recruiter_name"
+                                            value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" readonly
+                                            aria-readonly="true">
+                                    </div>
+                                    <div>
+                                        <label for="teamName" class="block text-sm font-medium mb-1">Team
+                                            <?= $automatic_mark; ?></label>
+                                        <?php
+                                        $teamName = "No Team";
+                                        // Edit mode: show the team of the recruiter who added the lead
+                                        if (!empty($lead['recruiter_team_id'])) {
+                                            $conn = getDbConnection();
+                                            $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ? LIMIT 1");
+                                            $stmt->bind_param("i", $lead['recruiter_team_id']);
+                                            $stmt->execute();
+                                            $stmt->bind_result($foundTeamName);
+                                            if ($stmt->fetch() && $foundTeamName) {
+                                                $teamName = $foundTeamName;
+                                            }
+                                            $stmt->close();
+                                            $conn->close();
+                                        }
+                                        // Add mode: show the current user's team
+                                        elseif (!empty($current_user['team_id'])) {
+                                            $conn = getDbConnection();
+                                            $stmt = $conn->prepare("SELECT name FROM teams WHERE id = ? LIMIT 1");
+                                            $stmt->bind_param("i", $current_user['team_id']);
+                                            $stmt->execute();
+                                            $stmt->bind_result($foundTeamName);
+                                            if ($stmt->fetch() && $foundTeamName) {
+                                                $teamName = $foundTeamName;
+                                            }
+                                            $stmt->close();
+                                            $conn->close();
+                                        }
+                                        ?>
+                                        <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
+                                            id="teamName" name="team_name"
+                                            value="<?php echo htmlspecialchars($teamName); ?>" readonly
+                                            aria-readonly="true">
+                                    </div>
+                                </div> -->
+
+                                <!-- Recruitment Info Section -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="recruiterName" class="block text-sm font-medium mb-1">Recruiter Name
+                                            <?= $automatic_mark; ?></label>
+                                        <?php if ($current_user['role'] === 'admin'): ?>
+                                        <select id="recruiterName" name="recruiter_id"
+                                            class="border rounded px-3 py-2 w-full bg-white"></select>
+                                        <?php else: ?>
+                                        <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
+                                            id="recruiterName" name="recruiter_name"
+                                            value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" readonly
+                                            aria-readonly="true">
+                                        <?php endif; ?>
+                                    </div>
+                                    <div>
+                                        <label for="teamName" class="block text-sm font-medium mb-1">Team
+                                            <?= $automatic_mark; ?></label>
+                                        <?php if ($current_user['role'] === 'admin'): ?>
+                                        <select id="teamName" name="team_id"
+                                            class="border rounded px-3 py-2 w-full bg-white"></select>
+                                        <?php else: ?>
+                                        <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
+                                            id="teamName" name="team_name"
+                                            value="<?php echo htmlspecialchars($teamName); ?>" readonly
+                                            aria-readonly="true">
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="pb-2 capitalize">
+                                    <span for="agentProgress" class="block text-sm text-gray-400">Recruitment Details
+                                    </span>
+                                    <hr class="border-gray-300 my-1">
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="status" class="block text-sm font-medium mb-1">Status
+                                            <?= $required_mark; ?></label>
+                                        <select
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="status" name="status" required>
+                                            <option value="Active">Active</option>
+                                            <option value="Inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="source" class="block text-sm font-medium mb-1">Source
+                                            <?= $required_mark; ?></label>
+                                        <select
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="source" name="source" required>
+                                            <option value="">Select Source</option>
+                                            <option value="Facebook Ads">Facebook Ads</option>
+                                            <option value="TikTok ads">TikTok ads</option>
+                                            <option value="Google Ads">Google Ads</option>
+                                            <option value="Referral">Referral</option>
+                                            <option value="Teleprospecting">Teleprospecting</option>
+                                            <option value="Video Message">Video Message</option>
+                                            <option value="Organic Posting">Organic Posting</option>
+                                            <option value="Email Marketing">Email Marketing</option>
+                                            <option value="Follow up">Follow up</option>
+                                            <option value="Manning">Manning</option>
+                                            <option value="Walk in">Walk in</option>
+                                            <option value="Flyering">Flyering</option>
+                                            <option value="Facebook Groups">Facebook Groups</option>
+                                            <option value="KKK">KKK</option>
+                                            <option value="Chat Messaging">Chat Messaging</option>
+                                            <option value="Landing Page">Landing Page</option>
+                                            <option value="Networking Events">Networking Events</option>
+                                            <option value="Organic Sharing">Organic Sharing</option>
+                                            <option value="Youtube Marketing">Youtube Marketing</option>
+                                            <option value="LinkedIn">LinkedIn</option>
+                                            <option value="Open House">Open House</option>
+                                            <option value="Tiktok">Tiktok</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="recruitment_progress" class="block text-sm font-medium mb-1">Recruitment
+                                        Progress
+                                        <?= $required_mark; ?></label>
+
+                                    <?php
+
+                                    $checklist_style = 'w-full text-center py-2 px-3 border rounded-lg transition-all duration-300 cursor-pointer bg-white text-gray-800';
+
+                                    $label_style = 'text-gray-600 text-sm';
+
+                                    $label_subsection_style = 'space-y-2 border-l border-gray-300 pl-2 w-[97%]';
+                                    ?>
+                                    <div id="progressChecklist" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div class="space-y-2">
+                                            <div class="flex flex-row justify-center items-center gap-2">
+                                                <label for="pre-recruitment"
+                                                    class="<?php echo htmlspecialchars($label_style) ?> whitespace-nowrap">Pre-recruitment
+                                                </label>
+                                                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                                    <div id="preRecruitmentProgressBar"
+                                                        class="h-3 bg-blue-500 transition-all duration-300"
+                                                        style="width: 0%;">
+                                                    </div>
+                                                </div>
+                                                <div class="text-xs text-right text-gray-600"
+                                                    id="preRecruitmentProgressText">0%
+                                                </div>
                                             </div>
-                                        </label>
-                                        <label class="block">
-                                            <input type="checkbox" id="accreditation" name="accreditation" value="1"
-                                                class="peer hidden">
-                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                Accreditation
-                                            </div>
-                                        </label>
-                                        <label class="block">
-                                            <input type="checkbox" id="assessment" name="assessment" value="1"
-                                                class="peer hidden">
-                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                Assessment
-                                            </div>
-                                        </label>
-                                        <label class="block">
-                                            <input type="checkbox" id="sales_training" name="sales_training" value="1"
-                                                class="peer hidden">
-                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                Sales 101
-                                            </div>
-                                        </label>
-                                        <label class="block">
-                                            <input type="checkbox" id="site_tour" name="site_tour" value="1"
-                                                class="peer hidden">
-                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                Site Tour
-                                            </div>
-                                        </label>
-                                        <label class="block">
-                                            <input type="checkbox" id="focus_projects" name="focus_projects" value="1"
-                                                class="peer hidden">
-                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                Focus Projects
-                                            </div>
-                                        </label>
-                                        <!-- Pre-recruitment progress bar -->
-                                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-2">
+
+
+                                            <!-- Pre-recruitment checkboxes -->
+                                            <label class="block">
+                                                <input type="checkbox" id="pre-assessment" name="pre-assessment"
+                                                    value="1" class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Pre-Assessment
+                                                </div>
+                                            </label>
+                                            <label class="block">
+                                                <input type="checkbox" id="accreditation" name="accreditation" value="1"
+                                                    class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Accreditation
+                                                </div>
+                                            </label>
+                                            <label class="block">
+                                                <input type="checkbox" id="assessment" name="assessment" value="1"
+                                                    class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Assessment
+                                                </div>
+                                            </label>
+                                            <label class="block">
+                                                <input type="checkbox" id="sales_training" name="sales_training"
+                                                    value="1" class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Sales 101
+                                                </div>
+                                            </label>
+                                            <label class="block">
+                                                <input type="checkbox" id="site_tour" name="site_tour" value="1"
+                                                    class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Site Tour
+                                                </div>
+                                            </label>
+                                            <label class="block">
+                                                <input type="checkbox" id="focus_projects" name="focus_projects"
+                                                    value="1" class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
+                                                    Focus Projects
+                                                </div>
+                                            </label>
+                                            <!-- Pre-recruitment progress bar -->
+                                            <!-- <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-2">
                                             <div id="preRecruitmentProgressBar"
-                                                class="h-3 bg-green-500 transition-all duration-300" style="width: 0%;">
+                                                class="h-3 bg-blue-500 transition-all duration-300" style="width: 0%;">
                                             </div>
                                         </div>
                                         <div class="text-xs text-right text-gray-600" id="preRecruitmentProgressText">0%
+                                        </div> -->
                                         </div>
-                                    </div>
 
-                                    <div class="space-y-2">
-                                        <label for="post-recruitment"
-                                            class="<?php echo htmlspecialchars($label_style) ?>">Post-recruitment</label>
-                                        <!-- Post-recruitment checkboxes -->
-                                        <label class="block">
-                                            <input type="checkbox" id="habit_forming" name="habit_forming" value="1"
-                                                class="peer hidden">
-                                            <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                Habit Forming
-                                            </div>
-                                        </label>
                                         <div class="space-y-2">
-                                            <label for="training_materials"
-                                                class="<?php echo htmlspecialchars($label_style) ?> text-xs">
-                                                Training Materials
+                                            <div class="flex flex-row justify-center items-center gap-2">
+                                                <label for="post-recruitment"
+                                                    class="<?php echo htmlspecialchars($label_style) ?> whitespace-nowrap">Post-recruitment</label>
+                                                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                                    <div id="postRecruitmentProgressBar"
+                                                        class="h-3 bg-orange-500 transition-all duration-300"
+                                                        style="width: 0%;">
+                                                    </div>
+                                                </div>
+                                                <div class="text-xs text-right text-gray-600"
+                                                    id="postRecruitmentProgressText">
+                                                    0%</div>
+                                            </div>
+
+                                            <!-- Post-recruitment checkboxes -->
+                                            <label class="block">
+                                                <input type="checkbox" id="habit_forming" name="habit_forming" value="1"
+                                                    class="peer hidden">
+                                                <div
+                                                    class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                    Habit Forming
+                                                </div>
                                             </label>
-                                            <div class="flex justify-end">
-                                                <div class="<?php echo htmlspecialchars($label_subsection_style) ?>">
-                                                    <label class="block">
-                                                        <input type="checkbox" id="digital_training"
-                                                            name="digital_training" value="1" class="peer hidden">
-                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?> ">
-                                                            Digital Marketing Training
-                                                        </div>
-                                                    </label>
-                                                    <label class="block">
-                                                        <input type="checkbox" id="sales_training_materials"
-                                                            name="sales_training_materials" value="1"
-                                                            class="peer hidden">
-                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                            Sales Training
-                                                        </div>
-                                                    </label>
-                                                    <label class="block">
-                                                        <input type="checkbox" id="objection_handling"
-                                                            name="objection_handling" value="1" class="peer hidden">
-                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                            Objection Handling
-                                                        </div>
-                                                    </label>
+                                            <div class="space-y-2">
+                                                <label for="training_materials"
+                                                    class="<?php echo htmlspecialchars($label_style) ?> text-xs">
+                                                    Training Materials
+                                                </label>
+                                                <div class="flex justify-end">
+                                                    <div
+                                                        class="<?php echo htmlspecialchars($label_subsection_style) ?>">
+                                                        <label class="block">
+                                                            <input type="checkbox" id="digital_training"
+                                                                name="digital_training" value="1" class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Digital Marketing Training
+                                                            </div>
+                                                        </label>
+                                                        <label class="block">
+                                                            <input type="checkbox" id="sales_training_materials"
+                                                                name="sales_training_materials" value="1"
+                                                                class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Sales Training
+                                                            </div>
+                                                        </label>
+                                                        <label class="block">
+                                                            <input type="checkbox" id="objection_handling"
+                                                                name="objection_handling" value="1" class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Objection Handling
+                                                            </div>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="space-y-2">
-                                            <label for="tools_familiarization"
-                                                class="<?php echo htmlspecialchars($label_style) ?> text-xs">
-                                                Tools Familiarization
-                                            </label>
-                                            <div class="flex justify-end">
-                                                <div class="<?php echo htmlspecialchars($label_subsection_style) ?>">
-                                                    <label class="block">
-                                                        <input type="checkbox" id="VAST" name="VAST" value="1"
-                                                            class="peer hidden">
-                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                            VAST Training
-                                                        </div>
-                                                    </label>
-                                                    <label class="block">
-                                                        <input type="checkbox" id="sales_monitoring"
-                                                            name="sales_monitoring" value="1" class="peer hidden">
-                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                            Google Site (Sales Monitoring)
-                                                        </div>
-                                                    </label>
-                                                    <label class="block">
-                                                        <input type="checkbox" id="LMS" name="LMS" value="1"
-                                                            class="peer hidden">
-                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                            Lead Management System
-                                                        </div>
-                                                    </label>
-                                                    <label class="block">
-                                                        <input type="checkbox" id="comm_structure" name="comm_structure"
-                                                            value="1" class="peer hidden">
-                                                        <div class="<?php echo htmlspecialchars($checklist_style); ?>">
-                                                            Comm Structure
-                                                        </div>
-                                                    </label>
+                                            <div class="space-y-2">
+                                                <label for="tools_familiarization"
+                                                    class="<?php echo htmlspecialchars($label_style) ?> text-xs">
+                                                    Tools Familiarization
+                                                </label>
+                                                <div class="flex justify-end">
+                                                    <div
+                                                        class="<?php echo htmlspecialchars($label_subsection_style) ?>">
+                                                        <label class="block">
+                                                            <input type="checkbox" id="VAST" name="VAST" value="1"
+                                                                class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                VAST Training
+                                                            </div>
+                                                        </label>
+                                                        <label class="block">
+                                                            <input type="checkbox" id="sales_monitoring"
+                                                                name="sales_monitoring" value="1" class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Google Site (Sales Monitoring)
+                                                            </div>
+                                                        </label>
+                                                        <label class="block">
+                                                            <input type="checkbox" id="LMS" name="LMS" value="1"
+                                                                class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Lead Management System
+                                                            </div>
+                                                        </label>
+                                                        <label class="block">
+                                                            <input type="checkbox" id="comm_structure"
+                                                                name="comm_structure" value="1" class="peer hidden">
+                                                            <div
+                                                                class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
+                                                                Comm Structure
+                                                            </div>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <!-- Post-recruitment progress bar -->
-                                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-2">
+                                            <!-- Post-recruitment progress bar -->
+                                            <!-- <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-2">
                                             <div id="postRecruitmentProgressBar"
                                                 class="h-3 bg-green-500 transition-all duration-300" style="width: 0%;">
                                             </div>
                                         </div>
                                         <div class="text-xs text-right text-gray-600" id="postRecruitmentProgressText">
-                                            0%</div>
+                                            0%</div> -->
+                                        </div>
                                     </div>
-                                </div>
-                                <!-- Overall progress bar -->
-                                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden mt-4">
-                                    <div id="progressBar" class="h-4 bg-green-500 transition-all duration-300"
-                                        style="width: 0%;"></div>
-                                </div>
-                                <div class="text-sm text-right text-gray-600" id="progressText">0%</div>
-                                <div class="mb-4">
-                                    <label for="remarks" class="block text-sm font-medium mb-1">Remarks
-                                        <?= $optional_mark; ?>
-                                    </label>
-                                    <textarea
-                                        class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        id="remarks" name="remarks" rows="3"></textarea>
-                                </div>
-                        </form>
+                                    <!-- Overall progress bar -->
+                                    <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden mt-6">
+                                        <div id="progressBar" class="h-6 bg-green-500 transition-all duration-300"
+                                            style="width: 0%;"></div>
+                                    </div>
+                                    <div class="text-sm text-right text-gray-600" id="progressText">0%</div>
+                                    <div class="mb-4">
+                                        <label for="remarks" class="block text-sm font-medium mb-1">Remarks
+                                            <?= $optional_mark; ?>
+                                        </label>
+                                        <textarea
+                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            id="remarks" name="remarks" rows="3"></textarea>
+                                    </div>
+                            </form>
+                        </div>
+                        <div class="flex justify-end gap-2 border-t px-6 py-4">
+                            <button type="button" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                                onclick="saveRecruitmentLead()">Save</button>
+                            <button type="button" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                                onclick="hideRecruitmentModal()">Cancel</button>
+                        </div>
                     </div>
-                    <div class="flex justify-end gap-2 border-t px-6 py-4">
-                        <button type="button" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                            onclick="saveRecruitmentLead()">Save</button>
-                        <button type="button" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
-                            onclick="hideRecruitmentModal()">Cancel</button>
-                    </div>
+
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -1011,10 +1263,16 @@ echo '<style>
 
     // Display recruitment data in table
     function displayRecruitmentData(leads) {
-        const tbody = document.getElementById("recruitmentTableBody")
-        tbody.innerHTML = ""
+        // Only show all leads for admin, else filter by recruiter_id
+        let visibleLeads = leads;
+        if (CURRENT_USER_ROLE === 'manager') {
+            visibleLeads = leads.filter(lead => lead.recruiter_id == CURRENT_USER_ID);
+        }
 
-        if (!leads || leads.length === 0) {
+        const tbody = document.getElementById("recruitmentTableBody");
+        tbody.innerHTML = "";
+
+        if (!visibleLeads || visibleLeads.length === 0) {
             tbody.innerHTML = `
         <tr>
             <td colspan="8" class="text-center text-muted py-4">
@@ -1023,11 +1281,11 @@ echo '<style>
                 <small>Try adjusting your filters or search terms</small>
             </td>
         </tr>
-    `
-            return
+    `;
+            return;
         }
 
-        leads.forEach((lead, index) => {
+        visibleLeads.forEach((lead, index) => {
             const row = document.createElement("tr")
             const dateObj = new Date(lead.created_at);
             const timestamp = dateObj.toLocaleString('en-US', {
@@ -1066,44 +1324,68 @@ echo '<style>
                         lead.status === 'Inactive' ? `<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Inactive</span>` :
                             `<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">${lead.status || 'N/A'}</span>`}
 </td>
-        <td class="px-6 py-4 align-middle"><strong>${canSeeDetails ? (lead.full_name || 'N/A') : maskText(lead.full_name || '')}</strong></td>
-        <td class="px-6 py-4 align-middle whitespace-nowrap">${canSeeDetails ? (lead.contact_number || 'N/A') : maskText(lead.contact_number || '')}</td>
-        <td class="px-6 py-4 align-middle">${canSeeDetails ? (lead.email || 'N/A') : maskText(lead.email || '')}</td>
-        <td class="px-6 py-4 align-middle">${lead.recruiter_name || 'N/A'}</td>
+        <td class="px-6 py-4 align-middle space-y-2 whitespace-nowrap"><strong>${canSeeDetails ? (lead.full_name || 'N/A') : maskText(lead.full_name || '')}</strong>
+        <div class="align-middle opacity-50 text-sm"><i class="fa fa-phone" aria-hidden="true"></i> ${canSeeDetails ? (lead.contact_number || 'N/A') : maskText(lead.contact_number || '')}</div>
+        <div class="align-middle opacity-50 text-sm"><i class="fa fa-envelope" aria-hidden="true"></i> ${canSeeDetails ? (lead.email || 'N/A') : maskText(lead.email || '')}</div>
+        </td>
         <td class="px-6 py-4 align-middle">
-        <div class='flex flex-col items-start gap-1 w-full'>
-            <!-- Overall Progress Bar -->
-            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div class="progress-bar h-3 bg-green-500 transition-all duration-300" style="width: ${getProgressPercent(lead)}%"></div>
+            <div>
+                <span>${lead.recruiter_name || 'N/A'}</span>
+                <br>
+                <span class="text-xs text-gray-500">${lead.recruiter_team || 'No Team'}</span>
             </div>
-            <div class="text-xs text-left text-gray-600">Overall: ${getProgressPercent(lead)}%</div>
+        </td>
+        <td class="px-6 py-4 align-middle">
+        <div class='flex flex-col items-start gap-2 w-full'>
+            
             <!-- Pre-recruitment Progress Bar -->
             <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-1">
-                <div class="progress-bar h-3 bg-blue-500 transition-all duration-300" style="width: ${getPreRecruitmentPercent(lead)}%"></div>
+                <div class="progress-bar h-3 bg-blue-300 transition-all duration-300" style="width: ${getPreRecruitmentPercent(lead)}%"></div>
             </div>
-            <div class="text-xs text-left text-gray-600">Pre: ${getPreRecruitmentPercent(lead)}%</div>
+            <div class="text-xs text-left text-gray-600 whitespace-nowrap font-semibold">Pre: ${getPreRecruitmentPercent(lead)}%</div>
             <!-- Post-recruitment Progress Bar -->
             <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-1">
-                <div class="progress-bar h-3 bg-yellow-500 transition-all duration-300" style="width: ${getPostRecruitmentPercent(lead)}%"></div>
+                <div class="progress-bar h-3 bg-orange-300 transition-all duration-300" style="width: ${getPostRecruitmentPercent(lead)}%"></div>
             </div>
-            <div class="text-xs text-left text-gray-600">Post: ${getPostRecruitmentPercent(lead)}%</div>
+            <div class="text-xs text-left text-gray-600 whitespace-nowrap font-semibold">Post: ${getPostRecruitmentPercent(lead)}%</div>
+            <!-- Overall Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div class="progress-bar h-3 bg-green-300 transition-all duration-300" style="width: ${getProgressPercent(lead)}%"></div>
+            </div>
+            <div class="text-xs text-left text-gray-600 whitespace-nowrap font-semibold">Overall: ${getProgressPercent(lead)}%</div>
         </div>
         </td>
         <td class="px-6 py-4 align-middle"><small>${lead.source || 'N/A'}</small></td>
         <td class="px-6 py-4 align-middle">
             <div class="btn-group btn-group-sm flex items-center justify-center gap-2">
                 ${canEditDelete ? `
+                <button class="btn btn-outline-onboard text-blue-500 border-2 p-1 rounded-md border-blue-500    hover:border-blue-500 hover:bg-blue-500 hover:text-white transition-all hidden"
+                onclick="showOnboardModal(${lead.id})"
+                    title="Onboard this Agent"
+                    id="onboardBtn-${lead.id}">
+                    <i class="fa fa-rocket" aria-hidden="true"></i>
+                </button>
                 <button class="btn btn-outline-primary text-yellow-500 border-2 p-1 rounded-md border-yellow-500 hover:border-yellow-500 hover:bg-yellow-500 hover:text-white transition-all" onclick="editLead(${lead.id})" title="Edit">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn btn-outline-danger text-red-500 border-2 p-1 rounded-md border-red-500 hover:border-red-500 hover:bg-red-500 hover:text-white transition-all" onclick="deleteLead(${lead.id})" title="Delete">
+                     <button class="btn btn-outline-danger text-red-500 border-2 p-1 rounded-md border-red-500 hover:border-red-500 hover:bg-red-500 hover:text-white transition-all" onclick="deleteLead(${lead.id})" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
                 ` : ''}
             </div>
         </td>
     `
-            tbody.appendChild(row)
+            tbody.appendChild(row);
+
+            // Show the onboard button if pre-recruitment progress is 100%
+            const prePercent = getPreRecruitmentPercent(lead);
+            if (prePercent === 100) {
+                const onboardBtn = document.getElementById(`onboardBtn-${lead.id}`);
+                if (onboardBtn) {
+                    onboardBtn.classList.remove("hidden");
+                    onboardBtn.classList.add("inline-block"); // or "block" if needed
+                }
+            }
         })
     }
 
@@ -1250,25 +1532,44 @@ echo '<style>
 
     // Modal and CRUD functions
     function showAddModal() {
-        document.getElementById('modalTitle').textContent = 'Add New Recruitment Lead';
+
+        if (CURRENT_USER_ROLE === 'admin') {
+            fetch('get_teams_and_managers.php')
+                .then(res => res.json())
+                .then(data => {
+                    // Populate team dropdown
+                    const teamSelect = document.getElementById('teamName');
+                    teamSelect.innerHTML = '<option value="">Select Team</option>';
+                    data.teams.forEach(team => {
+                        teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+                    });
+
+                    // When team changes, populate recruiter dropdown
+                    teamSelect.addEventListener('change', function() {
+                        const selectedTeam = data.teams.find(t => t.id == this.value);
+                        const recruiterSelect = document.getElementById('recruiterName');
+                        recruiterSelect.innerHTML = '<option value="">Select Recruiter</option>';
+                        if (selectedTeam && selectedTeam.managers) {
+                            selectedTeam.managers.forEach(manager => {
+                                recruiterSelect.innerHTML +=
+                                    `<option value="${manager.id}">${manager.name}</option>`;
+                            });
+                        }
+                    });
+                });
+        }
+
+        document.getElementById('modalTitle').textContent = 'Add New Recruited Agent';
         document.getElementById('recruitmentForm').reset();
         document.getElementById('leadId').value = '';
         document.getElementById('recruiterName').value = "<?php echo htmlspecialchars($user['name'] ?? ''); ?>";
         // Reset all checklist checkboxes and progress bar
-        const checklistKeys = [
-            'pre-assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'onboarding',
-            'habit_forming',
-            'digital_training', 'sales_training_materials', 'objection_handling', 'VAST', 'sales_monitoring',
-            'LMS', 'comm_structure', 'focus_projects'
-        ];
+        const checklistKeys = allKeys;
         checklistKeys.forEach(id => {
             const cb = document.getElementById(id);
             if (cb) cb.checked = false;
         });
-        const progressBar = document.getElementById('progressBar');
-        const progressText = document.getElementById('progressText');
-        if (progressBar) progressBar.style.width = '0%';
-        if (progressText) progressText.textContent = '0%';
+        updateProgress(); // Ensure progress bars reset
         document.getElementById('recruitmentModal').classList.remove('hidden');
     }
 
@@ -1276,8 +1577,244 @@ echo '<style>
         document.getElementById('recruitmentModal').classList.add('hidden');
     }
 
+    function showOnboardModal(id) {
+        document.getElementById('onboardModal').classList.remove('hidden');
+        const modalContent = document.querySelector('#onboardModal .p-0');
+        modalContent.innerHTML = `
+        <div class="p-6 overflow-y-auto max-h-[70vh]">
+            <form id="onboardUserForm">
+
+            <div class="flex flex-col items-center justify-center gap-2">
+                            <i class="fa-solid fa-circle-user text-[100px] bg-gradient-to-br from-blue-500 via-green-500 to-yellow-500 bg-clip-text text-transparent"></i>
+                            <div class="mb-4 mx-8">
+                                <div class="">
+                                    <div>
+                                        <input type="text" id="onboard_name" name="name"
+                                            class="text-center w-full focus:outline-none text-2xl font-bold" placeholder="Full Name" readonly>
+                                    </div>
+                                    <input type="text" id="onboard_username" name="username"
+                                        class=" w-full focus:outline-none text-center text-sm " placeholder="user.name.innersparc" readonly>
+                                </div>
+                                <hr class="my-3">
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 bg-red-5001 p-2 pt-0 text-gray-500 text-sm">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-envelope"></i>
+                                        <input type="email" id="onboard_email" name="email"
+                                            class="w-full whitespace-nowrap focus:outline-none" placeholder="yourname@gmail.com" readonly>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-key"></i>
+                                        <input type="text" value="123456789innersparc"
+                                            class="w-full whitespace-nowrap focus:outline-none " placeholder="123456789innersparc" readonly>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-phone"></i>
+                                        <input type="text" id="onboard_phone" name="phone"
+                                            class="w-full whitespace-nowrap focus:outline-none " placeholder="09123456789" readonly>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-user-tie"></i>
+                                        <input type="text" value="Agent"
+                                            class="w-full whitespace-nowrap focus:outline-none " placeholder="Agent" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+            <div class="mb-4">
+                
+                <small class="text-gray-500 hidden" id="onboard_username_preview"></small>
+            </div>
+
+            <div class="flex flex-col items-center justify-center gap-3 border  rounded-lg p-4 mb-4">
+
+                            <input type="text" id="onboard_recruiter"
+                                class="w-full focus:outline-none text-center font-semibold"
+                                placeholder="Your name should appear here" readonly>
+
+                            <p class="text-center">Do you want to officially <span
+                                    class="text-blue-600 font-semibold">onboard</span>
+                                this agent to your
+                                team, <input type="text" id="onboard_recruiter_team"
+                                    class="inline-block mx-1 rounded-lg bg-blue-500 text-white italic font-semibold focus:outline-none text-center"
+                                    value="Your Team should appear here" oninput="this.style.width = (this.value.length + 1) + 'ch';"
+                                    style="width: auto;" readonly>?</p>
+
+                            <div class="flex flex-col md:flex-row items-center mt-2 gap-2 w-full">
+                                <button type="submit" id="onboardSubmitBtn"
+                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full font-semibold">
+                                    Onboard Agent!
+                                </button>
+                                <button type="button"
+                                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 w-full"
+                                    onclick="hideOnboardModal()">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="text-sm text-gray-500 mb-4 text-sm text-center">
+                            <p>Note: The agent will be created with the default password
+                                <strong>123456789innersparc</strong>. Ensure to change the password after onboarding.
+                            </p>
+                        </div>
+            </form>
+                <div id="onboardLoading" class="text-center text-gray-400">Loading agent details...</div>
+        </div>
+    `;
+
+        let onboardLead = null;
+
+        // Fetch the agent details
+        const formData = new FormData();
+        formData.append("action", "get_recruitment_leads");
+        formData.append("filters", JSON.stringify({
+            id: id
+        }));
+
+        fetch("recruitment-api-debug.php", {
+                method: "POST",
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('onboardLoading').remove();
+                if (data.success && data.data && data.data.length > 0) {
+                    const lead = data.data[0];
+                    onboardLead = lead;
+
+                    document.getElementById('onboard_name').value = lead.full_name || '';
+                    document.getElementById('onboard_email').value = lead.email || '';
+                    document.getElementById('onboard_phone').value = lead.contact_number || '';
+                    document.getElementById('onboard_recruiter').value = lead.recruiter_name || '';
+                    document.getElementById('onboard_recruiter_team').value = lead.recruiter_team || 'No Team';
+
+                    // Generate automatic username
+                    let username = '';
+                    if (lead.full_name) {
+                        username = lead.full_name.toLowerCase()
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '')
+                            .replace(/[^a-z0-9\s]/g, '')
+                            .replace(/\s+/g, '.');
+                        username = username + '.innersparc';
+                    }
+                    document.getElementById('onboard_username').value = username;
+                    document.getElementById('onboard_username_preview').textContent = lead.full_name || '';
+                } else {
+                    modalContent.innerHTML +=
+                        '<div class="text-center text-red-500">Agent details not found.</div>';
+                }
+            })
+            .catch(() => {
+                modalContent.innerHTML +=
+                    '<div class="text-center text-red-500">Error loading agent details.</div>';
+            });
+
+        // Attach the submit handler AFTER the form is in the DOM
+        setTimeout(() => {
+            const onboardForm = document.getElementById('onboardUserForm');
+            if (onboardForm) {
+                onboardForm.onsubmit = function(e) {
+                    e.preventDefault();
+
+                    // Collect values
+                    const name = document.getElementById('onboard_name').value;
+                    const email = document.getElementById('onboard_email').value;
+                    const phone = document.getElementById('onboard_phone').value;
+                    const username = document.getElementById('onboard_username').value;
+                    const recruiter = document.getElementById('onboard_recruiter').value;
+                    const recruiter_team = document.getElementById('onboard_recruiter_team').value;
+                    const password = '123456789innersparc';
+                    const role = 'agent';
+                    const team_id = onboardLead ? onboardLead.recruiter_team_id || '' : '';
+
+                    const formData = new FormData();
+                    formData.append('action', 'onboard_agent');
+                    formData.append('name', name);
+                    formData.append('email', email);
+                    formData.append('phone', phone);
+                    formData.append('username', username);
+                    formData.append('password', password);
+                    formData.append('role', role);
+                    formData.append('team_id', team_id);
+
+                    fetch('recruitment-api-debug.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            console.log('Onboard agent response:', data); // Add this line
+                            if (data.success) {
+                                showNotification('Agent onboarded successfully!', 'success');
+                                hideOnboardModal();
+                                loadRecruitmentData();
+                            } else {
+                                showNotification('Error: ' + data.message, 'error');
+                            }
+                        })
+                        .catch(() => {
+                            showNotification('Error onboarding agent.', 'error');
+                        });
+                };
+            }
+        }, 0);
+    }
+
+    function generateUsername() {
+        const fullName = document.getElementById('user_name').value.trim();
+        if (fullName) {
+            let username = fullName.toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+                .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+                .replace(/\s+/g, '.'); // Replace spaces with dots
+            username = username + '.innersparc';
+            document.getElementById('user_username').value = username;
+            document.getElementById('usernamePreview').textContent = username;
+        } else {
+            document.getElementById('user_username').value = '';
+            document.getElementById('usernamePreview').textContent = '';
+        }
+    }
+
+    function hideOnboardModal() {
+        document.getElementById('onboardModal').classList.add('hidden');
+    }
+
     // FIXED: Working edit function
     function editLead(id) {
+
+        if (CURRENT_USER_ROLE === 'admin') {
+            fetch('get_teams_and_managers.php')
+                .then(res => res.json())
+                .then(data => {
+                    // Populate team dropdown
+                    const teamSelect = document.getElementById('teamName');
+                    teamSelect.innerHTML = '<option value="">Select Team</option>';
+                    data.teams.forEach(team => {
+                        teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+                    });
+
+                    // When team changes, populate recruiter dropdown
+                    teamSelect.addEventListener('change', function() {
+                        const selectedTeam = data.teams.find(t => t.id == this.value);
+                        const recruiterSelect = document.getElementById('recruiterName');
+                        recruiterSelect.innerHTML = '<option value="">Select Recruiter</option>';
+                        if (selectedTeam && selectedTeam.managers) {
+                            selectedTeam.managers.forEach(manager => {
+                                recruiterSelect.innerHTML +=
+                                    `<option value="${manager.id}">${manager.name}</option>`;
+                            });
+                        }
+                    });
+                });
+        }
+
         console.log('Editing lead with ID:', id);
 
         // Show loading state
@@ -1307,7 +1844,7 @@ echo '<style>
                     const lead = data.data[0]
 
                     // Update modal title
-                    document.getElementById("modalTitle").textContent = "Edit Recruitment Lead"
+                    document.getElementById("modalTitle").textContent = "Edit Recruited Agent";
 
                     // Populate form fields
                     document.getElementById("leadId").value = lead.id
@@ -1315,6 +1852,9 @@ echo '<style>
                     document.getElementById("contactNumber").value = lead.contact_number || ""
                     document.getElementById("email").value = lead.email || ""
                     document.getElementById("recruiterName").value = lead.recruiter_name || ""
+
+                    document.getElementById("teamName").value = lead.recruiter_team || ""
+
                     document.getElementById("status").value = lead.status || ""
                     document.getElementById("source").value = lead.source || ""
                     document.getElementById("remarks").value = lead.remarks || ""
@@ -1336,33 +1876,37 @@ echo '<style>
                     }
 
                     // Set checklist checkboxes and progress bar from lead data
-                    const checklistKeys = [
-                        'pre-assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour',
-                        'onboarding',
-                        'habit_forming',
-                        'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
-                        'sales_monitoring',
-                        'LMS', 'comm_structure', 'focus_projects'
-                    ];
-                    checklistKeys.forEach(id => {
+                    allKeys.forEach(id => {
                         const cb = document.getElementById(id);
                         // Use snake_case for DB fields, kebab-case for IDs
                         const dbKey = id.replace(/-/g, '_');
                         if (cb) cb.checked = !!lead[dbKey];
                     });
-                    // Update progress bar
-                    (function updateProgress() {
-                        let checked = 0;
-                        checklistKeys.forEach(id => {
-                            const cb = document.getElementById(id);
-                            if (cb && cb.checked) checked++;
-                        });
-                        const percent = Math.round((checked / checklistKeys.length) * 100);
-                        const progressBar = document.getElementById('progressBar');
-                        const progressText = document.getElementById('progressText');
-                        if (progressBar) progressBar.style.width = percent + '%';
-                        if (progressText) progressText.textContent = percent + '%';
-                    })();
+                    updateProgress(); // Ensure progress bars reflect loaded state
+
+                    // For admin users, set the selected recruiter and team
+                    if (CURRENT_USER_ROLE === 'admin') {
+                        // Set the selected recruiter
+                        if (lead.recruiter_id) {
+                            document.getElementById('recruiterName').value = lead.recruiter_id;
+                        }
+
+                        // Set the selected team
+                        if (lead.recruiter_team_id) {
+                            document.getElementById('teamName').value = lead.recruiter_team_id;
+
+                            // Trigger the team change event to populate recruiters
+                            const teamChangeEvent = new Event('change');
+                            document.getElementById('teamName').dispatchEvent(teamChangeEvent);
+
+                            // After a short delay, set the recruiter (to ensure dropdown is populated)
+                            setTimeout(() => {
+                                if (lead.recruiter_id) {
+                                    document.getElementById('recruiterName').value = lead.recruiter_id;
+                                }
+                            }, 100);
+                        }
+                    }
 
                     // Show the modal
                     document.getElementById('recruitmentModal').classList.remove('hidden');
@@ -1420,7 +1964,7 @@ echo '<style>
                 saveBtn.disabled = false
 
                 if (data.success) {
-                    const message = isUpdate ? "Lead updated successfully!" : "Lead added successfully!"
+                    const message = isUpdate ? "Agent updated successfully!" : "Agent added successfully!"
                     showNotification(message, "success")
 
                     // Hide the modal
@@ -1443,7 +1987,7 @@ echo '<style>
     }
 
     function deleteLead(id) {
-        if (confirm("Are you sure you want to delete this recruitment lead?")) {
+        if (confirm("Are you sure you want to delete this recruited agent?")) {
             const formData = new FormData()
             formData.append("action", "delete_recruitment_lead")
             formData.append("id", id)
@@ -1533,8 +2077,24 @@ echo '<style>
         keys.forEach(k => {
             if (lead[k]) checked++;
         });
-        return Math.round((checked / keys.length) * 100);
+
+        const percent = Math.round((checked / keys.length) * 100);
+
+        // Show button if 100%, hide otherwise
+        const btn = document.getElementById(`onboardBtn-${lead.id}`);
+        if (btn) {
+            if (percent === 100) {
+                btn.classList.remove("hidden");
+                btn.classList.add("inline-block");
+            } else {
+                btn.classList.add("hidden");
+                btn.classList.remove("inline-block");
+            }
+        }
+
+        return percent;
     }
+
 
     function getPostRecruitmentPercent(lead) {
         const keys = [
@@ -1550,55 +2110,318 @@ echo '<style>
     }
     </script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Checklist keys for each section
-        const preRecruitmentKeys = [
-            'pre-assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects'
-        ];
-        const postRecruitmentKeys = [
-            'habit_forming', 'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
-            'sales_monitoring', 'LMS', 'comm_structure'
-        ];
-        const allKeys = preRecruitmentKeys.concat(postRecruitmentKeys);
-        const checkboxes = allKeys.map(id => document.getElementById(id)).filter(Boolean);
-        const progressBar = document.getElementById('progressBar');
-        const progressText = document.getElementById('progressText');
-        const preRecruitmentProgressBar = document.getElementById('preRecruitmentProgressBar');
-        const preRecruitmentProgressText = document.getElementById('preRecruitmentProgressText');
-        const postRecruitmentProgressBar = document.getElementById('postRecruitmentProgressBar');
-        const postRecruitmentProgressText = document.getElementById('postRecruitmentProgressText');
+    // Checklist keys for each section (make global)
+    const preRecruitmentKeys = [
+        'pre-assessment', 'accreditation', 'assessment', 'sales_training', 'site_tour', 'focus_projects'
+    ];
+    const postRecruitmentKeys = [
+        'habit_forming', 'digital_training', 'sales_training_materials', 'objection_handling', 'VAST',
+        'sales_monitoring', 'LMS', 'comm_structure'
+    ];
+    const allKeys = preRecruitmentKeys.concat(postRecruitmentKeys);
+    let checkboxes = [];
+    let progressBar, progressText, preRecruitmentProgressBar, preRecruitmentProgressText, postRecruitmentProgressBar,
+        postRecruitmentProgressText;
 
-        function updateProgress() {
-            // Overall
-            let checked = 0;
-            checkboxes.forEach(cb => {
-                if (cb && cb.checked) checked++;
-            });
-            const percent = Math.round((checked / checkboxes.length) * 100);
-            if (progressBar) progressBar.style.width = percent + '%';
-            if (progressText) progressText.textContent = percent + '%';
-            // Pre-recruitment
-            let preChecked = 0;
-            preRecruitmentKeys.forEach(id => {
-                const cb = document.getElementById(id);
-                if (cb && cb.checked) preChecked++;
-            });
-            const prePercent = Math.round((preChecked / preRecruitmentKeys.length) * 100);
-            if (preRecruitmentProgressBar) preRecruitmentProgressBar.style.width = prePercent + '%';
-            if (preRecruitmentProgressText) preRecruitmentProgressText.textContent = prePercent + '%';
-            // Post-recruitment
-            let postChecked = 0;
-            postRecruitmentKeys.forEach(id => {
-                const cb = document.getElementById(id);
-                if (cb && cb.checked) postChecked++;
-            });
-            const postPercent = Math.round((postChecked / postRecruitmentKeys.length) * 100);
-            if (postRecruitmentProgressBar) postRecruitmentProgressBar.style.width = postPercent + '%';
-            if (postRecruitmentProgressText) postRecruitmentProgressText.textContent = postPercent + '%';
-        }
+    function updateProgress() {
+        // Re-query checkboxes in case DOM changed
+        checkboxes = allKeys.map(id => document.getElementById(id)).filter(Boolean);
+        progressBar = document.getElementById('progressBar');
+        progressText = document.getElementById('progressText');
+        preRecruitmentProgressBar = document.getElementById('preRecruitmentProgressBar');
+        preRecruitmentProgressText = document.getElementById('preRecruitmentProgressText');
+        postRecruitmentProgressBar = document.getElementById('postRecruitmentProgressBar');
+        postRecruitmentProgressText = document.getElementById('postRecruitmentProgressText');
+        // Overall
+        let checked = 0;
+        checkboxes.forEach(cb => {
+            if (cb && cb.checked) checked++;
+        });
+        const percent = checkboxes.length > 0 ? Math.round((checked / checkboxes.length) * 100) : 0;
+        if (progressBar) progressBar.style.width = percent + '%';
+        if (progressText) progressText.textContent = percent + '%';
+        // Pre-recruitment
+        let preChecked = 0;
+        preRecruitmentKeys.forEach(id => {
+            const cb = document.getElementById(id);
+            if (cb && cb.checked) preChecked++;
+        });
+        const prePercent = preRecruitmentKeys.length > 0 ? Math.round((preChecked / preRecruitmentKeys.length) * 100) :
+            0;
+        if (preRecruitmentProgressBar) preRecruitmentProgressBar.style.width = prePercent + '%';
+        if (preRecruitmentProgressText) preRecruitmentProgressText.textContent = prePercent + '%';
+        // Post-recruitment
+        let postChecked = 0;
+        postRecruitmentKeys.forEach(id => {
+            const cb = document.getElementById(id);
+            if (cb && cb.checked) postChecked++;
+        });
+        const postPercent = postRecruitmentKeys.length > 0 ? Math.round((postChecked / postRecruitmentKeys.length) *
+            100) : 0;
+        if (postRecruitmentProgressBar) postRecruitmentProgressBar.style.width = postPercent + '%';
+        if (postRecruitmentProgressText) postRecruitmentProgressText.textContent = postPercent + '%';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        checkboxes = allKeys.map(id => document.getElementById(id)).filter(Boolean);
         checkboxes.forEach(cb => cb && cb.addEventListener('change', updateProgress));
         updateProgress();
     });
+    </script>
+    <script>
+    // --- Team Status Summary Section ---
+    let teamStatusGrouping = 'year';
+    let teamStatusFilters = {
+        year: new Date().getFullYear()
+    };
+
+    function setGrouping(grouping) {
+        teamStatusGrouping = grouping;
+        // Toggle button styles
+        document.querySelectorAll('.grouping-toggle').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
+        document.getElementById('grouping-' + grouping).classList.add('bg-blue-600', 'text-white');
+        // Show/hide filters
+        document.getElementById('filterYear').classList.remove('hidden');
+        document.getElementById('filterMonth').classList.toggle('hidden', grouping !== 'month');
+        document.getElementById('filterQuarter').classList.toggle('hidden', grouping !== 'quarter');
+        // Reset filters
+        if (grouping === 'year') {
+            teamStatusFilters = {
+                year: document.getElementById('filterYear').value
+            };
+        } else if (grouping === 'month') {
+            teamStatusFilters = {
+                year: document.getElementById('filterYear').value,
+                month: document.getElementById('filterMonth').value
+            };
+        } else if (grouping === 'quarter') {
+            teamStatusFilters = {
+                year: document.getElementById('filterYear').value,
+                quarter: document.getElementById('filterQuarter').value
+            };
+        }
+        updateTeamStatusTitle();
+        refreshTeamStatus();
+    }
+
+    function populateYearMonthFilters() {
+        // Populate year dropdown (last 5 years)
+        const yearSel = document.getElementById('filterYear');
+        const now = new Date();
+        const thisYear = now.getFullYear();
+        yearSel.innerHTML = '';
+        for (let y = thisYear; y >= thisYear - 4; y--) {
+            yearSel.innerHTML += `<option value="${y}">${y}</option>`;
+        }
+        // Populate month dropdown
+        const monthSel = document.getElementById('filterMonth');
+        monthSel.innerHTML = '<option value="">All Months</option>';
+        ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November",
+            "December"
+        ].forEach((m, i) => {
+            monthSel.innerHTML += `<option value="${i + 1}">${m}</option>`;
+        });
+    }
+
+    function updateTeamStatusTitle() {
+        const titleEl = document.getElementById('teamStatusTitle');
+        let title = ' Recruited Agents';
+        const year = document.getElementById('filterYear').value;
+        if (teamStatusGrouping === 'year') {
+            title = `Recruited Agents in <span class='text-blue-700'>${year}</span> `;
+        } else if (teamStatusGrouping === 'month') {
+            const monthVal = document.getElementById('filterMonth').value;
+            const monthName = monthVal ? ["January", "February", "March", "April", "May", "June", "July", "August",
+                "September", "October", "November", "December"
+            ][parseInt(monthVal, 10) - 1] : '';
+            title =
+                `Recruited Agents${monthName ? ' in <span class="text-blue-700">' + monthName + '</span>' : ''} <span class='text-blue-700'>${year}</span>`;
+        } else if (teamStatusGrouping === 'quarter') {
+            const quarterVal = document.getElementById('filterQuarter').value;
+            title =
+                `Recruited Agents in <span class='text-blue-700'>Quarter ${quarterVal}</span>of <span class='text-blue-700'>${year}</span>`;
+        }
+        titleEl.innerHTML = title;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        populateYearMonthFilters();
+        setGrouping('year');
+        document.getElementById('filterYear').addEventListener('change', function() {
+            teamStatusFilters.year = this.value;
+            if (teamStatusGrouping === 'month') {
+                teamStatusFilters.month = document.getElementById('filterMonth').value;
+            } else if (teamStatusGrouping === 'quarter') {
+                teamStatusFilters.quarter = document.getElementById('filterQuarter').value;
+            }
+            updateTeamStatusTitle();
+            refreshTeamStatus();
+        });
+        document.getElementById('filterMonth').addEventListener('change', function() {
+            teamStatusFilters.month = this.value;
+            updateTeamStatusTitle();
+            refreshTeamStatus();
+        });
+        document.getElementById('filterQuarter').addEventListener('change', function() {
+            teamStatusFilters.quarter = this.value;
+            updateTeamStatusTitle();
+            refreshTeamStatus();
+        });
+        updateTeamStatusTitle();
+    });
+
+    function refreshTeamStatus() {
+        // Show loading in tables
+        document.getElementById('activeAgentsTableBody').innerHTML =
+            '<tr><td colspan="2" class="text-center text-gray-400 py-4">Loading...</td></tr>';
+        document.getElementById('inactiveAgentsTableBody').innerHTML =
+            '<tr><td colspan="2" class="text-center text-gray-400 py-4">Loading...</td></tr>';
+        // Fetch data
+        const formData = new FormData();
+        formData.append('action', 'get_team_status_summary');
+        formData.append('filters', JSON.stringify(teamStatusFilters));
+        fetch('recruitment-api-debug.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) throw new Error(data.message || 'Failed to load');
+                renderTeamStatusTables(data.data);
+                renderTeamStatusCharts(data.data);
+            })
+            .catch(err => {
+                document.getElementById('activeAgentsTableBody').innerHTML =
+                    `<tr><td colspan="2" class="text-center text-red-400 py-4">Error: ${err.message}</td></tr>`;
+                document.getElementById('inactiveAgentsTableBody').innerHTML =
+                    `<tr><td colspan="2" class="text-center text-red-400 py-4">Error: ${err.message}</td></tr>`;
+            });
+    }
+
+    function renderTeamStatusTables(data) {
+        // Group by status
+        const active = {},
+            inactive = {};
+        data.forEach(row => {
+            if (row.status === 'Active') {
+                active[row.team_name || 'No Team'] = row.count;
+            } else if (row.status === 'Inactive') {
+                inactive[row.team_name || 'No Team'] = row.count;
+            }
+        });
+        // Helper to sort teams alphabetically, but keep 'OJT (Intern)' at the bottom
+        function getSortedTeams(obj) {
+            let teams = Object.keys(obj);
+            const ojtIndex = teams.indexOf('OJT (Intern)');
+            let ojtTeam = null;
+            if (ojtIndex !== -1) {
+                ojtTeam = teams.splice(ojtIndex, 1)[0];
+            }
+            teams = teams.sort((a, b) => a.localeCompare(b));
+            if (ojtTeam) teams.push(ojtTeam);
+            return teams;
+        }
+        // Render Active table
+        const activeBody = document.getElementById('activeAgentsTableBody');
+        activeBody.innerHTML = '';
+        const sortedActiveTeams = getSortedTeams(active);
+        if (sortedActiveTeams.length === 0) {
+            activeBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-400 py-4">No data</td></tr>';
+        } else {
+            sortedActiveTeams.forEach(team => {
+                activeBody.innerHTML +=
+                    `<tr><td class="px-4 py-2 border-b">${team}</td><td class="px-4 py-2 border-b text-green-700 font-bold text-center">${active[team]}</td></tr>`;
+            });
+        }
+        // Render Inactive table
+        const inactiveBody = document.getElementById('inactiveAgentsTableBody');
+        inactiveBody.innerHTML = '';
+        const sortedInactiveTeams = getSortedTeams(inactive);
+        if (sortedInactiveTeams.length === 0) {
+            inactiveBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-400 py-4">No data</td></tr>';
+        } else {
+            sortedInactiveTeams.forEach(team => {
+                inactiveBody.innerHTML +=
+                    `<tr><td class="px-4 py-2 border-b">${team}</td><td class="px-4 py-2 border-b text-red-700 font-bold text-center">${inactive[team]}</td></tr>`;
+            });
+        }
+    }
+
+    function renderTeamStatusCharts(data) {
+        // Prepare data for charts
+        let teams = [...new Set(data.map(row => row.team_name || 'No Team'))];
+        // Sort teams alphabetically, but keep 'OJT (Intern)' at the bottom if present
+        const ojtIndex = teams.indexOf('OJT (Intern)');
+        let ojtTeam = null;
+        if (ojtIndex !== -1) {
+            ojtTeam = teams.splice(ojtIndex, 1)[0];
+        }
+        teams = teams.sort((a, b) => a.localeCompare(b));
+        if (ojtTeam) teams.push(ojtTeam);
+        const activeCounts = teams.map(team => {
+            const found = data.find(row => (row.team_name || 'No Team') === team && row.status === 'Active');
+            return found ? found.count : 0;
+        });
+        const inactiveCounts = teams.map(team => {
+            const found = data.find(row => (row.team_name || 'No Team') === team && row.status === 'Inactive');
+            return found ? found.count : 0;
+        });
+        // Destroy previous charts if any
+        if (window.activeAgentsChartObj) window.activeAgentsChartObj.destroy();
+        if (window.inactiveAgentsChartObj) window.inactiveAgentsChartObj.destroy();
+        // Active chart
+        const ctxA = document.getElementById('activeAgentsChart').getContext('2d');
+        window.activeAgentsChartObj = new Chart(ctxA, {
+            type: 'bar',
+            data: {
+                labels: teams,
+                datasets: [{
+                    label: 'Active Agents',
+                    data: activeCounts,
+                    backgroundColor: '#22c55e',
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        // Inactive chart
+        const ctxI = document.getElementById('inactiveAgentsChart').getContext('2d');
+        window.inactiveAgentsChartObj = new Chart(ctxI, {
+            type: 'bar',
+            data: {
+                labels: teams,
+                datasets: [{
+                    label: 'Inactive Agents',
+                    data: inactiveCounts,
+                    backgroundColor: '#ef4444',
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
     </script>
     <script src="assets/js/script.js"></script>
 </body>
