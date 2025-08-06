@@ -21,22 +21,23 @@ if (!isset($_GET['team_id'])) {
     exit;
 }
 
-$team_id = $_GET['team_id'];
+// Get POST data (sanitize/validate as needed)
+$username = $_POST['username'] ?? '';
+$email = $_POST['email'] ?? '';
+$name = $_POST['name'] ?? '';
 
-try {
-    $sql = "SELECT id, name FROM users WHERE team_id = :team_id ORDER BY name";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
-    $stmt->execute();
+// Response structure
+$response = ['exists' => false];
 
-    $recruiters = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    echo json_encode($recruiters);
-
-} catch (Exception $e) {
-    error_log("Error fetching team recruiters: " . $e->getMessage());
-    echo json_encode([
-        'success' => false,
-        'message' => 'Error fetching recruiters: ' . $e->getMessage()
-    ]);
+// Example using PDO:
+if (!empty($username)) {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $exists = $stmt->fetchColumn() > 0;
 }
+
+echo json_encode(['exists' => $exists]);
+
+// Return JSON response
+header('Content-Type: application/json');
+echo json_encode($response);
