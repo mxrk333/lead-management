@@ -2096,7 +2096,15 @@ echo '<style>
                 document.getElementById("email").value = lead.email || "";
                 document.getElementById("status").value = lead.status || "";
                 document.getElementById("remarks").value = lead.remarks || "";
-                document.getElementById("timestamp").value = lead.timestamp || "";
+                // document.getElementById("timestamp").value = lead.timestamp || "";
+
+                if (lead.created_at) {
+                    // Convert "YYYY-MM-DD HH:MM:SS" to "YYYY-MM-DDTHH:MM"
+                    const dt = lead.created_at.replace(' ', 'T').slice(0, 16);
+                    document.getElementById("timestamp").value = dt;
+                } else {
+                    document.getElementById("timestamp").value = "";
+                }
 
                 // Set checklist checkboxes
                 allKeys.forEach(id => {
