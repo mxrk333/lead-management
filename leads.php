@@ -918,87 +918,11 @@ $isSuperUser = isSuperUser($user['username']);
             transform: translateY(-1px);
         }
 
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
 
-        .modal-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
 
-        .modal-content {
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-lg);
-            max-width: 400px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            transform: scale(0.9);
-            transition: transform 0.3s ease;
-        }
+        
 
-        .modal-overlay.show .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-header {
-            padding: 1.5rem 1.5rem 1rem 1.5rem;
-            border-bottom: 1px solid var(--gray-200);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .modal-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--gray-900);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--gray-400);
-            cursor: pointer;
-            padding: 0;
-            width: 2rem;
-            height: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: var(--border-radius);
-            transition: all 0.2s ease;
-        }
-
-        .modal-close:hover {
-            background: var(--gray-100);
-            color: var(--gray-600);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
+        
         .call-options {
             display: flex;
             flex-direction: column;
@@ -1255,19 +1179,96 @@ $isSuperUser = isSuperUser($user['username']);
                 max-width: 280px;
             }
 
-            .modal-content {
-                width: 95%;
-                margin: 1rem;
-            }
+            
 
-            .modal-header {
-                padding: 1rem;
-            }
+#callModal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  inset: 0;                        /* top/right/bottom/left = 0 */
+  background-color: rgba(0,0,0,0.5);
+}
 
-            .modal-body {
-                padding: 1rem;
-            }
-        }
+/* When shown, center & allow page-level scrolling */
+#callModal.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;                  /* space around content */
+  overflow-y: auto;               /* enable vertical scrolling */
+  scrollbar-width: none;          /* Firefox: hide scrollbar */
+  -ms-overflow-style: none;       /* IE 10+: hide scrollbar */
+}
+
+/* Hide WebKit scrollbar */
+#callModal.show::-webkit-scrollbar {
+  display: none;
+}
+
+/* The white “card” */
+#callModal .modal-content {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  max-width: 400px;
+  width: 90%;
+  /* Add a value for max-height or remove if not needed */
+  max-height: 90vh;
+}
+
+
+/* Scale up on show */
+#callModal.show .modal-content {
+  transform: scale(1);
+}
+
+/* Header */
+#callModal .modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Title */
+#callModal .modal-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Close button */
+#callModal .modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--gray-400);
+  cursor: pointer;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+}
+
+#callModal .modal-close:hover {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
+/* Body */
+#callModal .modal-body {
+  padding: 1.5rem;
+}
+
+
+        
     </style>
 </head>
 <body>
@@ -1578,37 +1579,38 @@ $isSuperUser = isSuperUser($user['username']);
     </div>
 
     <!-- Call Modal -->
-    <div id="callModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">
-                    <i class="fas fa-phone"></i>
-                    Contact <span id="modalClientName"></span>
-                </h3>
-                <button class="modal-close" onclick="closeCallModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="call-options">
-                    <a href="#" id="phoneCallLink" class="call-option phone">
-                        <i class="fas fa-phone"></i>
-                        <div class="call-option-content">
-                            <div class="call-option-title">Phone Call</div>
-                            <div class="call-option-description">Make a regular phone call</div>
-                        </div>
-                    </a>
-                    <a href="#" id="whatsappLink" class="call-option whatsapp" target="_blank">
-                        <i class="fab fa-whatsapp"></i>
-                        <div class="call-option-content">
-                            <div class="call-option-title">WhatsApp</div>
-                            <div class="call-option-description">Send a WhatsApp message</div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </div>
+<div id="callModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>
+        <i class="fas fa-phone"></i>
+        Contact <span id="modalClientName"></span>
+      </h3>
+      <button class="modal-close" onclick="closeCallModal()">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
+    <div class="modal-body">
+      <div class="call-options">
+        <a href="#" id="phoneCallLink" class="call-option phone">
+          <i class="fas fa-phone"></i>
+          <div>
+            <strong>Phone Call</strong>
+            <p>Make a regular phone call</p>
+          </div>
+        </a>
+        <a href="#" id="whatsappLink" class="call-option whatsapp" target="_blank">
+          <i class="fab fa-whatsapp"></i>
+          <div>
+            <strong>WhatsApp</strong>
+            <p>Send a WhatsApp message</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
     
     <script>
     function deleteLead(id) {
@@ -1675,4 +1677,5 @@ $isSuperUser = isSuperUser($user['username']);
     
     <script src="assets/js/script.js"></script>
 </body>
-</html> 
+</html>
+<?php ?>
