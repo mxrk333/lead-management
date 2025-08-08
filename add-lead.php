@@ -1,5 +1,5 @@
 <?php
-// Enhanced add-lead.php with strict duplicate prevention and popup modal
+// Enhanced add-lead.php with comprehensive cross-team duplicate prevention
 session_start();
 
 // Enable error logging
@@ -62,7 +62,7 @@ try {
     if (!$user || !is_array($user)) {
         throw new Exception("User not found or invalid user data for ID: $user_id");
     }
-    debugLog("User found: " . ($user['name'] ?? 'Unknown'));
+    debugLog("User found: " . ($user['name'] ?? 'Unknown') . " from team: " . ($user['team_name'] ?? 'Unknown'));
 } catch (Exception $e) {
     handleError("Failed to get user information: " . $e->getMessage());
 }
@@ -75,10 +75,11 @@ $success = '';
 $error = '';
 $duplicate_found = false;
 $duplicate_details = [];
+$similar_leads = [];
 
-// ENHANCED: Function to check for exact duplicate leads (case-insensitive)
-function checkExactDuplicateLead($clientName) {
-    debugLog("Checking for exact duplicate lead: $clientName");
+// ENHANCED: Comprehensive duplicate detection across all teams
+function checkComprehensiveDuplicates($clientName, $phone = '', $email = '') {
+    debugLog("Checking comprehensive duplicates for: Name='$clientName', Phone='$phone', Email='$email'");
     
     try {
         $conn = getDbConnection();
@@ -86,7 +87,10 @@ function checkExactDuplicateLead($clientName) {
             throw new Exception("Database connection failed");
         }
         
-        // Search for leads with exact same name (case-insensitive, trimmed)
+        $duplicates = [];
+        $similar = [];
+        
+        // 1. EXACT NAME MATCH (case-insensitive, trimmed) - BLOCKING
         $stmt = $conn->prepare("
             SELECT 
                 l.id, 
@@ -95,52 +99,248 @@ function checkExactDuplicateLead($clientName) {
                 l.email, 
                 l.status,
                 l.created_at,
+                l.updated_at,
                 u.name as agent_name,
-                t.name as team_name
+                t.name as team_name,
+                t.id as team_id,
+                'exact_name' as match_type,
+                'BLOCKING' as severity
             FROM leads l
             LEFT JOIN users u ON l.user_id = u.id
             LEFT JOIN teams t ON u.team_id = t.id
             WHERE LOWER(TRIM(l.client_name)) = LOWER(TRIM(?))
             ORDER BY l.created_at DESC
-            LIMIT 5
+            LIMIT 10
         ");
         
         if (!$stmt) {
-            throw new Exception("Failed to prepare duplicate check statement: " . $conn->error);
+            throw new Exception("Failed to prepare exact name check: " . $conn->error);
         }
         
         $stmt->bind_param("s", $clientName);
-        
         if (!$stmt->execute()) {
-            throw new Exception("Failed to execute duplicate check: " . $stmt->error);
+            throw new Exception("Failed to execute exact name check: " . $stmt->error);
         }
         
         $result = $stmt->get_result();
-        $duplicates = [];
-        
         while ($row = $result->fetch_assoc()) {
             $duplicates[] = $row;
+        }
+        $stmt->close();
+        
+        // 2. PHONE NUMBER MATCH (if provided) - BLOCKING
+        if (!empty($phone) && strlen($phone) >= 10) {
+            $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+            
+            $stmt = $conn->prepare("
+                SELECT 
+                    l.id, 
+                    l.client_name, 
+                    l.phone, 
+                    l.email, 
+                    l.status,
+                    l.created_at,
+                    l.updated_at,
+                    u.name as agent_name,
+                    t.name as team_name,
+                    t.id as team_id,
+                    'exact_phone' as match_type,
+                    'BLOCKING' as severity
+                FROM leads l
+                LEFT JOIN users u ON l.user_id = u.id
+                LEFT JOIN teams t ON u.team_id = t.id
+                WHERE REPLACE(REPLACE(REPLACE(l.phone, '-', ''), ' ', ''), '+63', '0') = ?
+                   OR REPLACE(REPLACE(REPLACE(l.phone, '-', ''), ' ', ''), '+63', '0') = ?
+                ORDER BY l.created_at DESC
+                LIMIT 5
+            ");
+            
+            if ($stmt) {
+                $phoneVariant1 = $cleanPhone;
+                $phoneVariant2 = '0' . substr($cleanPhone, -10); // Handle +63 vs 0 prefix
+                
+                $stmt->bind_param("ss", $phoneVariant1, $phoneVariant2);
+                if ($stmt->execute()) {
+                    $result = $stmt->get_result();
+                    while ($row = $result->fetch_assoc()) {
+                        // Avoid duplicating if already found by name
+                        $exists = false;
+                        foreach ($duplicates as $dup) {
+                            if ($dup['id'] == $row['id']) {
+                                $exists = true;
+                                break;
+                            }
+                        }
+                        if (!$exists) {
+                            $duplicates[] = $row;
+                        }
+                    }
+                }
+                $stmt->close();
+            }
+        }
+        
+        // 3. EMAIL MATCH (if provided) - BLOCKING
+        if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $stmt = $conn->prepare("
+                SELECT 
+                    l.id, 
+                    l.client_name, 
+                    l.phone, 
+                    l.email, 
+                    l.status,
+                    l.created_at,
+                    l.updated_at,
+                    u.name as agent_name,
+                    t.name as team_name,
+                    t.id as team_id,
+                    'exact_email' as match_type,
+                    'BLOCKING' as severity
+                FROM leads l
+                LEFT JOIN users u ON l.user_id = u.id
+                LEFT JOIN teams t ON u.team_id = t.id
+                WHERE LOWER(TRIM(l.email)) = LOWER(TRIM(?))
+                ORDER BY l.created_at DESC
+                LIMIT 5
+            ");
+            
+            if ($stmt) {
+                $stmt->bind_param("s", $email);
+                if ($stmt->execute()) {
+                    $result = $stmt->get_result();
+                    while ($row = $result->fetch_assoc()) {
+                        // Avoid duplicating if already found
+                        $exists = false;
+                        foreach ($duplicates as $dup) {
+                            if ($dup['id'] == $row['id']) {
+                                $exists = true;
+                                break;
+                            }
+                        }
+                        if (!$exists) {
+                            $duplicates[] = $row;
+                        }
+                    }
+                }
+                $stmt->close();
+            }
+        }
+        
+        // 4. SIMILAR NAME MATCH - WARNING ONLY
+        $nameWords = explode(' ', strtolower(trim($clientName)));
+        if (count($nameWords) >= 2) {
+            $firstName = $nameWords[0];
+            $lastName = end($nameWords);
+            
+            $stmt = $conn->prepare("
+                SELECT 
+                    l.id, 
+                    l.client_name, 
+                    l.phone, 
+                    l.email, 
+                    l.status,
+                    l.created_at,
+                    l.updated_at,
+                    u.name as agent_name,
+                    t.name as team_name,
+                    t.id as team_id,
+                    'similar_name' as match_type,
+                    'WARNING' as severity
+                FROM leads l
+                LEFT JOIN users u ON l.user_id = u.id
+                LEFT JOIN teams t ON u.team_id = t.id
+                WHERE (LOWER(l.client_name) LIKE ? OR LOWER(l.client_name) LIKE ?)
+                  AND LOWER(TRIM(l.client_name)) != LOWER(TRIM(?))
+                ORDER BY l.created_at DESC
+                LIMIT 5
+            ");
+            
+            if ($stmt) {
+                $firstNamePattern = "%$firstName%";
+                $lastNamePattern = "%$lastName%";
+                
+                $stmt->bind_param("sss", $firstNamePattern, $lastNamePattern, $clientName);
+                if ($stmt->execute()) {
+                    $result = $stmt->get_result();
+                    while ($row = $result->fetch_assoc()) {
+                        $similar[] = $row;
+                    }
+                }
+                $stmt->close();
+            }
+        }
+        
+        $conn->close();
+        
+        debugLog("Found " . count($duplicates) . " blocking duplicates and " . count($similar) . " similar leads");
+        
+        return [
+            'blocking' => $duplicates,
+            'similar' => $similar
+        ];
+        
+    } catch (Exception $e) {
+        debugLog("Error checking for duplicates: " . $e->getMessage());
+        return ['blocking' => [], 'similar' => []];
+    }
+}
+
+// Enhanced function to get team statistics for duplicate context
+function getTeamDuplicateStats($clientName) {
+    debugLog("Getting team duplicate statistics for: $clientName");
+    
+    try {
+        $conn = getDbConnection();
+        if (!$conn) {
+            throw new Exception("Database connection failed");
+        }
+        
+        $stmt = $conn->prepare("
+            SELECT 
+                t.name as team_name,
+                t.id as team_id,
+                COUNT(l.id) as lead_count,
+                GROUP_CONCAT(DISTINCT u.name SEPARATOR ', ') as agents
+            FROM leads l
+            LEFT JOIN users u ON l.user_id = u.id
+            LEFT JOIN teams t ON u.team_id = t.id
+            WHERE LOWER(TRIM(l.client_name)) = LOWER(TRIM(?))
+            GROUP BY t.id, t.name
+            ORDER BY lead_count DESC
+        ");
+        
+        if (!$stmt) {
+            return [];
+        }
+        
+        $stmt->bind_param("s", $clientName);
+        if (!$stmt->execute()) {
+            return [];
+        }
+        
+        $result = $stmt->get_result();
+        $stats = [];
+        
+        while ($row = $result->fetch_assoc()) {
+            $stats[] = $row;
         }
         
         $stmt->close();
         $conn->close();
         
-        debugLog("Found " . count($duplicates) . " exact duplicates for: $clientName");
-        
-        return $duplicates;
+        return $stats;
         
     } catch (Exception $e) {
-        debugLog("Error checking for duplicates: " . $e->getMessage());
+        debugLog("Error getting team stats: " . $e->getMessage());
         return [];
     }
 }
 
-// Enhanced function to get developers with fallback
+// Enhanced getDevelopers function (keeping original logic)
 function getDevelopersEnhanced() {
     debugLog("Getting developers");
     
     try {
-        // Try the original function first
         if (function_exists('getDevelopers')) {
             $developers = getDevelopers();
             if (!empty($developers)) {
@@ -149,7 +349,6 @@ function getDevelopersEnhanced() {
             }
         }
         
-        // Fallback: Get directly from database
         $conn = getDbConnection();
         if (!$conn) {
             throw new Exception("Database connection failed");
@@ -157,7 +356,6 @@ function getDevelopersEnhanced() {
         
         $developers = [];
         
-        // Try different possible table names and structures
         $possible_queries = [
             "SELECT DISTINCT name FROM developers WHERE status = 'active' ORDER BY name",
             "SELECT DISTINCT name FROM developers ORDER BY name",
@@ -185,7 +383,6 @@ function getDevelopersEnhanced() {
         
         $conn->close();
         
-        // If still no developers, provide defaults
         if (empty($developers)) {
             debugLog("No developers found, using defaults");
             $defaultDevelopers = ['Lancaster', 'Antipolo Heights', 'Pleasant Fields', 'Vista Verde', 'Golden Hills'];
@@ -199,7 +396,6 @@ function getDevelopersEnhanced() {
     } catch (Exception $e) {
         debugLog("Error getting developers: " . $e->getMessage());
         
-        // Return default developers
         $defaultDevelopers = ['Lancaster', 'Antipolo Heights', 'Pleasant Fields', 'Vista Verde', 'Golden Hills'];
         $developers = [];
         foreach ($defaultDevelopers as $dev) {
@@ -209,12 +405,11 @@ function getDevelopersEnhanced() {
     }
 }
 
-// Enhanced function to get project models with fallback
+// Enhanced getProjectModels function (keeping original logic)
 function getProjectModelsEnhanced() {
     debugLog("Getting project models");
     
     try {
-        // Try the original function first
         if (function_exists('getProjectModels')) {
             $models = getProjectModels();
             if (!empty($models)) {
@@ -223,7 +418,6 @@ function getProjectModelsEnhanced() {
             }
         }
         
-        // Fallback: Get directly from database
         $conn = getDbConnection();
         if (!$conn) {
             throw new Exception("Database connection failed");
@@ -231,7 +425,6 @@ function getProjectModelsEnhanced() {
         
         $models = [];
         
-        // Try different possible table names and structures
         $possible_queries = [
             "SELECT developer_name, name FROM project_models WHERE status = 'active' ORDER BY developer_name, name",
             "SELECT developer_name, name FROM project_models ORDER BY developer_name, name",
@@ -261,7 +454,6 @@ function getProjectModelsEnhanced() {
         
         $conn->close();
         
-        // If still no models, provide defaults
         if (empty($models)) {
             debugLog("No project models found, using defaults");
             $defaultModels = [
@@ -290,7 +482,6 @@ function getProjectModelsEnhanced() {
     } catch (Exception $e) {
         debugLog("Error getting project models: " . $e->getMessage());
         
-        // Return default models
         $defaultModels = [
             ['developer_name' => 'Lancaster', 'name' => 'Kennedy'],
             ['developer_name' => 'Lancaster', 'name' => 'Alexandra'],
@@ -413,22 +604,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $validation_errors[] = "Lead source is required";
         }
         
-        // ENHANCED: Check for exact duplicate leads - PREVENT SAVING IF FOUND
+        // ENHANCED: Comprehensive duplicate check across all teams
         if (empty($validation_errors) && !empty($clientName)) {
-            $duplicates = checkExactDuplicateLead($clientName);
+            $duplicateResults = checkComprehensiveDuplicates($clientName, $phone, $email);
+            $blockingDuplicates = $duplicateResults['blocking'];
+            $similarLeads = $duplicateResults['similar'];
             
-            if (!empty($duplicates)) {
+            if (!empty($blockingDuplicates)) {
                 $duplicate_found = true;
-                $duplicate_details = $duplicates;
+                $duplicate_details = $blockingDuplicates;
                 
-                // Log duplicate detection
-                debugLog("DUPLICATE PREVENTED - Exact duplicate lead found for: $clientName");
-                foreach ($duplicates as $dup) {
-                    debugLog("Existing lead: ID {$dup['id']}, Agent: {$dup['agent_name']}, Team: {$dup['team_name']}, Status: {$dup['status']}");
+                // Get team statistics for context
+                $teamStats = getTeamDuplicateStats($clientName);
+                
+                // Log comprehensive duplicate detection
+                debugLog("COMPREHENSIVE DUPLICATE PREVENTED - Found " . count($blockingDuplicates) . " blocking duplicates for: $clientName");
+                foreach ($blockingDuplicates as $dup) {
+                    debugLog("Blocking duplicate: ID {$dup['id']}, Agent: {$dup['agent_name']}, Team: {$dup['team_name']}, Match: {$dup['match_type']}, Status: {$dup['status']}");
                 }
                 
-                // DO NOT PROCEED WITH SAVING - Set flag to show popup
-                debugLog("Lead creation blocked due to duplicate name");
+                if (!empty($similarLeads)) {
+                    debugLog("Also found " . count($similarLeads) . " similar leads (non-blocking)");
+                    $similar_leads = $similarLeads;
+                }
+                
+                // DO NOT PROCEED WITH SAVING - Set flag to show enhanced popup
+                debugLog("Lead creation blocked due to comprehensive duplicate detection across teams");
+            } elseif (!empty($similarLeads)) {
+                // Store similar leads for warning display but allow saving
+                $similar_leads = $similarLeads;
+                debugLog("Found " . count($similarLeads) . " similar leads (warning only)");
             }
         }
         
@@ -453,6 +658,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 debugLog("Lead added successfully with result: " . (is_numeric($result) ? "ID $result" : "true"));
                 $success = "Lead added successfully";
                 
+                // Log successful cross-team validation
+                if (!empty($similar_leads)) {
+                    debugLog("Lead saved despite " . count($similar_leads) . " similar leads found (warnings only)");
+                }
+                
                 // Clear form data on success
                 $_POST = [];
                 
@@ -469,7 +679,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Enhanced getLeadSources function with better error handling and "Others" option
+// Enhanced getLeadSources function (keeping original logic)
 function getLeadSources() {
     debugLog("Getting lead sources");
     
@@ -481,7 +691,6 @@ function getLeadSources() {
         
         $sources = [];
         
-        // Get ENUM values directly from the column
         $stmt = $conn->prepare("SHOW COLUMNS FROM leads WHERE Field = 'source'");
         if (!$stmt) {
             throw new Exception("Failed to prepare statement: " . $conn->error);
@@ -494,7 +703,6 @@ function getLeadSources() {
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();
         
-        // Parse ENUM values from the type definition
         if ($row && preg_match("/^enum$$'(.*)'$$$/", $row['Type'], $matches)) {
             $values = explode("','", $matches[1]);
             foreach ($values as $value) {
@@ -514,7 +722,6 @@ function getLeadSources() {
         $sources = [];
     }
     
-    // If no sources found from database, provide default values
     if (empty($sources)) {
         debugLog("Using default lead sources");
         $defaultSources = [
@@ -534,7 +741,6 @@ function getLeadSources() {
         }
     }
     
-    // Always add "Others" option at the end
     $sources[] = [
         'id' => 'Others',
         'name' => 'Others'
@@ -569,15 +775,666 @@ debugLog("Page rendering started");
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Base styles */
+        /* Enhanced styles for comprehensive duplicate detection */
         :root {
             --container-padding: 25px;
+            --primary-color: #4f46e5;
+            --danger-color: #dc2626;
+            --warning-color: #f59e0b;
+            --success-color: #10b981;
         }
 
         @media (max-width: 768px) {
             :root {
                 --container-padding: 15px;
             }
+        }
+
+        /* Base styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1f2937;
+            background-color: #f9fafb;
+        }
+        
+        .add-lead-page {
+            padding: 2rem;
+            background-color: #f9fafb;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .page-header h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+            letter-spacing: -0.025em;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .page-header h2::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 0;
+            width: 2.5rem;
+            height: 0.25rem;
+            background: linear-gradient(to right, var(--primary-color), #8b5cf6);
+            border-radius: 0.25rem;
+        }
+        
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.625rem 1rem;
+            background-color: white;
+            color: var(--primary-color);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-back:hover {
+            background-color: rgba(79, 70, 229, 0.05);
+            border-color: rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn-back i {
+            margin-right: 0.5rem;
+        }
+        
+        /* Form styles */
+        .lead-form {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(229, 231, 235, 0.5);
+            overflow: hidden;
+        }
+        
+        .form-section {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .form-section:last-of-type {
+            border-bottom: none;
+        }
+        
+        .form-section h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-section h3::before {
+            content: '';
+            display: inline-block;
+            width: 0.25rem;
+            height: 1.25rem;
+            background: linear-gradient(to bottom, var(--primary-color), #8b5cf6);
+            margin-right: 0.75rem;
+            border-radius: 0.125rem;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap; 
+            margin: 0 -0.75rem 1.5rem;
+        }
+        
+        .form-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 250px;
+            padding: 0 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .form-group {
+                flex: 0 0 100%;
+            }
+        }
+        
+        .form-group.full-width {
+            flex: 0 0 100%;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .required-field label::after {
+            content: ' *';
+            color: var(--danger-color);
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: #1f2937;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary-color);
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .form-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+            padding-right: 2.5rem;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .others-input {
+            margin-top: 0.75rem;
+            display: none;
+        }
+
+        .others-input.show {
+            display: block;
+        }
+
+        .others-input input {
+            border-color: var(--primary-color);
+            background-color: #f8fafc;
+        }
+
+        .others-input label {
+            font-size: 0.75rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding: 1.5rem 2rem;
+            background-color: #f9fafb;
+            border-top: 1px solid #f3f4f6;
+        }
+        
+        .btn-save,
+        .btn-cancel {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-save {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            margin-left: 0.75rem;
+        }
+        
+        .btn-save:hover {
+            background-color: #4338ca;
+        }
+        
+        .btn-cancel {
+            background-color: white;
+            color: #6b7280;
+            border: 1px solid #d1d5db;
+            text-decoration: none;
+        }
+        
+        .btn-cancel:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .success-message,
+        .error-message {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .success-message {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* ENHANCED: Comprehensive Duplicate Modal Styles */
+        .duplicate-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .duplicate-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .duplicate-modal-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 0;
+            max-width: 800px;
+            width: 95%;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        .duplicate-modal-header {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .duplicate-modal-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .duplicate-modal-title i {
+            font-size: 1.5rem;
+        }
+
+        .duplicate-modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+
+        .duplicate-modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .duplicate-modal-body {
+            padding: 2rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .duplicate-warning-text {
+            font-size: 1rem;
+            color: #374151;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #fef2f2;
+            border-left: 4px solid var(--danger-color);
+            border-radius: 0.5rem;
+        }
+
+        .duplicate-warning-text strong {
+            color: var(--danger-color);
+        }
+
+        .duplicate-section {
+            margin-bottom: 2rem;
+        }
+
+        .duplicate-section h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .blocking-section h4 {
+            color: var(--danger-color);
+        }
+
+        .blocking-section h4::before {
+            content: '🚫';
+            font-size: 1.25rem;
+        }
+
+        .similar-section h4 {
+            color: var(--warning-color);
+        }
+
+        .similar-section h4::before {
+            content: '⚠️';
+            font-size: 1.25rem;
+        }
+
+        .duplicate-details {
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .duplicate-item {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--danger-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .duplicate-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .similar-item {
+            border-left-color: var(--warning-color);
+        }
+
+        .duplicate-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .duplicate-item-name {
+            font-weight: 600;
+            color: #111827;
+            font-size: 1rem;
+            flex: 1;
+        }
+
+        .duplicate-item-match-type {
+            background: var(--danger-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-left: 1rem;
+        }
+
+        .similar-item .duplicate-item-match-type {
+            background: var(--warning-color);
+        }
+
+        .duplicate-item-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .duplicate-item-detail {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .duplicate-item-detail strong {
+            color: #374151;
+            font-weight: 500;
+            margin-bottom: 0.125rem;
+        }
+
+        .team-stats {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .team-stats h5 {
+            color: #0369a1;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .team-stats h5::before {
+            content: '👥';
+        }
+
+        .team-stat-item {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #0ea5e9;
+        }
+
+        .team-stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .duplicate-modal-footer {
+            background-color: #f9fafb;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .auto-close-timer {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .timer-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #e5e7eb;
+            border-top-color: var(--danger-color);
+            animation: spin 1s linear infinite;
+        }
+
+        .duplicate-modal-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-modal-close {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-modal-close:hover {
+            background-color: #b91c1c;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile responsive for modal */
+        @media (max-width: 768px) {
+            .duplicate-modal-content {
+                width: 98%;
+                margin: 1rem;
+                max-height: 95vh;
+            }
+
+            .duplicate-modal-header {
+                padding: 1rem 1.5rem;
+            }
+
+            .duplicate-modal-title {
+                font-size: 1.125rem;
+            }
+
+            .duplicate-modal-body {
+                padding: 1.5rem;
+            }
+
+            .duplicate-item-details {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .duplicate-modal-footer {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+                padding: 1rem 1.5rem;
+            }
+
+            .duplicate-modal-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .btn-modal-close {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+        
+        .required-note {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+        
+        .required-note span {
+            color: var(--danger-color);
+        }
+        
+        .optional-field {
+            color: #6b7280;
+            font-size: 0.75rem;
+            font-weight: normal;
+            margin-left: 0.25rem;
+        }
+
+        /* Similar leads warning (non-blocking) */
+        .similar-warning {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: #92400e;
+        }
+
+        .similar-warning h4 {
+            color: #92400e;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .similar-warning h4::before {
+            content: '⚠️';
         }
 
         /* Responsive adjustments */
@@ -686,7 +1543,6 @@ debugLog("Page rendering started");
             }
         }
 
-        /* Touch device optimizations */
         @media (hover: none) {
             .btn-save:hover,
             .btn-cancel:hover,
@@ -700,553 +1556,6 @@ debugLog("Page rendering started");
             .form-group textarea:focus {
                 box-shadow: none;
             }
-        }
-        
-        /* Base styles */
-        body {
-            font-family: 'Inter', sans-serif;
-            color: #1f2937;
-            background-color: #f9fafb;
-        }
-        
-        /* Add Lead page styles */
-        .add-lead-page {
-            padding: 2rem;
-            background-color: #f9fafb;
-        }
-        
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        
-        .page-header h2 {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: #111827;
-            margin: 0;
-            letter-spacing: -0.025em;
-            position: relative;
-            display: inline-block;
-        }
-        
-        .page-header h2::after {
-            content: '';
-            position: absolute;
-            bottom: -0.5rem;
-            left: 0;
-            width: 2.5rem;
-            height: 0.25rem;
-            background: linear-gradient(to right, #4f46e5, #8b5cf6);
-            border-radius: 0.25rem;
-        }
-        
-        .btn-back {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.625rem 1rem;
-            background-color: white;
-            color: #4f46e5;
-            border: 1px solid rgba(79, 70, 229, 0.2);
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-back:hover {
-            background-color: rgba(79, 70, 229, 0.05);
-            border-color: rgba(79, 70, 229, 0.3);
-        }
-        
-        .btn-back i {
-            margin-right: 0.5rem;
-        }
-        
-        /* Form styles */
-        .lead-form {
-            background-color: white;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(229, 231, 235, 0.5);
-            overflow: hidden;
-        }
-        
-        .form-section {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .form-section:last-of-type {
-            border-bottom: none;
-        }
-        
-        .form-section h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #111827;
-            margin-top: 0;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-        }
-        
-        .form-section h3::before {
-            content: '';
-            display: inline-block;
-            width: 0.25rem;
-            height: 1.25rem;
-            background: linear-gradient(to bottom, #4f46e5, #8b5cf6);
-            margin-right: 0.75rem;
-            border-radius: 0.125rem;
-        }
-        
-        .form-row {
-            display: flex;
-            flex-wrap: wrap; 
-            margin: 0 -0.75rem 1.5rem;
-        }
-        
-        .form-row:last-child {
-            margin-bottom: 0;
-        }
-        
-        .form-group {
-            flex: 1;
-            min-width: 250px;
-            padding: 0 0.75rem;
-            margin-bottom: 1rem;
-        }
-        
-        @media (max-width: 768px) {
-            .form-group {
-                flex: 0 0 100%;
-            }
-        }
-        
-        .form-group.full-width {
-            flex: 0 0 100%;
-        }
-        
-        .form-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 0.5rem;
-        }
-        
-        /* Required field indicator */
-        .required-field label::after {
-            content: ' *';
-            color: #ef4444;
-        }
-        
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            display: block;
-            width: 100%;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            color: #1f2937;
-            background-color: #fff;
-            background-clip: padding-box;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            border-color: #4f46e5;
-            outline: 0;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-        
-        .form-group select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            background-size: 1rem;
-            padding-right: 2.5rem;
-        }
-        
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        /* Others input field styling */
-        .others-input {
-            margin-top: 0.75rem;
-            display: none;
-        }
-
-        .others-input.show {
-            display: block;
-        }
-
-        .others-input input {
-            border-color: #4f46e5;
-            background-color: #f8fafc;
-        }
-
-        .others-input label {
-            font-size: 0.75rem;
-            color: #4f46e5;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        
-        /* Form actions */
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            padding: 1.5rem 2rem;
-            background-color: #f9fafb;
-            border-top: 1px solid #f3f4f6;
-        }
-        
-        .btn-save,
-        .btn-cancel {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-        
-        .btn-save {
-            background-color: #4f46e5;
-            color: white;
-            border: none;
-            margin-left: 0.75rem;
-        }
-        
-        .btn-save:hover {
-            background-color: #4338ca;
-        }
-        
-        .btn-cancel {
-            background-color: white;
-            color: #6b7280;
-            border: 1px solid #d1d5db;
-            text-decoration: none;
-        }
-        
-        .btn-cancel:hover {
-            background-color: #f3f4f6;
-        }
-        
-        /* Success and error messages */
-        .success-message,
-        .error-message {
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-        }
-        
-        .success-message {
-            background-color: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-        
-        .error-message {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        /* NEW: Duplicate Modal Styles */
-        .duplicate-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            z-index: 10000;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .duplicate-modal.show {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .duplicate-modal-content {
-            background: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            position: relative;
-            animation: slideIn 0.3s ease;
-        }
-
-        .duplicate-modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .duplicate-modal-title {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #dc2626;
-        }
-
-        .duplicate-modal-title i {
-            font-size: 1.5rem;
-            color: #dc2626;
-        }
-
-        .duplicate-modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: #6b7280;
-            cursor: pointer;
-            padding: 0.25rem;
-            border-radius: 0.25rem;
-            transition: all 0.2s ease;
-        }
-
-        .duplicate-modal-close:hover {
-            background-color: #f3f4f6;
-            color: #374151;
-        }
-
-        .duplicate-modal-body {
-            margin-bottom: 1.5rem;
-        }
-
-        .duplicate-warning-text {
-            font-size: 1rem;
-            color: #374151;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-        }
-
-        .duplicate-details {
-            background-color: #fef2f2;
-            border: 1px solid #fecaca;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .duplicate-details h4 {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #991b1b;
-            margin-bottom: 0.75rem;
-        }
-
-        .duplicate-item {
-            background: white;
-            border-radius: 0.375rem;
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            border-left: 3px solid #dc2626;
-        }
-
-        .duplicate-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .duplicate-item-name {
-            font-weight: 600;
-            color: #111827;
-            margin-bottom: 0.25rem;
-        }
-
-        .duplicate-item-details {
-            font-size: 0.75rem;
-            color: #6b7280;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .duplicate-modal-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-top: 1rem;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .auto-close-timer {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-
-        .timer-circle {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: 2px solid #e5e7eb;
-            border-top-color: #dc2626;
-            animation: spin 1s linear infinite;
-        }
-
-        .duplicate-modal-actions {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .btn-modal-close {
-            padding: 0.5rem 1rem;
-            background-color: #dc2626;
-            color: white;
-            border: none;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-modal-close:hover {
-            background-color: #b91c1c;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideIn {
-            from { 
-                opacity: 0;
-                transform: translateY(-20px) scale(0.95);
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Mobile responsive for modal */
-        @media (max-width: 768px) {
-            .duplicate-modal-content {
-                width: 95%;
-                padding: 1.5rem;
-                margin: 1rem;
-            }
-
-            .duplicate-modal-title {
-                font-size: 1.125rem;
-            }
-
-            .duplicate-modal-footer {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: stretch;
-            }
-
-            .duplicate-modal-actions {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .btn-modal-close {
-                flex: 1;
-            }
-        }
-        
-        /* Required field indicator */
-        .required-note {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-bottom: 1rem;
-        }
-        
-        .required-note span {
-            color: #ef4444;
-        }
-        
-        /* Source select styling */
-        .source-select {
-            max-height: 15rem;
-            overflow-y: auto;
-        }
-        
-        /* Optional field styling */
-        .optional-field {
-            color: #6b7280;
-            font-size: 0.75rem;
-            font-weight: normal;
-            margin-left: 0.25rem;
-        }
-
-        /* Loading state */
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        .loading::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            margin: -10px 0 0 -10px;
-            border: 2px solid #4f46e5;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
-        }
-
-        /* Debug info styling */
-        .debug-info {
-            background-color: #f3f4f6;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            font-family: monospace;
-            font-size: 0.75rem;
-            color: #6b7280;
         }
     </style>
 </head>
@@ -1281,23 +1590,10 @@ debugLog("Page rendering started");
                 </div>
                 <?php endif; ?>
 
-                <!-- Debug Information (remove in production) -->
-                <?php if (isset($_GET['debug'])): ?>
-                <div class="debug-info">
-                    <strong>Debug Information:</strong><br>
-                    Developers loaded: <?php echo count($developers); ?><br>
-                    Project models loaded: <?php echo count($projectModels); ?><br>
-                    Lead sources loaded: <?php echo count($leadSources); ?><br>
-                    <br>
-                    <strong>Developers:</strong><br>
-                    <?php foreach (array_slice($developers, 0, 5) as $dev): ?>
-                        - <?php echo htmlspecialchars($dev['name']); ?><br>
-                    <?php endforeach; ?>
-                    <br>
-                    <strong>Project Models (first 10):</strong><br>
-                    <?php foreach (array_slice($projectModels, 0, 10) as $model): ?>
-                        - <?php echo htmlspecialchars($model['developer_name']); ?>: <?php echo htmlspecialchars($model['name']); ?><br>
-                    <?php endforeach; ?>
+                <?php if (!empty($similar_leads) && !$duplicate_found): ?>
+                <div class="similar-warning">
+                    <h4>Similar Leads Found</h4>
+                    <p>We found <?php echo count($similar_leads); ?> similar lead(s) in the system. Please review to ensure this is not a duplicate before saving.</p>
                 </div>
                 <?php endif; ?>
                 
@@ -1439,7 +1735,7 @@ debugLog("Page rendering started");
                         
                         <div class="form-row">
                             <div class="form-group required-field">
-                                <label for="price">Total Contract Price (PHP)</label>
+                                <label for="price">Total Selling Price (PHP)</label>
                                 <input type="text" id="price" name="price" 
                                        value="<?php echo htmlspecialchars($_POST['price'] ?? ''); ?>"
                                        placeholder="e.g. 1,000,000.00" required>
@@ -1466,14 +1762,14 @@ debugLog("Page rendering started");
         </div>
     </div>
 
-    <!-- NEW: Duplicate Detection Modal -->
+    <!-- ENHANCED: Comprehensive Cross-Team Duplicate Detection Modal -->
     <?php if ($duplicate_found && !empty($duplicate_details)): ?>
     <div class="duplicate-modal show" id="duplicateModal">
         <div class="duplicate-modal-content">
             <div class="duplicate-modal-header">
                 <div class="duplicate-modal-title">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Duplicate Lead Detected
+                    <i class="fas fa-shield-alt"></i>
+                    Cross-Team Duplicate Protection
                 </div>
                 <button class="duplicate-modal-close" onclick="closeDuplicateModal()" aria-label="Close">
                     <i class="fas fa-times"></i>
@@ -1482,42 +1778,122 @@ debugLog("Page rendering started");
             
             <div class="duplicate-modal-body">
                 <div class="duplicate-warning-text">
-                    <strong>A lead with this exact name already exists in the system.</strong><br><br>
-                    The lead was <strong>NOT SAVED</strong> to prevent duplicate entries. This helps maintain data integrity across all teams.
+                    <strong>🚫 Lead Creation Blocked</strong><br><br>
+                    Our comprehensive validation system has detected that this lead already exists in the system across teams. 
+                    The lead was <strong>NOT SAVED</strong> to maintain data integrity and prevent duplicate entries across all teams.
                 </div>
                 
-                <div class="duplicate-details">
-                    <h4>Existing Lead(s) Found:</h4>
-                    <?php foreach ($duplicate_details as $dup): ?>
-                    <div class="duplicate-item">
-                        <div class="duplicate-item-name"><?php echo htmlspecialchars($dup['client_name']); ?></div>
-                        <div class="duplicate-item-details">
-                            <span><strong>Agent:</strong> <?php echo htmlspecialchars($dup['agent_name'] ?? 'N/A'); ?></span>
-                            <span><strong>Team:</strong> <?php echo htmlspecialchars($dup['team_name'] ?? 'N/A'); ?></span>
-                            <span><strong>Status:</strong> <?php echo htmlspecialchars($dup['status']); ?></span>
-                            <span><strong>Created:</strong> <?php echo date('M j, Y', strtotime($dup['created_at'])); ?></span>
+                <div class="duplicate-section blocking-section">
+                    <h4>Blocking Duplicates Found</h4>
+                    <div class="duplicate-details">
+                        <?php foreach ($duplicate_details as $dup): ?>
+                        <div class="duplicate-item">
+                            <div class="duplicate-item-header">
+                                <div class="duplicate-item-name"><?php echo htmlspecialchars($dup['client_name']); ?></div>
+                                <div class="duplicate-item-match-type"><?php echo htmlspecialchars($dup['match_type']); ?></div>
+                            </div>
+                            <div class="duplicate-item-details">
+                                <div class="duplicate-item-detail">
+                                    <strong>Agent:</strong>
+                                    <span><?php echo htmlspecialchars($dup['agent_name'] ?? 'N/A'); ?></span>
+                                </div>
+                                <div class="duplicate-item-detail">
+                                    <strong>Team:</strong>
+                                    <span><?php echo htmlspecialchars($dup['team_name'] ?? 'N/A'); ?></span>
+                                </div>
+                                <div class="duplicate-item-detail">
+                                    <strong>Status:</strong>
+                                    <span><?php echo htmlspecialchars($dup['status']); ?></span>
+                                </div>
+                                <div class="duplicate-item-detail">
+                                    <strong>Created:</strong>
+                                    <span><?php echo date('M j, Y g:i A', strtotime($dup['created_at'])); ?></span>
+                                </div>
+                                <?php if (!empty($dup['phone'])): ?>
+                                <div class="duplicate-item-detail">
+                                    <strong>Phone:</strong>
+                                    <span><?php echo htmlspecialchars($dup['phone']); ?></span>
+                                </div>
+                                <?php endif; ?>
+                                <?php if (!empty($dup['email'])): ?>
+                                <div class="duplicate-item-detail">
+                                    <strong>Email:</strong>
+                                    <span><?php echo htmlspecialchars($dup['email']); ?></span>
+                                </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <?php if (!empty($similar_leads)): ?>
+                <div class="duplicate-section similar-section">
+                    <h4>Additional Similar Leads</h4>
+                    <div class="duplicate-details">
+                        <?php foreach ($similar_leads as $similar): ?>
+                        <div class="duplicate-item similar-item">
+                            <div class="duplicate-item-header">
+                                <div class="duplicate-item-name"><?php echo htmlspecialchars($similar['client_name']); ?></div>
+                                <div class="duplicate-item-match-type"><?php echo htmlspecialchars($similar['match_type']); ?></div>
+                            </div>
+                            <div class="duplicate-item-details">
+                                <div class="duplicate-item-detail">
+                                    <strong>Agent:</strong>
+                                    <span><?php echo htmlspecialchars($similar['agent_name'] ?? 'N/A'); ?></span>
+                                </div>
+                                <div class="duplicate-item-detail">
+                                    <strong>Team:</strong>
+                                    <span><?php echo htmlspecialchars($similar['team_name'] ?? 'N/A'); ?></span>
+                                </div>
+                                <div class="duplicate-item-detail">
+                                    <strong>Status:</strong>
+                                    <span><?php echo htmlspecialchars($similar['status']); ?></span>
+                                </div>
+                                <div class="duplicate-item-detail">
+                                    <strong>Created:</strong>
+                                    <span><?php echo date('M j, Y', strtotime($similar['created_at'])); ?></span>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php 
+                $teamStats = getTeamDuplicateStats($clientName);
+                if (!empty($teamStats)): 
+                ?>
+                <div class="team-stats">
+                    <h5>Cross-Team Impact Analysis</h5>
+                    <?php foreach ($teamStats as $stat): ?>
+                    <div class="team-stat-item">
+                        <strong><?php echo htmlspecialchars($stat['team_name']); ?>:</strong>
+                        <?php echo $stat['lead_count']; ?> lead(s) with this name
+                        <br><small>Agents: <?php echo htmlspecialchars($stat['agents']); ?></small>
                     </div>
                     <?php endforeach; ?>
                 </div>
+                <?php endif; ?>
                 
                 <div class="duplicate-warning-text">
-                    If you believe this is an error or the leads are genuinely different people with the same name, please:
-                    <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
-                        <li>Report it to the system administrator via the login page, or</li>
-                        <li>Notify management directly for manual review</li>
-                    </ul>
+                    <strong>Next Steps:</strong><br>
+                    • Contact the existing lead's agent or team for coordination<br>
+                    • If this is genuinely a different person, contact your system administrator<br>
+                    • Report any system issues via the support channels<br><br>
+                    This cross-team validation helps maintain data quality and prevents conflicts between teams.
                 </div>
             </div>
             
             <div class="duplicate-modal-footer">
                 <div class="auto-close-timer">
                     <div class="timer-circle"></div>
-                    <span>Auto-closing in <span id="countdown">30</span> seconds</span>
+                    <span>Auto-closing in <span id="countdown">45</span> seconds</span>
                 </div>
                 <div class="duplicate-modal-actions">
                     <button class="btn-modal-close" onclick="closeDuplicateModal()">
-                        <i class="fas fa-times"></i> Close
+                        <i class="fas fa-check"></i> Understood
                     </button>
                 </div>
             </div>
@@ -1526,12 +1902,12 @@ debugLog("Page rendering started");
     <?php endif; ?>
     
     <script>
-        // Enhanced JavaScript with duplicate modal handling
-        console.log('Add Lead form script loaded');
+        // Enhanced JavaScript with comprehensive duplicate modal handling
+        console.log('Enhanced Add Lead form script loaded');
         
-        // NEW: Duplicate Modal Management
+        // Enhanced Duplicate Modal Management
         let countdownTimer = null;
-        let countdownSeconds = 30;
+        let countdownSeconds = 45; // Increased time for comprehensive review
 
         function closeDuplicateModal() {
             const modal = document.getElementById('duplicateModal');
@@ -1739,7 +2115,7 @@ debugLog("Page rendering started");
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing form');
+            console.log('DOM loaded, initializing enhanced form');
             
             try {
                 // Initialize project models if developer is already selected
@@ -1772,7 +2148,7 @@ debugLog("Page rendering started");
                     });
                 }
                 
-                // Price formatting
+                // Enhanced price formatting
                 const priceInput = document.getElementById('price');
                 if (priceInput) {
                     priceInput.addEventListener('input', function(e) {
@@ -1804,7 +2180,7 @@ debugLog("Page rendering started");
                     });
                 }
                 
-                // Phone number validation
+                // Enhanced phone number validation
                 const phoneInput = document.getElementById('phone');
                 if (phoneInput) {
                     phoneInput.addEventListener('input', function(e) {
@@ -1818,17 +2194,17 @@ debugLog("Page rendering started");
                     });
                 }
                 
-                // Form submission handling
+                // Enhanced form submission handling
                 const form = document.getElementById('leadForm');
                 const saveBtn = document.getElementById('saveBtn');
                 
                 if (form && saveBtn) {
                     form.addEventListener('submit', function(e) {
-                        console.log('Form submission started');
+                        console.log('Enhanced form submission started');
                         
                         try {
                             // Show loading state
-                            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating across teams...';
                             saveBtn.disabled = true;
                             
                             // Clean price value for submission
@@ -1837,7 +2213,7 @@ debugLog("Page rendering started");
                                 priceInput.value = price;
                             }
                             
-                            console.log('Form data prepared for submission');
+                            console.log('Form data prepared for comprehensive validation');
                             
                         } catch (error) {
                             console.error('Error preparing form submission:', error);
@@ -1868,18 +2244,19 @@ debugLog("Page rendering started");
                 }
                 
                 // Debug: Log current state
-                console.log('Form initialization complete');
+                console.log('Enhanced form initialization complete');
+                console.log('Cross-team validation enabled');
                 console.log('Available developers:', Object.keys(projectModelsData));
                 console.log('Total project models:', Object.values(projectModelsData).flat().length);
                 
             } catch (error) {
-                console.error('Error initializing form:', error);
+                console.error('Error initializing enhanced form:', error);
             }
         });
 
-        // Debug function to test project model loading
+        // Enhanced debug function
         function debugProjectModels() {
-            console.log('=== DEBUG PROJECT MODELS ===');
+            console.log('=== ENHANCED DEBUG PROJECT MODELS ===');
             console.log('Project Models Data:', projectModelsData);
             
             const developerSelect = document.getElementById('developer');
@@ -1898,7 +2275,8 @@ debugLog("Page rendering started");
                 console.log('Available Options:', Array.from(projectModelSelect.options).map(opt => opt.value));
             }
             
-            console.log('=== END DEBUG ===');
+            console.log('Cross-team validation: ENABLED');
+            console.log('=== END ENHANCED DEBUG ===');
         }
 
         // Make debug function available globally

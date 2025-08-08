@@ -228,12 +228,14 @@ $unread_count = count(array_filter($notifications, function($n) {
         <div class="header-right">
             <div class="header-actions">
                 <!-- Quick Actions -->
-                <div class="quick-actions">
-                    <a href="<?php echo $base_url; ?>add-lead.php" class="quick-action-btn" title="Add New Lead">
-                        <i class="fas fa-plus"></i>
-                        <span class="action-text">Add Lead</span>
-                    </a>
-                </div>
+                <?php if (empty($hide_add_button)): ?>
+                    <div class="quick-actions">
+                        <a href="add-lead.php" class="quick-action-btn" title="Add New Lead">
+                            <i class="fas fa-plus"></i>
+                            <span class="action-text">Add Lead</span>
+                        </a>
+                    </div>
+                <?php endif; ?>
                 
                 <!-- Notifications -->
                 <div class="header-notification" id="notificationDropdown">
@@ -370,6 +372,10 @@ $unread_count = count(array_filter($notifications, function($n) {
                                 <i class="fas fa-question-circle"></i>
                                 <span>Help & Support</span>
                             </a>
+                            <a href="#" class="menu-item" onclick="openReportModal(); return false;">
+                                <i class="fas fa-bug"></i>
+                                <span>Report a Problem</span>
+                            </a>
                             <div class="menu-divider"></div>
                             <a href="<?php echo $base_url; ?>logout.php" class="menu-item logout">
                                 <i class="fas fa-sign-out-alt"></i>
@@ -382,6 +388,99 @@ $unread_count = count(array_filter($notifications, function($n) {
         </div>
     </div>
 </header>
+
+<!-- Report Problem Modal - MOVED OUTSIDE HEADER -->
+<div id="reportModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-bug"></i>Report a Problem</h3>
+            <span class="close" onclick="closeReportModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="successMessage" class="success-message" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                Thank you! Your problem report has been submitted successfully. We'll investigate and get back to you soon.
+            </div>
+            
+            <div id="errorMessage" class="error-message" style="display: none;">
+            </div>
+            
+            <form id="reportForm" action="https://leads.dreamhosters.com/users/report-problem/process-report.php" method="POST">
+                <div class="form-group">
+                    <label for="report-username">Username <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="report-username" name="username" placeholder="Enter your username" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-phone">Phone Number <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-phone"></i>
+                        <input type="tel" id="report-phone" name="phone" placeholder="+1 (555) 123-4567" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="report-email">Email Address (Optional)</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="report-email" name="email" placeholder="your.email@example.com">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="issue-type">Issue Type <span class="required">*</span></label>
+                    <select id="issue-type" name="issue_type" required>
+                        <option value="">Select issue type</option>
+                        <option value="login-failed">Cannot sign in</option>
+                        <option value="forgot-password">Password reset issues</option>
+                        <option value="account-locked">Account locked/suspended</option>
+                        <option value="page-error">Page not loading properly</option>
+                        <option value="performance">Slow performance</option>
+                        <option value="feature-bug">Feature not working</option>
+                        <option value="data-issue">Data/information incorrect</option>
+                        <option value="security-concern">Security concern</option>
+                        <option value="other">Other technical issue</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Priority Level</label>
+                    <div class="priority-selector">
+                        <div class="priority-option low" data-priority="low">
+                            <i class="fas fa-circle"></i> Low
+                        </div>
+                        <div class="priority-option medium selected" data-priority="medium">
+                            <i class="fas fa-circle"></i> Medium
+                        </div>
+                        <div class="priority-option high" data-priority="high">
+                            <i class="fas fa-circle"></i> High
+                        </div>
+                    </div>
+                    <input type="hidden" id="priority" name="priority" value="medium">
+                </div>
+                
+                <div class="form-group">
+                    <label for="problem-description">Problem Description <span class="required">*</span></label>
+                    <textarea id="problem-description" name="description" placeholder="Please describe the problem you're experiencing in detail. Include any error messages, steps you took, and when the issue occurred..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="browser-info">Browser & System Information</label>
+                    <input type="text" id="browser-info" name="browser_info" readonly>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeReportModal()">Cancel</button>
+            <button type="submit" form="reportForm" class="btn-primary" id="submitBtn">
+                <i class="fas fa-paper-plane"></i> Submit Report
+            </button>
+        </div>
+    </div>
+</div>
 
 <style>
 /* Reset and Base Styles */
@@ -1033,19 +1132,293 @@ body > *:first-child,
     background: #e5e7eb;
 }
 
-@media (max-width: 1200px) {
-    .action-text {
-        display: none;
+/* MODAL STYLES - COPIED EXACTLY FROM LOGIN PAGE */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.modal.show::-webkit-scrollbar {
+    display: none;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    animation: slideUp 0.3s ease-out;
+    position: relative;
+    margin: auto;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 2rem 2rem 1rem 2rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #1e40af 0%, #f59e0b 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+.modal-header h3 i {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+}
+
+.close {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.close:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    padding: 1.5rem 2rem 2rem 2rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    border-top: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 0 0 16px 16px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.form-group label .required {
+    color: #ef4444;
+    margin-left: 0.25rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #1f2937;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #1e40af;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+}
+
+.form-group .input-with-icon {
+    position: relative;
+}
+
+.form-group .input-with-icon input {
+    padding-left: 2.75rem;
+}
+
+.form-group .input-with-icon i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+}
+
+.priority-selector {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.priority-option {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.priority-option.low {
+    color: #10b981;
+}
+
+.priority-option.medium {
+    color: #f59e0b;
+}
+
+.priority-option.high {
+    color: #ef4444;
+}
+
+.priority-option.selected {
+    border-color: currentColor;
+    background-color: rgba(30, 64, 175, 0.05);
+}
+
+.btn-secondary {
+    padding: 0.75rem 1.5rem;
+    background-color: #e5e7eb;
+    color: #374151;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #d1d5db;
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #1e40af 0%, #f59e0b 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.success-message {
+    background-color: #d1fae5;
+    color: #065f46;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    border-left: 4px solid #10b981;
+}
+
+.success-message i {
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+.error-message {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    border-left: 4px solid #ef4444;
+}
+
+.error-message i {
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-@media (min-width: 1200px) {
-    .action-text {
-        display: inline;
-    }
-}
-
-/* CRITICAL: Mobile Responsive Styles - Icon-only search */
+/* Mobile responsive adjustments */
 @media (max-width: 768px) {
     .mobile-toggle {
         display: block;
@@ -1280,16 +1653,36 @@ body > *:first-child,
         min-height: 60px;
     }
 
-    /* Slide up animation for mobile */
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(100%);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    /* Modal responsive adjustments */
+    .modal {
+        padding: 0.5rem;
+    }
+    
+    .modal-content {
+        max-width: 95vw;
+        margin: 0.5rem auto;
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1.5rem;
+        flex-direction: column;
+    }
+
+    .modal-footer .btn-secondary,
+    .modal-footer .btn-primary {
+        width: 100%;
+    }
+
+    .priority-selector {
+        flex-direction: column;
     }
 }
 
@@ -1329,6 +1722,22 @@ body > *:first-child,
     .search-input {
         width: 36px;
         height: 36px;
+    }
+
+    .modal-header {
+        padding: 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        padding: 1rem;
+    }
+
+    .modal-header h3 {
+        font-size: 1.25rem;
     }
 }
 </style>
@@ -1597,6 +2006,209 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // REPORT MODAL FUNCTIONS - COPIED EXACTLY FROM LOGIN PAGE
+    function getDetailedBrowserInfo() {
+        const userAgent = navigator.userAgent;
+        const platform = navigator.platform;
+        const language = navigator.language;
+        const cookieEnabled = navigator.cookieEnabled;
+        const onLine = navigator.onLine;
+        
+        let browserName = 'Unknown Browser';
+        let browserVersion = 'Unknown Version';
+        let osName = 'Unknown OS';
+        let osVersion = '';
+        let architecture = '';
+
+        // Detect Operating System
+        if (userAgent.indexOf('Windows NT 10.0') !== -1) {
+            osName = 'Windows 10/11';
+        } else if (userAgent.indexOf('Windows NT 6.3') !== -1) {
+            osName = 'Windows 8.1';
+        } else if (userAgent.indexOf('Windows NT 6.2') !== -1) {
+            osName = 'Windows 8';
+        } else if (userAgent.indexOf('Windows NT 6.1') !== -1) {
+            osName = 'Windows 7';
+        } else if (userAgent.indexOf('Windows NT 6.0') !== -1) {
+            osName = 'Windows Vista';
+        } else if (userAgent.indexOf('Windows NT 5.1') !== -1) {
+            osName = 'Windows XP';
+        } else if (userAgent.indexOf('Windows') !== -1) {
+            osName = 'Windows';
+        } else if (userAgent.indexOf('Mac OS X') !== -1) {
+            osName = 'macOS';
+            const macVersion = userAgent.match(/Mac OS X ([0-9_]+)/);
+            if (macVersion) {
+                osVersion = macVersion[1].replace(/_/g, '.');
+            }
+        } else if (userAgent.indexOf('Linux') !== -1) {
+            osName = 'Linux';
+        } else if (userAgent.indexOf('Android') !== -1) {
+            osName = 'Android';
+        } else if (userAgent.indexOf('iPhone') !== -1 || userAgent.indexOf('iPad') !== -1) {
+            osName = 'iOS';
+        }
+
+        // Detect Architecture
+        if (userAgent.indexOf('WOW64') !== -1 || userAgent.indexOf('Win64') !== -1 || userAgent.indexOf('x64') !== -1) {
+            architecture = '64-bit';
+        } else if (userAgent.indexOf('Win32') !== -1 || userAgent.indexOf('x86') !== -1) {
+            architecture = '32-bit';
+        }
+
+        // Detect Browser (Order matters!)
+        if (userAgent.indexOf('Edg/') !== -1) {
+            browserName = 'Microsoft Edge';
+            const edgeVersion = userAgent.match(/Edg\/([0-9.]+)/);
+            if (edgeVersion) browserVersion = edgeVersion[1];
+        } else if (userAgent.indexOf('Edge/') !== -1) {
+            browserName = 'Microsoft Edge (Legacy)';
+            const edgeVersion = userAgent.match(/Edge\/([0-9.]+)/);
+            if (edgeVersion) browserVersion = edgeVersion[1];
+        } else if (userAgent.indexOf('OPR/') !== -1 || userAgent.indexOf('Opera/') !== -1) {
+            browserName = 'Opera';
+            const operaVersion = userAgent.match(/(?:OPR|Opera)\/([0-9.]+)/);
+            if (operaVersion) browserVersion = operaVersion[1];
+        } else if (userAgent.indexOf('Chrome/') !== -1 && userAgent.indexOf('Safari/') === -1) {
+            browserName = 'Google Chrome';
+            const chromeVersion = userAgent.match(/Chrome\/([0-9.]+)/);
+            if (chromeVersion) browserVersion = chromeVersion[1];
+        } else if (userAgent.indexOf('Firefox/') !== -1) {
+            browserName = 'Mozilla Firefox';
+            const firefoxVersion = userAgent.match(/Firefox\/([0-9.]+)/);
+            if (firefoxVersion) browserVersion = firefoxVersion[1];
+        } else if (userAgent.indexOf('Safari/') !== -1) {
+            browserName = 'Safari';
+            const safariVersion = userAgent.match(/Version\/([0-9.]+)/);
+            if (safariVersion) browserVersion = safariVersion[1];
+        } else if (userAgent.indexOf('MSIE') !== -1 || userAgent.indexOf('Trident/') !== -1) {
+            browserName = 'Internet Explorer';
+            const ieVersion = userAgent.match(/(?:MSIE |rv:)([0-9.]+)/);
+            if (ieVersion) browserVersion = ieVersion[1];
+        }
+
+        // Get additional system info
+        const screenInfo = `${screen.width}x${screen.height}`;
+        const colorDepth = screen.colorDepth;
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const memory = navigator.deviceMemory ? `${navigator.deviceMemory}GB RAM` : 'Unknown RAM';
+        const cores = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'Unknown cores';
+
+        // Build comprehensive info string
+        let systemInfo = `${browserName} ${browserVersion}`;
+        systemInfo += ` | ${osName}`;
+        if (osVersion) systemInfo += ` ${osVersion}`;
+        if (architecture) systemInfo += ` (${architecture})`;
+        systemInfo += ` | Screen: ${screenInfo}`;
+        systemInfo += ` | ${colorDepth}-bit color`;
+        systemInfo += ` | ${cores}`;
+        if (navigator.deviceMemory) systemInfo += ` | ${memory}`;
+        systemInfo += ` | ${language}`;
+        systemInfo += ` | ${timezone}`;
+        systemInfo += ` | Cookies: ${cookieEnabled ? 'Enabled' : 'Disabled'}`;
+        systemInfo += ` | Online: ${onLine ? 'Yes' : 'No'}`;
+
+        return systemInfo;
+    }
+
+    // Priority selector for report modal
+    const priorityOptions = document.querySelectorAll('.priority-option');
+    const priorityInput = document.getElementById('priority');
+
+    if (priorityOptions.length > 0 && priorityInput) {
+        priorityOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                priorityOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                priorityInput.value = this.dataset.priority;
+            });
+        });
+    }
+
+    // Phone number formatting for report modal
+    const phoneInput = document.getElementById('report-phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 10) {
+                value = value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+            }
+            e.target.value = value;
+        });
+    }
+
+    // Handle report form submission - COPIED EXACTLY FROM LOGIN PAGE
+    const reportForm = document.getElementById('reportForm');
+    if (reportForm) {
+        reportForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Report form submitted');
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            const successMessageDiv = document.getElementById('successMessage');
+            const errorMessageDiv = document.getElementById('errorMessage');
+
+            // Hide previous messages
+            successMessageDiv.style.display = 'none';
+            if (errorMessageDiv) errorMessageDiv.style.display = 'none';
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            
+            const formData = new FormData(this);
+            
+            // Submit the form using the same method as login page
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    successMessageDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                    successMessageDiv.style.display = 'flex';
+                    document.getElementById('reportForm').reset();
+                    document.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('selected'));
+                    document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
+                    document.getElementById('priority').value = 'medium';
+                    
+                    // Re-populate browser info after reset
+                    const browserInfoField = document.getElementById('browser-info');
+                    if (browserInfoField) {
+                        browserInfoField.value = getDetailedBrowserInfo();
+                    }
+                    
+                    // Auto close modal after 3 seconds
+                    setTimeout(() => {
+                        closeReportModal();
+                    }, 3000);
+                } else {
+                    if (errorMessageDiv) {
+                        errorMessageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'An error occurred');
+                        errorMessageDiv.style.display = 'flex';
+                    } else {
+                        alert('Error: ' + (data.message || 'An error occurred'));
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (errorMessageDiv) {
+                    errorMessageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> An error occurred while submitting your report. Please try again.';
+                    errorMessageDiv.style.display = 'flex';
+                } else {
+                    alert('An error occurred while submitting your report. Please try again.');
+                }
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
     
     console.log('Header script initialization complete');
 });
@@ -1779,6 +2391,311 @@ function showNotificationMessage(message, type = 'success') {
     }, 4000);
 }
 
+// REPORT MODAL FUNCTIONS - COPIED EXACTLY FROM LOGIN PAGE
+function openReportModal() {
+    console.log('Opening report modal...');
+    const modal = document.getElementById('reportModal');
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    
+    // Reset form and hide success message
+    document.getElementById('reportForm').reset();
+    document.getElementById('successMessage').style.display = 'none';
+    const errorMessageDiv = document.getElementById('errorMessage');
+    if (errorMessageDiv) errorMessageDiv.style.display = 'none';
+    
+    // Reset priority to medium
+    document.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('selected'));
+    document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
+    document.getElementById('priority').value = 'medium';
+
+
+    const browserInfo = document.getElementById('browser-info');
+    if (browserInfo) {
+        function getDetailedBrowserInfo() {
+            const userAgent = navigator.userAgent;
+            const platform = navigator.platform;
+            const language = navigator.language;
+            const cookieEnabled = navigator.cookieEnabled;
+            const onLine = navigator.onLine;
+            
+            let browserName = 'Unknown Browser';
+            let browserVersion = 'Unknown Version';
+            let osName = 'Unknown OS';
+            let osVersion = '';
+            let architecture = '';
+
+          
+            if (userAgent.indexOf('Windows NT 10.0') !== -1) {
+                osName = 'Windows 10/11';
+            } else if (userAgent.indexOf('Windows NT 6.3') !== -1) {
+                osName = 'Windows 8.1';
+            } else if (userAgent.indexOf('Windows NT 6.2') !== -1) {
+                osName = 'Windows 8';
+            } else if (userAgent.indexOf('Windows NT 6.1') !== -1) {
+                osName = 'Windows 7';
+            } else if (userAgent.indexOf('Windows NT 6.0') !== -1) {
+                osName = 'Windows Vista';
+            } else if (userAgent.indexOf('Windows NT 5.1') !== -1) {
+                osName = 'Windows XP';
+            } else if (userAgent.indexOf('Windows') !== -1) {
+                osName = 'Windows';
+            } else if (userAgent.indexOf('Mac OS X') !== -1) {
+                osName = 'macOS';
+                const macVersion = userAgent.match(/Mac OS X ([0-9_]+)/);
+                if (macVersion) {
+                    osVersion = macVersion[1].replace(/_/g, '.');
+                }
+            } else if (userAgent.indexOf('Linux') !== -1) {
+                osName = 'Linux';
+            } else if (userAgent.indexOf('Android') !== -1) {
+                osName = 'Android';
+            } else if (userAgent.indexOf('iPhone') !== -1 || userAgent.indexOf('iPad') !== -1) {
+                osName = 'iOS';
+            }
+
+            // Detect Architecture
+            if (userAgent.indexOf('WOW64') !== -1 || userAgent.indexOf('Win64') !== -1 || userAgent.indexOf('x64') !== -1) {
+                architecture = '64-bit';
+            } else if (userAgent.indexOf('Win32') !== -1 || userAgent.indexOf('x86') !== -1) {
+                architecture = '32-bit';
+            }
+
+            // Detect Browser (Order matters!)
+            if (userAgent.indexOf('Edg/') !== -1) {
+                browserName = 'Microsoft Edge';
+                const edgeVersion = userAgent.match(/Edg\/([0-9.]+)/);
+                if (edgeVersion) browserVersion = edgeVersion[1];
+            } else if (userAgent.indexOf('Edge/') !== -1) {
+                browserName = 'Microsoft Edge (Legacy)';
+                const edgeVersion = userAgent.match(/Edge\/([0-9.]+)/);
+                if (edgeVersion) browserVersion = edgeVersion[1];
+            } else if (userAgent.indexOf('OPR/') !== -1 || userAgent.indexOf('Opera/') !== -1) {
+                browserName = 'Opera';
+                const operaVersion = userAgent.match(/(?:OPR|Opera)\/([0-9.]+)/);
+                if (operaVersion) browserVersion = operaVersion[1];
+            } else if (userAgent.indexOf('Chrome/') !== -1 && userAgent.indexOf('Safari/') === -1) {
+                browserName = 'Google Chrome';
+                const chromeVersion = userAgent.match(/Chrome\/([0-9.]+)/);
+                if (chromeVersion) browserVersion = chromeVersion[1];
+            } else if (userAgent.indexOf('Firefox/') !== -1) {
+                browserName = 'Mozilla Firefox';
+                const firefoxVersion = userAgent.match(/Firefox\/([0-9.]+)/);
+                if (firefoxVersion) browserVersion = firefoxVersion[1];
+            } else if (userAgent.indexOf('Safari/') !== -1) {
+                browserName = 'Safari';
+                const safariVersion = userAgent.match(/Version\/([0-9.]+)/);
+                if (safariVersion) browserVersion = safariVersion[1];
+            } else if (userAgent.indexOf('MSIE') !== -1 || userAgent.indexOf('Trident/') !== -1) {
+                browserName = 'Internet Explorer';
+                const ieVersion = userAgent.match(/(?:MSIE |rv:)([0-9.]+)/);
+                if (ieVersion) browserVersion = ieVersion[1];
+            }
+
+            // Get additional system info
+            const screenInfo = `${screen.width}x${screen.height}`;
+            const colorDepth = screen.colorDepth;
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const memory = navigator.deviceMemory ? `${navigator.deviceMemory}GB RAM` : 'Unknown RAM';
+            const cores = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'Unknown cores';
+
+            // Build comprehensive info string
+            let systemInfo = `${browserName} ${browserVersion}`;
+            systemInfo += ` | ${osName}`;
+            if (osVersion) systemInfo += ` ${osVersion}`;
+            if (architecture) systemInfo += ` (${architecture})`;
+            systemInfo += ` | Screen: ${screenInfo}`;
+            systemInfo += ` | ${colorDepth}-bit color`;
+            systemInfo += ` | ${cores}`;
+            if (navigator.deviceMemory) systemInfo += ` | ${memory}`;
+            systemInfo += ` | ${language}`;
+            systemInfo += ` | ${timezone}`;
+            systemInfo += ` | Cookies: ${cookieEnabled ? 'Enabled' : 'Disabled'}`;
+            systemInfo += ` | Online: ${onLine ? 'Yes' : 'No'}`;
+
+            return systemInfo;
+        }
+
+        browserInfo.value = getDetailedBrowserInfo();
+    }
+}
+
+function closeReportModal() {
+    const modal = document.getElementById('reportModal');
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('reportModal');
+    if (event.target == modal) {
+        closeReportModal();
+    }
+}
+
 // Override any existing markAllAsRead function globally
 window.markAllAsRead = markAllNotificationsAsRead;
+
+// MAKE MODAL FUNCTIONS GLOBALLY ACCESSIBLE
+window.openReportModal = function() {
+    console.log('Opening report modal...');
+    const modal = document.getElementById('reportModal');
+    if (!modal) {
+        console.error('Report modal not found!');
+        return;
+    }
+    
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Reset form and hide success message
+    const form = document.getElementById('reportForm');
+    const successMsg = document.getElementById('successMessage');
+    const errorMsg = document.getElementById('errorMessage');
+    
+    if (form) form.reset();
+    if (successMsg) successMsg.style.display = 'none';
+    if (errorMsg) errorMsg.style.display = 'none';
+    
+    // Reset priority to medium
+    document.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('selected'));
+    const mediumOption = document.querySelector('.priority-option[data-priority="medium"]');
+    if (mediumOption) mediumOption.classList.add('selected');
+    
+    const priorityInput = document.getElementById('priority');
+    if (priorityInput) priorityInput.value = 'medium';
+
+    // Re-populate browser info
+    const browserInfo = document.getElementById('browser-info');
+    if (browserInfo) {
+        browserInfo.value = getDetailedBrowserInfo();
+    }
+};
+
+window.closeReportModal = function() {
+    console.log('Closing report modal...');
+    const modal = document.getElementById('reportModal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+};
+
+// Make browser info function globally accessible
+window.getDetailedBrowserInfo = function() {
+    const userAgent = navigator.userAgent;
+    const platform = navigator.platform;
+    const language = navigator.language;
+    const cookieEnabled = navigator.cookieEnabled;
+    const onLine = navigator.onLine;
+    
+    let browserName = 'Unknown Browser';
+    let browserVersion = 'Unknown Version';
+    let osName = 'Unknown OS';
+    let osVersion = '';
+    let architecture = '';
+
+    // Detect Operating System
+    if (userAgent.indexOf('Windows NT 10.0') !== -1) {
+        osName = 'Windows 10/11';
+    } else if (userAgent.indexOf('Windows NT 6.3') !== -1) {
+        osName = 'Windows 8.1';
+    } else if (userAgent.indexOf('Windows NT 6.2') !== -1) {
+        osName = 'Windows 8';
+    } else if (userAgent.indexOf('Windows NT 6.1') !== -1) {
+        osName = 'Windows 7';
+    } else if (userAgent.indexOf('Windows NT 6.0') !== -1) {
+        osName = 'Windows Vista';
+    } else if (userAgent.indexOf('Windows NT 5.1') !== -1) {
+        osName = 'Windows XP';
+    } else if (userAgent.indexOf('Windows') !== -1) {
+        osName = 'Windows';
+    } else if (userAgent.indexOf('Mac OS X') !== -1) {
+        osName = 'macOS';
+        const macVersion = userAgent.match(/Mac OS X ([0-9_]+)/);
+        if (macVersion) {
+            osVersion = macVersion[1].replace(/_/g, '.');
+        }
+    } else if (userAgent.indexOf('Linux') !== -1) {
+        osName = 'Linux';
+    } else if (userAgent.indexOf('Android') !== -1) {
+        osName = 'Android';
+    } else if (userAgent.indexOf('iPhone') !== -1 || userAgent.indexOf('iPad') !== -1) {
+        osName = 'iOS';
+    }
+
+    // Detect Architecture
+    if (userAgent.indexOf('WOW64') !== -1 || userAgent.indexOf('Win64') !== -1 || userAgent.indexOf('x64') !== -1) {
+        architecture = '64-bit';
+    } else if (userAgent.indexOf('Win32') !== -1 || userAgent.indexOf('x86') !== -1) {
+        architecture = '32-bit';
+    }
+
+    // Detect Browser (Order matters!)
+    if (userAgent.indexOf('Edg/') !== -1) {
+        browserName = 'Microsoft Edge';
+        const edgeVersion = userAgent.match(/Edg\/([0-9.]+)/);
+        if (edgeVersion) browserVersion = edgeVersion[1];
+    } else if (userAgent.indexOf('Edge/') !== -1) {
+        browserName = 'Microsoft Edge (Legacy)';
+        const edgeVersion = userAgent.match(/Edge\/([0-9.]+)/);
+        if (edgeVersion) browserVersion = edgeVersion[1];
+    } else if (userAgent.indexOf('OPR/') !== -1 || userAgent.indexOf('Opera/') !== -1) {
+        browserName = 'Opera';
+        const operaVersion = userAgent.match(/(?:OPR|Opera)\/([0-9.]+)/);
+        if (operaVersion) browserVersion = operaVersion[1];
+    } else if (userAgent.indexOf('Chrome/') !== -1 && userAgent.indexOf('Safari/') === -1) {
+        browserName = 'Google Chrome';
+        const chromeVersion = userAgent.match(/Chrome\/([0-9.]+)/);
+        if (chromeVersion) browserVersion = chromeVersion[1];
+    } else if (userAgent.indexOf('Firefox/') !== -1) {
+        browserName = 'Mozilla Firefox';
+        const firefoxVersion = userAgent.match(/Firefox\/([0-9.]+)/);
+        if (firefoxVersion) browserVersion = firefoxVersion[1];
+    } else if (userAgent.indexOf('Safari/') !== -1) {
+        browserName = 'Safari';
+        const safariVersion = userAgent.match(/Version\/([0-9.]+)/);
+        if (safariVersion) browserVersion = safariVersion[1];
+    } else if (userAgent.indexOf('MSIE') !== -1 || userAgent.indexOf('Trident/') !== -1) {
+        browserName = 'Internet Explorer';
+        const ieVersion = userAgent.match(/(?:MSIE |rv:)([0-9.]+)/);
+        if (ieVersion) browserVersion = ieVersion[1];
+    }
+
+    // Get additional system info
+    const screenInfo = `${screen.width}x${screen.height}`;
+    const colorDepth = screen.colorDepth;
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const memory = navigator.deviceMemory ? `${navigator.deviceMemory}GB RAM` : 'Unknown RAM';
+    const cores = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : 'Unknown cores';
+
+    // Build comprehensive info string
+    let systemInfo = `${browserName} ${browserVersion}`;
+    systemInfo += ` | ${osName}`;
+    if (osVersion) systemInfo += ` ${osVersion}`;
+    if (architecture) systemInfo += ` (${architecture})`;
+    systemInfo += ` | Screen: ${screenInfo}`;
+    systemInfo += ` | ${colorDepth}-bit color`;
+    systemInfo += ` | ${cores}`;
+    if (navigator.deviceMemory) systemInfo += ` | ${memory}`;
+    systemInfo += ` | ${language}`;
+    systemInfo += ` | ${timezone}`;
+    systemInfo += ` | Cookies: ${cookieEnabled ? 'Enabled' : 'Disabled'}`;
+    systemInfo += ` | Online: ${onLine ? 'Yes' : 'No'}`;
+
+    return systemInfo;
+};
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('reportModal');
+    if (event.target === modal) {
+        closeReportModal();
+    }
+});
+
+console.log('Report modal functions made globally accessible');
 </script>

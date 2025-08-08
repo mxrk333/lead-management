@@ -1,4 +1,91 @@
 <?php
+// =========================================================================
+// START: LOGIC TO HANDLE NEW PROBLEM REPORT SUBMISSION (AJAX)
+// This block runs BEFORE any session checks or HTML output.
+// It checks if the form was submitted by looking for the required 'username' and 'description' fields.
+// =========================================================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username']) && isset($_POST['description']) && !isset($_POST['update_report'])) {
+    
+    // Set the header to indicate a JSON response is being sent.
+    header('Content-Type: application/json');
+    
+    // Adjust the path to go up two directories to find the config and includes folders.
+    $base_path = dirname(dirname(__DIR__)); 
+    require_once $base_path . '/config/database.php';
+    // functions.php is not strictly needed here but included for consistency.
+    require_once $base_path . '/includes/functions.php';
+
+    $conn = null;
+    $stmt = null;
+
+    try {
+        $conn = getDbConnection();
+        if (!$conn) {
+            throw new Exception("Failed to get a database connection.");
+        }
+
+        // Basic validation for required fields from the form.
+        $required_fields = ['username', 'phone', 'issue_type', 'priority', 'description'];
+        foreach ($required_fields as $field) {
+            if (empty($_POST[$field])) {
+                throw new Exception("The field '{$field}' cannot be empty. Please fill out all required fields.");
+            }
+        }
+        
+        // Prepare the SQL INSERT statement to add the new report to the database.
+        // The `status` is set to 'open' by default for new reports.
+        $query = "INSERT INTO problem_reports (username, phone, email, issue_type, priority, description, browser_info, status, created_at, updated_at) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, 'open', NOW(), NOW())";
+        
+        $stmt = $conn->prepare($query);
+        if (!$stmt) {
+            throw new Exception("Database prepare statement failed: " . $conn->error);
+        }
+
+        // Bind the form data to the prepared statement to prevent SQL injection.
+        $stmt->bind_param(
+            "sssssss",
+            $_POST['username'],
+            $_POST['phone'],
+            $_POST['email'], // Optional field
+            $_POST['issue_type'],
+            $_POST['priority'],
+            $_POST['description'],
+            $_POST['browser_info'] // Optional field
+        );
+
+        // Execute the statement and check for success.
+        if ($stmt->execute()) {
+            // Send a success message back to the browser.
+            echo json_encode(['success' => true, 'message' => 'Thank you! Your problem report has been submitted successfully.']);
+        } else {
+            // The report failed to save.
+            throw new Exception("Database execute statement failed: " . $stmt->error);
+        }
+
+    } catch (Exception $e) {
+        // Log the detailed error for debugging purposes.
+        error_log("Error creating problem report: " . $e->getMessage());
+        
+        // Send a generic, user-friendly error message back to the browser.
+        http_response_code(500); // Set HTTP status to indicate a server error.
+        echo json_encode(['success' => false, 'message' => 'An error occurred while submitting your report. Please try again.']);
+        
+    } finally {
+        // Always close the statement and connection to free up resources.
+        if ($stmt) $stmt->close();
+        if ($conn) $conn->close();
+    }
+    
+    // Crucially, stop the script here so it doesn't try to render the dashboard page.
+    exit();
+}
+// =========================================================================
+// END: NEW REPORT SUBMISSION LOGIC
+// --- Original content of process-report.php continues below ---
+// =========================================================================
+
+
 session_start();
 
 // Fix the path resolution - go up two directories to reach the root
@@ -309,11 +396,7 @@ try {
     if ($stats_result) {
         $stats = $stats_result->fetch_assoc();
     }
-    // Temporary debug output for stats
-     echo '<pre>';
-     var_dump($stats);
-     echo '</pre>';
-
+    
 } catch (Exception $e) {
     error_log("Error getting stats: " . $e->getMessage());
 }
@@ -361,6 +444,11 @@ function buildTabUrl($tab_name) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* General Layout */
+        body.fade-in {
+            opacity: 1;
+            transition: opacity 0.3s ease-in;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
@@ -370,6 +458,7 @@ function buildTabUrl($tab_name) {
             min-height: 100vh;
         }
 
+        
         .container {
             display: flex;
             width: 100%;
@@ -702,9 +791,9 @@ function buildTabUrl($tab_name) {
             color: white;
             border-color: #3b82f6;
         }
-        
-        /* Modal Styles (Unified with login.php approach) */
-        .modal {
+
+        /* START: Scoped Modal Styles for View Details Modal */
+        #viewDetailsModal {
             display: none; /* Hidden by default */
             position: fixed;
             z-index: 2000; /* High z-index to be on top */
@@ -720,10 +809,150 @@ function buildTabUrl($tab_name) {
             padding: 1rem; /* Padding for smaller screens */
         }
 
-        .modal.show {
+        #viewDetailsModal.show {
             display: flex; /* Show as flex to center content */
         }
+        
+        #viewDetailsModal .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        #viewDetailsModal .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        #viewDetailsModal .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        #viewDetailsModal .close:hover {
+            color: #000;
+        }
+        
+        #viewDetailsModal .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        #viewDetailsModal .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        #viewDetailsModal .form-group input,
+        #viewDetailsModal .form-group select,
+        #viewDetailsModal .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+        
+        #viewDetailsModal .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        #viewDetailsModal .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        #viewDetailsModal .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        #viewDetailsModal .description-preview {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        #viewDetailsModal .report-details-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding-bottom: 1rem;
+        }
+        #viewDetailsModal .detail-item {
+            word-break: break-word;
+            padding: 0.5rem 0;
+        }
+        #viewDetailsModal .detail-item strong {
+            color: #1f2937;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        #viewDetailsModal .detail-item.full-width {
+            grid-column: span 2;
+        }
+        #viewDetailsModal .detail-item p {
+            margin-top: 0.5rem;
+            background-color: #f9fafb;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+            color: #4b5563;
+        }
 
+        #viewDetailsModal .modal-separator {
+            margin: 1.5rem 0;
+            border: 0;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        #viewDetailsModal .modal-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+        #viewDetailsModal .modal-message.success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        #viewDetailsModal .modal-message.error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border-left: 4px solid #ef4444;
+        }
+        #viewDetailsModal .modal-message i {
+            margin-right: 0.5rem;
+            font-size: 1rem;
+        }
+
+        /* Keyframes are global and do not need to be scoped */
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -740,190 +969,41 @@ function buildTabUrl($tab_name) {
             }
         }
         
-        .modal-content {
-            background-color: white;
-            margin: 5% auto; /* Adjusted for centering with flex */
-            padding: 2rem;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh; /* Adjusted for better responsiveness */
-            overflow-y: auto;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Using shadow-lg */
-            animation: slideUp 0.3s ease-out;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem; /* Add padding to bottom of header */
-            border-bottom: 1px solid #e5e7eb; /* Add border for separation */
-        }
-        
-        .close {
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        
-        .close:hover {
-            color: #000;
-        }
-        
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #374151;
-        }
-        
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 0.875rem;
-        }
-        
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-        
-        .btn-primary {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .btn-primary:hover {
-            background: #2563eb;
-        }
-        
-        .description-preview {
-            max-width: 300px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        /* Report Details Content within Modal */
-        .report-details-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            padding-bottom: 1rem;
-        }
-        .detail-item {
-            word-break: break-word;
-            padding: 0.5rem 0; /* Add vertical padding */
-        }
-        .detail-item strong {
-            color: #1f2937;
-            font-weight: 600;
-            display: block; /* Make strong a block for better spacing */
-            margin-bottom: 0.25rem;
-        }
-        .detail-item.full-width {
-            grid-column: span 2;
-        }
-        .detail-item p {
-            margin-top: 0.5rem;
-            background-color: #f9fafb;
-            padding: 0.75rem;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            font-size: 0.875rem;
-            color: #4b5563;
-        }
-
-        /* Separator in modal */
-        .modal-separator {
-            margin: 1.5rem 0;
-            border: 0;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        /* Success/Error Messages within Modal */
-        .modal-message {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            font-size: 0.875rem;
-        }
-        .modal-message.success {
-            background-color: #d1fae5;
-            color: #065f46;
-            border-left: 4px solid #10b981;
-        }
-        .modal-message.error {
-            background-color: #fee2e2;
-            color: #b91c1c;
-            border-left: 4px solid #ef4444;
-        }
-        .modal-message i {
-            margin-right: 0.5rem;
-            font-size: 1rem;
-        }
-
         /* Responsive Adjustments */
         @media (max-width: 768px) {
             .reports-container {
                 padding: 1rem;
             }
-            
             .reports-header {
                 flex-direction: column;
                 align-items: stretch;
             }
-            
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            
             .filters-grid {
                 grid-template-columns: 1fr;
             }
-            
             .table-container {
                 font-size: 0.75rem;
             }
-            
             th, td {
                 padding: 0.5rem;
             }
 
-            .modal-content {
+            #viewDetailsModal .modal-content {
                 width: 95%;
-                margin: 1rem auto; /* Adjust margin for smaller screens */
+                margin: 1rem auto;
                 padding: 1.5rem;
             }
-            .modal-header {
+            #viewDetailsModal .modal-header {
                 padding: 1rem 1.5rem 0.5rem 1.5rem;
             }
-            .modal-body {
-                padding: 1.5rem;
-            }
-            .report-details-content {
+            #viewDetailsModal .report-details-content {
                 grid-template-columns: 1fr;
             }
         }
+        /* END: Scoped Modal Styles */
     </style>
 </head>
 <body>
@@ -941,7 +1021,6 @@ function buildTabUrl($tab_name) {
                     </div>
                 </div>
 
-                <!-- Tabs for Active/Completed Reports -->
                 <div class="tabs">
                     <a href="<?php echo buildTabUrl('active'); ?>" class="tab-button <?php echo ($active_tab === 'active' ? 'active' : ''); ?>">
                         Active Reports (<?php echo number_format($stats['open_reports'] + $stats['in_progress_reports']); ?>)
@@ -951,7 +1030,6 @@ function buildTabUrl($tab_name) {
                     </a>
                 </div>
                 
-                <!-- Statistics Cards -->
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-number"><?php echo number_format($stats['total_reports'] ?? 0); ?></div>
@@ -986,7 +1064,6 @@ function buildTabUrl($tab_name) {
                     <?php endif; ?>
                 </div>
                 
-                <!-- Filters Section -->
                 <div class="filters-section">
                     <form method="GET" action="">
                         <input type="hidden" name="tab" value="<?php echo htmlspecialchars($active_tab); ?>">
@@ -1042,7 +1119,6 @@ function buildTabUrl($tab_name) {
                     </form>
                 </div>
                 
-                <!-- Reports Table -->
                 <div class="reports-table">
                     <div class="table-container">
                         <table>
@@ -1109,7 +1185,7 @@ function buildTabUrl($tab_name) {
                                     </td>
                                     <td><?php echo $report['hours_open']; ?>h</td>
                                     <td>
-                                        <button class="btn-view" onclick="viewReport(<?php echo $report['id']; ?>, <?php echo $user_id; ?>)" <?php echo !empty($report['assigned_to']) ? 'disabled' : ''; ?>>
+                                        <button class="btn-view" onclick="viewReport(<?php echo $report['id']; ?>, <?php echo $user_id; ?>)">
                                             <i class="fas fa-eye"></i> View
                                         </button>
                                     </td>
@@ -1121,7 +1197,6 @@ function buildTabUrl($tab_name) {
                     </div>
                 </div>
                 
-                <!-- Pagination -->
                 <?php if ($total_pages > 1): ?>
                 <div class="pagination">
                     <?php if ($current_page > 1): ?>
@@ -1152,38 +1227,34 @@ function buildTabUrl($tab_name) {
         </div>
     </div>
     
-    <!-- Report Detail Modal -->
-    <div id="reportModal" class="modal">
+    <div id="viewDetailsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Report Details</h2>
-                <span class="close" onclick="closeModal()">&times;</span>
+                <span class="close" onclick="closeDetailsModal()">&times;</span>
             </div>
-            <div id="modalMessage" class="modal-message" style="display: none;"></div>
+            <div id="viewDetailsModalMessage" class="modal-message" style="display: none;"></div>
             <div id="reportDetails">
-                <!-- Report details will be loaded here -->
-            </div>
+                </div>
         </div>
     </div>
-    
+
     <script>
-        const basePath = `<?php echo $base_path; ?>`; // Make base_path available in JS
+        const basePath = '<?php echo rtrim(str_replace(basename($_SERVER['DOCUMENT_ROOT']), '', $base_path), '/'); ?>';
 
         function viewReport(reportId, currentUserId) {
-            const modal = document.getElementById('reportModal');
+            const modal = document.getElementById('viewDetailsModal');
             const reportDetailsDiv = document.getElementById('reportDetails');
-            const modalMessageDiv = document.getElementById('modalMessage');
+            const modalMessageDiv = document.getElementById('viewDetailsModalMessage'); // Target the correctly ID'd message div
 
             // Clear previous content and messages
-            reportDetailsDiv.innerHTML = '';
+            reportDetailsDiv.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Loading details...</p></div>';
             modalMessageDiv.style.display = 'none';
-            modalMessageDiv.className = 'modal-message'; // Reset classes
+            modalMessageDiv.className = 'modal-message';
 
-            // Show modal
             modal.classList.add('show');
-            document.body.style.overflow = 'hidden'; // Prevent scrolling body
+            document.body.style.overflow = 'hidden';
 
-            // Load report details via AJAX, passing currentUserId
             fetch(`${basePath}/api/get-report-details.php?id=${reportId}&current_user_id=${currentUserId}`)
                 .then(response => {
                     if (!response.ok) {
@@ -1195,89 +1266,74 @@ function buildTabUrl($tab_name) {
                     reportDetailsDiv.innerHTML = html;
                 })
                 .catch(error => {
-                    reportDetailsDiv.innerHTML = 
-                        '<p style="color: #ef4444;">Error loading report details. Please try again.</p>';
+                    reportDetailsDiv.innerHTML = '<p style="color: #ef4444; text-align:center;">Error loading report details. Please try again.</p>';
                     console.error('Error loading report details:', error);
-                    modalMessageDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Error loading report details: ${error.message}`;
-                    modalMessageDiv.classList.add('error');
-                    modalMessageDiv.style.display = 'flex';
                 });
         }
-    
-        function closeModal() {
-            const modal = document.getElementById('reportModal');
+
+        function closeDetailsModal() {
+            const modal = document.getElementById('viewDetailsModal');
             modal.classList.remove('show');
-            document.body.style.overflow = 'auto'; // Re-enable scrolling body
-            // Reload the page to reflect changes after closing modal (optional, but good for updates)
+            document.body.style.overflow = 'auto';
+            // Reload to reflect any status changes made in the modal
             location.reload(); 
         }
-    
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('reportModal');
+
+        // Close modal when clicking outside of it
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('viewDetailsModal');
             if (event.target == modal) {
-                closeModal();
+                closeDetailsModal();
             }
-        }
+        });
    
-        // Function to handle updating report details from the modal form
         function updateReport(reportId) {
+            // Note: This function is called from the content loaded via AJAX into the modal
             const form = document.getElementById('statusForm');
             const formData = new FormData(form);
-            formData.append('update_report', '1'); // Use the new flag
+            formData.append('update_report', '1');
             formData.append('report_id', reportId);
             
             const submitButton = form.querySelector('button[type="submit"]');
             const originalButtonText = submitButton.innerHTML;
-            const modalMessageDiv = document.getElementById('modalMessage');
+            const modalMessageDiv = document.getElementById('viewDetailsModalMessage'); // Target correct message div
 
-            // Show loading state
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-            modalMessageDiv.style.display = 'none'; // Hide previous messages
-            modalMessageDiv.className = 'modal-message'; // Reset classes
+            modalMessageDiv.style.display = 'none';
+            modalMessageDiv.className = 'modal-message';
 
-            fetch(window.location.href, { // Submit to the current page (process-report.php)
+            fetch(window.location.href, { // Submit to self (process-report.php)
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    return response.json();
-                } else {
-                    return response.text().then(text => {
-                        console.error('Server did not return JSON. Full response text:', text);
-                        throw new Error('Server did not return JSON. Response: ' + text);
-                    });
-                }
-            })
+            .then(response => response.json().catch(() => { throw new Error('Invalid JSON response from server.'); }))
             .then(data => {
                 if (data.success) {
                     modalMessageDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
                     modalMessageDiv.classList.add('success');
                     modalMessageDiv.style.display = 'flex';
-                    // Give user a moment to see success message before reloading
                     setTimeout(() => {
-                        closeModal(); 
+                        closeDetailsModal();
                     }, 1500); 
                 } else {
-                    modalMessageDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${data.message}`;
-                    modalMessageDiv.classList.add('error');
-                    modalMessageDiv.style.display = 'flex';
+                    throw new Error(data.message || 'An unknown error occurred.');
                 }
             })
             .catch(error => {
-                modalMessageDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> An unexpected error occurred: ${error.message}`;
+                modalMessageDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
                 modalMessageDiv.classList.add('error');
                 modalMessageDiv.style.display = 'flex';
                 console.error('Fetch error during report update:', error);
-            })
-            .finally(() => {
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalButtonText;
             });
         }
     </script>
+
+    <script>
+            // Add the 'fade-in' class to the body to trigger the transition
+            document.body.classList.add('fade-in');
+        </script>
 </body>
 </html>
