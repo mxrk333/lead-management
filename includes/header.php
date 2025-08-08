@@ -1834,8 +1834,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('User menu active state:', !isActive);
             
-            // Handle mobile overlay
-            if (window.innerWidth <= 768) {
+            
+            if (window.innerWidth <= 0) {
                 mobileOverlay.classList.toggle('active');
                 document.body.style.overflow = isActive ? 'auto' : 'hidden';
             }
@@ -2409,7 +2409,7 @@ function openReportModal() {
     document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
     document.getElementById('priority').value = 'medium';
 
-
+    // Re-populate browser info after reset
     const browserInfo = document.getElementById('browser-info');
     if (browserInfo) {
         function getDetailedBrowserInfo() {
@@ -2425,7 +2425,7 @@ function openReportModal() {
             let osVersion = '';
             let architecture = '';
 
-          
+            // Detect Operating System
             if (userAgent.indexOf('Windows NT 10.0') !== -1) {
                 osName = 'Windows 10/11';
             } else if (userAgent.indexOf('Windows NT 6.3') !== -1) {

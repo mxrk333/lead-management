@@ -5370,3 +5370,9 @@ Stack trace:
 [08-Aug-2025 19:03:16 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\lead-management\recruitment-dashboard.php on line 64
 [08-Aug-2025 19:03:16 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\lead-management\recruitment-dashboard.php on line 82
 [08-Aug-2025 19:03:16 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\lead-management\recruitment-dashboard.php on line 82
+[08-Aug-2025 19:13:19 Asia/Manila] Attempting database connection. DreamHost environment: false
+[08-Aug-2025 19:13:19 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[08-Aug-2025 19:13:19 Asia/Manila] Attempting database connection. DreamHost environment: false
+[08-Aug-2025 19:13:19 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[08-Aug-2025 19:13:19 Asia/Manila] Attempting database connection. DreamHost environment: false
+[08-Aug-2025 19:13:19 Asia/Manila] Database connection successful to localhost/real_estate_leads
