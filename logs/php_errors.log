@@ -5364,3 +5364,9 @@ Stack trace:
 [29-Jul-2025 12:12:39 Asia/Manila] Database connection successful to localhost/real_estate_leads
 [29-Jul-2025 12:12:39 Asia/Manila] Attempting database connection. DreamHost environment: false
 [29-Jul-2025 12:12:39 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[08-Aug-2025 19:03:16 Asia/Manila] PHP Warning:  Undefined array key "user_id" in C:\xampp\htdocs\lead-management\recruitment-dashboard.php on line 44
+[08-Aug-2025 19:03:16 Asia/Manila] Attempting database connection. DreamHost environment: false
+[08-Aug-2025 19:03:16 Asia/Manila] Database connection successful to localhost/real_estate_leads
+[08-Aug-2025 19:03:16 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\lead-management\recruitment-dashboard.php on line 64
+[08-Aug-2025 19:03:16 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\lead-management\recruitment-dashboard.php on line 82
+[08-Aug-2025 19:03:16 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\lead-management\recruitment-dashboard.php on line 82

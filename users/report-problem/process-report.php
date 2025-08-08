@@ -4,7 +4,7 @@
 // This block runs BEFORE any session checks or HTML output.
 // It checks if the form was submitted by looking for the required 'username' and 'description' fields.
 // =========================================================================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username']) && isset($_POST['description']) && !isset($_POST['update_report'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username']) && isset($_POST['description']) && !isset($_POST['update_report']) && !isset($_POST['get_report_details'])) {
     
     // Set the header to indicate a JSON response is being sent.
     header('Content-Type: application/json');
@@ -80,11 +80,191 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username']) && isset(
     // Crucially, stop the script here so it doesn't try to render the dashboard page.
     exit();
 }
+
+// =========================================================================
+// START: AJAX ENDPOINT FOR GETTING REPORT DETAILS
+// =========================================================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['get_report_details'])) {
+    header('Content-Type: application/json');
+    
+    $base_path = dirname(dirname(__DIR__));
+    require_once $base_path . '/config/database.php';
+    require_once $base_path . '/includes/functions.php';
+    
+    session_start();
+    
+    if (!isset($_SESSION['user_id'])) {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized access.']);
+        exit();
+    }
+    
+    $user_id = $_SESSION['user_id'];
+    $report_id = (int)$_POST['report_id'];
+    
+    try {
+        $conn = getDbConnection();
+        if (!$conn) {
+            throw new Exception("Failed to get database connection.");
+        }
+        
+        // Start transaction for auto-assignment
+        $conn->begin_transaction();
+        
+        // Get report details with assigned user info
+        $query = "SELECT pr.*, u.username as assigned_username, u.name as assigned_name 
+                  FROM problem_reports pr 
+                  LEFT JOIN users u ON pr.assigned_to = u.id 
+                  WHERE pr.id = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $report_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $report = $result->fetch_assoc();
+        
+        if (!$report) {
+            throw new Exception("Report not found.");
+        }
+        
+        // Auto-assign if not already assigned
+        if (empty($report['assigned_to'])) {
+            $update_query = "UPDATE problem_reports SET assigned_to = ?, updated_at = NOW() WHERE id = ?";
+            $update_stmt = $conn->prepare($update_query);
+            $update_stmt->bind_param("ii", $user_id, $report_id);
+            $update_stmt->execute();
+            
+            // Get current user info for display
+            $user_query = "SELECT username, name FROM users WHERE id = ?";
+            $user_stmt = $conn->prepare($user_query);
+            $user_stmt->bind_param("i", $user_id);
+            $user_stmt->execute();
+            $user_result = $user_stmt->get_result();
+            $current_user = $user_result->fetch_assoc();
+            
+            $report['assigned_to'] = $user_id;
+            $report['assigned_username'] = $current_user['username'];
+            $report['assigned_name'] = $current_user['name'];
+        }
+        
+        $conn->commit();
+        
+        // Generate HTML for modal content
+        $html = generateReportDetailsHTML($report);
+        
+        echo json_encode(['success' => true, 'html' => $html]);
+        
+    } catch (Exception $e) {
+        if ($conn && $conn->inTransaction()) {
+            $conn->rollback();
+        }
+        error_log("Error getting report details: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Error loading report details: ' . $e->getMessage()]);
+    } finally {
+        if ($conn) $conn->close();
+    }
+    
+    exit();
+}
+
+// Function to generate report details HTML
+function generateReportDetailsHTML($report) {
+    $html = '<div class="report-details-content">';
+    $html .= '<div class="detail-item">';
+    $html .= '<strong>Report ID:</strong> #' . htmlspecialchars($report['id']);
+    $html .= '</div>';
+    
+    $html .= '<div class="detail-item">';
+    $html .= '<strong>Username:</strong> ' . htmlspecialchars($report['username']);
+    $html .= '</div>';
+    
+    $html .= '<div class="detail-item">';
+    $html .= '<strong>Phone:</strong> ' . htmlspecialchars($report['phone']);
+    $html .= '</div>';
+    
+    $html .= '<div class="detail-item">';
+    $html .= '<strong>Email:</strong> ' . htmlspecialchars($report['email'] ?: 'Not provided');
+    $html .= '</div>';
+    
+    $html .= '<div class="detail-item">';
+    $html .= '<strong>Issue Type:</strong> ' . htmlspecialchars(ucfirst(str_replace('-', ' ', $report['issue_type'])));
+    $html .= '</div>';
+    
+    $html .= '<div class="detail-item">';
+    $html .= '<strong>Priority:</strong> <span class="priority-badge priority-' . $report['priority'] . '">' . htmlspecialchars(ucfirst($report['priority'])) . '</span>';
+    $html .= '</div>';
+    
+    $html .= '<div class="detail-item">';
+    $html .= '<strong>Current Status:</strong> <span class="status-badge status-' . $report['status'] . '">' . htmlspecialchars(ucfirst(str_replace('-', ' ', $report['status']))) . '</span>';
+    $html .= '</div>';
+    
+    $html .= '<div class="detail-item">';
+    $html .= '<strong>Assigned To:</strong> ' . htmlspecialchars($report['assigned_username'] ?: 'Unassigned');
+    $html .= '</div>';
+    
+    $html .= '<div class="detail-item">';
+    $html .= '<strong>Created:</strong> ' . date('M j, Y \a\t H:i', strtotime($report['created_at']));
+    $html .= '</div>';
+    
+    $html .= '<div class="detail-item">';
+    $html .= '<strong>Last Updated:</strong> ' . date('M j, Y \a\t H:i', strtotime($report['updated_at']));
+    $html .= '</div>';
+    
+    if ($report['resolved_at']) {
+        $html .= '<div class="detail-item">';
+        $html .= '<strong>Resolved:</strong> ' . date('M j, Y \a\t H:i', strtotime($report['resolved_at']));
+        $html .= '</div>';
+    }
+    
+    $html .= '<div class="detail-item full-width">';
+    $html .= '<strong>Description:</strong>';
+    $html .= '<p>' . nl2br(htmlspecialchars($report['description'])) . '</p>';
+    $html .= '</div>';
+    
+    if ($report['browser_info']) {
+        $html .= '<div class="detail-item full-width">';
+        $html .= '<strong>Browser Info:</strong>';
+        $html .= '<p>' . htmlspecialchars($report['browser_info']) . '</p>';
+        $html .= '</div>';
+    }
+    
+    if ($report['resolution_notes']) {
+        $html .= '<div class="detail-item full-width">';
+        $html .= '<strong>Resolution Notes:</strong>';
+        $html .= '<p>' . nl2br(htmlspecialchars($report['resolution_notes'])) . '</p>';
+        $html .= '</div>';
+    }
+    
+    $html .= '</div>';
+    
+    // Add status update form
+    $html .= '<hr class="modal-separator">';
+    $html .= '<form id="statusForm" onsubmit="updateReport(' . $report['id'] . '); return false;">';
+    $html .= '<div class="form-group">';
+    $html .= '<label for="status">Update Status:</label>';
+    $html .= '<select id="status" name="status" required>';
+    $html .= '<option value="open"' . ($report['status'] === 'open' ? ' selected' : '') . '>Open</option>';
+    $html .= '<option value="in-progress"' . ($report['status'] === 'in-progress' ? ' selected' : '') . '>In Progress</option>';
+    $html .= '<option value="resolved"' . ($report['status'] === 'resolved' ? ' selected' : '') . '>Resolved</option>';
+    $html .= '<option value="closed"' . ($report['status'] === 'closed' ? ' selected' : '') . '>Closed</option>';
+    $html .= '</select>';
+    $html .= '</div>';
+    
+    $html .= '<div class="form-group">';
+    $html .= '<label for="resolution_notes">Resolution Notes:</label>';
+    $html .= '<textarea id="resolution_notes" name="resolution_notes" placeholder="Add notes about the resolution or progress...">' . htmlspecialchars($report['resolution_notes'] ?: '') . '</textarea>';
+    $html .= '</div>';
+    
+    $html .= '<button type="submit" class="btn-primary">';
+    $html .= '<i class="fas fa-save"></i> Update Report';
+    $html .= '</button>';
+    $html .= '</form>';
+    
+    return $html;
+}
+
 // =========================================================================
 // END: NEW REPORT SUBMISSION LOGIC
 // --- Original content of process-report.php continues below ---
 // =========================================================================
-
 
 session_start();
 
@@ -156,7 +336,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_report'])) {
     try {
         $report_id = (int)$_POST['report_id'];
         $new_status = $_POST['status'];
-        // Removed assigned_to_id from POST as per new UI
         $resolution_notes = $_POST['resolution_notes'] ?? '';
         
         $valid_statuses = ['open', 'in-progress', 'resolved', 'closed'];
@@ -179,7 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_report'])) {
             throw new Exception("Report not found for update.");
         }
         
-        // Update query without assigned_to, as it's no longer in the form
+        // Update query
         $update_query = "UPDATE problem_reports SET status = ?, resolution_notes = ?, updated_at = NOW()";
         $params = [$new_status, $resolution_notes];
         $types = "ss"; // s for status, s for resolution_notes
@@ -245,7 +424,59 @@ $offset = ($current_page - 1) * $reports_per_page;
 // Initialize variables
 $reports = [];
 $total_reports = 0;
-$stats = ['total_reports' => 0, 'open_reports' => 0, 'in_progress_reports' => 0, 'resolved_reports' => 0, 'closed_reports' => 0, 'high_priority' => 0, 'medium_priority' => 0, 'low_priority' => 0];
+
+// Initialize stats with default values
+$stats = [
+    'total_reports' => 0, 
+    'open_reports' => 0, 
+    'in_progress_reports' => 0, 
+    'resolved_reports' => 0, 
+    'closed_reports' => 0, 
+    'high_priority' => 0, 
+    'medium_priority' => 0, 
+    'low_priority' => 0,
+    'active_reports' => 0,
+    'completed_reports' => 0
+];
+
+// Get statistics for ALL reports (not filtered by current tab or search)
+try {
+    // FIXED: Using backticks around aliases to avoid SQL syntax errors
+    $stats_query = "SELECT 
+                        COUNT(*) as `total_reports`,
+                        SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) as `open_reports`,
+                        SUM(CASE WHEN status = 'in-progress' THEN 1 ELSE 0 END) as `in_progress_reports`,
+                        SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as `resolved_reports`,
+                        SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as `closed_reports`,
+                        SUM(CASE WHEN priority = 'high' THEN 1 ELSE 0 END) as `high_priority`,
+                        SUM(CASE WHEN priority = 'medium' THEN 1 ELSE 0 END) as `medium_priority`,
+                        SUM(CASE WHEN priority = 'low' THEN 1 ELSE 0 END) as `low_priority`
+                    FROM problem_reports";
+    
+    $stats_result = $conn->query($stats_query);
+    
+    if ($stats_result && $stats_result->num_rows > 0) {
+        $stats_row = $stats_result->fetch_assoc();
+        
+        // Safely convert to integers with null coalescing
+        $stats['total_reports'] = (int)($stats_row['total_reports'] ?? 0);
+        $stats['open_reports'] = (int)($stats_row['open_reports'] ?? 0);
+        $stats['in_progress_reports'] = (int)($stats_row['in_progress_reports'] ?? 0);
+        $stats['resolved_reports'] = (int)($stats_row['resolved_reports'] ?? 0);
+        $stats['closed_reports'] = (int)($stats_row['closed_reports'] ?? 0);
+        $stats['high_priority'] = (int)($stats_row['high_priority'] ?? 0);
+        $stats['medium_priority'] = (int)($stats_row['medium_priority'] ?? 0);
+        $stats['low_priority'] = (int)($stats_row['low_priority'] ?? 0);
+        
+        // Calculate derived stats
+        $stats['active_reports'] = $stats['open_reports'] + $stats['in_progress_reports'];
+        $stats['completed_reports'] = $stats['resolved_reports'] + $stats['closed_reports'];
+    }
+    
+} catch (Exception $e) {
+    error_log("Error getting stats: " . $e->getMessage());
+    // Stats remain at default 0 values
+}
 
 try {
     // Build search conditions
@@ -355,52 +586,6 @@ try {
     error_log($error_message);
 }
 
-// Get statistics for ALL reports (or current tab if desired)
-// For simplicity, stats will reflect the current tab's filter
-try {
-    $stats_conditions = [];
-    $stats_params = [];
-    $stats_types = "";
-
-    if (!empty($status_tab_filter)) {
-        $placeholders = implode(',', array_fill(0, count($status_tab_filter), '?'));
-        $stats_conditions[] = "status IN ($placeholders)";
-        foreach ($status_tab_filter as $status) {
-            $stats_params[] = $status;
-            $stats_types .= "s";
-        }
-    }
-
-    $stats_where_clause = "";
-    if (!empty($stats_conditions)) {
-        $stats_where_clause = "WHERE " . implode(" AND ", $stats_conditions);
-    }
-
-    $stats_query = "SELECT 
-                        COUNT(*) as total_reports,
-                        SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) as open_reports,
-                        SUM(CASE WHEN status = 'in-progress' THEN 1 ELSE 0 END) as in_progress_reports,
-                        SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved_reports,
-                        SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as closed_reports,
-                        SUM(CASE WHEN priority = 'high' THEN 1 ELSE 0 END) as high_priority,
-                        SUM(CASE WHEN priority = 'medium' THEN 1 ELSE 0 END) as medium_priority,
-                        SUM(CASE WHEN priority = 'low' THEN 1 ELSE 0 END) as low_priority
-                    FROM problem_reports $stats_where_clause";
-    
-    $stats_stmt = $conn->prepare($stats_query);
-    if (!empty($stats_params)) {
-        $stats_stmt->bind_param($stats_types, ...$stats_params);
-    }
-    $stats_stmt->execute();
-    $stats_result = $stats_stmt->get_result();
-    if ($stats_result) {
-        $stats = $stats_result->fetch_assoc();
-    }
-    
-} catch (Exception $e) {
-    error_log("Error getting stats: " . $e->getMessage());
-}
-
 // Get team members for assignment (still needed for the modal's team_members array, even if dropdown is removed)
 $team_members = [];
 try {
@@ -411,10 +596,6 @@ try {
     }
 } catch (Exception $e) {
     error_log("Error getting team members: " . $e->getMessage());
-} finally {
-    if ($conn && $conn->ping()) { // Ensure connection is closed if it was opened and still active
-        $conn->close();
-    }
 }
 
 // Function to build pagination URL
@@ -865,6 +1046,7 @@ function buildTabUrl($tab_name) {
             border: 1px solid #d1d5db;
             border-radius: 8px;
             font-size: 0.875rem;
+            box-sizing: border-box;
         }
         
         #viewDetailsModal .form-group textarea {
@@ -1023,19 +1205,19 @@ function buildTabUrl($tab_name) {
 
                 <div class="tabs">
                     <a href="<?php echo buildTabUrl('active'); ?>" class="tab-button <?php echo ($active_tab === 'active' ? 'active' : ''); ?>">
-                        Active Reports (<?php echo number_format($stats['open_reports'] + $stats['in_progress_reports']); ?>)
+                        Active Reports (<?php echo number_format($stats['active_reports'] ?? 0); ?>)
                     </a>
                     <a href="<?php echo buildTabUrl('completed'); ?>" class="tab-button <?php echo ($active_tab === 'completed' ? 'active' : ''); ?>">
-                        Completed Reports (<?php echo number_format($stats['resolved_reports'] + $stats['closed_reports']); ?>)
+                        Completed Reports (<?php echo number_format($stats['completed_reports'] ?? 0); ?>)
                     </a>
                 </div>
                 
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number"><?php echo number_format($stats['total_reports'] ?? 0); ?></div>
-                        <div class="stat-label">Total Reports (<?php echo ucfirst($active_tab); ?>)</div>
-                    </div>
                     <?php if ($active_tab === 'active'): ?>
+                        <div class="stat-card">
+                            <div class="stat-number"><?php echo number_format($stats['active_reports'] ?? 0); ?></div>
+                            <div class="stat-label">Total Active Reports</div>
+                        </div>
                         <div class="stat-card open">
                             <div class="stat-number"><?php echo number_format($stats['open_reports'] ?? 0); ?></div>
                             <div class="stat-label">Open Reports</div>
@@ -1049,6 +1231,10 @@ function buildTabUrl($tab_name) {
                             <div class="stat-label">High Priority</div>
                         </div>
                     <?php elseif ($active_tab === 'completed'): ?>
+                        <div class="stat-card">
+                            <div class="stat-number"><?php echo number_format($stats['completed_reports'] ?? 0); ?></div>
+                            <div class="stat-label">Total Completed Reports</div>
+                        </div>
                         <div class="stat-card resolved">
                             <div class="stat-number"><?php echo number_format($stats['resolved_reports'] ?? 0); ?></div>
                             <div class="stat-label">Resolved Reports</div>
@@ -1058,8 +1244,8 @@ function buildTabUrl($tab_name) {
                             <div class="stat-label">Closed Reports</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-number"><?php echo number_format($stats['total_reports'] ?? 0); ?></div>
-                            <div class="stat-label">Total Completed</div>
+                            <div class="stat-number"><?php echo number_format($stats['high_priority'] ?? 0); ?></div>
+                            <div class="stat-label">High Priority</div>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -1245,7 +1431,7 @@ function buildTabUrl($tab_name) {
         function viewReport(reportId, currentUserId) {
             const modal = document.getElementById('viewDetailsModal');
             const reportDetailsDiv = document.getElementById('reportDetails');
-            const modalMessageDiv = document.getElementById('viewDetailsModalMessage'); // Target the correctly ID'd message div
+            const modalMessageDiv = document.getElementById('viewDetailsModalMessage');
 
             // Clear previous content and messages
             reportDetailsDiv.innerHTML = '<div style="text-align:center; padding: 2rem;"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Loading details...</p></div>';
@@ -1255,20 +1441,32 @@ function buildTabUrl($tab_name) {
             modal.classList.add('show');
             document.body.style.overflow = 'hidden';
 
-            fetch(`${basePath}/api/get-report-details.php?id=${reportId}&current_user_id=${currentUserId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.text();
-                })
-                .then(html => {
-                    reportDetailsDiv.innerHTML = html;
-                })
-                .catch(error => {
-                    reportDetailsDiv.innerHTML = '<p style="color: #ef4444; text-align:center;">Error loading report details. Please try again.</p>';
-                    console.error('Error loading report details:', error);
-                });
+            // Create form data for POST request
+            const formData = new FormData();
+            formData.append('get_report_details', '1');
+            formData.append('report_id', reportId);
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    reportDetailsDiv.innerHTML = data.html;
+                } else {
+                    throw new Error(data.message || 'Unknown error occurred');
+                }
+            })
+            .catch(error => {
+                reportDetailsDiv.innerHTML = '<p style="color: #ef4444; text-align:center;">Error loading report details. Please try again.</p>';
+                console.error('Error loading report details:', error);
+            });
         }
 
         function closeDetailsModal() {
@@ -1296,7 +1494,7 @@ function buildTabUrl($tab_name) {
             
             const submitButton = form.querySelector('button[type="submit"]');
             const originalButtonText = submitButton.innerHTML;
-            const modalMessageDiv = document.getElementById('viewDetailsModalMessage'); // Target correct message div
+            const modalMessageDiv = document.getElementById('viewDetailsModalMessage');
 
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
@@ -1332,8 +1530,8 @@ function buildTabUrl($tab_name) {
     </script>
 
     <script>
-            // Add the 'fade-in' class to the body to trigger the transition
-            document.body.classList.add('fade-in');
-        </script>
+        // Add the 'fade-in' class to the body to trigger the transition
+        document.body.classList.add('fade-in');
+    </script>
 </body>
 </html>
