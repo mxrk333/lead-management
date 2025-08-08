@@ -32,6 +32,7 @@ if (isset($_POST['update_profile'])) {
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $profilePicture = isset($_FILES['profile_picture']) ? $_FILES['profile_picture'] : null;
+    $coverPhoto = isset($_FILES['cover_photo']) ? $_FILES['cover_photo'] : null;
     $current_password = isset($_POST['current_password']) ? $_POST['current_password'] : '';
     $new_password = isset($_POST['new_password']) ? $_POST['new_password'] : '';
     $confirm_password = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
@@ -173,6 +174,53 @@ if (isset($_POST['update_profile'])) {
                             }
                         } else {
                             $error_message = "Error uploading profile picture. Check directory permissions.";
+                            $transaction_success = false;
+                        }
+                    }
+                }
+                
+                // Handle cover photo upload
+                if ($transaction_success && $coverPhoto && $coverPhoto['error'] === UPLOAD_ERR_OK) {
+                    $file_extension = strtolower(pathinfo($coverPhoto['name'], PATHINFO_EXTENSION));
+                    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+                    
+                    if (!in_array($file_extension, $allowed_extensions)) {
+                        $error_message = "Invalid file type for cover photo. Only JPG, PNG, and GIF files are allowed.";
+                        $transaction_success = false;
+                    } else {
+                        $upload_dir = 'uploads/cover_photos/';
+                        if (!file_exists($upload_dir)) {
+                            mkdir($upload_dir, 0777, true);
+                        }
+                        
+                        $file_name = uniqid('cover_') . '.' . $file_extension;
+                        $target_file = $upload_dir . $file_name;
+                        
+                        if (move_uploaded_file($coverPhoto['tmp_name'], $target_file)) {
+                            // Delete old cover photo if exists
+                            if (!empty($user['cover_photo']) && file_exists($user['cover_photo'])) {
+                                unlink($user['cover_photo']);
+                            }
+                            
+                            // Update cover photo in database
+                            $cover_update_stmt = $conn->prepare("UPDATE users SET cover_photo = ? WHERE id = ?");
+                            
+                            if (!$cover_update_stmt) {
+                                $error_message = "Database error: " . $conn->error;
+                                $transaction_success = false;
+                            } else {
+                                $cover_update_stmt->bind_param("si", $target_file, $user_id);
+                                
+                                if (!$cover_update_stmt->execute()) {
+                                    $error_message = "Error updating cover photo: " . $cover_update_stmt->error;
+                                    $transaction_success = false;
+                                } else {
+                                    // Update session with new cover photo
+                                    $_SESSION['user_cover_photo'] = $target_file;
+                                }
+                            }
+                        } else {
+                            $error_message = "Error uploading cover photo. Check directory permissions.";
                             $transaction_success = false;
                         }
                     }
@@ -333,13 +381,38 @@ $conn->close();
         
         .profile-cover {
             height: 500px;
-            background-image: url('assets/images/innersparc.jpg'); 
+            background-image: url('<?php echo !empty($user['cover_photo']) && file_exists($user['cover_photo']) ? htmlspecialchars($user['cover_photo']) : 'assets/images/innersparc.jpg'; ?>'); 
             background-size: cover;
             background-position: center;
             position: relative;
             display: flex;
             align-items: flex-end;
             padding: 0 100px;
+        }
+        
+        .profile-cover-edit {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(78, 115, 223, 0.9);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            border: 2px solid white;
+            transition: all 0.2s;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+        }
+        
+        .profile-cover-edit:hover {
+            background-color: rgba(58, 92, 204, 0.9);
+            transform: scale(1.1);
         }
         
         .profile-header-content {
@@ -982,6 +1055,9 @@ $conn->close();
                 <div class="profile-card">
                     <div class="profile-header">
                         <div class="profile-cover">
+                            <label for="cover_photo_upload" class="profile-cover-edit" title="Change Cover Photo">
+                                <i class="fas fa-camera"></i>
+                            </label>
                             <div class="profile-header-content">
                                 <div class="profile-avatar-container">
                                     <div class="profile-avatar">
@@ -1195,8 +1271,9 @@ $conn->close();
                                 </div>
                                 
                                 <form method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" enctype="multipart/form-data">
-                                    <!-- Hidden file input for profile picture -->
+                                    <!-- Hidden file inputs -->
                                     <input type="file" id="profile_picture_upload" name="profile_picture" class="hidden-file-input" accept="image/jpeg,image/png,image/gif">
+                                    <input type="file" id="cover_photo_upload" name="cover_photo" class="hidden-file-input" accept="image/jpeg,image/png,image/gif">
                                     
                                     <div class="tab-content active" id="tab-profile">
                                         <div class="form-section">
@@ -1332,6 +1409,23 @@ $conn->close();
                     
                     // Set the image source to the selected file
                     img.src = e.target.result;
+                }
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+        
+        // Cover photo upload
+        const coverPhotoUpload = document.getElementById('cover_photo_upload');
+        const profileCover = document.querySelector('.profile-cover');
+        
+        coverPhotoUpload.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    // Update the background image of the cover
+                    profileCover.style.backgroundImage = `url(${e.target.result})`;
                 }
                 
                 reader.readAsDataURL(this.files[0]);
