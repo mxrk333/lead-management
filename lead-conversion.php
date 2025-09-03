@@ -87,10 +87,11 @@ if (!in_array($status_filter, $valid_filters)) {
 }
 
 // ENHANCED: Define conversion statuses with proper categorization
-$closed_statuses = ['Closed Deal'];
+// Only House Turn Over is considered fully Closed Deal
+$closed_statuses = ['House Turn Over'];
 $lost_statuses = ['Lost'];
-$in_progress_statuses = ['Requirement Stage', 'Downpayment Stage', 'Housing Loan Application', 
-                        'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over'];
+$in_progress_statuses = ['Requirement Stage', 'Closed Deal', 'Downpayment Stage', 'Housing Loan Application', 
+                        'Loan Approval', 'Loan Takeout', 'House Inspection'];
 
 // Build status condition based on filter
 switch ($status_filter) {
@@ -216,13 +217,13 @@ $query = "
         dt.next_payment_date,
         CASE 
             WHEN l.status = 'House Turn Over' THEN 100
-            WHEN l.status = 'House Inspection' THEN 90
-            WHEN l.status = 'Loan Takeout' THEN 80
-            WHEN l.status = 'Loan Approval' THEN 70
-            WHEN l.status = 'Housing Loan Application' THEN 60
-            WHEN l.status = 'Downpayment Stage' THEN 40
-            WHEN l.status = 'Requirement Stage' THEN 20
-            WHEN l.status = 'Closed Deal' THEN 10
+            WHEN l.status = 'House Inspection' THEN 95
+            WHEN l.status = 'Loan Takeout' THEN 90
+            WHEN l.status = 'Loan Approval' THEN 85
+            WHEN l.status = 'Housing Loan Application' THEN 80
+            WHEN l.status = 'Downpayment Stage' THEN 75
+            WHEN l.status = 'Closed Deal' THEN 70
+            WHEN l.status = 'Requirement Stage' THEN 25
             ELSE 0
         END as conversion_progress
     FROM leads l
@@ -282,13 +283,13 @@ SELECT
     AVG(CASE WHEN l.status NOT IN ('Lost') THEN 
         CASE 
             WHEN l.status = 'House Turn Over' THEN 100
-            WHEN l.status = 'House Inspection' THEN 90
-            WHEN l.status = 'Loan Takeout' THEN 80
-            WHEN l.status = 'Loan Approval' THEN 70
-            WHEN l.status = 'Housing Loan Application' THEN 60
-            WHEN l.status = 'Downpayment Stage' THEN 40
-            WHEN l.status = 'Requirement Stage' THEN 20
-            WHEN l.status = 'Closed Deal' THEN 10
+            WHEN l.status = 'House Inspection' THEN 95
+            WHEN l.status = 'Loan Takeout' THEN 90
+            WHEN l.status = 'Loan Approval' THEN 85
+            WHEN l.status = 'Housing Loan Application' THEN 80
+            WHEN l.status = 'Downpayment Stage' THEN 75
+            WHEN l.status = 'Closed Deal' THEN 70
+            WHEN l.status = 'Requirement Stage' THEN 25
             ELSE 0
         END 
     END) as avg_conversion_progress
@@ -357,18 +358,18 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
 function getStatusBadgeClass($status) {
     switch ($status) {
         case 'House Turn Over':
-        case 'Loan Takeout':
-            return 'success';
+            return 'success'; // Fully completed/closed deal
         case 'Lost':
             return 'danger';
-        case 'Closed Deal':
-        case 'Loan Approval':
-        case 'House Inspection':
-            return 'info';
         case 'Requirement Stage':
+            return 'warning'; // Early stage in progress
+        case 'Closed Deal':
         case 'Downpayment Stage':
         case 'Housing Loan Application':
-            return 'warning';
+        case 'Loan Approval':
+        case 'Loan Takeout':
+        case 'House Inspection':
+            return 'info'; // In progress stages
         default:
             return 'info';
     }
@@ -522,42 +523,62 @@ function getStatusBadgeClass($status) {
             box-shadow: var(--shadow-md);
         }
 
-        .filters-container {
+        .filters-search-container {
             background: white;
             border-radius: var(--border-radius);
-            padding: 1.25rem;
+            padding: 1.5rem;
             margin-bottom: 1.5rem;
             box-shadow: var(--shadow);
             border: 1px solid var(--gray-200);
         }
 
-        .filters-row {
+        .unified-form {
+            width: 100%;
+        }
+
+        .form-row {
             display: flex;
-            gap: 1rem;
-            align-items: center;
+            gap: 1.5rem;
+            align-items: end;
             flex-wrap: wrap;
         }
 
-        .filter-group {
+        .filter-group, .search-group {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
         }
 
+        .filter-group {
+            min-width: 200px;
+        }
+
+        .search-group {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
         .filter-label {
             font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--gray-700);
+            margin-bottom: 0.25rem;
         }
 
         .filter-select {
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--gray-200);
+            padding: 0.75rem;
+            border: 2px solid var(--gray-200);
             border-radius: var(--border-radius);
             font-size: 0.875rem;
             background-color: var(--gray-50);
             transition: all 0.2s ease;
-            min-width: 150px;
+            font-weight: 500;
         }
 
         .filter-select:focus {
@@ -567,25 +588,9 @@ function getStatusBadgeClass($status) {
             background-color: white;
         }
 
-        .search-container {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--gray-200);
-        }
-
-        .search-form {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-        }
-
         .search-input {
-            flex: 1;
             padding: 0.75rem 1rem;
-            border: 1px solid var(--gray-200);
+            border: 2px solid var(--gray-200);
             border-radius: var(--border-radius);
             font-size: 0.875rem;
             transition: all 0.2s ease;
@@ -689,75 +694,162 @@ function getStatusBadgeClass($status) {
             margin: 0;
         }
 
-        .leads-table-container {
+        .leads-cards-container {
             flex: 1;
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            overflow: auto;
             margin-bottom: 1.5rem;
-            position: relative;
         }
 
-        .leads-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+        .leads-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1rem;
+            padding: 0;
         }
 
-        .leads-table thead {
-            position: sticky;
-            top: 0;
-            z-index: 1;
-            background: var(--gray-50);
-        }
-
-        .leads-table th {
-            background: var(--gray-50);
-            padding: 1rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--gray-600);
-            border-bottom: 1px solid var(--gray-200);
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        .leads-table td {
-            padding: 1rem;
-            font-size: 0.875rem;
-            color: var(--gray-700);
-            border-bottom: 1px solid var(--gray-200);
+        .lead-card-compact {
             background: white;
-            vertical-align: top;
-        }
-
-        .leads-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .leads-table tbody tr {
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            border: 2px solid var(--gray-200);
             transition: all 0.2s ease;
+            overflow: hidden;
+            padding: 1rem;
         }
 
-        .leads-table tbody tr:hover {
-            background: var(--gray-50);
+        .lead-card-compact:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
         }
 
-        /* Lost deal highlighting styles */
-        .leads-table tbody tr.lost-deal {
-            background-color: #fef2f2 !important;
+        .lead-card-compact.lost-deal {
+            background-color: #fef2f2;
+            border-color: var(--danger);
             border-left: 4px solid var(--danger);
         }
 
-        .leads-table tbody tr.lost-deal:hover {
-            background-color: #fecaca !important;
+        .lead-card-compact.lost-deal:hover {
+            background-color: #fecaca;
         }
 
-        .leads-table tbody tr.lost-deal td {
-            background-color: transparent;
+        .card-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            gap: 1rem;
+        }
+
+        .client-section {
+            flex: 1;
+        }
+
+        .client-name-compact {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: 0 0 0.25rem 0;
+            line-height: 1.2;
+        }
+
+        .phone-compact {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--gray-600);
+        }
+
+        .status-section {
+            flex-shrink: 0;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 0.75rem;
+            gap: 1rem;
+        }
+
+        .property-compact {
+            flex: 1;
+        }
+
+        .developer-compact {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 0.25rem;
+        }
+
+        .model-compact {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .price-compact {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--success);
+            text-align: right;
+        }
+
+        .lost-deal .price-compact {
+            color: var(--danger);
+            text-decoration: line-through;
+        }
+
+        .progress-compact {
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-bar-compact {
+            width: 100%;
+            height: 0.5rem;
+            background: var(--gray-200);
+            border-radius: 0.25rem;
+            overflow: hidden;
+            margin-bottom: 0.375rem;
+        }
+
+        .progress-bar-compact .progress-fill {
+            height: 100%;
+            background: var(--info);
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar-compact .progress-fill.closed-deal {
+            background: var(--success);
+        }
+
+        .progress-bar-compact .progress-fill.early-stage {
+            background: var(--warning);
+        }
+
+        .progress-label-compact {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-600);
+            text-align: center;
+        }
+
+        .actions-compact {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .date-compact {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            font-weight: 500;
+        }
+
+        .buttons-compact {
+            display: flex;
+            gap: 0.5rem;
         }
 
         .status-badge {
@@ -770,24 +862,53 @@ function getStatusBadgeClass($status) {
             font-weight: 500;
         }
 
-        .status-badge.success {
+        .status-badge-large {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border: 2px solid transparent;
+        }
+
+        .status-badge-compact {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-badge.success, .status-badge-large.success, .status-badge-compact.success {
             background: var(--success-light);
             color: var(--success);
+            border-color: var(--success);
         }
 
-        .status-badge.warning {
+        .status-badge.warning, .status-badge-large.warning, .status-badge-compact.warning {
             background: var(--warning-light);
             color: var(--warning);
+            border-color: var(--warning);
         }
 
-        .status-badge.info {
+        .status-badge.info, .status-badge-large.info, .status-badge-compact.info {
             background: var(--info-light);
             color: var(--info);
+            border-color: var(--info);
         }
 
-        .status-badge.danger {
+        .status-badge.danger, .status-badge-large.danger, .status-badge-compact.danger {
             background: var(--danger-light);
             color: var(--danger);
+            border-color: var(--danger);
         }
 
         .progress-bar {
@@ -801,7 +922,7 @@ function getStatusBadgeClass($status) {
 
         .progress-fill {
             height: 100%;
-            background: var(--success);
+            background: var(--info);
             transition: width 0.3s ease;
         }
 
@@ -816,8 +937,16 @@ function getStatusBadgeClass($status) {
 
         .conversion-progress .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--warning), var(--success));
+            background: var(--info);
             transition: width 0.3s ease;
+        }
+
+        .conversion-progress .progress-fill.closed-deal {
+            background: var(--success);
+        }
+
+        .conversion-progress .progress-fill.early-stage {
+            background: var(--warning);
         }
 
         .amount-text {
@@ -872,6 +1001,101 @@ function getStatusBadgeClass($status) {
         .btn-view:hover,
         .btn-edit:hover:not(.disabled) {
             transform: translateY(-1px);
+        }
+
+        .btn-card-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: 2px solid;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-card-action.btn-view {
+            background: var(--info-light);
+            color: var(--info);
+            border-color: var(--info);
+        }
+
+        .btn-card-action.btn-edit {
+            background: var(--warning-light);
+            color: var(--warning);
+            border-color: var(--warning);
+        }
+
+        .btn-card-action.btn-edit.disabled {
+            background: var(--gray-100);
+            color: var(--gray-400);
+            border-color: var(--gray-300);
+            cursor: not-allowed;
+        }
+
+        .btn-card-action:hover:not(.disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-card-action.btn-view:hover {
+            background: var(--info);
+            color: white;
+        }
+
+        .btn-card-action.btn-edit:hover:not(.disabled) {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-compact {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1px solid;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-view-compact {
+            background: var(--info-light);
+            color: var(--info);
+            border-color: var(--info);
+        }
+
+        .btn-edit-compact {
+            background: var(--warning-light);
+            color: var(--warning);
+            border-color: var(--warning);
+        }
+
+        .btn-edit-compact.disabled {
+            background: var(--gray-100);
+            color: var(--gray-400);
+            border-color: var(--gray-300);
+            cursor: not-allowed;
+        }
+
+        .btn-compact:hover:not(.disabled) {
+            transform: translateY(-1px);
+        }
+
+        .btn-view-compact:hover {
+            background: var(--info);
+            color: white;
+        }
+
+        .btn-edit-compact:hover:not(.disabled) {
+            background: var(--warning);
+            color: white;
         }
 
         .pagination {
@@ -939,6 +1163,36 @@ function getStatusBadgeClass($status) {
             margin: 0;
         }
 
+        .empty-state-large {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            border: 2px solid var(--gray-200);
+        }
+
+        .empty-state-large i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .empty-state-large h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin: 0 0 1rem 0;
+        }
+
+        .empty-state-large p {
+            font-size: 1.125rem;
+            color: var(--gray-500);
+            margin: 0;
+            line-height: 1.6;
+        }
+
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -947,12 +1201,6 @@ function getStatusBadgeClass($status) {
             .leads-page {
                 padding: 1rem;
                 min-height: calc(100vh - 60px);
-            }
-
-            .leads-table-container {
-                margin: -1rem;
-                margin-top: 1rem;
-                border-radius: 0;
             }
 
             .page-header {
@@ -971,25 +1219,23 @@ function getStatusBadgeClass($status) {
                 justify-content: center;
             }
 
-            .filters-row {
+            .form-row {
                 flex-direction: column;
                 align-items: stretch;
+                gap: 1rem;
             }
 
-            .filter-group {
-                width: 100%;
-            }
-
-            .filter-select {
+            .filter-group, .search-group {
                 min-width: auto;
                 width: 100%;
             }
 
-            .search-form {
-                flex-direction: column;
+            .filter-select, .search-input {
+                width: 100%;
             }
 
-            .search-input {
+            .action-group {
+                flex-direction: column;
                 width: 100%;
             }
 
@@ -1002,37 +1248,76 @@ function getStatusBadgeClass($status) {
                 grid-template-columns: 1fr;
             }
 
-            .leads-table {
-                font-size: 0.75rem;
+            .leads-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
             }
 
-            .leads-table th,
-            .leads-table td {
+            .lead-card-compact {
+                padding: 0.875rem;
+            }
+
+            .card-main {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+                margin-bottom: 0.625rem;
+            }
+
+            .client-name-compact {
+                font-size: 1.125rem;
+            }
+
+            .status-badge-compact {
+                font-size: 0.6875rem;
+                padding: 0.25rem 0.5rem;
+            }
+
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+                margin-bottom: 0.625rem;
+            }
+
+            .price-compact {
+                text-align: left;
+                font-size: 1rem;
+            }
+
+            .actions-compact {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+                padding-top: 0.625rem;
+            }
+
+            .buttons-compact {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .btn-compact {
+                flex: 1;
+                justify-content: center;
+                font-size: 0.8125rem;
                 padding: 0.5rem;
             }
-        }
 
-        @media print {
-            .filters-container,
-            .search-container,
-            .header-actions,
-            .pagination {
-                display: none !important;
+            .empty-state-large {
+                padding: 2rem 1rem;
             }
-            
-            .page-header h2 {
+
+            .empty-state-large h3 {
                 font-size: 1.25rem;
             }
-            
-            .leads-table {
-                font-size: 0.75rem;
-            }
-            
-            .leads-table th,
-            .leads-table td {
-                padding: 0.5rem;
+
+            .empty-state-large p {
+                font-size: 1rem;
             }
         }
+
+
     </style>
 </head>
 <body>
@@ -1050,53 +1335,47 @@ function getStatusBadgeClass($status) {
                             <i class="fas fa-arrow-left"></i>
                             Back to Active Leads
                         </a>
-                        <button class="btn-export" onclick="window.print()">
-                            <i class="fas fa-print"></i>
-                            Print Report
-                        </button>
                     </div>
                 </div>
                 
-                <!-- Enhanced Filters Container -->
-                <div class="filters-container">
-                    <form method="GET" action="" class="filters-row">
-                        <div class="filter-group">
-                            <label class="filter-label">Status Filter</label>
-                            <select name="status_filter" class="filter-select" onchange="this.form.submit()">
-                                <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Conversion Leads</option>
-                                <option value="closed" <?php echo $status_filter === 'closed' ? 'selected' : ''; ?>>Closed Deals Only</option>
-                                <option value="lost" <?php echo $status_filter === 'lost' ? 'selected' : ''; ?>>Lost Deals Only</option>
-                                <option value="in_progress" <?php echo $status_filter === 'in_progress' ? 'selected' : ''; ?>>In Progress</option>
-                            </select>
+                <!-- Unified Filter and Search Container -->
+                <div class="filters-search-container">
+                    <form class="unified-form" method="GET" action="">
+                        <div class="form-row">
+                            <div class="filter-group">
+                                <label class="filter-label">Status Filter</label>
+                                <select name="status_filter" class="filter-select">
+                                    <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Conversion Leads</option>
+                                    <option value="closed" <?php echo $status_filter === 'closed' ? 'selected' : ''; ?>>Closed Deals Only</option>
+                                    <option value="lost" <?php echo $status_filter === 'lost' ? 'selected' : ''; ?>>Lost Deals Only</option>
+                                    <option value="in_progress" <?php echo $status_filter === 'in_progress' ? 'selected' : ''; ?>>In Progress</option>
+                                </select>
+                            </div>
+                            
+                            <div class="search-group">
+                                <label class="filter-label">Search</label>
+                                <input 
+                                    type="text" 
+                                    name="search" 
+                                    class="search-input" 
+                                    placeholder="Search by client name, phone, email, developer, or project" 
+                                    value="<?php echo htmlspecialchars($search_term); ?>"
+                                >
+                            </div>
+                            
+                            <div class="action-group">
+                                <button type="submit" class="search-button">
+                                    <i class="fas fa-search"></i>
+                                    Apply Filters
+                                </button>
+                                <?php if ($search_active || $status_filter !== 'all'): ?>
+                                <a href="lead-conversion.php" class="search-reset" title="Clear all filters">
+                                    <i class="fas fa-times"></i>
+                                    Clear
+                                </a>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                        <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
-                            <input type="hidden" name="search" value="<?php echo htmlspecialchars($_GET['search']); ?>">
-                        <?php endif; ?>
-                    </form>
-                </div>
-                
-                <!-- Search Container -->
-                <div class="search-container">
-                    <form class="search-form" method="GET" action="">
-                        <input 
-                            type="text" 
-                            name="search" 
-                            class="search-input" 
-                            placeholder="Search by client name, phone, email, developer, or project" 
-                            value="<?php echo htmlspecialchars($search_term); ?>"
-                        >
-                        <?php if ($status_filter !== 'all'): ?>
-                            <input type="hidden" name="status_filter" value="<?php echo htmlspecialchars($status_filter); ?>">
-                        <?php endif; ?>
-                        <button type="submit" class="search-button">
-                            <i class="fas fa-search"></i>
-                            Search
-                        </button>
-                        <?php if ($search_active || $status_filter !== 'all'): ?>
-                        <a href="lead-conversion.php" class="search-reset" title="Clear all filters">
-                            <i class="fas fa-times"></i>
-                        </a>
-                        <?php endif; ?>
                     </form>
                 </div>
                 
@@ -1158,137 +1437,97 @@ function getStatusBadgeClass($status) {
                     </div>
                 </div>
 
-                <div class="leads-table-container">
+                <div class="leads-cards-container">
                     <?php if (count($leads) > 0): ?>
-                    <table class="leads-table">
-                        <thead>
-                            <tr>
-                                <th>STATUS</th>
-                                <th>CLIENT</th>
-                                <th>PROPERTY</th>
-                                <th>PRICE</th>
-                                <th>AGENT</th>
-                                <th>CONVERSION PROGRESS</th>
-                                <th>DP PROGRESS</th>
-                                <th>LOAN STATUS</th>
-                                <th>DATE</th>
-                                <th>ACTIONS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                                                <div class="leads-grid">
                             <?php foreach ($leads as $lead): ?>
-                                <tr class="<?php echo ($lead['status'] == 'Lost') ? 'lost-deal' : ''; ?>">
-                                    <td>
-                                        <span class="status-badge <?php echo getStatusBadgeClass($lead['status']); ?>">
-                                            <?php echo htmlspecialchars($lead['status']); ?>
-                                        </span>
-                                        <?php if ($lead['status'] == 'Lost'): ?>
-                                            <div style="font-size: 0.75rem; color: var(--danger); margin-top: 0.25rem;">
-                                                Lost Deal
+                                <div class="lead-card-compact <?php echo ($lead['status'] == 'Lost') ? 'lost-deal' : ''; ?>">
+                                    <!-- Client Name - Most Prominent -->
+                                    <div class="card-main">
+                                        <div class="client-section">
+                                            <h3 class="client-name-compact"><?php echo htmlspecialchars($lead['client_name']); ?></h3>
+                                            <div class="phone-compact"><?php echo htmlspecialchars($lead['phone']); ?></div>
+                                        </div>
+                                        
+                                        <div class="status-section">
+                                            <span class="status-badge-compact <?php echo getStatusBadgeClass($lead['status']); ?>">
+                                                <?php echo htmlspecialchars($lead['status']); ?>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Essential Info Row -->
+                                    <div class="info-row">
+                                        <div class="property-compact">
+                                            <div class="developer-compact"><?php echo htmlspecialchars($lead['developer']); ?></div>
+                                            <div class="model-compact"><?php echo htmlspecialchars($lead['project_model']); ?></div>
+                                        </div>
+                                        <div class="price-compact">₱<?php echo number_format($lead['price'], 0); ?></div>
+                                    </div>
+
+                                    <!-- Progress Bar (Only for non-lost deals) -->
+                                    <?php if ($lead['status'] != 'Lost'): ?>
+                                        <div class="progress-compact">
+                                            <div class="progress-bar-compact">
+                                                <div class="progress-fill <?php 
+                                                    if (in_array($lead['status'], $closed_statuses)) {
+                                                        echo 'closed-deal';
+                                                    } elseif ($lead['status'] == 'Requirement Stage') {
+                                                        echo 'early-stage';
+                                                    } else {
+                                                        echo ''; // In progress stages use default info color
+                                                    }
+                                                ?>" style="width: <?php echo $lead['conversion_progress']; ?>%"></div>
                                             </div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <div style="font-weight: 600;"><?php echo htmlspecialchars($lead['client_name']); ?></div>
-                                        <div style="font-size: 0.75rem; color: var(--gray-500);"><?php echo htmlspecialchars($lead['phone']); ?></div>
-                                    </td>
-                                    <td>
-                                        <div style="font-weight: 500;"><?php echo htmlspecialchars($lead['developer']); ?></div>
-                                        <div style="font-size: 0.75rem; color: var(--gray-500);"><?php echo htmlspecialchars($lead['project_model']); ?></div>
-                                    </td>
-                                    <td>
-                                        <span class="amount-text">₱<?php echo number_format($lead['price'], 0); ?></span>
-                                    </td>
-                                    <td>
-                                        <div style="font-weight: 500;"><?php echo htmlspecialchars($lead['agent_name'] ?? 'N/A'); ?></div>
-                                        <div style="font-size: 0.75rem; color: var(--gray-500);"><?php echo htmlspecialchars($lead['team_name'] ?? 'N/A'); ?></div>
-                                    </td>
-                                    <td>
-                                        <?php if ($lead['status'] != 'Lost'): ?>
-                                            <div class="conversion-progress">
-                                                <div class="progress-fill" style="width: <?php echo $lead['conversion_progress']; ?>%"></div>
-                                            </div>
-                                            <div style="font-size: 0.75rem; color: var(--gray-500);">
-                                                <?php echo $lead['conversion_progress']; ?>% Complete
-                                            </div>
-                                        <?php else: ?>
-                                            <span class="status-badge danger">Lost</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($lead['status'] != 'Lost' && in_array($lead['status'], ['Downpayment Stage', 'Housing Loan Application', 'Loan Approval'])): ?>
-                                            <?php if ($lead['total_dp_paid'] && $lead['price']): ?>
-                                                <?php $dp_percentage = ($lead['total_dp_paid'] / ($lead['price'] * 0.2)) * 100; ?>
-                                                <div class="progress-bar">
-                                                    <div class="progress-fill" style="width: <?php echo min(100, $dp_percentage); ?>%"></div>
-                                                </div>
-                                                <div style="font-size: 0.75rem; color: var(--gray-500);">
-                                                    <?php echo number_format($dp_percentage, 1); ?>% Complete
-                                                </div>
-                                            <?php else: ?>
-                                                <span class="status-badge info">No DP Data</span>
-                                            <?php endif; ?>
-                                        <?php else: ?>
-                                            <span class="status-badge info">
+                                            <div class="progress-label-compact">
                                                 <?php 
-                                                if ($lead['status'] == 'Lost') {
-                                                    echo '—';
-                                                } elseif (in_array($lead['status'], ['Closed Deal', 'Requirement Stage'])) {
-                                                    echo 'N/A';
+                                                // Show different labels based on status
+                                                if (in_array($lead['status'], $closed_statuses)) {
+                                                    echo "CLOSED - " . $lead['conversion_progress'] . "%";
                                                 } else {
-                                                    echo 'Complete';
+                                                    echo $lead['conversion_progress'] . "% In Progress";
                                                 }
                                                 ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($lead['status'] != 'Lost'): ?>
-                                            <?php if ($lead['loan_takeout']): ?>
-                                                <span class="status-badge success">Approved</span>
-                                            <?php elseif ($lead['pagibig_bank_approval']): ?>
-                                                <span class="status-badge warning">Processing</span>
-                                            <?php elseif (in_array($lead['status'], ['Housing Loan Application', 'Loan Approval'])): ?>
-                                                <span class="status-badge info">Applied</span>
-                                            <?php else: ?>
-                                                <span class="status-badge info">Cash</span>
-                                            <?php endif; ?>
-                                        <?php else: ?>
-                                            <span class="status-badge danger">—</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php 
-$display_date = $lead['updated_at'];
-if ($lead['status'] == 'House Turn Over' && $lead['turnover_date']) {
-    $display_date = $lead['turnover_date'];
-}
-echo date('M j, Y', strtotime($display_date)); 
-?>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <a href="lead-details.php?id=<?php echo $lead['id']; ?>" class="btn-view" title="View Lead">
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <!-- Actions -->
+                                    <div class="actions-compact">
+                                        <div class="date-compact">
+                                            <?php 
+                                            $display_date = $lead['updated_at'];
+                                            if ($lead['status'] == 'House Turn Over' && $lead['turnover_date']) {
+                                                $display_date = $lead['turnover_date'];
+                                            }
+                                            echo date('M j, Y', strtotime($display_date)); 
+                                            ?>
+                                        </div>
+                                        <div class="buttons-compact">
+                                            <a href="lead-details.php?id=<?php echo $lead['id']; ?>" class="btn-compact btn-view-compact" title="View Full Details">
                                                 <i class="fas fa-eye"></i>
+                                                View Details
                                             </a>
                                             <?php if (canEditLead($lead, $_SESSION['user_id'])): ?>
-                                                <a href="edit-lead.php?id=<?php echo $lead['id']; ?>" class="btn-edit" title="Edit Lead">
+                                                <a href="edit-lead.php?id=<?php echo $lead['id']; ?>" class="btn-compact btn-edit-compact" title="Edit Lead">
                                                     <i class="fas fa-edit"></i>
+                                                    Edit
                                                 </a>
                                             <?php else: ?>
-                                                <a href="#" class="btn-edit disabled" title="You are not authorized to edit this lead" style="pointer-events: none; opacity: 0.5; border: 1px solid #9ca3af; color: #6b7280; background-color: #d1d5db;">
+                                                <button class="btn-compact btn-edit-compact disabled" title="Not authorized to edit" disabled>
                                                     <i class="fas fa-edit"></i>
-                                                </a>
+                                                    Edit
+                                                </button>
                                             <?php endif; ?>
                                         </div>
-                                    </td>
-                                </tr>
+                                    </div>
+                                </div>
                             <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                        </div>
                     <?php else: ?>
-                    <div class="empty-state">
+                        <div class="empty-state-large">
                         <i class="fas fa-exclamation-triangle"></i>
+                            <h3>No Leads Found</h3>
                         <p>
                             <?php 
                             if ($search_active) {

@@ -39,3 +39,70 @@
 [24-Jul-2025 20:47:38 Europe/Berlin] [ADD-LEAD DEBUG] 2025-07-24 20:47:38 - Add lead script started
 [24-Jul-2025 20:48:48 Europe/Berlin] [ADD-LEAD DEBUG] 2025-07-24 20:48:48 - Add lead script started
 [24-Jul-2025 20:49:05 Europe/Berlin] [ADD-LEAD DEBUG] 2025-07-24 20:49:05 - Add lead script started
+[03-Sep-2025 07:41:43 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 07:41:43 - Add lead script started
+[03-Sep-2025 07:41:49 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 07:41:49 - Add lead script started
+[03-Sep-2025 07:43:17 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 07:43:17 - Add lead script started
+[03-Sep-2025 07:45:15 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Sep-2025 07:45:15 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Sep-2025 07:45:15 Europe/Berlin] User logged in: ID=15, Role=admin, Team ID=8
+[03-Sep-2025 07:45:15 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Sep-2025 07:45:15 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Sep-2025 07:45:15 Europe/Berlin] Entering getEnhancedDashboardData for User ID: 15, Role: admin
+[03-Sep-2025 07:45:15 Europe/Berlin] Is SuperUser: true
+[03-Sep-2025 07:45:15 Europe/Berlin] User's Team ID: NULL
+[03-Sep-2025 07:45:15 Europe/Berlin] Is Admin/Superuser: true, Is Manager: false
+[03-Sep-2025 07:45:15 Europe/Berlin] Query mode: Admin/Superuser - no restrictions
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT COUNT(*) as total FROM leads l
+[03-Sep-2025 07:45:15 Europe/Berlin] Total Leads: 138
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l AND l.status = 'Presentation Stage'
+[03-Sep-2025 07:45:15 Europe/Berlin] Exception during query execution: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'AND l.status = 'Presentation Stage'' at line 1
+[03-Sep-2025 07:45:15 Europe/Berlin] Presentation Stage: 0
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l AND l.status IN ('Closed Deal', 'Closed')
+[03-Sep-2025 07:45:15 Europe/Berlin] Exception during query execution: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'AND l.status IN ('Closed Deal', 'Closed')' at line 1
+[03-Sep-2025 07:45:15 Europe/Berlin] Closed Deals: 0
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT SUM(l.price) as total FROM leads l AND l.status IN ('Closed Deal', 'Closed')
+[03-Sep-2025 07:45:15 Europe/Berlin] Exception during query execution: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'AND l.status IN ('Closed Deal', 'Closed')' at line 1
+[03-Sep-2025 07:45:15 Europe/Berlin] Portfolio Value: 0.00
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.user_id = u.id ORDER BY l.created_at DESC LIMIT 10
+[03-Sep-2025 07:45:15 Europe/Berlin] Recent Leads Count: 10
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT project_model, COUNT(*) as count FROM leads l GROUP BY project_model ORDER BY count DESC LIMIT 10
+[03-Sep-2025 07:45:15 Europe/Berlin] Most Inquired Models Count: 10
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT developer, COUNT(*) as count FROM leads l GROUP BY developer ORDER BY count DESC LIMIT 10
+[03-Sep-2025 07:45:15 Europe/Berlin] Top Projects Count: 10
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT 
+            COUNT(*) as total_tracked,
+            SUM(CASE WHEN requirements_complete = 1 THEN 1 ELSE 0 END) as requirements_complete,
+            SUM(CASE WHEN pagibig_bank_approval = 1 THEN 1 ELSE 0 END) as bank_approved,
+            SUM(CASE WHEN loan_takeout = 1 THEN 1 ELSE 0 END) as loan_takeouts,
+            SUM(CASE WHEN turnover = 1 THEN 1 ELSE 0 END) as turnovers,
+            AVG(progress_rate) as avg_progress
+        FROM downpayment_tracker dt JOIN leads l ON dt.lead_id = l.id
+[03-Sep-2025 07:45:15 Europe/Berlin] Downpayment Stats: {"total_tracked":"2","requirements_complete":"2","bank_approved":"2","loan_takeouts":"2","turnovers":"2","avg_progress":"100.000000"}
+[03-Sep-2025 07:45:15 Europe/Berlin] Memo Query Params: user_id=15, team_id=NULL
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT m.*, u.name as created_by_name 
+                       FROM memos m 
+                       LEFT JOIN users u ON m.created_by = u.id 
+                       WHERE m.is_active = 1 ORDER BY m.memo_when DESC LIMIT 5
+[03-Sep-2025 07:45:15 Europe/Berlin] Recent Memos Count: 2
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT 
+                COUNT(*) as total_recruitment,
+                SUM(CASE WHEN interest_level = 'Hot' THEN 1 ELSE 0 END) as hot_prospects,
+                SUM(CASE WHEN status = 'Training Sir Gab' THEN 1 ELSE 0 END) as in_training,
+                SUM(CASE WHEN status = '1st Reservation sale' THEN 1 ELSE 0 END) as first_sales
+            FROM recruitment_leads rl
+[03-Sep-2025 07:45:15 Europe/Berlin] Exception during query execution: Unknown column 'interest_level' in 'field list'
+[03-Sep-2025 07:45:15 Europe/Berlin] Recruitment Stats: {"total_recruitment":0,"hot_prospects":0,"in_training":0,"first_sales":0}
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT rl.* FROM recruitment_leads rl ORDER BY rl.timestamp DESC LIMIT 5
+[03-Sep-2025 07:45:15 Europe/Berlin] Recent Recruitment Count: 5
+[03-Sep-2025 07:45:15 Europe/Berlin] Executing query: SELECT * FROM team_performance_summary ORDER BY total_sales DESC LIMIT 5
+[03-Sep-2025 07:45:15 Europe/Berlin] Exception during query execution: The user specified as a definer ('managementlead'@'66.33.192.0/255.255.224.0') does not exist
+[03-Sep-2025 07:45:15 Europe/Berlin] Team Performance Count: 0
+[03-Sep-2025 07:45:15 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[03-Sep-2025 07:45:15 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[03-Sep-2025 07:45:15 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[03-Sep-2025 08:18:07 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 08:18:07 - Add lead script started
+[03-Sep-2025 08:18:24 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 08:18:24 - Add lead script started
+[03-Sep-2025 08:25:38 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 08:25:38 - Add lead script started
+[03-Sep-2025 08:26:28 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 08:26:28 - Add lead script started
+[03-Sep-2025 08:28:01 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 08:28:01 - Add lead script started
+[03-Sep-2025 08:35:39 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 08:35:39 - Add lead script started

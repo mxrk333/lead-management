@@ -531,6 +531,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $linkedin = isset($_POST['linkedin']) ? trim($_POST['linkedin']) : '';
         $temperature = isset($_POST['temperature']) ? trim($_POST['temperature']) : '';
         $status = isset($_POST['status']) ? trim($_POST['status']) : '';
+        $leadClassification = isset($_POST['lead_classification']) ? trim($_POST['lead_classification']) : '';
         
         // Handle "Others" option for developer/project
         $developer = isset($_POST['developer']) ? trim($_POST['developer']) : '';
@@ -604,6 +605,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $validation_errors[] = "Lead source is required";
         }
         
+        if (empty($leadClassification)) {
+            $validation_errors[] = "Lead classification is required";
+        } elseif (!in_array($leadClassification, ['Locally/Internationally Employed', 'OFW', 'Self employed'])) {
+            $validation_errors[] = "Invalid lead classification value";
+        }
+        
         // ENHANCED: Comprehensive duplicate check across all teams
         if (empty($validation_errors) && !empty($clientName)) {
             $duplicateResults = checkComprehensiveDuplicates($clientName, $phone, $email);
@@ -651,7 +658,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Add lead to database
             $result = addLead(
                 $user_id, $clientName, $phone, $email, $facebook, $linkedin, 
-                $temperature, $status, $source, $developer, $projectModel, $price, $remarks
+                $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks
             );
             
             if ($result) {
@@ -730,7 +737,7 @@ function getLeadSources() {
             'Organic Posting', 'Email Marketing', 'Follow up', 'Manning', 
             'Walk in', 'Flyering', 'Chat messaging', 'Property Listing', 
             'Landing Page', 'Networking Events', 'Organic Sharing', 
-            'Youtube Marketing', 'LinkedIn', 'Open House', 'Facebook Page', 'Others'
+            'Youtube Marketing', 'LinkedIn', 'Open House', 'Facebook Page', 'OFW','Others'
         ];
         
         foreach ($defaultSources as $source) {
@@ -1644,6 +1651,24 @@ debugLog("Page rendering started");
                                            value="<?php echo htmlspecialchars($_POST['source_other'] ?? ''); ?>"
                                            placeholder="Enter lead source" maxlength="100">
                                 </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group required-field">
+                                <label for="lead_classification">Lead Classification</label>
+                                <select id="lead_classification" name="lead_classification" required>
+                                    <option value="">Select Lead Classification</option>
+                                    <option value="Locally/Internationally Employed" <?php echo (isset($_POST['lead_classification']) && $_POST['lead_classification'] === 'Locally/Internationally Employed') ? 'selected' : ''; ?>>
+                                        Locally/Internationally Employed
+                                    </option>
+                                    <option value="OFW" <?php echo (isset($_POST['lead_classification']) && $_POST['lead_classification'] === 'OFW') ? 'selected' : ''; ?>>
+                                        OFW
+                                    </option>
+                                    <option value="Self employed" <?php echo (isset($_POST['lead_classification']) && $_POST['lead_classification'] === 'Self employed') ? 'selected' : ''; ?>>
+                                        Self employed
+                                    </option>
+                                </select>
                             </div>
                         </div>
                         

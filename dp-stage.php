@@ -184,6 +184,40 @@ if (!empty($filter_progress)) {
     $leads = $filtered_leads;
 }
 
+// Handle file upload for receipts
+function handleReceiptUpload($files, $lead_id, $stage_type) {
+    $upload_dir = 'uploads/receipts/';
+    if (!file_exists($upload_dir)) {
+        mkdir($upload_dir, 0777, true);
+    }
+    
+    $uploaded_files = [];
+    
+    if (isset($files['tmp_name']) && is_array($files['tmp_name'])) {
+        for ($i = 0; $i < count($files['tmp_name']); $i++) {
+            if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                $file_extension = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+                
+                // Validate file type (only PNG and JPEG)
+                if (in_array($file_extension, ['png', 'jpg', 'jpeg'])) {
+                    $new_filename = $lead_id . '_' . $stage_type . '_' . time() . '_' . $i . '.' . $file_extension;
+                    $upload_path = $upload_dir . $new_filename;
+                    
+                    if (move_uploaded_file($files['tmp_name'][$i], $upload_path)) {
+                        $uploaded_files[] = [
+                            'filename' => $new_filename,
+                            'original_name' => $files['name'][$i],
+                            'path' => $upload_path
+                        ];
+                    }
+                }
+            }
+        }
+    }
+    
+    return $uploaded_files;
+}
+
 // Handle form submission for updating tracker
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_tracker'])) {
     $lead_id = $_POST['lead_id'];
@@ -195,6 +229,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_tracker'])) {
     $pagibig_bank_approval = isset($_POST['pagibig_bank_approval']) ? 1 : 0;
     $loan_takeout = isset($_POST['loan_takeout']) ? 1 : 0;
     $turnover = isset($_POST['turnover']) ? 1 : 0;
+    
+    // Handle receipt uploads (only DP receipts)
+    $receipt_uploads = [];
+    if (isset($_FILES['dp_receipt'])) {
+        $receipt_uploads['downpayment'] = handleReceiptUpload($_FILES['dp_receipt'], $lead_id, 'downpayment');
+    }
     
     // Calculate total stages based on DP terms
     $total_dp_stages = intval($dp_terms);
@@ -249,6 +289,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_tracker'])) {
         );
         $update_stmt->execute();
         $update_stmt->close();
+        
+        // Store receipt information
+        foreach ($receipt_uploads as $stage => $files) {
+            foreach ($files as $file) {
+                $receipt_stmt = $conn->prepare("INSERT INTO stage_receipts (lead_id, stage_type, filename, original_name, file_path, uploaded_at) VALUES (?, ?, ?, ?, ?, NOW())");
+                $receipt_stmt->bind_param("issss", $lead_id, $stage, $file['filename'], $file['original_name'], $file['path']);
+                $receipt_stmt->execute();
+                $receipt_stmt->close();
+            }
+        }
     } else {
         // Create new tracker
         $insert_stmt = $conn->prepare("INSERT INTO downpayment_tracker 
@@ -270,6 +320,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_tracker'])) {
         );
         $insert_stmt->execute();
         $insert_stmt->close();
+        
+        // Store receipt information for new tracker
+        foreach ($receipt_uploads as $stage => $files) {
+            foreach ($files as $file) {
+                $receipt_stmt = $conn->prepare("INSERT INTO stage_receipts (lead_id, stage_type, filename, original_name, file_path, uploaded_at) VALUES (?, ?, ?, ?, ?, NOW())");
+                $receipt_stmt->bind_param("issss", $lead_id, $stage, $file['filename'], $file['original_name'], $file['path']);
+                $receipt_stmt->execute();
+                $receipt_stmt->close();
+            }
+        }
     }
     
     // Add activity log
@@ -710,7 +770,7 @@ if (isset($_GET['success'])) {
     }
     
     .modal-header {
-        background: linear-gradient(135deg, var(--primary), #6366f1);
+        background: var(--primary);
         color: white;
         padding: 1.5rem 2rem;
         border-radius: 1rem 1rem 0 0;
@@ -778,7 +838,7 @@ if (isset($_GET['success'])) {
     
     /* View DP Modal Specific Styles */
     .client-info-card {
-        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        background: var(--gray-50);
         border: 2px solid var(--primary);
         border-radius: 1rem;
         padding: 2rem;
@@ -794,7 +854,7 @@ if (isset($_GET['success'])) {
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg, var(--primary), #6366f1, var(--success));
+        background: var(--primary);
     }
     
     .client-info-header {
@@ -893,12 +953,12 @@ if (isset($_GET['success'])) {
     }
     
     .terms-card.spot-dp {
-        background: linear-gradient(135deg, var(--success-light), #d1fae5);
+        background: var(--success-light);
         border-color: var(--success);
     }
     
     .terms-card.installment {
-        background: linear-gradient(135deg, var(--primary-light), #e0e7ff);
+        background: var(--primary-light);
         border-color: var(--primary);
     }
     
@@ -1056,7 +1116,7 @@ if (isset($_GET['success'])) {
     }
     
     .progress-overview-card {
-        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        background: var(--gray-50);
         border: 2px solid var(--gray-200);
         border-radius: 1rem;
         padding: 2rem;
@@ -1073,7 +1133,7 @@ if (isset($_GET['success'])) {
         width: 120px;
         height: 120px;
         border-radius: 50%;
-        background: conic-gradient(var(--success) 0deg, var(--success) var(--progress-angle, 0deg), var(--gray-200) var(--progress-angle, 0deg));
+        background: var(--gray-200);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1305,7 +1365,7 @@ if (isset($_GET['success'])) {
     }
     
     .info-message {
-        background: linear-gradient(135deg, var(--primary-light), #e0e7ff);
+        background: var(--primary-light);
         border: 2px solid var(--primary);
         color: var(--primary);
         padding: 1rem 1.5rem;
@@ -1319,6 +1379,154 @@ if (isset($_GET['success'])) {
     .info-message i {
         margin-right: 0.75rem;
         font-size: 1.25rem;
+    }
+    
+    /* File Upload Styles */
+    .file-upload-section {
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        margin: 0.75rem 0;
+    }
+    
+    .file-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px dashed var(--gray-300);
+        border-radius: var(--border-radius);
+        background: var(--gray-50);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+    }
+    
+    .file-input:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+    
+    .file-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    
+    /* DP Receipt Section Styles */
+    .dp-receipt-section {
+        background: var(--gray-50);
+        border: 2px solid var(--gray-200);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .uploaded-receipts {
+        margin-top: 1.5rem;
+    }
+    
+    .receipt-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .receipt-item {
+        background: white;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        text-align: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .receipt-item:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .receipt-thumbnail {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        border-radius: var(--border-radius);
+        margin-bottom: 0.5rem;
+    }
+    
+    .receipt-info {
+        font-size: 0.75rem;
+        color: var(--gray-600);
+    }
+    
+    .receipt-stage {
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Image Modal Styles */
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        animation: fadeIn 0.2s ease-out;
+    }
+    
+    .image-modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-width: 90%;
+        max-height: 90%;
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .image-modal img {
+        max-width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+        border-radius: var(--border-radius);
+    }
+    
+    .image-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .image-modal-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+    
+    .image-modal-close {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--gray-500);
+        padding: 0.5rem;
+        border-radius: var(--border-radius);
+        transition: all 0.2s ease;
+    }
+    
+    .image-modal-close:hover {
+        background: var(--gray-100);
+        color: var(--gray-900);
     }
     
     .view-toggle {
@@ -1841,10 +2049,21 @@ if (isset($_GET['success'])) {
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Receipts Section (View Mode) -->
+                    <div class="receipts-section">
+                        <div class="section-title">
+                            <i class="fas fa-receipt"></i>
+                            Uploaded Receipts
+                        </div>
+                        <div class="uploaded-receipts" id="view_uploaded_receipts">
+                            <!-- Receipts will be displayed here -->
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Edit Mode Content (Form) -->
-                <form id="trackerForm" method="post" style="display: none;">
+                <form id="trackerForm" method="post" enctype="multipart/form-data" style="display: none;">
                     <input type="hidden" name="lead_id" id="edit_lead_id">
                     <input type="hidden" name="update_tracker" value="1">
                     
@@ -1895,6 +2114,22 @@ if (isset($_GET['success'])) {
                             <select id="edit_current_dp_stage" name="current_dp_stage" required>
                                 <!-- Options will be populated by JavaScript -->
                             </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label style="font-size: 1rem; color: var(--gray-700); font-weight: 600; margin-bottom: 1rem;">
+                                <i class="fas fa-receipt"></i> DP Payment Receipts
+                            </label>
+                            
+                            <div class="dp-receipt-section">
+                                <div id="dp_stages_receipts">
+                                    <!-- DP stage receipt uploads will be generated here based on terms -->
+                                </div>
+                                
+                                <div class="uploaded-receipts" id="uploaded_receipts_display">
+                                    <!-- Uploaded receipts will be displayed here -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -1959,11 +2194,113 @@ if (isset($_GET['success'])) {
         </div>
     </div>
     
+    <!-- Image Viewing Modal -->
+    <div id="imageModal" class="image-modal">
+        <div class="image-modal-content">
+            <div class="image-modal-header">
+                <div class="image-modal-title" id="imageModalTitle">Receipt Image</div>
+                <span class="image-modal-close" onclick="closeImageModal()">&times;</span>
+            </div>
+            <img id="imageModalImg" src="" alt="Receipt Image">
+        </div>
+    </div>
+    
     <script>
     // Global variables
     let currentLeadData = null; // Stores lead info (clientName, developer, etc.)
     let currentTrackerData = null; // Stores fetched tracker data
     let initialReservationDate = null; // Stores the reservation date when modal opens
+    
+    // Image viewing functions
+    function openImageModal(imagePath, title) {
+        document.getElementById('imageModalImg').src = imagePath;
+        document.getElementById('imageModalTitle').textContent = title;
+        document.getElementById('imageModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeImageModal() {
+        document.getElementById('imageModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('imageModal');
+        if (event.target == modal) {
+            closeImageModal();
+        }
+    }
+    
+    // Load and display uploaded receipts for a lead
+    function loadUploadedReceipts(leadId) {
+        fetch(`get_receipts.php?lead_id=${leadId}`)
+            .then(response => response.json())
+            .then(receipts => {
+                displayReceipts(receipts);
+            })
+            .catch(error => {
+                console.error('Error loading receipts:', error);
+            });
+    }
+    
+    // Generate dynamic receipt upload fields based on DP terms
+    function generateDPReceiptFields(dpTerms) {
+        const container = document.getElementById('dp_stages_receipts');
+        if (!container) return;
+        
+        let html = '';
+        const terms = parseInt(dpTerms) || 12;
+        
+        for (let stage = 1; stage <= terms; stage++) {
+            html += `
+                <div class="dp-stage-upload" style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--gray-200); border-radius: var(--border-radius); background: white;">
+                    <label for="dp_receipt_stage_${stage}" style="font-size: 0.875rem; color: var(--gray-700); font-weight: 600; margin-bottom: 0.5rem; display: block;">
+                        <i class="fas fa-receipt"></i> DP Stage ${stage} Receipt (PNG/JPEG):
+                    </label>
+                    <input type="file" id="dp_receipt_stage_${stage}" name="dp_receipt[]" 
+                           accept=".png,.jpg,.jpeg" multiple class="file-input" style="margin-bottom: 0.5rem;">
+                    <small style="color: var(--gray-500); font-size: 0.75rem; display: block;">
+                        Upload receipt for downpayment stage ${stage} of ${terms} (PNG/JPEG only)
+                    </small>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+    }
+    
+    function displayReceipts(receipts) {
+        const editContainer = document.getElementById('uploaded_receipts_display');
+        const viewContainer = document.getElementById('view_uploaded_receipts');
+        
+        let html = '';
+        
+        if (receipts.length === 0) {
+            html = '<p style="color: var(--gray-500); font-style: italic; text-align: center; padding: 2rem;">No receipts uploaded yet</p>';
+        } else {
+            html += '<div class="receipt-grid">';
+            
+            receipts.forEach(receipt => {
+                html += `
+                    <div class="receipt-item" onclick="openImageModal('${receipt.file_path}', '${receipt.original_name}')">
+                        <img src="${receipt.file_path}" alt="${receipt.original_name}" class="receipt-thumbnail" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zNSA0MEg2NVY2MEgzNVY0MFoiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2Zz4K'">
+                        <div class="receipt-info">
+                            <div class="receipt-stage">DP Payment</div>
+                            <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem;">${receipt.original_name}</div>
+                            <div style="font-size: 0.6875rem; color: var(--gray-400);">${new Date(receipt.uploaded_at).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+        }
+        
+        // Update both containers
+        if (editContainer) editContainer.innerHTML = html;
+        if (viewContainer) viewContainer.innerHTML = html;
+    }
 
     // Function to open the unified DP Details modal
     function openDpDetailsModal(leadId, clientName, developer, projectModel, price, trackerData, mode = 'view') {
@@ -1989,6 +2326,9 @@ if (isset($_GET['success'])) {
             document.getElementById('view_price').textContent = 'Price not set';
         }
 
+        // Load uploaded receipts for this lead
+        loadUploadedReceipts(leadId);
+        
         // Display in requested mode
         toggleMode(mode);
         
@@ -2134,7 +2474,7 @@ if (isset($_GET['success'])) {
         else if (progress >= 25) progressColor = 'var(--primary)';
         
         progressCircle.style.setProperty('--progress-angle', progressAngle + 'deg');
-        progressCircle.style.background = `conic-gradient(${progressColor} 0deg, ${progressColor} ${progressAngle}deg, var(--gray-200) ${progressAngle}deg)`;
+        progressCircle.style.background = progressColor;
         progressText.textContent = Math.round(progress) + '%';
         
         // Display milestones
@@ -2195,7 +2535,7 @@ if (isset($_GET['success'])) {
         // Reset progress
         var progressCircle = document.getElementById('progress_circle');
         var progressText = document.getElementById('view_progress_percentage');
-        progressCircle.style.background = `conic-gradient(var(--gray-300) 0deg, var(--gray-300) 0deg, var(--gray-200) 0deg)`;
+        progressCircle.style.background = 'var(--gray-200)';
         progressText.textContent = '0%';
         
         // Reset all milestones to pending
@@ -2242,6 +2582,9 @@ if (isset($_GET['success'])) {
         
         // Populate DP stages dropdown with default terms
         updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+        
+        // Generate receipt upload fields with default terms
+        generateDPReceiptFields(document.getElementById('edit_dp_terms').value);
 
         if (tracker) {
             if (tracker.reservation_date) {
@@ -2255,6 +2598,9 @@ if (isset($_GET['success'])) {
             document.getElementById('edit_dp_terms').value = tracker.dp_terms;
             updateDpStages('edit_dp_terms', 'edit_current_dp_stage'); // Re-populate based on fetched terms
             document.getElementById('edit_current_dp_stage').value = tracker.current_dp_stage;
+            
+            // Regenerate receipt fields based on tracker's DP terms
+            generateDPReceiptFields(tracker.dp_terms);
             
             document.getElementById('edit_pagibig_bank_approval').checked = tracker.pagibig_bank_approval == 1;
             document.getElementById('edit_loan_takeout').checked = tracker.loan_takeout == 1;
@@ -2324,14 +2670,20 @@ if (isset($_GET['success'])) {
             document.getElementById('edit_dp_terms').value = '1';
             updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
             document.getElementById('edit_current_dp_stage').value = '1';
+            // Generate receipt field for spot DP (single payment)
+            generateDPReceiptFields('1');
         } else {
             document.getElementById('edit_dp_terms').value = '12'; // Default back to 12 months
             updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+            // Generate receipt fields for installment plan
+            generateDPReceiptFields('12');
         }
     });
     
     document.getElementById('edit_dp_terms').addEventListener('change', function() {
         updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+        // Regenerate receipt upload fields based on new DP terms
+        generateDPReceiptFields(this.value);
     });
     
     // Close modals when clicking outside
