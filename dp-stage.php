@@ -362,10 +362,13 @@ if (isset($_GET['success'])) {
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+    /* CSS Variables - Updated to blue-only color scheme */
     :root {
-        --primary: #4f46e5;
-        --primary-hover: #4338ca;
-        --primary-light: #e0e7ff;
+        --primary: #2563eb; /* Changed from blue/orange to blue only */
+        --primary-dark: #1d4ed8;
+        --primary-light: #dbeafe;
+        --secondary: #64748b; /* Changed secondary to neutral gray */
+        --secondary-light: #f1f5f9;
         --success: #10b981;
         --success-light: #d1fae5;
         --warning: #f59e0b;
@@ -382,10 +385,8 @@ if (isset($_GET['success'])) {
         --gray-700: #374151;
         --gray-800: #1f2937;
         --gray-900: #111827;
-        --border-radius: 0.5rem;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --border-radius: 0.75rem;
         --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
     
@@ -741,7 +742,7 @@ if (isset($_GET['success'])) {
         gap: 0.5rem;
     }
     
-    /* Modal styles */
+    /* Modal styles - Increased modal width */
     #dpDetailsModal {
         display: none;
         position: fixed;
@@ -760,8 +761,8 @@ if (isset($_GET['success'])) {
         margin: 2rem auto;
         border-radius: 1rem;
         box-shadow: var(--shadow-lg);
-        width: 90%;
-        max-width: 900px;
+        width: 95%; /* Increased from 90% */
+        max-width: 1200px; /* Increased from 900px */
         position: relative;
         max-height: calc(100vh - 4rem);
         display: flex;
@@ -2109,21 +2110,32 @@ if (isset($_GET['success'])) {
                             </select>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="edit_current_dp_stage">Current Downpayment Stage:</label>
-                            <select id="edit_current_dp_stage" name="current_dp_stage" required>
-                                <!-- Options will be populated by JavaScript -->
-                            </select>
-                        </div>
+                        <!-- Removed Current Downpayment Stage dropdown as requested -->
                         
                         <div class="form-group">
                             <label style="font-size: 1rem; color: var(--gray-700); font-weight: 600; margin-bottom: 1rem;">
-                                <i class="fas fa-receipt"></i> DP Payment Receipts
+                                <i class="fas fa-receipt"></i> DP Payment Receipt Upload
                             </label>
                             
+                            <!-- Added receipt counter display -->
+                            <div class="receipt-counter" id="receipt_counter" style="background: var(--primary-light); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1rem; text-align: center; font-weight: 600; color: var(--primary-dark);">
+                                <i class="fas fa-receipt"></i> <span id="receipt_count_text">0 out of 12 receipts uploaded</span>
+                            </div>
+                            
                             <div class="dp-receipt-section">
-                                <div id="dp_stages_receipts">
-                                    <!-- DP stage receipt uploads will be generated here based on terms -->
+                                <!-- Single upload field instead of multiple stages -->
+                                <div class="single-receipt-upload" style="padding: 1.5rem; border: 2px dashed var(--primary); border-radius: var(--border-radius); background: var(--primary-light); text-align: center;">
+                                    <div style="margin-bottom: 1rem;">
+                                        <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
+                                        <div style="font-weight: 600; color: var(--primary-dark); margin-bottom: 0.25rem;">Upload Receipt</div>
+                                        <div style="font-size: 0.875rem; color: var(--gray-600);">Select receipt image (PNG/JPEG only)</div>
+                                    </div>
+                                    <input type="file" id="dp_receipt_single" name="dp_receipt[]" 
+                                           accept=".png,.jpg,.jpeg" class="file-input" 
+                                           style="margin-bottom: 0.5rem;" onchange="updateReceiptCounter()">
+                                    <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                        Each upload counts as one month of your DP payment plan
+                                    </div>
                                 </div>
                                 
                                 <div class="uploaded-receipts" id="uploaded_receipts_display">
@@ -2201,7 +2213,7 @@ if (isset($_GET['success'])) {
                 <div class="image-modal-title" id="imageModalTitle">Receipt Image</div>
                 <span class="image-modal-close" onclick="closeImageModal()">&times;</span>
             </div>
-            <img id="imageModalImg" src="" alt="Receipt Image">
+            <img id="imageModalImg" src="/placeholder.svg" alt="Receipt Image">
         </div>
     </div>
     
@@ -2244,30 +2256,43 @@ if (isset($_GET['success'])) {
             });
     }
     
-    // Generate dynamic receipt upload fields based on DP terms
-    function generateDPReceiptFields(dpTerms) {
-        const container = document.getElementById('dp_stages_receipts');
-        if (!container) return;
+    function updateReceiptCounter() {
+        const fileInput = document.getElementById('dp_receipt_single');
+        const dpTerms = parseInt(document.getElementById('edit_dp_terms').value) || 12;
         
-        let html = '';
-        const terms = parseInt(dpTerms) || 12;
+        // Get current uploaded receipts count from the display
+        const uploadedReceipts = document.querySelectorAll('#uploaded_receipts_display .receipt-item').length;
         
-        for (let stage = 1; stage <= terms; stage++) {
-            html += `
-                <div class="dp-stage-upload" style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--gray-200); border-radius: var(--border-radius); background: white;">
-                    <label for="dp_receipt_stage_${stage}" style="font-size: 0.875rem; color: var(--gray-700); font-weight: 600; margin-bottom: 0.5rem; display: block;">
-                        <i class="fas fa-receipt"></i> DP Stage ${stage} Receipt (PNG/JPEG):
-                    </label>
-                    <input type="file" id="dp_receipt_stage_${stage}" name="dp_receipt[]" 
-                           accept=".png,.jpg,.jpeg" multiple class="file-input" style="margin-bottom: 0.5rem;">
-                    <small style="color: var(--gray-500); font-size: 0.75rem; display: block;">
-                        Upload receipt for downpayment stage ${stage} of ${terms} (PNG/JPEG only)
-                    </small>
-                </div>
-            `;
+        // Add selected files count
+        const selectedFiles = fileInput.files ? fileInput.files.length : 0;
+        const totalReceipts = uploadedReceipts + selectedFiles;
+        
+        // Update counter display
+        const counterText = document.getElementById('receipt_count_text');
+        if (counterText) {
+            counterText.textContent = `${totalReceipts} out of ${dpTerms} receipts uploaded`;
         }
         
-        container.innerHTML = html;
+        // Update progress indication
+        const receiptCounter = document.getElementById('receipt_counter');
+        if (receiptCounter) {
+            const percentage = (totalReceipts / dpTerms) * 100;
+            if (percentage >= 100) {
+                receiptCounter.style.background = 'var(--success-light)';
+                receiptCounter.style.color = '#065f46';
+            } else if (percentage >= 50) {
+                receiptCounter.style.background = 'var(--warning-light)';
+                receiptCounter.style.color = '#92400e';
+            } else {
+                receiptCounter.style.background = 'var(--primary-light)';
+                receiptCounter.style.color = 'var(--primary-dark)';
+            }
+        }
+    }
+
+    function generateDPReceiptFields(dpTerms) {
+        // Update the receipt counter when terms change
+        updateReceiptCounter();
     }
     
     function displayReceipts(receipts) {
@@ -2281,12 +2306,13 @@ if (isset($_GET['success'])) {
         } else {
             html += '<div class="receipt-grid">';
             
-            receipts.forEach(receipt => {
+            receipts.forEach((receipt, index) => {
+                const monthNumber = index + 1; // Each receipt represents a month
                 html += `
                     <div class="receipt-item" onclick="openImageModal('${receipt.file_path}', '${receipt.original_name}')">
                         <img src="${receipt.file_path}" alt="${receipt.original_name}" class="receipt-thumbnail" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zNSA0MEg2NVY2MEgzNVY0MFoiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2Zz4K'">
                         <div class="receipt-info">
-                            <div class="receipt-stage">DP Payment</div>
+                            <div class="receipt-stage">Month ${monthNumber}</div>
                             <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem;">${receipt.original_name}</div>
                             <div style="font-size: 0.6875rem; color: var(--gray-400);">${new Date(receipt.uploaded_at).toLocaleDateString()}</div>
                         </div>
@@ -2300,7 +2326,23 @@ if (isset($_GET['success'])) {
         // Update both containers
         if (editContainer) editContainer.innerHTML = html;
         if (viewContainer) viewContainer.innerHTML = html;
+        
+        updateReceiptCounter();
     }
+
+    function updateDpStages(termsSelectId, currentStageSelectId) {
+        // Update receipt counter when terms change
+        updateReceiptCounter();
+    }
+
+    // Event listeners for edit form
+    document.getElementById('edit_spot_dp').addEventListener('change', function() {
+        toggleTermsSection('edit_terms_section', 'edit_spot_dp', 'edit_dp_terms', 'edit_current_dp_stage');
+    });
+
+    document.getElementById('edit_dp_terms').addEventListener('change', function() {
+        updateReceiptCounter(); // Update counter when terms change
+    });
 
     // Function to open the unified DP Details modal
     function openDpDetailsModal(leadId, clientName, developer, projectModel, price, trackerData, mode = 'view') {

@@ -242,6 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $linkedin = trim($_POST['linkedin']);
         $temperature = trim($_POST['temperature']);
         $status = trim($_POST['status']);
+        $leadClassification = trim($_POST['lead_classification']);
         
         // Handle "Others" option for developer/project
         $developer = trim($_POST['developer']);
@@ -303,6 +304,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $errors[] = "Lead source is required";
         }
         
+        if (empty($leadClassification)) {
+            $errors[] = "Lead classification is required";
+        }
+        
         if (empty($errors)) {
             // ENHANCED: Check for status change and log it automatically
             $statusChanged = ($original_lead['status'] !== $status);
@@ -310,7 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Update lead in database
             $result = updateLead(
                 $lead_id, $clientName, $phone, $email, $facebook, $linkedin, 
-                $temperature, $status, $source, $developer, $projectModel, $price, $remarks
+                $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks
             );
             
             if ($result) {
@@ -330,10 +335,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'phone' => [$original_lead['phone'], $phone],
                     'email' => [$original_lead['email'], $email],
                     'temperature' => [$original_lead['temperature'], $temperature],
+                    'source' => [$original_lead['source'], $source],
+                    'lead_classification' => [$original_lead['lead_classification'], $leadClassification],
                     'developer' => [$original_lead['developer'], $developer],
                     'project_model' => [$original_lead['project_model'], $projectModel],
-                    'price' => [$original_lead['price'], $price],
-                    'source' => [$original_lead['source'], $source]
+                    'price' => [$original_lead['price'], $price]
                 ];
                 
                 foreach ($fieldsToTrack as $fieldName => $values) {
@@ -802,6 +808,24 @@ foreach ($projectModels as $model) {
                                            placeholder="Enter lead source" maxlength="100"
                                            <?php echo $isCustomSource ? 'required' : ''; ?>>
                                 </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group required-field">
+                                <label for="lead_classification">Lead Classification</label>
+                                <select id="lead_classification" name="lead_classification" required>
+                                    <option value="">Select Lead Classification</option>
+                                    <option value="Locally/Internationally Employed" <?php echo (isset($lead['lead_classification']) && $lead['lead_classification'] === 'Locally/Internationally Employed') ? 'selected' : ''; ?>>
+                                        Locally/Internationally Employed
+                                    </option>
+                                    <option value="OFW" <?php echo (isset($lead['lead_classification']) && $lead['lead_classification'] === 'OFW') ? 'selected' : ''; ?>>
+                                        OFW
+                                    </option>
+                                    <option value="Self employed" <?php echo (isset($lead['lead_classification']) && $lead['lead_classification'] === 'Self employed') ? 'selected' : ''; ?>>
+                                        Self employed
+                                    </option>
+                                </select>
                             </div>
                         </div>
                         

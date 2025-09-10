@@ -893,16 +893,16 @@ function addLead($user_id, $client_name, $phone, $email, $facebook, $linkedin, $
 }
 
 function updateLead($leadId, $clientName, $phone, $email, $facebook, $linkedin, 
-                   $temperature, $status, $source, $developer, $projectModel, $price, $remarks) {
+                   $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks) {
     $conn = getDbConnection();
     
     $stmt = $conn->prepare("UPDATE leads SET client_name = ?, phone = ?, email = ?, 
                            facebook = ?, linkedin = ?, temperature = ?, status = ?, 
-                           source = ?, developer = ?, project_model = ?, price = ?, remarks = ? 
+                           source = ?, lead_classification = ?, developer = ?, project_model = ?, price = ?, remarks = ? 
                            WHERE id = ?");
 
-    $stmt->bind_param("ssssssssssdsi", $clientName, $phone, $email, $facebook, $linkedin,
-                     $temperature, $status, $source, $developer, $projectModel, $price, $remarks, $leadId);
+    $stmt->bind_param("sssssssssssdsi", $clientName, $phone, $email, $facebook, $linkedin,
+                     $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks, $leadId);
     $result = $stmt->execute();
     
     $stmt->close();
