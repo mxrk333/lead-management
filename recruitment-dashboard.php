@@ -84,6 +84,10 @@ if ($current_user['role'] != 'admin' && $current_user['role'] != 'manager') {
     exit();
 }
 
+
+// Get recruitment statistics
+$recruitmentStats = getRecruitmentStats($current_user_id, $current_user['role']);
+
 // Now include the sidebar after all dependencies are loaded
 $hide_add_button = true;
 require_once 'includes/sidebar.php';
@@ -296,6 +300,147 @@ echo '<style>
             margin-left: 0 !important;
         }
     }
+    
+    /* Enhanced Recruitment Progress Button Styles */
+    .recruitment-progress-btn {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .recruitment-progress-btn::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.3s ease, height 0.3s ease;
+        z-index: 1;
+    }
+    
+    .recruitment-progress-btn:hover::before {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .recruitment-progress-btn:active {
+        transform: scale(0.95);
+        transition: transform 0.1s ease;
+    }
+    
+    /* Pulse effect for interactive feedback */
+    .recruitment-progress-btn:hover {
+        animation: subtle-pulse 1.5s infinite;
+    }
+    
+    @keyframes subtle-pulse {
+        0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+        70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+    
+    /* Orange pulse for post-recruitment buttons */
+    .recruitment-progress-btn.orange:hover {
+        animation: subtle-pulse-orange 1.5s infinite;
+    }
+    
+    @keyframes subtle-pulse-orange {
+        0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+        70% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+    }
+    
+    /* Smooth text transitions */
+    .recruitment-progress-btn span {
+        position: relative;
+        z-index: 2;
+        transition: all 0.3s ease;
+    }
+    
+    /* Icon animation */
+    .recruitment-progress-btn .fas {
+        transition: transform 0.3s ease;
+    }
+    
+    .recruitment-progress-btn:hover .fas {
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    /* Checked state enhancements */
+    .recruitment-progress-btn.checked {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Enhanced Card Animations */
+    @keyframes slideInUp {
+        0% {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-5px);
+        }
+    }
+    
+    /* Card hover animations */
+    .modern-agent-card:hover {
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    /* Custom scrollbar styles */
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    
+    .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+    }
+    
+    .scrollbar-track-gray-100::-webkit-scrollbar-track {
+        background: #f3f4f6;
+    }
+    
+    /* Glass morphism effect for filters */
+    .backdrop-blur-sm {
+        backdrop-filter: blur(4px);
+    }
+    
+    /* Enhanced button animations */
+    .group\/btn:hover {
+        transform: translateY(-2px) scale(1.05);
+    }
+    
+    .group\/btn:active {
+        transform: translateY(0) scale(0.98);
+    }
     </style>
 
 </head>
@@ -318,7 +463,7 @@ echo '<style>
                     <div class="flex gap-2 mt-4 md:mt-0">
                         <button type="button"
                             class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
-                            onclick="showAddModal()">
+                            onclick="console.log('Button clicked'); showAddModal();">
                             <i class="fas fa-plus"></i> New Agent
                         </button>
                         <button type="button"
@@ -328,60 +473,189 @@ echo '<style>
                         </button>
                     </div>
                 </div>
+<!-- Statistics Grid -->
+<div class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-6">
+        <!-- Total Recruited Agents -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Total Agents</p>
+                    <p id="totalAgentsStat" class="text-3xl font-bold text-gray-900">
+                        <?php echo $recruitmentStats['total_recruited']; ?>
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
 
-                <!-- Filters -->
-                <div class="bg-white rounded-lg shadow mb-4">
-                    <div class="p-6">
-                        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-3 gap-4">
-                            <h5 class="text-lg font-semibold flex items-center gap-2 mb-0">
-                                <i class="fas fa-filter"></i> Filters
-                            </h5>
-                            <div class="flex gap-2">
-                                <button type="button"
-                                    class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 flex items-center gap-2"
-                                    onclick="applyFilters()">
-                                    <i class="fas fa-search"></i> Search
-                                </button>
-                                <button type="button"
-                                    class="border border-gray-400 text-gray-700 px-3 py-1.5 rounded-md text-sm hover:bg-gray-100 flex items-center gap-2"
-                                    onclick="clearFilters()">
-                                    <i class="fas fa-times"></i> Clear All
-                                </button>
-                            </div>
-                        </div>
+        <!-- Active Agents -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Active Agents</p>
+                    <p id="activeAgentsStat" class="text-3xl font-bold text-green-600">
+                        <?php echo $recruitmentStats['active_agents']; ?>
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user-check text-green-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inactive Agents -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Inactive Agents</p>
+                    <p id="inactiveAgentsStat" class="text-3xl font-bold text-red-600">
+                        <?php echo $recruitmentStats['inactive_agents']; ?>
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user-times text-red-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onboarded Agents -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Onboarded</p>
+                    <p id="onboardedAgentsStat" class="text-3xl font-bold text-purple-600">
+                        <?php echo $recruitmentStats['onboarded_agents']; ?>
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-rocket text-purple-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Combined Filters and Agents Card -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+    <!-- Enhanced Header Section -->
+    <div class="bg-blue-600 px-8 py-6 text-white">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-blue-700 rounded-xl flex items-center justify-center shadow-sm">
+                    <i class="fas fa-users text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold mb-1">Recruited Agents</h2>
+                    <p class="text-blue-100 text-sm">Manage and filter your recruitment database</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button"
+                    class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2 border border-blue-500"
+                    onclick="applyFilters()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <button type="button"
+                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2 border border-gray-500"
+                    onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+                    <!-- Enhanced Filters Section -->
+                    <div class="p-6 bg-gray-50 border-b border-gray-200">
                         <!-- Active Filters Display -->
-                        <div id="activeFilters" class="mb-3 hidden">
-                            <small class="">Active filters:</small>
-                            <div id="activeFilterTags" class="mt-1 flex flex-row"></div>
+                        <div id="activeFilters" class="mb-4 hidden">
+                            <p class="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                                <i class="fas fa-filter text-blue-500"></i>
+                                Active Filters:
+                            </p>
+                            <div id="activeFilterTags" class="flex flex-wrap gap-2"></div>
                         </div>
-                        <!-- Filter Row -->
-                        <div class="flex flex-col md:flex-row gap-4">
-                            <div class="flex-1">
-                                <label for="searchInput" class="block text-sm font-medium mb-1">Search</label>
-                                <input type="text"
-                                    class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    id="searchInput" placeholder="Search name, email, phone..."
-                                    oninput="debouncedApplyFilters()">
+
+                        <!-- Filter Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                            <!-- Search Filter -->
+                            <div class="xl:col-span-2">
+                                <label for="searchInput" class="block text-sm font-semibold text-gray-700 mb-2">Search Agent</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-search text-gray-400"></i>
+                                    </div>
+                                    <input type="text"
+                                        class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-white shadow-sm"
+                                        id="searchInput" placeholder="Name, email, or phone..."
+                                        oninput="debouncedApplyFilters()">
+                                </div>
                             </div>
-                            <div class="flex-1">
-                                <label for="filterStatus" class="block text-sm font-medium mb-1">Status</label>
-                                <select
-                                    class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    id="filterStatus">
-                                    <option value="">All Statuses</option>
+
+                            <!-- Activity Status Filter -->
+                            <div>
+                                <label for="filterStatus" class="block text-sm font-semibold text-gray-700 mb-2">Activity Status</label>
+                                <select class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-white shadow-sm"
+                                    id="filterStatus" onchange="applyFilters()">
+                                    <option value="">All Status</option>
                                     <option value="Active">Active</option>
                                     <option value="Inactive">Inactive</option>
                                 </select>
                             </div>
-                            <?php if ($user['role'] === 'admin'): ?>
-                            <div class="flex-1">
-                                <label for="filterTeam" class="block text-sm font-medium mb-1">Team</label>
-                                <select
-                                    class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    id="filterTeam">
-                                    <option value="">All Teams</option>
-                                    <!-- Teams will be populated by JavaScript -->
 
+                            <!-- Recruitment Status Filter -->
+                            <div>
+                                <label for="filterRecruitmentStatus" class="block text-sm font-semibold text-gray-700 mb-2">Onboarding</label>
+                                <select class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-white shadow-sm"
+                                    id="filterRecruitmentStatus" onchange="applyFilters()">
+                                    <option value="">All Agents</option>
+                                    <option value="1">Onboarded</option>
+                                    <option value="0">Not Onboarded</option>
+                                </select>
+                            </div>
+
+                            <!-- Year Filter -->
+                            <div>
+                                <label for="filterYear" class="block text-sm font-semibold text-gray-700 mb-2">Year</label>
+                                <select class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-white shadow-sm"
+                                    id="filterYear" onchange="applyFilters()">
+                                    <option value="">All Years</option>
+                                    <!-- Will be populated by JavaScript -->
+                                </select>
+                            </div>
+
+                            <!-- Month Filter -->
+                            <div>
+                                <label for="filterMonth" class="block text-sm font-semibold text-gray-700 mb-2">Month</label>
+                                <select class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-white shadow-sm"
+                                    id="filterMonth" onchange="applyFilters()">
+                                    <option value="">All Months</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+
+                            <?php if ($user['role'] === 'admin'): ?>
+                            <!-- Team Filter (Admin Only) -->
+                            <div class="xl:col-span-1">
+                                <label for="filterTeam" class="block text-sm font-semibold text-gray-700 mb-2">Team</label>
+                                <select class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-white shadow-sm"
+                                    id="filterTeam" onchange="applyFilters()">
+                                    <option value="">All Teams</option>
                                     <?php foreach ($teams as $team): ?>
                                     <option value="<?= htmlspecialchars($team['id']) ?>">
                                         <?= htmlspecialchars($team['name']) ?>
@@ -390,91 +664,50 @@ echo '<style>
                                 </select>
                             </div>
                             <?php endif; ?>
-                            <div class="flex-1 hidden">
-                                <label for="filterSource" class="block text-sm font-medium mb-1">Recruited by</label>
-                                <select
-                                    class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    id="filterSource">
-                                </select>
-                            </div>
-
                         </div>
+
                         <!-- Results Summary -->
-                        <div id="filterResults" class="mt-3 hidden">
-                            <small class="text-gray-500 flex items-center gap-2">
-                                <i class="fas fa-info-circle"></i>
-                                <span id="resultsCount">0</span> Results found
-                                <span id="filterTime"></span>
-                            </small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Agents Table -->
-                <div class="rounded-xl shadow bg-white pb-3">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h5 class="text-lg font-semibold mb-0">Recruited Agents</h5>
-                    </div>
-                    <div class="">
-                        <div class="overflow-x-auto">
-                            <div class="max-h-[400px] overflow-y-auto">
-                                <!-- Recruitment Table -->
-                                <table id="recruitmentTable"
-                                    class="w-full min-w-[900px] border-separate border-spacing-0 rounded-xl text-left bg-white">
-                                    <thead class="sticky top-0 z-10 bg-gray-50">
-                                        <tr>
-                                            <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
-                                                onclick="sortTable('created_at')">
-                                                Date of Entry <i class="fas fa-sort"></i>
-                                            </th>
-                                            <th
-                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                                Status</th>
-                                            <th class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 cursor-pointer whitespace-nowrap bg-gray-50"
-                                                onclick="sortTable('full_name')">
-                                                Agent Details <i class="fas fa-sort"></i>
-                                            </th>
-                                            <th
-                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                                Manager</th>
-                                            <th
-                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                                Progress</th>
-                                            <th
-                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                                Recruited by</th>
-                                            <th
-                                                class="px-6 py-4 font-semibold text-xs uppercase tracking-wider text-gray-600 border-b border-gray-200 whitespace-nowrap bg-gray-50">
-                                                Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="recruitmentTableBody">
-                                        <tr>
-                                            <td colspan="8" class="text-center py-8">
-                                                <svg class="animate-spin h-6 w-6 text-blue-600 mx-auto"
-                                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle class="opacity-25" cx="12" cy="12" r="10"
-                                                        stroke="currentColor" stroke-width="4"></circle>
-                                                    <path class="opacity-75" fill="currentColor"
-                                                        d="M4 12a8 8 0 018-8v8z">
-                                                    </path>
-                                                </svg>
-                                                <p class="mt-2 text-gray-500">Loading recruitment data...</p>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                        <div id="filterResults" class="mt-4 hidden">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <p class="text-sm text-blue-700 flex items-center gap-2">
+                                    <i class="fas fa-info-circle"></i>
+                                    Found <span id="resultsCount" class="font-semibold">0</span> agents
+                                    <span id="filterTime" class="text-blue-500"></span>
+                                </p>
                             </div>
-
                         </div>
-                        <!-- Loading indicator -->
-                        <div id="loadingIndicator" class="text-center py-4 hidden">
-                            <svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg"
-                                fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                            </svg>
+                    </div>
+
+                    <!-- Enhanced Agents Grid Section -->
+                    <div class="p-6">
+                        <div class="max-h-[800px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                            <!-- Enhanced Cards Container -->
+                            <div id="recruitmentTableBody" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                <!-- Enhanced Loading state -->
+                                <div class="col-span-full flex flex-col items-center justify-center py-16">
+                                    <div class="relative">
+                                        <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <i class="fas fa-users text-blue-600 text-lg"></i>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-600 text-lg font-medium mt-4">Loading recruitment data...</p>
+                                    <p class="text-gray-500 text-sm">Please wait while we fetch agent information</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Enhanced Loading indicator -->
+                        <div id="loadingIndicator" class="text-center py-8 hidden">
+                            <div class="inline-flex items-center gap-3">
+                                <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                                </svg>
+                                <span class="text-gray-600 font-medium">Updating results...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -495,119 +728,8 @@ echo '<style>
                     </div>
                 </div>
 
-                <!-- Active/Inactive Agents by Team Section -->
-                <div class="mt-6 p-6 py-4 rounded-xl shadow bg-white" id="team-status-section">
-                    <div class="flex flex-col md:flex-row md:items-start md:justify-between mb-4 gap-4">
-                        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 w-full">
-                            <span id="teamStatusTitle"
-                                class="text-lg font-semibold flex items-center gap-2 whitespace-nowrap">
-                                <!-- Title will be set by JS -->
-                            </span>
-                            <div class="flex flex-col items-end gap-2">
-                                <div class="flex gap-2 bg-gray-100 rounded-md p-1.5">
-                                    <?php
-                                    $filter_style = 'grouping-toggle px-3 py-1.5 rounded-md text-xs font-medium tracking-wider focus:ring-2 focus:ring-blue-500 hover:bg-blue-600 hover:text-white active:bg-blue-700 active:text-white uppercase transition-colors duration-200';
-                                    ?>
-                                    <button id="grouping-year"
-                                        class="<?php echo htmlspecialchars($filter_style); ?> bg-blue-600 text-white"
-                                        onclick="setGrouping('year')">Year</button>
-                                    <button id="grouping-month"
-                                        class="<?php echo htmlspecialchars($filter_style); ?> bg-blue-600 text-white"
-                                        onclick="setGrouping('month')">Month</button>
-                                    <button id="grouping-quarter"
-                                        class="<?php echo htmlspecialchars($filter_style); ?> bg-blue-600 text-white"
-                                        onclick="setGrouping('quarter')">Quarter</button>
-                                </div>
-                                <div>
-                                    <select id="filterYear" class="border rounded-md px-3 py-1.5 text-sm ml-2"></select>
-                                    <select id="filterMonth"
-                                        class="border rounded-md px-3 py-1.5 text-sm ml-2 hidden"></select>
-                                    <select id="filterQuarter"
-                                        class="border rounded-md px-3 py-1.5 text-sm ml-2 hidden">
-                                        <option value="1">Quarter 1 (January - March)</option>
-                                        <option value="2">Quarter 2 (April - June)</option>
-                                        <option value="3">Quarter 3 (July - September)</option>
-                                        <option value="4">Quarter 4 (October - December)</option>
-                                    </select>
-                                </div>
-
-                            </div>
-                        </div>
-                        <div class="flex flex-row items-center justify-end gap-2 md:mt-0">
-                            <button type="button"
-                                class="bg-white border border-gray-300 text-gray-500 px-4 py-2 rounded-md hover:border-gray-500 hover:text-gray-700 flex items-center gap-2"
-                                onclick="refreshTeamStatus()" title="Refresh Team Status">
-                                <i class="fas fa-refresh"></i> Refresh
-                            </button>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
-                        <!-- Active Table & Chart -->
-                        <div
-                            class="border hover:border-green-500 bg-gradient-to-br from-gray-100 via-white to-gray-100 hover:from-gray-100 hover:via-green-100 hover:to-gray-100 p-6 rounded-xl transition-colors transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg group">
-                            <h3
-                                class="text-lg font-medium mb-2 text-green-700 flex items-center gap-2 pb-2 border-b border-gray-300 uppercase font-medium tracking-wider">
-                                <i class="fas fa-user-check"></i> Active Agents
-                            </h3>
-                            <!-- Active Chart -->
-                            <canvas id="activeAgentsChart" height="180"></canvas>
-                            <!-- Active Teams Table -->
-                            <div class="overflow-x-auto mt-4 rounded-xl">
-                                <table
-                                    class="w-full min-w-[300px] border-separate border-spacing-2  text-left bg-white">
-                                    <thead class="text-white">
-                                        <tr class="whitespace-nowrap">
-                                            <th
-                                                class="px-4 py-2 font-bold rounded-lg text-center bg-green-600 text-white text-xs uppercase tracking-wider">
-                                                Team</th>
-                                            <th
-                                                class="px-4 py-2 font-bold rounded-lg text-center bg-green-600 text-white text-xs uppercase tracking-wider">
-                                                Total Active Count</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="activeAgentsTableBody">
-                                        <tr>
-                                            <td colspan="2" class="text-center text-gray-400 py-4">No data</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <!-- Inactive Table & Chart -->
-                        <div
-                            class="border hover:border-red-500 bg-gradient-to-br from-gray-100 via-white to-gray-100 hover:from-gray-100 hover:via-red-100 hover:to-gray-100 p-6 rounded-xl transition-all transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg group">
-                            <h3
-                                class="text-lg font-medium mb-2 text-red-700 flex items-center gap-2 pb-2 border-b border-gray-300 uppercase font-medium tracking-wider">
-                                <i class="fas fa-user-times"></i>
-                                Inactive Agents
-                            </h3>
-                            <!-- Inactive Chart -->
-                            <canvas id="inactiveAgentsChart" height="180"></canvas>
-                            <!-- Inactive Teams Table -->
-                            <div class="overflow-x-auto mt-4 rounded-xl">
-                                <table
-                                    class="w-full min-w-[300px] border-separate border-spacing-2  text-left bg-white">
-                                    <thead class="text-white">
-                                        <tr class="whitespace-nowrap">
-                                            <th
-                                                class="px-4 py-2 font-bold rounded-lg text-center bg-red-600 text-white text-xs uppercase tracking-wider">
-                                                Team</th>
-                                            <th
-                                                class="px-4 py-2 font-bold rounded-lg text-center bg-red-600 text-white text-xs uppercase tracking-wider">
-                                                Total Inactive Count</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="inactiveAgentsTableBody">
-                                        <tr>
-                                            <td colspan="2" class="text-center text-gray-400 py-4">No data</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
+            
             <!-- Add/Edit Modal (Tailwind) -->
             <div id="recruitmentModal"
                 class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
@@ -686,10 +808,14 @@ echo '<style>
                                                 <label for="timestamp"
                                                     class="<?= htmlspecialchars($label_name_style) ?>">Date
                                                     of Entry
+                                                    <span id="timestampLabel"><?= $automatic_mark; ?></span>
                                                 </label>
-                                                <input type="datetime-local"
-                                                    class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    id="timestamp" name="timestamp">
+                                                <input type="date"
+                                                    class="border rounded px-3 py-2 w-full bg-gray-100 text-gray-600"
+                                                    id="timestamp" name="timestamp" 
+                                                    value=""
+                                                    readonly
+                                                    aria-readonly="true">
                                             </div>
                                         </div>
                                     </div>
@@ -753,39 +879,77 @@ echo '<style>
                                         <!-- Recruitment Info Section -->
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                             <div>
-                                                <label for="recruiterName"
+                                                <label for="managerName"
                                                     class="<?= htmlspecialchars($label_name_style) ?>">Manager
-                                                    <?= $automatic_mark; ?></label>
-                                                <?php if ($current_user['role'] === 'admin'): ?>
-                                                <!-- <select id="recruiterName" name="recruiter_id"
-                                                class="border rounded px-3 py-2 w-full bg-white"></select> -->
-                                                <!-- Readonly Manager Field -->
-                                                <input type="text" id="recruiterName" name="recruiter_name"
-                                                    class="border rounded px-3 py-2 w-full bg-gray-100" readonly
+                                                    <span id="managerLabel"><?= $automatic_mark; ?></span></label>
+                                                <?php 
+                                                // Get all managers for dropdown
+                                                $managers = [];
+                                                try {
+                                                    $conn = getDbConnection();
+                                                    $stmt = $conn->prepare("SELECT id, name, team_id FROM users WHERE role = 'manager' ORDER BY name");
+                                                    $stmt->execute();
+                                                    $result = $stmt->get_result();
+                                                    while ($row = $result->fetch_assoc()) {
+                                                        $managers[] = $row;
+                                                    }
+                                                    $stmt->close();
+                                                    $conn->close();
+                                                } catch (Exception $e) {
+                                                    error_log("Error fetching managers: " . $e->getMessage());
+                                                }
+                                                ?>
+                                                <!-- Text input for add mode -->
+                                                <input type="text" 
+                                                    class="border rounded px-3 py-2 w-full bg-gray-100 text-gray-600"
+                                                    id="managerName" 
+                                                    name="manager_name"
+                                                    value=""
+                                                    readonly 
                                                     aria-readonly="true">
-
-                                                <!-- Hidden ID for form processing -->
-                                                <input type="hidden" id="recruiterId" name="recruiter_id">
-                                                <?php else: ?>
-                                                <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
-                                                    id="recruiterName" name="recruiter_name"
-                                                    value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>"
-                                                    readonly aria-readonly="true">
-                                                <?php endif; ?>
+                                                <!-- Select dropdown for edit mode (hidden by default) -->
+                                                <select id="managerSelect" name="manager_id_select" 
+                                                    class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 hidden">
+                                                    <option value="">Select Manager</option>
+                                                    <?php foreach ($managers as $manager): ?>
+                                                    <option value="<?= htmlspecialchars($manager['id']) ?>">
+                                                        <?= htmlspecialchars($manager['name']) ?>
+                                                    </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <input type="hidden" 
+                                                    id="managerId" 
+                                                    name="manager_id" 
+                                                    value="">
                                             </div>
-                                            <div>
+                                            <div class="relative group">
                                                 <label for="teamName"
                                                     class="<?= htmlspecialchars($label_name_style) ?>">Team
-                                                    <?= $automatic_mark; ?></label>
-                                                <?php if ($current_user['role'] === 'admin'): ?>
-                                                <select id="teamName" name="team_id"
-                                                    class="border rounded px-3 py-2 w-full bg-white"></select>
-                                                <?php else: ?>
-                                                <input type="text" class="border rounded px-3 py-2 w-full bg-gray-100"
-                                                    id="teamName" name="team_name"
-                                                    value="<?php echo htmlspecialchars($teamName); ?>" readonly
-                                                    aria-readonly="true">
-                                                <?php endif; ?>
+                                                    <span id="teamLabel"><?= $automatic_mark; ?></span></label>
+                                                <div class="relative">
+                                                    <!-- Text input for add mode -->
+                                                    <div id="teamNameDiv" class="flex items-center border rounded-lg px-4 py-2.5 bg-gray-50 text-gray-600">
+                                                        <span class="flex-grow" id="teamNameText"></span>
+                                                        <input type="hidden" id="teamId" name="team_id" value="">
+                                                    </div>
+                                                    <!-- Select dropdown for edit mode (hidden by default) -->
+                                                    <select id="teamSelect" name="team_id_select" 
+                                                        class="appearance-none border rounded-lg px-4 py-2.5 w-full bg-white text-gray-800 
+                                                               focus:ring-2 focus:ring-blue-500 focus:border-transparent 
+                                                               transition-all duration-200 ease-in-out shadow-sm hidden">
+                                                        <option value="">Select Team</option>
+                                                        <?php foreach ($teams as $team): ?>
+                                                        <option value="<?= htmlspecialchars($team['id']) ?>">
+                                                            <?= htmlspecialchars($team['name']) ?>
+                                                        </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <div id="teamSelectArrow" class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 hidden">
+                                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                                                        </svg>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -814,16 +978,46 @@ echo '<style>
                                                 <label for="source"
                                                     class="<?= htmlspecialchars($label_name_style) ?>">Recruited
                                                     by
-                                                    <?= $required_mark; ?></label>
-                                                <!-- <select
-                                            class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            id="source" name="source" required>
-                                            <option value="Referral">Referral</option>
-                                        </select> -->
-                                                <select id="source" name="source"
-                                                    class="border rounded px-3 py-2 w-full bg-white">
-                                                    <option value="">Select a member</option>
+                                                    <span id="sourceLabel"><?= $automatic_mark; ?></span></label>
+                                                <?php 
+                                                // Get all users for dropdown
+                                                $recruiters = [];
+                                                try {
+                                                    $conn = getDbConnection();
+                                                    $stmt = $conn->prepare("SELECT id, name FROM users WHERE role IN ('admin', 'manager', 'user') ORDER BY name");
+                                                    $stmt->execute();
+                                                    $result = $stmt->get_result();
+                                                    while ($row = $result->fetch_assoc()) {
+                                                        $recruiters[] = $row;
+                                                    }
+                                                    $stmt->close();
+                                                    $conn->close();
+                                                } catch (Exception $e) {
+                                                    error_log("Error fetching recruiters: " . $e->getMessage());
+                                                }
+                                                ?>
+                                                <!-- Text input for add mode -->
+                                                <input type="text" 
+                                                    class="border rounded px-3 py-2 w-full bg-gray-100 text-gray-600"
+                                                    id="source" 
+                                                    name="source"
+                                                    value=""
+                                                    readonly 
+                                                    aria-readonly="true">
+                                                <!-- Select dropdown for edit mode (hidden by default) -->
+                                                <select id="sourceSelect" name="source_id_select" 
+                                                    class="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 hidden">
+                                                    <option value="">Select Recruiter</option>
+                                                    <?php foreach ($recruiters as $recruiter): ?>
+                                                    <option value="<?= htmlspecialchars($recruiter['id']) ?>">
+                                                        <?= htmlspecialchars($recruiter['name']) ?>
+                                                    </option>
+                                                    <?php endforeach; ?>
                                                 </select>
+                                                <input type="hidden" 
+                                                    id="sourceId" 
+                                                    name="source_id" 
+                                                    value="">
                                             </div>
                                         </div>
 
@@ -835,7 +1029,7 @@ echo '<style>
 
                                             <?php
 
-                                            $checklist_style = 'w-full text-center py-2 px-3 border rounded-lg transition-all duration-300 cursor-pointer bg-white text-gray-800';
+                                            $checklist_style = 'recruitment-progress-btn w-full text-center py-3 px-4 border rounded-lg transition-all duration-300 cursor-pointer bg-white text-gray-800 hover:shadow-lg hover:scale-105 transform active:scale-95 select-none font-medium';
 
                                             $label_style = 'text-gray-600 text-sm';
 
@@ -863,48 +1057,72 @@ echo '<style>
                                                         <input type="checkbox" id="pre-assessment" name="pre-assessment"
                                                             value="1" class="peer hidden">
                                                         <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                            Pre-Assessment
+                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800 peer-checked:hover:bg-blue-700 peer-checked:hover:border-blue-700 relative group">
+                                                            <span class="peer-checked:hidden">Pre-Assessment</span>
+                                                            <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                <i class="fas fa-check text-white"></i>
+                                                                Pre-Assessment
+                                                            </span>
                                                         </div>
                                                     </label>
                                                     <label class="block">
                                                         <input type="checkbox" id="accreditation" name="accreditation"
                                                             value="1" class="peer hidden">
                                                         <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                            Accreditation
+                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800 peer-checked:hover:bg-blue-700 peer-checked:hover:border-blue-700 relative group">
+                                                            <span class="peer-checked:hidden">Accreditation</span>
+                                                            <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                <i class="fas fa-check text-white"></i>
+                                                                Accreditation
+                                                            </span>
                                                         </div>
                                                     </label>
                                                     <label class="block">
                                                         <input type="checkbox" id="assessment" name="assessment"
                                                             value="1" class="peer hidden">
                                                         <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                            Assessment
+                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800 peer-checked:hover:bg-blue-700 peer-checked:hover:border-blue-700 relative group">
+                                                            <span class="peer-checked:hidden">Assessment</span>
+                                                            <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                <i class="fas fa-check text-white"></i>
+                                                                Assessment
+                                                            </span>
                                                         </div>
                                                     </label>
                                                     <label class="block">
                                                         <input type="checkbox" id="sales_training" name="sales_training"
                                                             value="1" class="peer hidden">
                                                         <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                            Sales 101
+                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800 peer-checked:hover:bg-blue-700 peer-checked:hover:border-blue-700 relative group">
+                                                            <span class="peer-checked:hidden">Sales 101</span>
+                                                            <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                <i class="fas fa-check text-white"></i>
+                                                                Sales 101
+                                                            </span>
                                                         </div>
                                                     </label>
                                                     <label class="block">
                                                         <input type="checkbox" id="site_tour" name="site_tour" value="1"
                                                             class="peer hidden">
                                                         <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                            Site Tour
+                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800 peer-checked:hover:bg-blue-700 peer-checked:hover:border-blue-700 relative group">
+                                                            <span class="peer-checked:hidden">Site Tour</span>
+                                                            <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                <i class="fas fa-check text-white"></i>
+                                                                Site Tour
+                                                            </span>
                                                         </div>
                                                     </label>
                                                     <label class="block">
                                                         <input type="checkbox" id="focus_projects" name="focus_projects"
                                                             value="1" class="peer hidden">
                                                         <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">
-                                                            Focus Projects
+                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-800 peer-checked:hover:bg-blue-700 peer-checked:hover:border-blue-700 relative group">
+                                                            <span class="peer-checked:hidden">Focus Projects</span>
+                                                            <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                <i class="fas fa-check text-white"></i>
+                                                                Focus Projects
+                                                            </span>
                                                         </div>
                                                     </label>
                                                 </div>
@@ -930,25 +1148,37 @@ echo '<style>
                                                         <input type="checkbox" id="habit_forming" name="habit_forming"
                                                             value="1" class="peer hidden">
                                                         <div
-                                                            class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                            Habit Forming
+                                                            class="<?php echo htmlspecialchars($checklist_style); ?> orange peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 peer-checked:hover:bg-orange-600 peer-checked:hover:border-orange-600 relative group">
+                                                            <span class="peer-checked:hidden">Habit Forming</span>
+                                                            <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                <i class="fas fa-check text-white"></i>
+                                                                Habit Forming
+                                                            </span>
                                                         </div>
                                                     </label>
-                                                    <div class="space-y-2">
-                                                        <label for="training_materials"
-                                                            class="<?php echo htmlspecialchars($label_style) ?> text-xs">
-                                                            Training Materials
-                                                        </label>
-                                                        <div class="flex justify-end">
-                                                            <div
-                                                                class="<?php echo htmlspecialchars($label_subsection_style) ?>">
+                                                    <div class="space-y-2 group">
+                                                        <div class="flex items-center justify-between">
+                                                            <label for="training_materials"
+                                                                class="<?php echo htmlspecialchars($label_style) ?> text-xs font-medium text-gray-600 group-hover:text-gray-800 transition-colors">
+                                                                Training Materials
+                                                            </label>
+                                                            <span class="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
+                                                                Track progress
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full">
+                                                            <div class="space-y-2 pl-4 border-l-2 border-gray-200 group-hover:border-blue-300 transition-colors w-full">
                                                                 <label class="block">
                                                                     <input type="checkbox" id="digital_training"
                                                                         name="digital_training" value="1"
                                                                         class="peer hidden">
                                                                     <div
-                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                                        Digital Marketing Training
+                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> orange peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 peer-checked:hover:bg-orange-600 peer-checked:hover:border-orange-600 relative group">
+                                                                        <span class="peer-checked:hidden">Digital Marketing Training</span>
+                                                                        <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                            <i class="fas fa-check text-white"></i>
+                                                                            Digital Marketing Training
+                                                                        </span>
                                                                     </div>
                                                                 </label>
                                                                 <label class="block">
@@ -956,8 +1186,12 @@ echo '<style>
                                                                         name="sales_training_materials" value="1"
                                                                         class="peer hidden">
                                                                     <div
-                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                                        Sales Training
+                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> orange peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 peer-checked:hover:bg-orange-600 peer-checked:hover:border-orange-600 relative group">
+                                                                        <span class="peer-checked:hidden">Training Materials</span>
+                                                                        <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                            <i class="fas fa-check text-white"></i>
+                                                                            Training Materials
+                                                                        </span>
                                                                     </div>
                                                                 </label>
                                                                 <label class="block">
@@ -965,27 +1199,39 @@ echo '<style>
                                                                         name="objection_handling" value="1"
                                                                         class="peer hidden">
                                                                     <div
-                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                                        Objection Handling
+                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> orange peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 peer-checked:hover:bg-orange-600 peer-checked:hover:border-orange-600 relative group">
+                                                                        <span class="peer-checked:hidden">Objection Handling</span>
+                                                                        <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                            <i class="fas fa-check text-white"></i>
+                                                                            Objection Handling
+                                                                        </span>
                                                                     </div>
                                                                 </label>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div class="space-y-2">
-                                                        <label for="tools_familiarization"
-                                                            class="<?php echo htmlspecialchars($label_style) ?> text-xs">
-                                                            Tools Familiarization
-                                                        </label>
-                                                        <div class="flex justify-end">
-                                                            <div
-                                                                class="<?php echo htmlspecialchars($label_subsection_style) ?>">
+                                                    <div class="space-y-2 group">
+                                                        <div class="flex items-center justify-between">
+                                                            <label for="tools_familiarization"
+                                                                class="<?php echo htmlspecialchars($label_style) ?> text-xs font-medium text-gray-600 group-hover:text-gray-800 transition-colors">
+                                                                Tools Familiarization
+                                                            </label>
+                                                            <span class="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">
+                                                                Track progress
+                                                            </span>
+                                                        </div>
+                                                        <div class="w-full">
+                                                            <div class="space-y-2 pl-4 border-l-2 border-gray-200 group-hover:border-blue-300 transition-colors w-full">
                                                                 <label class="block">
                                                                     <input type="checkbox" id="VAST" name="VAST"
                                                                         value="1" class="peer hidden">
                                                                     <div
-                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                                        VAST Training
+                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> orange peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 peer-checked:hover:bg-orange-600 peer-checked:hover:border-orange-600 relative group">
+                                                                        <span class="peer-checked:hidden">VAST Training</span>
+                                                                        <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                            <i class="fas fa-check text-white"></i>
+                                                                            VAST Training
+                                                                        </span>
                                                                     </div>
                                                                 </label>
                                                                 <label class="block">
@@ -993,16 +1239,24 @@ echo '<style>
                                                                         name="sales_monitoring" value="1"
                                                                         class="peer hidden">
                                                                     <div
-                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                                        Google Site (Sales Monitoring)
+                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> orange peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 peer-checked:hover:bg-orange-600 peer-checked:hover:border-orange-600 relative group">
+                                                                        <span class="peer-checked:hidden">Google Site (Sales Monitoring)</span>
+                                                                        <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                            <i class="fas fa-check text-white"></i>
+                                                                            Google Site (Sales Monitoring)
+                                                                        </span>
                                                                     </div>
                                                                 </label>
                                                                 <label class="block">
                                                                     <input type="checkbox" id="LMS" name="LMS" value="1"
                                                                         class="peer hidden">
                                                                     <div
-                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                                        Lead Management System
+                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> orange peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 peer-checked:hover:bg-orange-600 peer-checked:hover:border-orange-600 relative group">
+                                                                        <span class="peer-checked:hidden">Lead Management System</span>
+                                                                        <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                            <i class="fas fa-check text-white"></i>
+                                                                            Lead Management System
+                                                                        </span>
                                                                     </div>
                                                                 </label>
                                                                 <label class="block">
@@ -1010,8 +1264,12 @@ echo '<style>
                                                                         name="comm_structure" value="1"
                                                                         class="peer hidden">
                                                                     <div
-                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500">
-                                                                        Comm Structure
+                                                                        class="<?php echo htmlspecialchars($checklist_style); ?> orange peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 hover:bg-orange-50 hover:border-orange-400 hover:text-orange-800 peer-checked:hover:bg-orange-600 peer-checked:hover:border-orange-600 relative group">
+                                                                        <span class="peer-checked:hidden">Comm Structure</span>
+                                                                        <span class="hidden peer-checked:inline-flex items-center gap-2">
+                                                                            <i class="fas fa-check text-white"></i>
+                                                                            Comm Structure
+                                                                        </span>
                                                                     </div>
                                                                 </label>
                                                             </div>
@@ -1184,7 +1442,7 @@ echo '<style>
     // Initialize dashboard
     document.addEventListener("DOMContentLoaded", function() {
         console.log('Recruitment dashboard loading...');
-        // Removed loadStats() call
+        populateYearFilter(); // Populate year dropdown
         loadRecruitmentData()
 
         // Add keyboard shortcuts
@@ -1192,6 +1450,20 @@ echo '<style>
 
         populateTeamAndRecruiterDropdowns();
     })
+    
+    // Populate year filter dropdown
+    function populateYearFilter() {
+        const yearSelect = document.getElementById('filterYear');
+        const currentYear = new Date().getFullYear();
+        
+        // Add years from current year back to 5 years ago
+        for (let year = currentYear; year >= currentYear - 5; year--) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearSelect.appendChild(option);
+        }
+    }
 
     // Handle keyboard shortcuts
     function handleKeyboardShortcuts(e) {
@@ -1204,6 +1476,7 @@ echo '<style>
             clearFilters()
         }
     }
+
 
     // Load recruitment data
     function loadRecruitmentData() {
@@ -1275,7 +1548,7 @@ echo '<style>
             })
     }
 
-    // Display recruitment data in table
+    // Display recruitment data in cards
     function displayRecruitmentData(leads) {
         // Only show all leads for admin, else filter by recruiter_id
         let visibleLeads = leads;
@@ -1283,24 +1556,21 @@ echo '<style>
             visibleLeads = leads.filter(lead => lead.recruiter_id == CURRENT_USER_ID);
         }
 
-        const tbody = document.getElementById("recruitmentTableBody");
-        tbody.innerHTML = "";
+        const cardsContainer = document.getElementById("recruitmentTableBody");
+        cardsContainer.innerHTML = "";
 
         if (!visibleLeads || visibleLeads.length === 0) {
-            tbody.innerHTML = `
-        <tr>
-            <td colspan="8" class="text-center text-muted py-4">
-                <i class="fas fa-search fa-2x mb-2 d-block"></i>
-                <p class="mb-0">No recruitment leads found</p>
-                <small>Try adjusting your filters or search terms</small>
-            </td>
-        </tr>
-    `;
+            cardsContainer.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center py-12">
+                    <i class="fas fa-search text-4xl mb-4 text-gray-400"></i>
+                    <p class="text-lg font-medium text-gray-600 mb-2">No recruitment leads found</p>
+                    <small class="text-gray-500">Try adjusting your filters or search terms</small>
+                </div>
+            `;
             return;
         }
 
         visibleLeads.forEach((lead, index) => {
-            const row = document.createElement("tr")
             const dateObj = new Date(lead.created_at);
             const timestamp = dateObj.toLocaleString('en-US', {
                 year: 'numeric',
@@ -1317,9 +1587,6 @@ echo '<style>
             const canSeeDetails = isOwnLead || isAdmin;
             const canEditDelete = isOwnLead || isAdmin;
 
-            row.style.animationDelay = `${index * 50}ms`
-            row.className = 'fade-in hover:bg-gray-50 transition-colors';
-
             function maskWord(word) {
                 if (word.length <= 2) return word[0] + '*'.repeat(word.length - 1);
                 if (word.length <= 4) return word[0] + '*'.repeat(word.length - 2) + word[word.length - 1];
@@ -1331,78 +1598,224 @@ echo '<style>
                 return text.split(' ').map(maskWord).join(' ');
             }
 
-            row.innerHTML = `
-        <td class="px-6 py-4 align-middle">${timestamp || 'N/A'}</td>
-        <td class="px-6 py-4 align-middle">
-  ${lead.status === 'Active' ? `<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Active</span>` :
-                        lead.status === 'Inactive' ? `<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Inactive</span>` :
-                            `<span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">${lead.status || 'N/A'}</span>`}
-        </td>
-        <td class="px-6 py-4 align-middle whitespace-nowrap">
-            <strong class="block max-w-[200px] truncate" title="${lead.full_name}">
-                ${canSeeDetails ? (lead.full_name || 'N/A') : maskText(lead.full_name || '')}
-            </strong>
-        <div class="align-middle opacity-50 text-xs"><i class="fa fa-phone" aria-hidden="true"></i> ${canSeeDetails ? (lead.contact_number || 'No contact number found') : maskText(lead.contact_number || '')}</div>
-        <div class="align-middle opacity-50 text-xs"><i class="fa fa-envelope" aria-hidden="true"></i> ${canSeeDetails ? (lead.email || 'No email found') : maskText(lead.email || '')}</div>
-        </td>
-        <td class="px-6 py-4 align-middle">
-            <div>
-                <span>${lead.recruiter_name || 'N/A'}</span>
-                <br>
-                <span class="text-xs text-gray-500">${lead.recruiter_team || 'No Team'}</span>
-            </div>
-        </td>
-        <td class="px-6 py-4 align-middle">
-        <div class='flex flex-col items-start gap-2 w-full'>
+            // Create card element
+            const card = document.createElement("div");
+            card.className = "modern-agent-card transform transition-all duration-500 hover:scale-105";
+            card.style.animationDelay = `${index * 100}ms`;
+            card.style.animation = `slideInUp 0.6s ease-out ${index * 100}ms both`;
             
-            <!-- Pre-recruitment Progress Bar -->
-            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-1">
-                <div class="progress-bar h-3 bg-blue-300 transition-all duration-300" style="width: ${getPreRecruitmentPercent(lead)}%"></div>
-            </div>
-            <div class="text-xs text-left text-gray-600 whitespace-nowrap font-semibold">Pre: ${getPreRecruitmentPercent(lead)}%</div>
-            <!-- Post-recruitment Progress Bar -->
-            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-1">
-                <div class="progress-bar h-3 bg-orange-300 transition-all duration-300" style="width: ${getPostRecruitmentPercent(lead)}%"></div>
-            </div>
-            <div class="text-xs text-left text-gray-600 whitespace-nowrap font-semibold">Post: ${getPostRecruitmentPercent(lead)}%</div>
-            <!-- Overall Progress Bar -->
-            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div class="progress-bar h-3 bg-green-300 transition-all duration-300" style="width: ${getProgressPercent(lead)}%"></div>
-            </div>
-            <div class="text-xs text-left text-gray-600 whitespace-nowrap font-semibold">Overall: ${getProgressPercent(lead)}%</div>
-        </div>
-        </td>
-        <td class="px-6 py-4 align-middle"><small>${lead.source || 'N/A'}</small></td>
-        <td class="px-6 py-4 align-middle">
-            <div class="btn-group btn-group-sm flex items-center justify-center gap-2">
-                ${canEditDelete ? `
-                <button class="btn btn-outline-onboard text-blue-500 border-2 p-1 rounded-md border-blue-500    hover:border-blue-500 hover:bg-blue-500 hover:text-white transition-all hidden"
-                onclick="showOnboardModal(${lead.id})"
-                    title="Onboarding Details"
-                    id="onboardBtn-${lead.id}">
-                    <i class="fa fa-rocket" aria-hidden="true"></i>
-                </button>
-                <button class="btn btn-outline-primary text-yellow-500 border-2 p-1 rounded-md border-yellow-500 hover:border-yellow-500 hover:bg-yellow-500 hover:text-white transition-all" onclick="editLead(${lead.id})" title="Edit">
-                    <i class="fas fa-edit"></i>
-                </button>
-                     <button class="btn btn-outline-danger text-red-500 border-2 p-1 rounded-md border-red-500 hover:border-red-500 hover:bg-red-500 hover:text-white transition-all" onclick="deleteLead(${lead.id})" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-                ` : ''}
-            </div>
-        </td>
-    `
-            tbody.appendChild(row);
+            card.innerHTML = `
+                <div class="group relative bg-gradient-to-br from-white via-slate-50 to-blue-50/30 border-2 border-gray-200/60 rounded-3xl p-6 shadow-lg hover:shadow-2xl hover:border-blue-300/80 transition-all duration-500 transform hover:-translate-y-2 backdrop-blur-sm overflow-hidden">
+                    <!-- Decorative Background Elements -->
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/30 to-purple-100/30 rounded-full blur-2xl transform translate-x-16 -translate-y-16 group-hover:scale-150 transition-transform duration-700"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-emerald-100/30 to-blue-100/30 rounded-full blur-xl transform -translate-x-12 translate-y-12 group-hover:scale-125 transition-transform duration-500"></div>
+                    
+                    <!-- Enhanced Header Section -->
+                    <div class="relative flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-4">
+                            <div class="relative flex-shrink-0">
+                                <!-- Enhanced Avatar with Better Gradients -->
+                                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-xl ring-4 ring-white/50 group-hover:ring-8 group-hover:ring-blue-200/50 transition-all duration-300">
+                                    ${(lead.full_name || 'N').charAt(0).toUpperCase()}
+                                </div>
+                                <!-- Enhanced Status Indicator -->
+                                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-lg ring-2 ring-white">
+                                    ${lead.status === 'Active' ? 
+                                        '<div class="w-3 h-3 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full animate-pulse shadow-sm"></div>' :
+                                        lead.status === 'Inactive' ? 
+                                        '<div class="w-3 h-3 bg-gradient-to-r from-red-400 to-red-500 rounded-full shadow-sm"></div>' :
+                                        '<div class="w-3 h-3 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full shadow-sm"></div>'
+                                    }
+                                </div>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <h3 class="font-bold text-gray-900 text-lg truncate mb-1 group-hover:text-blue-700 transition-colors duration-300" title="${lead.full_name}">
+                                    ${canSeeDetails ? (lead.full_name || 'N/A') : maskText(lead.full_name || '')}
+                                </h3>
+                                <p class="text-sm text-gray-500 font-medium flex items-center gap-1">
+                                    <i class="fas fa-calendar text-xs text-blue-400"></i>
+                                    ${new Date(lead.created_at).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}
+                                </p>
+                            </div>
+                        </div>
+                        <!-- Enhanced Status Badge -->
+                        <div class="flex-shrink-0">
+                            ${lead.status === 'Active' ? 
+                                '<span class="inline-flex items-center px-3 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border-2 border-emerald-200/50 shadow-sm"><span class="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse"></span>Active</span>' :
+                                lead.status === 'Inactive' ? 
+                                '<span class="inline-flex items-center px-3 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-red-100 to-red-50 text-red-700 border-2 border-red-200/50 shadow-sm"><span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>Inactive</span>' :
+                                `<span class="inline-flex items-center px-3 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-gray-100 to-gray-50 text-gray-700 border-2 border-gray-200/50 shadow-sm">${lead.status || 'N/A'}</span>`
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced Contact Grid -->
+                    <div class="relative bg-gradient-to-br from-white/80 to-gray-50/80 backdrop-blur-sm rounded-2xl p-4 mb-4 border border-gray-200/50 shadow-inner">
+                        <div class="grid grid-cols-1 gap-3">
+                            <!-- Phone & Email Row -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="flex items-center gap-2 min-w-0 bg-white/60 rounded-lg p-2 hover:bg-blue-50/80 transition-colors duration-200">
+                                    <div class="w-6 h-6 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-phone text-white text-xs"></i>
+                                    </div>
+                                    <span class="text-gray-800 text-sm font-medium truncate">
+                                        ${canSeeDetails ? (lead.contact_number || 'N/A') : maskText(lead.contact_number || '')}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2 min-w-0 bg-white/60 rounded-lg p-2 hover:bg-purple-50/80 transition-colors duration-200">
+                                    <div class="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-envelope text-white text-xs"></i>
+                                    </div>
+                                    <span class="text-gray-800 text-sm font-medium truncate" title="${canSeeDetails ? (lead.email || 'N/A') : maskText(lead.email || '')}">
+                                        ${canSeeDetails ? (lead.email ? (lead.email.length > 15 ? lead.email.substring(0, 15) + '...' : lead.email) : 'N/A') : maskText(lead.email || '')}
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- Recruiter & Team Row -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="flex items-center gap-2 min-w-0 bg-white/60 rounded-lg p-2 hover:bg-emerald-50/80 transition-colors duration-200">
+                                    <div class="w-6 h-6 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-user-tie text-white text-xs"></i>
+                                    </div>
+                                    <span class="text-gray-800 text-sm font-medium truncate" title="${lead.recruiter_name || 'N/A'}">
+                                        ${lead.recruiter_name || 'N/A'}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2 min-w-0 bg-white/60 rounded-lg p-2 hover:bg-orange-50/80 transition-colors duration-200">
+                                    <div class="w-6 h-6 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-users text-white text-xs"></i>
+                                    </div>
+                                    <span class="text-gray-800 text-sm font-medium truncate" title="${lead.recruiter_team || 'No Team'}">
+                                        ${lead.recruiter_team || 'No Team'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-            // Show the onboard button if pre-recruitment progress is 100%
-            const prePercent = getPreRecruitmentPercent(lead);
-            if (prePercent === 100) {
-                const onboardBtn = document.getElementById(`onboardBtn-${lead.id}`);
-                if (onboardBtn) {
-                    onboardBtn.classList.remove("hidden");
-                    onboardBtn.classList.add("inline-block"); // or "block" if needed
-                }
-            }
+                    <!-- Enhanced Progress Section -->
+                    <div class="relative bg-gradient-to-br from-white/60 to-gray-50/60 backdrop-blur-sm rounded-2xl p-4 mb-4 border border-gray-200/50 space-y-4">
+                        <div class="flex items-center justify-center mb-3">
+                            <h4 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                <i class="fas fa-chart-line text-blue-500"></i>
+                                Progress Tracking
+                            </h4>
+                        </div>
+                        
+                        <!-- Pre-Recruitment Progress -->
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full shadow-sm"></div>
+                                    <span class="font-semibold text-blue-700 text-sm">Pre-Recruitment</span>
+                                </div>
+                                <span class="font-bold text-blue-700 text-sm bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-1 rounded-lg border border-blue-200/50">
+                                    ${getPreRecruitmentPercent(lead)}%
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 shadow-inner">
+                                <div class="h-2 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 rounded-full transition-all duration-700 shadow-sm relative overflow-hidden" 
+                                     style="width: ${getPreRecruitmentPercent(lead)}%">
+                                    <div class="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Post-Recruitment Progress -->
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full shadow-sm"></div>
+                                    <span class="font-semibold text-orange-700 text-sm">Post-Recruitment</span>
+                                </div>
+                                <span class="font-bold text-orange-700 text-sm bg-gradient-to-r from-orange-50 to-orange-100 px-3 py-1 rounded-lg border border-orange-200/50">
+                                    ${getPostRecruitmentPercent(lead)}%
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 shadow-inner">
+                                <div class="h-2 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 rounded-full transition-all duration-700 shadow-sm relative overflow-hidden" 
+                                     style="width: ${getPostRecruitmentPercent(lead)}%">
+                                    <div class="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Overall Progress -->
+                        <div class="space-y-2 pt-2 border-t border-gray-200/50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full shadow-sm"></div>
+                                    <span class="font-bold text-emerald-700 text-sm">Overall Progress</span>
+                                </div>
+                                <span class="font-bold text-emerald-700 text-lg bg-gradient-to-r from-emerald-50 to-emerald-100 px-4 py-2 rounded-xl border-2 border-emerald-200/50 shadow-sm">
+                                    ${getProgressPercent(lead)}%
+                                </span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+                                <div class="h-3 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 rounded-full transition-all duration-700 shadow-md relative overflow-hidden" 
+                                     style="width: ${getProgressPercent(lead)}%">
+                                    <div class="absolute inset-0 bg-gradient-to-r from-white/40 to-transparent rounded-full"></div>
+                                    <div class="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Footer -->
+                    <div class="relative pt-4 border-t border-gray-200/50">
+                        <div class="flex items-center justify-between">
+                            <!-- Source Information -->
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center border-2 border-white shadow-sm">
+                                    <i class="fas fa-user-plus text-indigo-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Recruited by</p>
+                                    <p class="text-sm font-bold text-gray-700 truncate max-w-[100px]" title="${lead.source || 'N/A'}">
+                                        ${lead.source || 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex items-center gap-2">
+                                ${canEditDelete ? `
+                                    ${(lead.LMS == 1 || lead.LMS === '1' || getPostRecruitmentPercent(lead) >= 75 || getProgressPercent(lead) >= 86) ? `
+                                        <button class="group/btn relative w-10 h-10 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:scale-110 active:scale-95 flex items-center justify-center overflow-hidden" 
+                                                onclick="showOnboardModal(${lead.id})" title="Onboarding" id="onboardBtn-${lead.id}">
+                                            <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                                            <i class="fas fa-rocket text-sm relative z-10 group-hover/btn:animate-bounce"></i>
+                                        </button>
+                                    ` : ''}
+                                    <button class="group/btn relative w-10 h-10 bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/25 hover:scale-110 active:scale-95 flex items-center justify-center overflow-hidden" 
+                                            onclick="editLead(${lead.id})" title="Edit Agent">
+                                        <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                                        <i class="fas fa-edit text-sm relative z-10 group-hover/btn:rotate-12 transition-transform duration-200"></i>
+                                    </button>
+                                    <button class="group/btn relative w-10 h-10 bg-gradient-to-r from-red-500 via-red-600 to-rose-600 text-white rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-red-500/25 hover:scale-110 active:scale-95 flex items-center justify-center overflow-hidden" 
+                                            onclick="deleteLead(${lead.id})" title="Delete Agent">
+                                        <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                                        <i class="fas fa-trash text-sm relative z-10 group-hover/btn:animate-pulse"></i>
+                                    </button>
+                                ` : `
+                                    <div class="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg">
+                                        <i class="fas fa-lock text-gray-400 text-xs"></i>
+                                        <span class="text-xs text-gray-500 font-medium">View Only</span>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced hover effects -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-50/0 via-purple-50/0 to-indigo-50/0 group-hover:from-blue-50/40 group-hover:via-purple-50/20 group-hover:to-indigo-50/30 rounded-3xl transition-all duration-700 pointer-events-none"></div>
+                    
+                    <!-- Subtle border glow on hover -->
+                    <div class="absolute inset-0 rounded-3xl ring-0 ring-blue-200/0 group-hover:ring-2 group-hover:ring-blue-200/50 transition-all duration-500 pointer-events-none"></div>
+                </div>
+            `;
+            
+            cardsContainer.appendChild(card);
         })
     }
 
@@ -1419,28 +1832,42 @@ echo '<style>
         // Collect filter values
         currentFilters = {}
         const status = document.getElementById("filterStatus").value.trim()
-        const source = document.getElementById("filterSource").value.trim()
-        const search = document.getElementById("searchInput").value.trim() // Get value from main search input
-        const team = document.getElementById("filterTeam").value.trim()
+        const source = document.getElementById("filterSource") ? document.getElementById("filterSource").value.trim() : ''
+        const search = document.getElementById("searchInput").value.trim()
+        const team = document.getElementById("filterTeam") ? document.getElementById("filterTeam").value.trim() : ''
+        const recruitmentStatus = document.getElementById("filterRecruitmentStatus").value.trim()
+        const year = document.getElementById("filterYear").value.trim()
+        const month = document.getElementById("filterMonth").value.trim()
+
+        // Debug log
+        console.log('Current filter values:', {
+            status,
+            source,
+            search,
+            team,
+            recruitmentStatus,
+            year,
+            month
+        });
 
         if (status) currentFilters.status = status
         if (source) currentFilters.source = source
         if (search) currentFilters.search = search
         if (team) currentFilters.team = team
+        if (year) currentFilters.year = year
+        if (month) currentFilters.month = month
+        if (recruitmentStatus !== '') {
+            currentFilters.onboardStatus = recruitmentStatus
+            console.log('Setting onboardStatus filter to:', recruitmentStatus)
+        }
 
         console.log('Applied filters:', currentFilters);
 
         // Load data with filters
         loadRecruitmentData()
-
-        // Restore button state
-        setTimeout(() => {
-            searchBtn.innerHTML = originalText
-            searchBtn.disabled = false
-        }, 500)
-
-        // Show success message
-        loadRecruitmentData()
+        
+        // Also update statistics with filters
+        loadRecruitmentStats()
 
         // Restore button state
         setTimeout(() => {
@@ -1461,15 +1888,18 @@ echo '<style>
 
         currentFilters = {}
         document.getElementById("filterStatus").value = ""
-        document.getElementById("filterSource").value = ""
-        document.getElementById("filterTeam").value = ""
+        if (document.getElementById("filterSource")) document.getElementById("filterSource").value = ""
+        if (document.getElementById("filterTeam")) document.getElementById("filterTeam").value = ""
+        document.getElementById("filterRecruitmentStatus").value = ""
         document.getElementById("searchInput").value = ""
-        // REMOVE THIS LINE: const headerSearchInput = document.getElementById("headerSearchInput").value = "";
+        document.getElementById("filterYear").value = ""
+        document.getElementById("filterMonth").value = ""
 
         document.getElementById("activeFilters").style.display = "none"
         document.getElementById("filterResults").style.display = "none"
 
         loadRecruitmentData()
+        loadRecruitmentStats()  // Also refresh statistics when filters are cleared
         showNotification("All filters cleared", "info")
     }
 
@@ -1520,6 +1950,18 @@ echo '<style>
             recruiter: {
                 icon: 'fas fa-user-tie',
                 label: 'Recruiter'
+            },
+            onboardStatus: {
+                icon: 'fas fa-rocket',
+                label: 'Onboard Status'
+            },
+            year: {
+                icon: 'fas fa-calendar-alt',
+                label: 'Year'
+            },
+            month: {
+                icon: 'fas fa-calendar-week',
+                label: 'Month'
             }
             // Add more keys as needed
         }
@@ -1554,6 +1996,23 @@ echo '<style>
                 }
             }
 
+            // Show human-friendly status for onboarding
+            if (key === 'onboardStatus') {
+                const v = String(value);
+                if (v === '1') displayValue = 'Onboarded';
+                else if (v === '0') displayValue = 'Not Onboarded';
+            }
+
+            // Convert month number to month name for display
+            if (key === 'month') {
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                  'July', 'August', 'September', 'October', 'November', 'December'];
+                const monthIndex = parseInt(value) - 1;
+                if (monthIndex >= 0 && monthIndex < 12) {
+                    displayValue = monthNames[monthIndex];
+                }
+            }
+
             // tag.innerHTML =
             //     `<span class="text-white bg-gray-400 rounded-full px-3 py-1">${displayKey}: ${value} <i class="fas fa-times ms-1" onclick="removeFilter('${key}')"></i></span>`
             tag.innerHTML = `
@@ -1582,7 +2041,10 @@ echo '<style>
             'status': 'filterStatus',
             'source': 'filterSource',
             'team': 'filterTeam',
-            'search': 'searchInput'
+            'onboardStatus': 'filterRecruitmentStatus',
+            'search': 'searchInput',
+            'year': 'filterYear',
+            'month': 'filterMonth'
         };
 
         if (fieldMap[key]) {
@@ -1671,17 +2133,102 @@ echo '<style>
                                 `<option value="${recruiter.name}">${recruiter.name}</option>`;
                         });
                     }
+                })
+                .catch(error => {
+                    console.error('Error fetching team recruiters for manager:', error);
                 });
         }
     }
 
-
     // Modal and CRUD functions
     function showAddModal() {
-        document.getElementById('modalTitle').textContent = 'Add New Recruited Agent';
-        document.getElementById('recruitmentForm').reset();
-        document.getElementById('leadId').value = '';
-        document.getElementById('recruiterName').value = "<?php echo htmlspecialchars($user['name'] ?? ''); ?>";
+        console.log('showAddModal function called');
+        
+        // Check if elements exist before accessing them
+        const modalTitle = document.getElementById('modalTitle');
+        const recruitmentForm = document.getElementById('recruitmentForm');
+        const leadId = document.getElementById('leadId');
+        
+        if (modalTitle) modalTitle.textContent = 'Add New Recruited Agent';
+        if (recruitmentForm) recruitmentForm.reset();
+        if (leadId) leadId.value = '';
+        
+        // Auto-populate fields for NEW entries only
+        // Date of entry
+        const timestampField = document.getElementById('timestamp');
+        if (timestampField) {
+            timestampField.value = new Date().toISOString().split('T')[0]; // Today's date
+            timestampField.readOnly = true;
+        }
+        
+        // Manager field - auto-populate with current user's manager
+        const managerField = document.getElementById('managerName');
+        const managerIdField = document.getElementById('managerId');
+        
+        // Team field - auto-populate with current user's team
+        const teamNameText = document.getElementById('teamNameText');
+        const teamIdField = document.getElementById('teamId');
+        
+        // Source/recruited by field - auto-populate with current user
+        const sourceField = document.getElementById('source');
+        const sourceIdField = document.getElementById('sourceId');
+        
+        // Set current user as recruiter
+        if (sourceField) sourceField.value = "<?php echo htmlspecialchars($user['name'] ?? ''); ?>";
+        if (sourceIdField) sourceIdField.value = "<?php echo htmlspecialchars($user['id'] ?? ''); ?>";
+        
+        // Set current user's team
+        if (teamNameText) teamNameText.textContent = "<?php echo htmlspecialchars($current_user_team); ?>";
+        if (teamIdField) teamIdField.value = "<?php echo htmlspecialchars($current_user['team_id'] ?? ''); ?>";
+        
+        // Auto-populate manager based on current user's team
+        <?php
+        $auto_manager_name = '';
+        $auto_manager_id = '';
+        $teamId = $current_user['team_id'] ?? null;
+        
+        if ($teamId) {
+            $conn = getDbConnection();
+            $stmt = $conn->prepare("SELECT id, name FROM users WHERE team_id = ? AND role = 'manager' LIMIT 1");
+            $stmt->bind_param("i", $teamId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                $manager = $result->fetch_assoc();
+                $auto_manager_name = $manager['name'];
+                $auto_manager_id = $manager['id'];
+            } else {
+                if ($current_user_team === 'Blazing SPARCS') {
+                    $auto_manager_name = 'Erwin Baguioan';
+                    $stmt = $conn->prepare("SELECT id FROM users WHERE name LIKE '%Erwin Baguioan%' LIMIT 1");
+                    $stmt->execute();
+                    $stmt->bind_result($erwinId);
+                    $stmt->fetch();
+                    $auto_manager_id = $erwinId ?? null;
+                }
+            }
+            $stmt->close();
+            $conn->close();
+        }
+        ?>
+        
+        if (managerField) managerField.value = "<?php echo htmlspecialchars($auto_manager_name); ?>";
+        if (managerIdField) managerIdField.value = "<?php echo htmlspecialchars($auto_manager_id); ?>";
+        
+        // Make sure fields are in "add mode" (readonly/display mode for auto-populated fields)
+        setFieldsToAddMode();
+        
+        // Update labels to show "(Automatic)"
+        const timestampLabel = document.getElementById('timestampLabel');
+        const managerLabel = document.getElementById('managerLabel');
+        const teamLabel = document.getElementById('teamLabel');
+        const sourceLabel = document.getElementById('sourceLabel');
+        
+        if (timestampLabel) timestampLabel.innerHTML = '<span class="text-[12px] text-gray-500">(Automatic)</span>';
+        if (managerLabel) managerLabel.innerHTML = '<span class="text-[12px] text-gray-500">(Automatic)</span>';
+        if (teamLabel) teamLabel.innerHTML = '<span class="text-[12px] text-gray-500">(Automatic)</span>';
+        if (sourceLabel) sourceLabel.innerHTML = '<span class="text-[12px] text-gray-500">(Automatic)</span>';
 
         // Reset all checklist checkboxes and progress bar
         const checklistKeys = allKeys;
@@ -1696,6 +2243,13 @@ echo '<style>
             const recruiterInput = document.getElementById('recruiterName');
             const recruiterIdInput = document.getElementById('recruiterId');
             const teamMembersSelect = document.getElementById('source');
+
+            // Check if elements exist before accessing them
+            if (!teamSelect || !recruiterInput || !recruiterIdInput || !teamMembersSelect) {
+                console.warn('Some form elements are missing for admin role');
+                document.getElementById('recruitmentModal').classList.remove('hidden');
+                return;
+            }
 
             // Clear existing options
             teamSelect.innerHTML = '<option value="">Select Team</option>';
@@ -1781,64 +2335,297 @@ echo '<style>
     function hideRecruitmentModal() {
         document.getElementById('recruitmentModal').classList.add('hidden');
     }
+    
+    // Helper function to set fields to "add mode" (auto-populated, readonly)
+    function setFieldsToAddMode() {
+        // Show readonly text inputs, hide dropdowns
+        const managerName = document.getElementById('managerName');
+        const managerSelect = document.getElementById('managerSelect');
+        const teamNameDiv = document.getElementById('teamNameDiv');
+        const teamSelect = document.getElementById('teamSelect');
+        const source = document.getElementById('source');
+        const sourceSelect = document.getElementById('sourceSelect');
+        const timestamp = document.getElementById('timestamp');
+        
+        // Manager field
+        if (managerName) {
+            managerName.classList.remove('hidden');
+            managerName.readOnly = true;
+            managerName.classList.add('bg-gray-100', 'text-gray-600');
+        }
+        if (managerSelect) managerSelect.classList.add('hidden');
+        
+        // Team field
+        if (teamNameDiv) teamNameDiv.classList.remove('hidden');
+        if (teamSelect) teamSelect.classList.add('hidden');
+        
+        // Source field
+        if (source) {
+            source.classList.remove('hidden');
+            source.readOnly = true;
+            source.classList.add('bg-gray-100', 'text-gray-600');
+        }
+        if (sourceSelect) sourceSelect.classList.add('hidden');
+        
+        // Timestamp field
+        if (timestamp) {
+            timestamp.readOnly = true;
+            timestamp.classList.add('bg-gray-100', 'text-gray-600');
+        }
+    }
+    
+    // Helper function to set fields to "edit mode" (editable dropdowns)
+    function setFieldsToEditMode() {
+        // Hide readonly text inputs, show dropdowns
+        const managerName = document.getElementById('managerName');
+        const managerSelect = document.getElementById('managerSelect');
+        const teamNameDiv = document.getElementById('teamNameDiv');
+        const teamSelect = document.getElementById('teamSelect');
+        const source = document.getElementById('source');
+        const sourceSelect = document.getElementById('sourceSelect');
+        const timestamp = document.getElementById('timestamp');
+        
+        // Manager field - show dropdown for editing (admin only)
+        if (CURRENT_USER_ROLE === 'admin') {
+            if (managerName) managerName.classList.add('hidden');
+            if (managerSelect) {
+                managerSelect.classList.remove('hidden');
+                managerSelect.classList.add('border', 'rounded', 'px-3', 'py-2', 'w-full', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
+            }
+        } else {
+            // For non-admin users, keep manager field as display only
+            if (managerName) {
+                managerName.classList.remove('hidden');
+                managerName.readOnly = true;
+                managerName.classList.add('bg-gray-100', 'text-gray-600');
+            }
+            if (managerSelect) managerSelect.classList.add('hidden');
+        }
+        
+        // Team field - show dropdown for editing (admin only)
+        if (CURRENT_USER_ROLE === 'admin') {
+            if (teamNameDiv) teamNameDiv.classList.add('hidden');
+            if (teamSelect) teamSelect.classList.remove('hidden');
+        } else {
+            // For non-admin users, keep team field as display only
+            if (teamNameDiv) teamNameDiv.classList.remove('hidden');
+            if (teamSelect) teamSelect.classList.add('hidden');
+        }
+        
+        // Source field - show dropdown for editing (admin and manager only)
+        if (CURRENT_USER_ROLE === 'admin' || CURRENT_USER_ROLE === 'manager') {
+            if (source) source.classList.add('hidden');
+            if (sourceSelect) {
+                sourceSelect.classList.remove('hidden');
+                sourceSelect.classList.add('border', 'rounded', 'px-3', 'py-2', 'w-full', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
+            }
+        } else {
+            // For regular users, keep source field as display only
+            if (source) {
+                source.classList.remove('hidden');
+                source.readOnly = true;
+                source.classList.add('bg-gray-100', 'text-gray-600');
+            }
+            if (sourceSelect) sourceSelect.classList.add('hidden');
+        }
+        
+        // Timestamp field - make editable
+        if (timestamp) {
+            timestamp.readOnly = false;
+            timestamp.classList.remove('bg-gray-100', 'text-gray-600');
+            timestamp.classList.add('border', 'rounded', 'px-3', 'py-2', 'w-full', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
+        }
+        
+        // Update labels to show they are editable (based on role)
+        const timestampLabel = document.getElementById('timestampLabel');
+        const managerLabel = document.getElementById('managerLabel');
+        const teamLabel = document.getElementById('teamLabel');
+        const sourceLabel = document.getElementById('sourceLabel');
+        
+        if (timestampLabel) timestampLabel.innerHTML = '<span class="text-[12px] text-red-500">*</span>';
+        
+        if (CURRENT_USER_ROLE === 'admin') {
+            if (managerLabel) managerLabel.innerHTML = '<span class="text-[12px] text-red-500">*</span>';
+            if (teamLabel) teamLabel.innerHTML = '<span class="text-[12px] text-red-500">*</span>';
+        } else {
+            if (managerLabel) managerLabel.innerHTML = '<span class="text-[12px] text-gray-500">(Read-only)</span>';
+            if (teamLabel) teamLabel.innerHTML = '<span class="text-[12px] text-gray-500">(Read-only)</span>';
+        }
+        
+        if (CURRENT_USER_ROLE === 'admin' || CURRENT_USER_ROLE === 'manager') {
+            if (sourceLabel) sourceLabel.innerHTML = '<span class="text-[12px] text-red-500">*</span>';
+        } else {
+            if (sourceLabel) sourceLabel.innerHTML = '<span class="text-[12px] text-gray-500">(Read-only)</span>';
+        }
+    }
 
     function showOnboardModal(id) {
         document.getElementById('onboardModal').classList.remove('hidden');
         const modalContent = document.querySelector('#onboardModal .p-0');
         modalContent.innerHTML = `
-        <div class="p-6 overflow-y-auto max-h-[70vh]">
-            <form id="onboardUserForm">
-                <div class="flex flex-col items-center justify-center gap-2">
-                    
-                <div class="flex justify-center items-center overflow-visible">
-                    <i class="fa-solid fa-user-astronaut text-[100px] bg-gradient-to-br from-blue-500 via-green-500 to-yellow-500 bg-clip-text text-transparent leading-[1.1] pt-2"></i>
-                </div>
-
-                    <div class="mb-4 mx-8">
-                        <div>
-                            <div>
-                                <input type="text" id="onboard_name" name="name"
-                                    class="text-center w-full focus:outline-none text-2xl font-bold" placeholder="Full Name" readonly>
-                            </div>
-                            <input type="text" id="onboard_username" name="username"
-                                class=" w-full focus:outline-none text-center text-sm " placeholder="user.name.innersparc" readonly>
+        <div class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-[70vh] overflow-y-auto">
+            <!-- Header Section -->
+            <div class="relative bg-white border-b border-gray-100 px-8 py-8 shadow-sm">
+                <div class="text-center">
+                    <!-- Avatar with modern styling -->
+                    <div class="relative inline-block mb-6">
+                        <div class="w-24 h-24 bg-gradient-to-br from-emerald-400 via-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white">
+                            <i class="fa-solid fa-user-astronaut text-white text-3xl"></i>
                         </div>
-                        <hr class="my-3">
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 bg-red-5001 p-2 pt-0 text-gray-500 text-sm">
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-envelope"></i>
-                                <input type="email" id="onboard_email" name="email"
-                                    class="w-full whitespace-nowrap focus:outline-none" placeholder="yourname@gmail.com" readonly>
+                        <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
+                            <i class="fa-solid fa-plus text-white text-xs"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Agent Name -->
+                    <div class="mb-2">
+                        <input type="text" id="onboard_name" name="name"
+                            class="text-center w-full focus:outline-none text-3xl font-bold text-gray-800 bg-transparent border-b-2 border-transparent hover:border-blue-200 transition-all duration-300 pb-2" 
+                            placeholder="Full Name" readonly>
+                    </div>
+                    
+                    <div class="flex items-center justify-center gap-2 text-gray-500">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-sm font-medium">Ready for Onboarding</span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="onboardUserForm" class="px-8 py-6">
+                <!-- Login Credentials Section -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 mb-6 overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+                        <div class="flex items-center gap-3 text-white">
+                            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-key text-lg"></i>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-key"></i>
-                                <input type="text" value="123456789innersparc"
-                                    class="w-full whitespace-nowrap focus:outline-none " placeholder="123456789innersparc" readonly>
+                            <div>
+                                <h3 class="text-lg font-bold">Login Credentials</h3>
+                                <p class="text-blue-100 text-sm">Generated automatically for this agent</p>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-phone"></i>
-                                <input type="text" id="onboard_phone" name="phone"
-                                    class="w-full whitespace-nowrap focus:outline-none " placeholder="09123456789" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 space-y-4">
+                        <!-- Username -->
+                        <div class="group">
+                            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 block">Username</label>
+                            <div class="relative">
+                                <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
+                                    <i class="fa-solid fa-user text-blue-500"></i>
+                                </div>
+                                <div id="onboard_username" class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl font-mono text-lg text-gray-800 select-all cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 focus:ring-4 focus:ring-blue-100">
+                                    user.name.innersparc
+                                </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-user-tie"></i>
-                                <input type="text" value="Agent"
-                                    class="w-full whitespace-nowrap focus:outline-none " placeholder="Agent" readonly>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="group">
+                            <label class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 block">Password</label>
+                            <div class="relative">
+                                <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
+                                    <i class="fa-solid fa-lock text-green-500"></i>
+                                </div>
+                                <div class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl font-mono text-lg text-gray-800 select-all cursor-pointer hover:bg-green-50 hover:border-green-300 transition-all duration-200 focus:ring-4 focus:ring-green-100">
+                                    123456789innersparc
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security Notice -->
+                        <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                            <div class="flex items-start gap-3">
+                                <div class="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <i class="fa-solid fa-shield-halved text-amber-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-amber-800 mb-1">Security Notice</h4>
+                                    <p class="text-sm text-amber-700">Agent should change password after first login</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Contact Information Section -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 mb-6 overflow-hidden">
+                    <div class="bg-gradient-to-r from-gray-600 to-gray-700 px-6 py-4">
+                        <div class="flex items-center gap-3 text-white">
+                            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-address-card text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold">Contact Information</h3>
+                                <p class="text-gray-200 text-sm">Agent details and role</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Email -->
+                            <div class="group">
+                                <label class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 block">Email</label>
+                                <div class="relative">
+                                    <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
+                                        <i class="fa-solid fa-envelope text-blue-500"></i>
+                                    </div>
+                                    <input type="email" id="onboard_email" name="email"
+                                        class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-300 transition-all duration-200" 
+                                        placeholder="yourname@gmail.com" readonly>
+                                </div>
+                            </div>
+
+                            <!-- Phone -->
+                            <div class="group">
+                                <label class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 block">Phone</label>
+                                <div class="relative">
+                                    <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
+                                        <i class="fa-solid fa-phone text-green-500"></i>
+                                    </div>
+                                    <input type="text" id="onboard_phone" name="phone"
+                                        class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-4 focus:ring-green-100 focus:border-green-300 transition-all duration-200" 
+                                        placeholder="09123456789" readonly>
+                                </div>
+                            </div>
+
+                            <!-- Role -->
+                            <div class="group">
+                                <label class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 block">Role</label>
+                                <div class="relative">
+                                    <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
+                                        <i class="fa-solid fa-user-tie text-purple-500"></i>
+                                    </div>
+                                    <input type="text" value="Agent"
+                                        class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-300 transition-all duration-200" 
+                                        placeholder="Agent" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden Elements -->
                 <div class="mb-4">
                     <small class="text-gray-500 hidden" id="onboard_username_preview"></small>
                 </div>
+                
+                <!-- Action Section -->
                 <div id="onboardActionSection"></div>
-                <div class="text-sm text-gray-500 mb-4 text-sm text-center">
-                    <p>Note: The agent will be created with the default password
-                        <strong>123456789innersparc</strong>. Ensure to change the password after onboarding.
-                    </p>
-                </div>
             </form>
-            <div id="onboardLoading" class="text-center text-gray-400">Loading agent details...</div>
+            
+            <!-- Loading State -->
+            <div id="onboardLoading" class="flex flex-col items-center justify-center py-16">
+                <div class="relative">
+                    <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <i class="fa-solid fa-user text-blue-600 text-lg"></i>
+                    </div>
+                </div>
+                <p class="mt-4 text-gray-600 text-lg font-medium">Loading agent details...</p>
+                <p class="text-gray-500 text-sm">Please wait while we fetch the information</p>
+            </div>
         </div>
     `;
 
@@ -1877,7 +2664,7 @@ echo '<style>
                     document.getElementById('onboard_name').value = lead.full_name || '';
                     document.getElementById('onboard_email').value = lead.email || '';
                     document.getElementById('onboard_phone').value = lead.contact_number || '';
-                    document.getElementById('onboard_username').value = username;
+                    document.getElementById('onboard_username').textContent = username;
                     document.getElementById('onboard_username_preview').textContent = lead.full_name || '';
 
                     // --- Username existence check ---
@@ -1894,6 +2681,12 @@ echo '<style>
                             const actionSection = document.getElementById('onboardActionSection');
                             if (checkData.success && checkData.exists) {
                                 // Username exists, show "already onboarded" message and undo button
+                                // Prepare safely escaped args for inline handler
+                                const _username = username;
+                                const _email = (lead.email || '').replace(/'/g, "\\'");
+                                const _phone = (lead.contact_number || '').replace(/'/g, "\\'");
+                                const _leadId = lead.id;
+
                                 actionSection.innerHTML = `
                         <div class="p-6 text-center border rounded-lg mb-4">
                         <i class="fa-solid fa-info text-[30px] text-yellow-500"></i>
@@ -1904,7 +2697,7 @@ echo '<style>
                             </p>
 
                             <div class="flex flex-row gap-2">
-                                <button type="button" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded w-full font-semibold transition-all" onclick="undoOnboardAgent('${username}')">Unboard this Agent</button>
+                                <button type="button" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded w-full font-semibold transition-all" onclick="undoOnboardAgent(this, '${_username}', '${_email}', '${_phone}', ${_leadId})">Unboard this Agent</button>
                                 <button type="button" class="bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2 rounded w-full transition-all" onclick="hideOnboardModal()">Cancel</button>
                             </div>
                         </div>
@@ -1954,7 +2747,7 @@ echo '<style>
                                         const name = document.getElementById('onboard_name').value;
                                         const email = document.getElementById('onboard_email').value;
                                         const phone = document.getElementById('onboard_phone').value;
-                                        const username = document.getElementById('onboard_username').value;
+                                        const username = document.getElementById('onboard_username').textContent;
                                         const recruiter = document.getElementById('onboard_recruiter')
                                             .value;
                                         const recruiter_team = document.getElementById(
@@ -2017,26 +2810,65 @@ echo '<style>
     }
 
     // Undo onboard function
-    function undoOnboardAgent(username) {
-        if (!confirm('Are you sure you want to undo this onboard action?')) return;
-        const fd = new FormData();
-        fd.append('action', 'delete_agent_by_username');
-        fd.append('username', username);
+    function undoOnboardAgent(btnEl, username, email = '', phone = '', leadId = null) {
+        console.log('[UNDO] Clicked Unboard with:', { username, email, phone, leadId });
+        try {
+            if (!confirm('Are you sure you want to undo this onboard action?')) return;
 
-        fetch('recruitment-api-debug.php', {
-                method: 'POST',
-                body: fd
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('Agent successfully removed.', 'success');
-                    hideOnboardModal();
-                    loadRecruitmentData();
-                } else {
-                    showNotification('Error: ' + data.message, 'error');
-                }
-            });
+            // Show temporary loading state on the button if present
+            const btn = btnEl || null;
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Unboarding...';
+            }
+
+            const fd = new FormData();
+            fd.append('action', 'delete_agent_by_username');
+            fd.append('username', username);
+            if (email) fd.append('email', email);
+            if (phone) fd.append('phone', phone);
+            if (leadId !== null && leadId !== undefined) fd.append('lead_id', leadId);
+
+            console.log('[UNDO] Sending payload:', Array.from(fd.entries()));
+
+            fetch('recruitment-api-debug.php', {
+                    method: 'POST',
+                    body: fd
+                })
+                .then(async res => {
+                    const text = await res.text();
+                    console.log('[UNDO] Raw response:', text);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Invalid JSON response');
+                    }
+                })
+                .then(data => {
+                    console.log('[UNDO] Parsed response:', data);
+                    if (data.success) {
+                        showNotification('Agent successfully removed. Updated leads: ' + (data.updated_leads ?? 0), 'success');
+                        hideOnboardModal();
+                        loadRecruitmentData();
+                    } else {
+                        showNotification('Error: ' + (data.message || 'Failed to unboard agent'), 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error('[UNDO] Request failed:', err);
+                    showNotification('Network or server error while unboarding.', 'error');
+                })
+                .finally(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                });
+        } catch (e) {
+            console.error('[UNDO] Unexpected error:', e);
+            showNotification('Unexpected error. Please try again.', 'error');
+        }
     }
 
     function generateUsername() {
@@ -2058,6 +2890,23 @@ echo '<style>
 
     function hideOnboardModal() {
         document.getElementById('onboardModal').classList.add('hidden');
+    }
+
+    function handleOnboardingFilter(value) {
+        console.log('Handling onboarding filter change:', value);
+        const currentFilter = document.getElementById('currentFilter');
+        
+        // Store the raw value for debugging
+        currentFilter.setAttribute('data-value', value);
+        
+        // Show current filter value
+        currentFilter.textContent = value === '' ? '' : 
+                                  value === '1' ? 'Showing Onboarded' : 
+                                  'Showing Pending';
+        
+        // Apply filters with debug logging
+        console.log('Before filter application - currentFilters:', {...currentFilters});
+        applyFilters();
     }
 
     // FIXED: Working edit function
@@ -2096,14 +2945,74 @@ echo '<style>
                 document.getElementById("email").value = lead.email || "";
                 document.getElementById("status").value = lead.status || "";
                 document.getElementById("remarks").value = lead.remarks || "";
-                // document.getElementById("timestamp").value = lead.timestamp || "";
+                
+                // Set fields to edit mode first
+                setFieldsToEditMode();
 
+                // Populate timestamp (date of entry) from original data
                 if (lead.created_at) {
-                    // Convert "YYYY-MM-DD HH:MM:SS" to "YYYY-MM-DDTHH:MM"
-                    const dt = lead.created_at.replace(' ', 'T').slice(0, 16);
-                    document.getElementById("timestamp").value = dt;
+                    // Convert "YYYY-MM-DD HH:MM:SS" to "YYYY-MM-DD"
+                    const dateOnly = lead.created_at.split(' ')[0];
+                    document.getElementById("timestamp").value = dateOnly;
                 } else {
                     document.getElementById("timestamp").value = "";
+                }
+                
+                // Populate manager data from lead (preserve original)
+                const managerNameField = document.getElementById("managerName");
+                const managerSelectField = document.getElementById("managerSelect");
+                const managerIdField = document.getElementById("managerId");
+                
+                if (lead.recruiter_name) {
+                    if (managerNameField) managerNameField.value = lead.recruiter_name;
+                    if (managerSelectField) {
+                        // Try to find and select the matching manager in dropdown
+                        for (let option of managerSelectField.options) {
+                            if (option.text === lead.recruiter_name) {
+                                option.selected = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (lead.recruiter_id && managerIdField) {
+                    managerIdField.value = lead.recruiter_id;
+                }
+                
+                // Populate team data from lead (preserve original)
+                const teamNameText = document.getElementById("teamNameText");
+                const teamIdField = document.getElementById("teamId");
+                const teamSelectField = document.getElementById("teamSelect");
+                
+                if (lead.recruiter_team) {
+                    if (teamNameText) teamNameText.textContent = lead.recruiter_team;
+                    if (teamSelectField) {
+                        teamSelectField.value = lead.recruiter_team_id || '';
+                    }
+                }
+                if (lead.recruiter_team_id && teamIdField) {
+                    teamIdField.value = lead.recruiter_team_id;
+                }
+                
+                // Populate source (recruited by) from lead (preserve original)
+                const sourceField = document.getElementById("source");
+                const sourceSelectField = document.getElementById("sourceSelect");
+                const sourceIdField = document.getElementById("sourceId");
+                
+                if (lead.source) {
+                    if (sourceField) sourceField.value = lead.source;
+                    if (sourceSelectField) {
+                        // Try to find and select the matching recruiter in dropdown
+                        for (let option of sourceSelectField.options) {
+                            if (option.text === lead.source) {
+                                option.selected = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (lead.source_id && sourceIdField) {
+                    sourceIdField.value = lead.source_id;
                 }
 
                 // Set checklist checkboxes
@@ -2125,13 +3034,15 @@ echo '<style>
                             const sourceSelect = document.getElementById("source");
 
                             // Clear and populate team dropdown
-                            teamSelect.innerHTML = '<option value="">Select Team</option>';
-                            teamsData.teams.forEach(team => {
-                                const opt = document.createElement('option');
-                                opt.value = team.id;
-                                opt.textContent = team.name;
-                                teamSelect.appendChild(opt);
-                            });
+                            if (teamSelect) {
+                                teamSelect.innerHTML = '<option value="">Select Team</option>';
+                                teamsData.teams.forEach(team => {
+                                    const opt = document.createElement('option');
+                                    opt.value = team.id;
+                                    opt.textContent = team.name;
+                                    teamSelect.appendChild(opt);
+                                });
+                            }
 
                             // Helper: populate team members into 'source'
                             const loadTeamMembers = async (teamId, selectedSource = null) => {
@@ -2186,7 +3097,9 @@ echo '<style>
                                 if (this.value) {
                                     loadTeamMembers(this.value); // without selectedSource
                                 } else {
-                                    sourceSelect.innerHTML = '<option value="">Select a member</option>';
+                                    if (sourceSelect) {
+                                        sourceSelect.innerHTML = '<option value="">Select a member</option>';
+                                    }
                                 }
                             };
 
@@ -2196,9 +3109,26 @@ echo '<style>
                                 loadTeamMembers(lead.recruiter_team_id, lead.source);
                             }
 
-                            // Fallback: set recruiter directly if not found in team
-                            if (lead.recruiter_name) recruiterInput.value = lead.recruiter_name;
-                            if (lead.recruiter_id) recruiterIdInput.value = lead.recruiter_id;
+                            if (lead.recruiter_name) {
+                                recruiterInput.value = lead.recruiter_name;
+                            }
+                            if (lead.recruiter_id) {
+                                recruiterIdInput.value = lead.recruiter_id;
+                            }
+
+                            // Set source field to show who recruited this agent (from database)
+                            if (lead.source) {
+                                // For edit mode, show the actual recruiter from database, not current user
+                                const sourceField = document.getElementById("source");
+                                if (sourceField) {
+                                    sourceField.value = lead.source;
+                                    sourceField.readOnly = false; // Allow editing in admin mode
+                                }
+                                const sourceIdField = document.getElementById("sourceId");
+                                if (sourceIdField && lead.source_id) {
+                                    sourceIdField.value = lead.source_id;
+                                }
+                            }
                         })
 
                 }
@@ -2313,8 +3243,40 @@ echo '<style>
         loadRecruitmentData()
     }
 
+    // Load recruitment statistics with current filters
+    function loadRecruitmentStats() {
+        console.log('Loading recruitment statistics with filters:', currentFilters);
+        
+        const formData = new FormData();
+        formData.append('action', 'get_recruitment_stats_with_filters');
+        formData.append('filters', JSON.stringify(currentFilters));
+        
+        fetch('recruitment-api-debug.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update statistics cards
+                document.getElementById('totalAgentsStat').textContent = data.stats.total_recruited || 0;
+                document.getElementById('activeAgentsStat').textContent = data.stats.active_agents || 0;
+                document.getElementById('inactiveAgentsStat').textContent = data.stats.inactive_agents || 0;
+                document.getElementById('onboardedAgentsStat').textContent = data.stats.onboarded_agents || 0;
+                
+                console.log('Statistics updated successfully');
+            } else {
+                console.error('Error loading statistics:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching statistics:', error);
+        });
+    }
+
     function refreshData() {
         console.log('Refreshing all data...');
+        loadRecruitmentStats(); // Refresh statistics
         loadRecruitmentData()
         showNotification("Data refreshed successfully", "success")
     }
@@ -2460,309 +3422,175 @@ echo '<style>
     });
     </script>
     <script>
-    // --- Team Status Summary Section ---
-    let teamStatusGrouping = 'year';
-    let teamStatusFilters = {
-        year: new Date().getFullYear()
-    };
-
-    function setGrouping(grouping) {
-        teamStatusGrouping = grouping;
-        // Toggle button styles
-        document.querySelectorAll('.grouping-toggle').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
-        document.getElementById('grouping-' + grouping).classList.add('bg-blue-600', 'text-white');
-        // Show/hide filters
-        document.getElementById('filterYear').classList.remove('hidden');
-        document.getElementById('filterMonth').classList.toggle('hidden', grouping !== 'month');
-        document.getElementById('filterQuarter').classList.toggle('hidden', grouping !== 'quarter');
-        // Reset filters
-        if (grouping === 'year') {
-            teamStatusFilters = {
-                year: document.getElementById('filterYear').value
-            };
-        } else if (grouping === 'month') {
-            teamStatusFilters = {
-                year: document.getElementById('filterYear').value,
-                month: document.getElementById('filterMonth').value
-            };
-        } else if (grouping === 'quarter') {
-            teamStatusFilters = {
-                year: document.getElementById('filterYear').value,
-                quarter: document.getElementById('filterQuarter').value
-            };
-        }
-        updateTeamStatusTitle();
-        refreshTeamStatus();
-    }
-
-    function populateYearMonthFilters() {
-        // Populate year dropdown (last 5 years)
-        const yearSel = document.getElementById('filterYear');
-        const now = new Date();
-        const thisYear = now.getFullYear();
-        yearSel.innerHTML = '';
-        for (let y = thisYear; y >= thisYear - 4; y--) {
-            yearSel.innerHTML += `<option value="${y}">${y}</option>`;
-        }
-        // Populate month dropdown
-        const monthSel = document.getElementById('filterMonth');
-        monthSel.innerHTML = '<option value="">All Months</option>';
-        ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November",
-            "December"
-        ].forEach((m, i) => {
-            monthSel.innerHTML += `<option value="${i + 1}">${m}</option>`;
-        });
-    }
-
-    function updateTeamStatusTitle() {
-        const titleEl = document.getElementById('teamStatusTitle');
-        let title = ' Recruited Agents';
-        const year = document.getElementById('filterYear').value;
-        if (teamStatusGrouping === 'year') {
-            title = `Recruited Agents in <span class='text-blue-700'>${year}</span> `;
-        } else if (teamStatusGrouping === 'month') {
-            const monthVal = document.getElementById('filterMonth').value;
-            const monthName = monthVal ? ["January", "February", "March", "April", "May", "June", "July", "August",
-                "September", "October", "November", "December"
-            ][parseInt(monthVal, 10) - 1] : '';
-            title =
-                `Recruited Agents${monthName ? ' in <span class="text-blue-700">' + monthName + '</span>' : ''} <span class='text-blue-700'>${year}</span>`;
-        } else if (teamStatusGrouping === 'quarter') {
-            const quarterVal = document.getElementById('filterQuarter').value;
-            title =
-                `Recruited Agents in <span class='text-blue-700'>Quarter ${quarterVal}</span>of <span class='text-blue-700'>${year}</span>`;
-        }
-        titleEl.innerHTML = title;
-    }
-
+    
+    // Enhanced recruitment progress button interactions
     document.addEventListener('DOMContentLoaded', function() {
-        populateYearMonthFilters();
-        setGrouping('year');
-        document.getElementById('filterYear').addEventListener('change', function() {
-            teamStatusFilters.year = this.value;
-            if (teamStatusGrouping === 'month') {
-                teamStatusFilters.month = document.getElementById('filterMonth').value;
-            } else if (teamStatusGrouping === 'quarter') {
-                teamStatusFilters.quarter = document.getElementById('filterQuarter').value;
-            }
-            updateTeamStatusTitle();
-            refreshTeamStatus();
+        // Add click feedback to all recruitment progress buttons
+        const progressButtons = document.querySelectorAll('.recruitment-progress-btn');
+        
+        progressButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Add ripple effect
+                const ripple = document.createElement('span');
+                ripple.style.position = 'absolute';
+                ripple.style.borderRadius = '50%';
+                ripple.style.background = 'rgba(255, 255, 255, 0.6)';
+                ripple.style.pointerEvents = 'none';
+                ripple.style.transform = 'scale(0)';
+                ripple.style.animation = 'ripple-effect 0.6s linear';
+                
+                const rect = button.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+                ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+                
+                button.appendChild(ripple);
+                
+                // Remove ripple after animation
+                setTimeout(() => {
+                    if (ripple.parentNode) {
+                        ripple.parentNode.removeChild(ripple);
+                    }
+                }, 600);
+                
+                // Add temporary "pressed" class for enhanced feedback
+                button.classList.add('button-pressed');
+                setTimeout(() => {
+                    button.classList.remove('button-pressed');
+                }, 150);
+            });
+            
+            // Add hover sound effect (optional - can be enabled if desired)
+            button.addEventListener('mouseenter', function() {
+                // Subtle scale increase on hover
+                button.style.transform = 'scale(1.02)';
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                button.style.transform = 'scale(1)';
+            });
         });
-        document.getElementById('filterMonth').addEventListener('change', function() {
-            teamStatusFilters.month = this.value;
-            updateTeamStatusTitle();
-            refreshTeamStatus();
-        });
-        document.getElementById('filterQuarter').addEventListener('change', function() {
-            teamStatusFilters.quarter = this.value;
-            updateTeamStatusTitle();
-            refreshTeamStatus();
-        });
-        updateTeamStatusTitle();
     });
-
-    function refreshTeamStatus() {
-        // Show loading in tables
-        document.getElementById('activeAgentsTableBody').innerHTML =
-            '<tr><td colspan="2" class="text-center text-gray-400 py-4">Loading...</td></tr>';
-        document.getElementById('inactiveAgentsTableBody').innerHTML =
-            '<tr><td colspan="2" class="text-center text-gray-400 py-4">Loading...</td></tr>';
-        // Fetch data
-        const formData = new FormData();
-        formData.append('action', 'get_team_status_summary');
-        formData.append('filters', JSON.stringify(teamStatusFilters));
-        fetch('recruitment-api-debug.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (!data.success) throw new Error(data.message || 'Failed to load');
-                renderTeamStatusTables(data.data);
-                renderTeamStatusCharts(data.data);
-            })
-            .catch(err => {
-                document.getElementById('activeAgentsTableBody').innerHTML =
-                    `<tr><td colspan="2" class="text-center text-red-400 py-4">Error: ${err.message}</td></tr>`;
-                document.getElementById('inactiveAgentsTableBody').innerHTML =
-                    `<tr><td colspan="2" class="text-center text-red-400 py-4">Error: ${err.message}</td></tr>`;
-            });
-    }
-
-    function renderTeamStatusTables(data) {
-        // Group by status
-        const active = {},
-            inactive = {};
-        data.forEach(row => {
-            if (row.status === 'Active') {
-                active[row.team_name || 'No Team'] = row.count;
-            } else if (row.status === 'Inactive') {
-                inactive[row.team_name || 'No Team'] = row.count;
+    
+    // Add ripple effect keyframes
+    const rippleStyle = document.createElement('style');
+    rippleStyle.innerHTML = `
+        @keyframes ripple-effect {
+            to {
+                transform: scale(4);
+                opacity: 0;
             }
-        });
-        // Helper to sort teams alphabetically, but keep 'OJT (Intern)' at the bottom
-        function getSortedTeams(obj) {
-            let teams = Object.keys(obj);
-            const ojtIndex = teams.indexOf('OJT (Intern)');
-            let ojtTeam = null;
-            if (ojtIndex !== -1) {
-                ojtTeam = teams.splice(ojtIndex, 1)[0];
+        }
+        
+        .button-pressed {
+            transform: scale(0.98) !important;
+            filter: brightness(0.95);
+        }
+        
+        .recruitment-progress-btn {
+            overflow: hidden !important;
+        }
+        
+        /* Tooltip enhancement */
+        .recruitment-progress-btn {
+            position: relative;
+        }
+        
+        .recruitment-progress-btn:hover::after {
+            content: 'Click to toggle';
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+            opacity: 0;
+            animation: tooltip-fade-in 0.3s ease forwards;
+        }
+        
+        @keyframes tooltip-fade-in {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(5px);
             }
-            teams = teams.sort((a, b) => a.localeCompare(b));
-            if (ojtTeam) teams.push(ojtTeam);
-            return teams;
-        }
-        // Render Active table
-        const activeBody = document.getElementById('activeAgentsTableBody');
-        activeBody.innerHTML = '';
-        const sortedActiveTeams = getSortedTeams(active);
-        let activeTotal = 0;
-        if (sortedActiveTeams.length === 0) {
-            activeBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-400 py-4">No data</td></tr>';
-        } else {
-            sortedActiveTeams.forEach(team => {
-                if (team === 'OJT (Intern)') return; // Skip OJT team in active table
-                activeBody.innerHTML +=
-                    `<tr class=" border-b border-green-700"><td class="px-4 py-2 text-center">${team}</td><td class="px-4 py-2 text-green-700 font-bold text-center">${active[team]}</td></tr>`;
-                activeTotal += active[team];
-            });
-            // Add total row
-            activeBody.innerHTML +=
-                `<tr class="">
-            <td class="px-4 py-2 font-bold rounded-lg text-center bg-none text-green-600 border border-green-700  text-sm uppercase tracking-wider">Total</td>
-            <td class="px-4 py-2 font-bold rounded-lg text-center bg-none text-green-600 border border-green-700  text-sm uppercase tracking-wider">${activeTotal}</td>
-        </tr>`;
-        }
-        // Render Inactive table
-        const inactiveBody = document.getElementById('inactiveAgentsTableBody');
-        inactiveBody.innerHTML = '';
-        const sortedInactiveTeams = getSortedTeams(inactive);
-        let inactiveTotal = 0;
-        if (sortedInactiveTeams.length === 0) {
-            inactiveBody.innerHTML = '<tr><td colspan="2" class="text-center text-gray-400 py-4">No data</td></tr>';
-        } else {
-            sortedInactiveTeams.forEach(team => {
-                if (team === 'OJT (Intern)') return; // Skip OJT team in inactive table
-                inactiveBody.innerHTML +=
-                    `<tr><td class="px-4 py-2 text-center">${team}</td><td class="px-4 py-2 text-red-700 font-bold text-center">${inactive[team]}</td></tr>`;
-                inactiveTotal += inactive[team];
-            });
-            // Add total row
-            inactiveBody.innerHTML +=
-                `<tr>
-            <td class="px-4 py-2 font-bold rounded-lg text-center bg-none text-red-600 border border-red-700  text-sm uppercase tracking-wider">Total</td>
-            <td class="px-4 py-2 font-bold rounded-lg text-center bg-none text-red-600 border border-red-700  text-sm uppercase tracking-wider">${inactiveTotal}</td>
-        </tr>`;
-        }
-    }
-
-    function renderTeamStatusCharts(data) {
-        // Prepare data for charts
-        let teams = [...new Set(data.map(row => row.team_name || 'No Team'))];
-
-        // Sort alphabetically and move 'OJT (Intern)' to the end
-        const ojtIndex = teams.indexOf('OJT (Intern)');
-        let ojtTeam = null;
-        if (ojtIndex !== -1) {
-            ojtTeam = teams.splice(ojtIndex, 1)[0];
-        }
-        teams = teams.sort((a, b) => a.localeCompare(b));
-        if (ojtTeam) teams.push(ojtTeam); // OJT is still in the last index
-
-        // Exclude OJT (Intern) from chart rendering arrays
-        teams = teams.filter(team => team !== 'OJT (Intern)');
-
-        // Prepare counts
-        const activeCounts = teams.map(team => {
-            if (team === 'OJT (Intern)') return 0; // Hide it by setting to 0
-            const found = data.find(row => (row.team_name || 'No Team') === team && row.status === 'Active');
-            return found ? found.count : 0;
-        });
-
-        const inactiveCounts = teams.map(team => {
-            if (team === 'OJT (Intern)') return 0; // Hide it by setting to 0
-            const found = data.find(row => (row.team_name || 'No Team') === team && row.status === 'Inactive');
-            return found ? found.count : 0;
-        });
-
-        // Destroy previous charts if any
-        if (window.activeAgentsChartObj) window.activeAgentsChartObj.destroy();
-        if (window.inactiveAgentsChartObj) window.inactiveAgentsChartObj.destroy();
-
-        // Active chart
-        const ctxA = document.getElementById('activeAgentsChart').getContext('2d');
-        window.activeAgentsChartObj = new Chart(ctxA, {
-            type: 'bar',
-            data: {
-                labels: teams,
-                datasets: [{
-                    label: 'Active Agents',
-                    data: activeCounts,
-                    backgroundColor: teams.map(team => team === 'OJT (Intern)' ? 'rgba(0,0,0,0)' :
-                        '#22c55e')
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: {
-                            callback: function(value, index, ticks) {
-                                const label = this.getLabelForValue(value);
-                                return label === 'OJT (Intern)' ? '' : label;
-                            }
-                        }
-                    },
-                    y: {
-                        beginAtZero: true
-                    }
-                }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
             }
-        });
-
-        // Inactive chart
-        const ctxI = document.getElementById('inactiveAgentsChart').getContext('2d');
-        window.inactiveAgentsChartObj = new Chart(ctxI, {
-            type: 'bar',
-            data: {
-                labels: teams,
-                datasets: [{
-                    label: 'Inactive Agents',
-                    data: inactiveCounts,
-                    backgroundColor: teams.map(team => team === 'OJT (Intern)' ? 'rgba(0,0,0,0)' :
-                        '#ef4444')
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: {
-                            callback: function(value, index, ticks) {
-                                const label = this.getLabelForValue(value);
-                                return label === 'OJT (Intern)' ? '' : label;
-                            }
-                        }
-                    },
-                    y: {
-                        beginAtZero: true
-                    }
-                }
+        }
+        
+        /* Enhanced glow effect for better interactivity indication */
+        .recruitment-progress-btn:hover {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .recruitment-progress-btn.orange:hover {
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+        }
+        
+        /* Modern card entrance animations */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
             }
-        });
-    }
-    </script>
-    <script src="assets/js/script.js"></script>
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modern-agent-card {
+            animation: slideInUp 0.4s ease-out forwards;
+            animation-fill-mode: both;
+        }
+        
+        /* Stagger animation delay for cards */
+        .modern-agent-card:nth-child(1) { animation-delay: 0.1s; }
+        .modern-agent-card:nth-child(2) { animation-delay: 0.15s; }
+        .modern-agent-card:nth-child(3) { animation-delay: 0.2s; }
+        .modern-agent-card:nth-child(4) { animation-delay: 0.25s; }
+        .modern-agent-card:nth-child(5) { animation-delay: 0.3s; }
+        .modern-agent-card:nth-child(6) { animation-delay: 0.35s; }
+        .modern-agent-card:nth-child(7) { animation-delay: 0.4s; }
+        .modern-agent-card:nth-child(8) { animation-delay: 0.45s; }
+        .modern-agent-card:nth-child(n+9) { animation-delay: 0.5s; }
+        
+        /* Enhanced progress bar animations */
+        .progress-bar-animated {
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
+            background-size: 25px 25px;
+            animation: progress-shimmer 2s infinite;
+        }
+        
+        @keyframes progress-shimmer {
+            0% { background-position: -25px 0; }
+            100% { background-position: 100px 0; }
+        }
+        
+        /* Status badge pulse */
+        .status-active {
+            animation: status-pulse 2s infinite;
+        }
+        
+        @keyframes status-pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+            }
+        }
+    `;
+    document.head.appendChild(rippleStyle);
+
+</script>
+<script src="assets/js/script.js"></script>
 </body>
-
 </html>

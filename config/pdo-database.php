@@ -15,10 +15,10 @@ function getPdoConnection() {
         // Use the same environment detection as your MySQLi setup
         if (function_exists('isDreamHost') && isDreamHost()) {
             // DreamHost environment
-            $host = 'managementlead.innersparcagents.dreamhosters.com';
-            $username = 'managementlead';
+            $host = 'managementleaddb.innersparcagents.dreamhosters.com';
+            $username = 'managementleaddb';
             $password = 'innersparc123';
-            $database = 'managementlead';
+            $database = 'managementleaddb';
         } else {
             // Local development environment
             $host = 'localhost';
