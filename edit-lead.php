@@ -817,7 +817,7 @@ foreach ($projectModels as $model) {
                                 <select id="lead_classification" name="lead_classification" required>
                                     <option value="">Select Lead Classification</option>
                                     <option value="Locally/Internationally Employed" <?php echo (isset($lead['lead_classification']) && $lead['lead_classification'] === 'Locally/Internationally Employed') ? 'selected' : ''; ?>>
-                                        Locally/Internationally Employed
+                                        Locally Employed
                                     </option>
                                     <option value="OFW" <?php echo (isset($lead['lead_classification']) && $lead['lead_classification'] === 'OFW') ? 'selected' : ''; ?>>
                                         OFW
@@ -866,9 +866,9 @@ foreach ($projectModels as $model) {
                                     <option value="">Select Status</option>
                                     <?php 
                                     $statuses = [
-                                        'Inquiry', 'Presentation Stage', 'Negotiation', 'Lost', 'Site Tour',
+                                        'Inquiry', 'Presentation Stage', 'Negotiation', 'Site Tour',
                                          'Requirement Stage', 'Downpayment Stage', 'Housing Loan Application',
-                                        'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over', 'Closed Deal'
+                                        'Loan Approval', 'Loan Takeout', 'House Inspection', 'House Turn Over', 'Closed Deal', 'Lost'   
                                     ];
                                     foreach ($statuses as $status_option): ?>
                                     <option value="<?php echo htmlspecialchars($status_option); ?>"

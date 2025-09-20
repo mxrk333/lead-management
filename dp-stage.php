@@ -135,7 +135,15 @@ if (!empty($leads)) {
     $lead_ids = array_column($leads, 'id');
     
     if (!empty($lead_ids)) {
-        $tracker_query = "SELECT * FROM downpayment_tracker WHERE lead_id IN (" . implode(',', $lead_ids) . ")";
+        // Get the most recent tracker entry for each lead (since multiple entries are now allowed)
+        $tracker_query = "SELECT dt1.* FROM downpayment_tracker dt1
+                         INNER JOIN (
+                             SELECT lead_id, MAX(created_at) as max_created_at
+                             FROM downpayment_tracker 
+                             WHERE lead_id IN (" . implode(',', $lead_ids) . ")
+                             GROUP BY lead_id
+                         ) dt2 ON dt1.lead_id = dt2.lead_id AND dt1.created_at = dt2.max_created_at
+                         ORDER BY dt1.lead_id";
         $tracker_result = $conn->query($tracker_query);
         
         if ($tracker_result) {
@@ -143,16 +151,34 @@ if (!empty($leads)) {
                 // Calculate progress details for the modal's edit button logic
                 $requirements_complete = $tracker['requirements_complete'] == 1;
                 $spot_dp = $tracker['spot_dp'] == 1;
-                $current_dp_stage = intval($tracker['current_dp_stage']);
                 $total_dp_stages = intval($tracker['total_dp_stages']);
                 $pagibig_bank_approval = $tracker['pagibig_bank_approval'] == 1;
                 $loan_takeout = $tracker['loan_takeout'] == 1;
                 $turnover = $tracker['turnover'] == 1;
 
+                // Dynamically calculate current_dp_stage based on actual receipt count
+                $current_dp_stage = 0;
+                if ($spot_dp) {
+                    $current_dp_stage = 1; // Spot DP is always stage 1
+                } else {
+                    // Count actual receipts from stage_receipts table
+                    $receipt_count_stmt = $conn->prepare("SELECT COUNT(*) as total_receipts FROM stage_receipts WHERE lead_id = ? AND stage_type = 'downpayment'");
+                    $receipt_count_stmt->bind_param("i", $tracker['lead_id']);
+                    $receipt_count_stmt->execute();
+                    $receipt_count_result = $receipt_count_stmt->get_result();
+                    $total_receipts = $receipt_count_result->fetch_assoc()['total_receipts'];
+                    $receipt_count_stmt->close();
+                    
+                    // Current stage should be at least 1 if there are any receipts, and not exceed total terms
+                    $current_dp_stage = $total_receipts > 0 ? max(1, min($total_receipts, $total_dp_stages)) : 0;
+                }
+
                 $is_dp_stage_complete = $spot_dp || ($current_dp_stage > 0 && $current_dp_stage == $total_dp_stages);
 
                 $is_fully_complete = $requirements_complete && $is_dp_stage_complete && $pagibig_bank_approval && $loan_takeout && $turnover;
 
+                // Update the tracker with the dynamically calculated current_dp_stage
+                $tracker['current_dp_stage'] = $current_dp_stage;
                 $tracker['progress_details'] = [
                     'is_fully_complete' => $is_fully_complete
                 ];
@@ -182,6 +208,56 @@ if (!empty($filter_progress)) {
         }
     }
     $leads = $filtered_leads;
+}
+
+// Function to update current_dp_stage based on actual receipt count
+function updateCurrentDpStage($conn, $lead_id) {
+    // Get the latest tracker for this lead
+    $tracker_stmt = $conn->prepare("SELECT id, spot_dp, total_dp_stages FROM downpayment_tracker WHERE lead_id = ? ORDER BY created_at DESC LIMIT 1");
+    $tracker_stmt->bind_param("i", $lead_id);
+    $tracker_stmt->execute();
+    $tracker_result = $tracker_stmt->get_result();
+    $tracker = $tracker_result->fetch_assoc();
+    $tracker_stmt->close();
+    
+    if (!$tracker) {
+        return; // No tracker found
+    }
+    
+    $spot_dp = $tracker['spot_dp'] == 1;
+    $total_dp_stages = intval($tracker['total_dp_stages']);
+    
+    // Calculate current_dp_stage based on actual receipt count
+    $current_dp_stage = 0;
+    if ($spot_dp) {
+        $current_dp_stage = 1; // Spot DP is always stage 1
+    } else {
+        // Count actual receipts from stage_receipts table
+        $receipt_count_stmt = $conn->prepare("SELECT COUNT(*) as total_receipts FROM stage_receipts WHERE lead_id = ? AND stage_type = 'downpayment'");
+        $receipt_count_stmt->bind_param("i", $lead_id);
+        $receipt_count_stmt->execute();
+        $receipt_count_result = $receipt_count_stmt->get_result();
+        $total_receipts = $receipt_count_result->fetch_assoc()['total_receipts'];
+        $receipt_count_stmt->close();
+        
+        // Current stage should be at least 1 if there are any receipts, and not exceed total terms
+        $current_dp_stage = $total_receipts > 0 ? max(1, min($total_receipts, $total_dp_stages)) : 0;
+    }
+    
+    // Calculate progress rate
+    $progress_rate = $total_dp_stages > 0 ? ($current_dp_stage / $total_dp_stages) * 100 : 0;
+    
+    // Update the tracker with the correct current_dp_stage
+    $update_stmt = $conn->prepare("
+        UPDATE downpayment_tracker 
+        SET current_dp_stage = ?, progress_rate = ?, updated_at = NOW()
+        WHERE id = ?
+    ");
+    $update_stmt->bind_param("idi", $current_dp_stage, $progress_rate, $tracker['id']);
+    $update_stmt->execute();
+    $update_stmt->close();
+    
+    return $current_dp_stage;
 }
 
 // Handle file upload for receipts
@@ -224,8 +300,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_tracker'])) {
     $reservation_date = !empty($_POST['reservation_date']) ? $_POST['reservation_date'] : null;
     $requirements_complete = isset($_POST['requirements_complete']) ? 1 : 0;
     $spot_dp = isset($_POST['spot_dp']) ? 1 : 0;
-    $dp_terms = $spot_dp ? '1' : $_POST['dp_terms'];
-    $current_dp_stage = $spot_dp ? 1 : intval($_POST['current_dp_stage']);
+    // Validate and sanitize dp_terms to match ENUM values
+    $allowed_dp_terms = ['6', '9', '12', '15', '18', '24', '36'];
+    $raw_dp_terms = $spot_dp ? '6' : (isset($_POST['dp_terms']) ? trim($_POST['dp_terms']) : '12');
+    $dp_terms = in_array($raw_dp_terms, $allowed_dp_terms) ? (string)$raw_dp_terms : '12'; // Default to 12 if invalid
+    
+    // Force to string and ensure it's exactly one of the allowed values
+    $dp_terms = (string)$dp_terms;
+    if (!in_array($dp_terms, $allowed_dp_terms)) {
+        $dp_terms = '12'; // Fallback to default
+    }
+    
+    // Additional validation - ensure it's exactly what we expect
+    $dp_terms = trim($dp_terms);
+    $dp_terms = preg_replace('/[^0-9]/', '', $dp_terms); // Remove any non-numeric characters
+    if (!in_array($dp_terms, $allowed_dp_terms)) {
+        $dp_terms = '12'; // Final fallback
+    }
+    
+    // Comprehensive debugging
+    error_log("=== DP TERMS DEBUG ===");
+    error_log("POST data: " . print_r($_POST, true));
+    error_log("FILES data: " . print_r($_FILES, true));
+    error_log("Spot DP: " . ($spot_dp ? 'true' : 'false'));
+    error_log("Raw dp_terms: " . var_export($raw_dp_terms, true));
+    error_log("Processed dp_terms: " . var_export($dp_terms, true));
+    error_log("dp_terms type: " . gettype($dp_terms));
+    error_log("dp_terms length: " . strlen($dp_terms));
+    error_log("Is in allowed array: " . (in_array($dp_terms, $allowed_dp_terms) ? 'true' : 'false'));
+    
+    // Additional validation - check for any non-printable characters
+    error_log("dp_terms hex: " . bin2hex($dp_terms));
+    error_log("dp_terms ord values: " . implode(',', array_map('ord', str_split($dp_terms))));
+    
     $pagibig_bank_approval = isset($_POST['pagibig_bank_approval']) ? 1 : 0;
     $loan_takeout = isset($_POST['loan_takeout']) ? 1 : 0;
     $turnover = isset($_POST['turnover']) ? 1 : 0;
@@ -236,101 +343,150 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_tracker'])) {
         $receipt_uploads['downpayment'] = handleReceiptUpload($_FILES['dp_receipt'], $lead_id, 'downpayment');
     }
     
+    if (!$spot_dp) {
+        // Count existing receipts for this lead
+        $receipt_count_stmt = $conn->prepare("SELECT COUNT(*) as total_receipts FROM stage_receipts WHERE lead_id = ? AND stage_type = 'downpayment'");
+        $receipt_count_stmt->bind_param("i", $lead_id);
+        $receipt_count_stmt->execute();
+        $receipt_count_result = $receipt_count_stmt->get_result();
+        $total_receipts = $receipt_count_result->fetch_assoc()['total_receipts'];
+        $receipt_count_stmt->close();
+        
+        // Add newly uploaded receipts to count
+        if (!empty($receipt_uploads['downpayment'])) {
+            $total_receipts += count($receipt_uploads['downpayment']);
+        }
+        
+        // Current stage should be at least 1 if there are any receipts, and not exceed total terms
+        $current_dp_stage = $total_receipts > 0 ? max(1, min($total_receipts, intval($dp_terms))) : 0;
+    } else {
+        $current_dp_stage = 1; // Spot DP is always stage 1
+    }
+    
     // Calculate total stages based on DP terms
     $total_dp_stages = intval($dp_terms);
     
     // Calculate progress rate
-    $completed_steps = 0;
-    $total_steps = 5; // requirements, dp stages, pagibig/bank approval, loan takeout, turnover
+    $progress_rate = $total_dp_stages > 0 ? ($current_dp_stage / $total_dp_stages) * 100 : 0;
     
-    if ($requirements_complete) $completed_steps++;
-    if ($spot_dp || $current_dp_stage == $total_dp_stages) $completed_steps++; // This is the DP stage completion
-    if ($pagibig_bank_approval) $completed_steps++;
-    if ($loan_takeout) $completed_steps++;
-    if ($turnover) $completed_steps++;
+    // Ensure dp_terms is a string for ENUM compatibility
+    $dp_terms = (string)$dp_terms;
     
-    $progress_rate = ($completed_steps / $total_steps) * 100;
-    
-    // Check if tracker exists
-    $check_stmt = $conn->prepare("SELECT id FROM downpayment_tracker WHERE lead_id = ?");
+    if (!empty($receipt_uploads['downpayment'])) {
+        foreach ($receipt_uploads['downpayment'] as $receipt) {
+            $receipt_stmt = $conn->prepare("INSERT INTO stage_receipts (lead_id, stage_type, filename, original_name, file_path, file_size, mime_type) VALUES (?, 'downpayment', ?, ?, ?, ?, ?)");
+            $file_path = 'uploads/receipts/' . $receipt['filename'];
+            $file_size = isset($receipt['size']) ? $receipt['size'] : null;
+            $mime_type = isset($receipt['type']) ? $receipt['type'] : null;
+            $receipt_stmt->bind_param("issssi", $lead_id, $receipt['filename'], $receipt['original_name'], $file_path, $file_size, $mime_type);
+            $receipt_stmt->execute();
+            $receipt_stmt->close();
+        }
+        
+        // Update the current_dp_stage in the database after uploading receipts
+        updateCurrentDpStage($conn, $lead_id);
+    }
+
+    // Check if tracker entry exists for this lead
+    $check_stmt = $conn->prepare("SELECT id FROM downpayment_tracker WHERE lead_id = ? ORDER BY created_at DESC LIMIT 1");
     $check_stmt->bind_param("i", $lead_id);
     $check_stmt->execute();
     $check_result = $check_stmt->get_result();
-    $tracker_exists = $check_result->fetch_assoc();
+    $existing_tracker = $check_result->fetch_assoc();
     $check_stmt->close();
-    
-    if ($tracker_exists) {
-        // Update existing tracker
-        $update_stmt = $conn->prepare("UPDATE downpayment_tracker SET 
-                        reservation_date = ?, 
-                        requirements_complete = ?, 
-                        spot_dp = ?,
-                        dp_terms = ?, 
-                        current_dp_stage = ?, 
-                        total_dp_stages = ?, 
-                        pagibig_bank_approval = ?, 
-                        loan_takeout = ?, 
-                        turnover = ?, 
-                        progress_rate = ?, 
-                        updated_at = NOW() 
-                        WHERE lead_id = ?");
-        $update_stmt->bind_param("siisiiiiidi", 
-            $reservation_date, 
-            $requirements_complete, 
+
+    if ($existing_tracker) {
+        // Update existing tracker entry
+        $update_stmt = $conn->prepare("
+            UPDATE downpayment_tracker 
+            SET reservation_date = ?, requirements_complete = ?, spot_dp = ?, dp_terms = ?, 
+                current_dp_stage = ?, total_dp_stages = ?, progress_rate = ?, 
+                pagibig_bank_approval = ?, loan_takeout = ?, turnover = ?, updated_at = NOW()
+            WHERE id = ?
+        ");
+        
+        $update_stmt->bind_param(
+            "siisiiidiii",
+            $reservation_date,
+            $requirements_complete,
             $spot_dp,
-            $dp_terms, 
-            $current_dp_stage, 
+            $dp_terms,
+            $current_dp_stage,
             $total_dp_stages,
-            $pagibig_bank_approval, 
-            $loan_takeout, 
-            $turnover, 
-            $progress_rate, 
-            $lead_id
+            $progress_rate,
+            $pagibig_bank_approval,
+            $loan_takeout,
+            $turnover,
+            $existing_tracker['id']
         );
-        $update_stmt->execute();
+        
+        // Debug the actual values being bound
+        error_log("About to execute update with values:");
+        error_log("dp_terms: " . var_export($dp_terms, true) . " (type: " . gettype($dp_terms) . ")");
+        error_log("All bound values: lead_id=$lead_id, reservation_date=$reservation_date, requirements_complete=$requirements_complete, spot_dp=$spot_dp, dp_terms=$dp_terms, current_dp_stage=$current_dp_stage, total_dp_stages=$total_dp_stages, progress_rate=$progress_rate, pagibig_bank_approval=$pagibig_bank_approval, loan_takeout=$loan_takeout, turnover=$turnover, tracker_id=" . $existing_tracker['id']);
+        
+        // Test the prepared statement before executing
+        if (!$update_stmt) {
+            error_log("Update statement is null!");
+            throw new Exception("Update statement is null");
+        }
+        
+        if (!$update_stmt->execute()) {
+            error_log("Update failed: " . $update_stmt->error);
+            error_log("Update error code: " . $update_stmt->errno);
+            throw new Exception("Update failed: " . $update_stmt->error);
+        }
         $update_stmt->close();
-        
-        // Store receipt information
-        foreach ($receipt_uploads as $stage => $files) {
-            foreach ($files as $file) {
-                $receipt_stmt = $conn->prepare("INSERT INTO stage_receipts (lead_id, stage_type, filename, original_name, file_path, uploaded_at) VALUES (?, ?, ?, ?, ?, NOW())");
-                $receipt_stmt->bind_param("issss", $lead_id, $stage, $file['filename'], $file['original_name'], $file['path']);
-                $receipt_stmt->execute();
-                $receipt_stmt->close();
-            }
-        }
     } else {
-        // Create new tracker
-        $insert_stmt = $conn->prepare("INSERT INTO downpayment_tracker 
-                        (lead_id, reservation_date, requirements_complete, spot_dp, dp_terms, current_dp_stage, 
-                        total_dp_stages, pagibig_bank_approval, loan_takeout, turnover, progress_rate) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $insert_stmt->bind_param("isiisiiiiid", 
-            $lead_id, 
-            $reservation_date, 
-            $requirements_complete, 
+        // Insert new tracker entry if none exists
+        $insert_stmt = $conn->prepare("
+            INSERT INTO downpayment_tracker 
+            (lead_id, reservation_date, requirements_complete, spot_dp, dp_terms, 
+             current_dp_stage, total_dp_stages, progress_rate, pagibig_bank_approval, 
+             loan_takeout, turnover, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ");
+
+        $insert_stmt->bind_param(
+            "isisiidiii",
+            $lead_id,
+            $reservation_date,
+            $requirements_complete,
             $spot_dp,
-            $dp_terms, 
-            $current_dp_stage, 
+            $dp_terms,
+            $current_dp_stage,
             $total_dp_stages,
-            $pagibig_bank_approval, 
-            $loan_takeout, 
-            $turnover, 
-            $progress_rate
+            $progress_rate,
+            $pagibig_bank_approval,
+            $loan_takeout,
+            $turnover
         );
-        $insert_stmt->execute();
-        $insert_stmt->close();
+
+        // Debug the actual values being bound for insert
+        error_log("About to execute insert with values:");
+        error_log("dp_terms: " . var_export($dp_terms, true) . " (type: " . gettype($dp_terms) . ")");
         
-        // Store receipt information for new tracker
-        foreach ($receipt_uploads as $stage => $files) {
-            foreach ($files as $file) {
-                $receipt_stmt = $conn->prepare("INSERT INTO stage_receipts (lead_id, stage_type, filename, original_name, file_path, uploaded_at) VALUES (?, ?, ?, ?, ?, NOW())");
-                $receipt_stmt->bind_param("issss", $lead_id, $stage, $file['filename'], $file['original_name'], $file['path']);
-                $receipt_stmt->execute();
-                $receipt_stmt->close();
-            }
+        if (!$insert_stmt->execute()) {
+            error_log("Insert failed: " . $insert_stmt->error);
+            throw new Exception("Insert failed: " . $insert_stmt->error);
         }
+        $insert_stmt->close();
     }
+
+    $success_message = "Tracker updated successfully! Current DP Stage: $current_dp_stage out of $total_dp_stages";
+    if (!empty($receipt_uploads['downpayment'])) {
+        $receipt_count = count($receipt_uploads['downpayment']);
+        $success_message .= " ($receipt_count new receipt(s) uploaded)";
+    }
+    
+    // Add JavaScript to update main dashboard display
+    $success_message .= "
+    <script>
+        // Update main dashboard stage display after successful upload
+        if (typeof updateMainDashboardStage === 'function') {
+            updateMainDashboardStage($lead_id, $current_dp_stage, $total_dp_stages);
+        }
+    </script>";
     
     // Add activity log
     addLeadActivity($lead_id, $user_id, "Downpayment Tracker", "Updated downpayment tracker information");
@@ -701,6 +857,7 @@ if (isset($_GET['success'])) {
     
     .status-badge i {
         margin-right: 0.375rem;
+        font-size: 0.875rem;
     }
     
     .status-complete {
@@ -742,6 +899,30 @@ if (isset($_GET['success'])) {
         gap: 0.5rem;
     }
     
+    /* Make action buttons all blue */
+    .action-buttons .btn {
+        background: #3b82f6;
+        color: white;
+        border: 1px solid #3b82f6;
+        transition: all 0.2s ease;
+    }
+    
+    .action-buttons .btn:hover {
+        background: #2563eb;
+        border-color: #2563eb;
+        transform: translateY(-1px);
+    }
+    
+    .action-buttons .btn-primary {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    .action-buttons .btn-primary:hover {
+        background: #2563eb;
+        border-color: #2563eb;
+    }
+    
     /* Modal styles - Increased modal width */
     #dpDetailsModal {
         display: none;
@@ -762,12 +943,34 @@ if (isset($_GET['success'])) {
         border-radius: 1rem;
         box-shadow: var(--shadow-lg);
         width: 95%; /* Increased from 90% */
-        max-width: 1200px; /* Increased from 900px */
+        max-width: 1600px; /* Much larger max width for big screens */
         position: relative;
         max-height: calc(100vh - 4rem);
         display: flex;
         flex-direction: column;
         animation: slideIn 0.3s ease-out;
+    }
+    
+    /* Responsive modal sizing - just make the modal bigger on larger screens */
+    @media (min-width: 1024px) {
+        .modal-content {
+            width: 90%;
+            max-width: 1800px;
+        }
+    }
+    
+    @media (min-width: 1280px) {
+        .modal-content {
+            width: 85%;
+            max-width: 2000px;
+        }
+    }
+    
+    @media (min-width: 1536px) {
+        .modal-content {
+            width: 80%;
+            max-width: 2200px;
+        }
     }
     
     .modal-header {
@@ -1631,6 +1834,48 @@ if (isset($_GET['success'])) {
     .no-results a:hover {
         text-decoration: underline;
     }
+
+    /* Updated color scheme to use only blue variants */
+    .monthly-progress-item.completed {
+        background-color: #3b82f6;
+        color: white;
+        border: 2px solid #1d4ed8;
+    }
+    
+    .monthly-progress-item.current {
+        background-color: #60a5fa;
+        color: white;
+        border: 2px solid #2563eb;
+        animation: pulse 2s infinite;
+    }
+    
+    .monthly-progress-item.pending {
+        background-color: #f1f5f9;
+        color: #64748b;
+        border: 2px solid #e2e8f0;
+    }
+    
+    .progress-bar-fill {
+        background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+    
+    .btn-primary {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2563eb;
+        border-color: #2563eb;
+    }
+    
+    .text-primary {
+        color: #3b82f6 !important;
+    }
+    
+    .bg-primary {
+        background-color: #3b82f6 !important;
+    }
 </style>
 </head>
 <body>
@@ -1802,7 +2047,7 @@ if (isset($_GET['success'])) {
                                                         <strong>Spot Downpayment</strong>
                                                     </div>
                                                 <?php else: ?>
-                                                <div>
+                                                <div class="stage-display" id="stage_display_<?= $lead['id'] ?>">
                                                     <strong>Month <?= htmlspecialchars($trackers[$lead['id']]['current_dp_stage']) ?></strong> of 
                                                     <?= htmlspecialchars($trackers[$lead['id']]['total_dp_stages']) ?>
                                                 </div>
@@ -1863,15 +2108,15 @@ if (isset($_GET['success'])) {
                                         <td>
                                             <div class="action-buttons">
                                                 <!-- Unified Manage DP Button -->
-                                                <button class="btn btn-primary action-btn" onclick="openDpDetailsModal(
-                                                    <?= $lead['id'] ?>, 
-                                                    '<?= htmlspecialchars($lead['client_name']) ?>', 
-                                                    '<?= htmlspecialchars($lead['developer']) ?>', 
-                                                    '<?= htmlspecialchars($lead['project_model']) ?>', 
-                                                    <?= $lead['price'] ?? 0 ?>, 
-                                                    <?= $current_tracker ? htmlspecialchars(json_encode($current_tracker)) : 'null' ?>, 
-                                                    'view'
-                                                )">
+                                                <button class="btn btn-primary action-btn manage-dp-btn" 
+                                                        data-lead-id="<?= $lead['id'] ?>"
+                                                        data-client-name="<?= htmlspecialchars($lead['client_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                                        data-developer="<?= htmlspecialchars($lead['developer'], ENT_QUOTES, 'UTF-8') ?>"
+                                                        data-project-model="<?= htmlspecialchars($lead['project_model'], ENT_QUOTES, 'UTF-8') ?>"
+                                                        data-price="<?= $lead['price'] ?? 0 ?>"
+                                                        data-tracker-data="<?= $current_tracker ? htmlspecialchars(json_encode($current_tracker), ENT_QUOTES, 'UTF-8') : '' ?>"
+                                                        data-mode="view"
+                                                        onclick="handleManageDpClick(this); return false;">
                                                     <i class="fas fa-tasks"></i> <span>Manage DP</span>
                                                 </button>
                                                 
@@ -2258,14 +2503,23 @@ if (isset($_GET['success'])) {
     
     function updateReceiptCounter() {
         const fileInput = document.getElementById('dp_receipt_single');
-        const dpTerms = parseInt(document.getElementById('edit_dp_terms').value) || 12;
+        const dpTermsField = document.getElementById('edit_dp_terms');
+        const dpTerms = parseInt(dpTermsField.value) || 12;
         
-        // Get current uploaded receipts count from the display
+        // Get current uploaded receipts count from the database/display
         const uploadedReceipts = document.querySelectorAll('#uploaded_receipts_display .receipt-item').length;
         
         // Add selected files count
         const selectedFiles = fileInput.files ? fileInput.files.length : 0;
         const totalReceipts = uploadedReceipts + selectedFiles;
+        
+        const currentStageField = document.getElementById('edit_current_dp_stage');
+        if (currentStageField && !document.getElementById('edit_spot_dp').checked) {
+            const currentStage = totalReceipts > 0 ? Math.max(1, Math.min(totalReceipts, dpTerms)) : 0;
+            currentStageField.value = currentStage;
+            currentStageField.readOnly = true; // Prevent manual editing
+            currentStageField.style.backgroundColor = '#f3f4f6'; // Visual indication it's calculated
+        }
         
         // Update counter display
         const counterText = document.getElementById('receipt_count_text');
@@ -2287,6 +2541,139 @@ if (isset($_GET['success'])) {
                 receiptCounter.style.background = 'var(--primary-light)';
                 receiptCounter.style.color = 'var(--primary-dark)';
             }
+        }
+        
+        updateMonthlyProgressDisplay();
+        
+        // Update the main table stage display if we're in edit mode for a specific lead
+        if (typeof currentLeadData !== 'undefined' && currentLeadData && currentLeadData.leadId) {
+            const stageDisplay = document.getElementById('stage_display_' + currentLeadData.leadId);
+            console.log('Updating stage display for lead:', currentLeadData.leadId, 'Element found:', !!stageDisplay);
+            if (stageDisplay) {
+                const currentStage = totalReceipts > 0 ? Math.max(1, Math.min(totalReceipts, dpTerms)) : 0;
+                console.log('Updating stage display:', { totalReceipts, dpTerms, currentStage });
+                stageDisplay.innerHTML = `<strong>Month ${currentStage}</strong> of ${dpTerms}`;
+            }
+        }
+    }
+    
+    // Function to update main dashboard stage display for any lead
+    function updateMainDashboardStage(leadId, currentStage, totalStages) {
+        const stageDisplay = document.getElementById('stage_display_' + leadId);
+        if (stageDisplay) {
+            console.log('Updating main dashboard stage for lead:', leadId, 'Stage:', currentStage, 'Total:', totalStages);
+            stageDisplay.innerHTML = `<strong>Month ${currentStage}</strong> of ${totalStages}`;
+        }
+    }
+    
+    // Function to handle Manage DP button clicks directly
+    function handleManageDpClick(button) {
+        console.log('Direct Manage DP button click detected!');
+        const leadId = button.getAttribute('data-lead-id');
+        const clientName = button.getAttribute('data-client-name');
+        const developer = button.getAttribute('data-developer');
+        const projectModel = button.getAttribute('data-project-model');
+        const price = button.getAttribute('data-price');
+        const trackerData = button.getAttribute('data-tracker-data');
+        const mode = button.getAttribute('data-mode');
+        
+        console.log('Manage DP button clicked with data:', {
+            leadId, clientName, developer, projectModel, price, trackerData, mode
+        });
+        
+        // Parse tracker data if it exists
+        let parsedTrackerData = null;
+        if (trackerData && trackerData !== '') {
+            try {
+                parsedTrackerData = JSON.parse(trackerData);
+            } catch (e) {
+                console.error('Error parsing tracker data:', e);
+                parsedTrackerData = null;
+            }
+        }
+        
+        openDpDetailsModal(leadId, clientName, developer, projectModel, price, parsedTrackerData, mode);
+    }
+    
+    // Function to refresh all stage displays on page load
+    function refreshAllStageDisplays() {
+        // Get all stage display elements
+        const stageDisplays = document.querySelectorAll('[id^="stage_display_"]');
+        stageDisplays.forEach(function(stageDisplay) {
+            const leadId = stageDisplay.id.replace('stage_display_', '');
+            // Fetch current tracker data for this lead
+            fetch(`api/get-tracker.php?lead_id=${leadId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.tracker) {
+                        const tracker = data.tracker;
+                        if (tracker.spot_dp) {
+                            stageDisplay.innerHTML = '<strong>Spot Downpayment</strong>';
+                        } else {
+                            stageDisplay.innerHTML = `<strong>Month ${tracker.current_dp_stage}</strong> of ${tracker.total_dp_stages}`;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error refreshing stage display for lead', leadId, ':', error);
+                });
+        });
+    }
+
+    // These event listeners are now handled in attachEditFormEventListeners()
+    // document.getElementById('edit_dp_terms').addEventListener('input', function() {
+    //     updateReceiptCounter();
+    // });
+
+    // document.getElementById('edit_spot_dp').addEventListener('change', function() {
+    //     const currentStageField = document.getElementById('edit_current_dp_stage');
+    //     if (this.checked) {
+    //         currentStageField.value = 1;
+    //         currentStageField.readOnly = true;
+    //     } else {
+    //         updateReceiptCounter();
+    //     }
+    // });
+    
+    function updateMonthlyProgressDisplay() {
+        const monthlyProgressGrid = document.getElementById('monthly_progress_grid');
+        if (!monthlyProgressGrid) return;
+        
+        const dpTerms = parseInt(document.getElementById('edit_dp_terms').value) || 12;
+        const uploadedReceipts = document.querySelectorAll('#uploaded_receipts_display .receipt-item').length;
+        const selectedFiles = document.getElementById('dp_receipt_single').files ? document.getElementById('dp_receipt_single').files.length : 0;
+        const totalReceipts = uploadedReceipts + selectedFiles;
+        const currentStage = totalReceipts > 0 ? Math.min(totalReceipts, dpTerms) : 0;
+        
+        // Clear and rebuild monthly progress
+        monthlyProgressGrid.innerHTML = '';
+        
+        for (let i = 1; i <= dpTerms; i++) {
+            const monthItem = document.createElement('div');
+            monthItem.classList.add('monthly-progress-item');
+            
+            let monthStatus = 'pending';
+            if (i <= currentStage) {
+                monthStatus = 'completed';
+                monthItem.classList.add('completed');
+            } else if (i === currentStage + 1 && currentStage < dpTerms) {
+                monthStatus = 'current';
+                monthItem.classList.add('current');
+            } else {
+                monthItem.classList.add('pending');
+            }
+            
+            monthItem.innerHTML = `
+                <div class="month-number">${i}</div>
+                <div class="month-status">${monthStatus.toUpperCase()}</div>
+            `;
+            
+            monthlyProgressGrid.appendChild(monthItem);
+        }
+        
+        const currentStageDisplay = document.querySelector('.current-stage-display');
+        if (currentStageDisplay) {
+            currentStageDisplay.textContent = `Month ${currentStage} of ${dpTerms}`;
         }
     }
 
@@ -2344,12 +2731,36 @@ if (isset($_GET['success'])) {
         updateReceiptCounter(); // Update counter when terms change
     });
 
+
     // Function to open the unified DP Details modal
     function openDpDetailsModal(leadId, clientName, developer, projectModel, price, trackerData, mode = 'view') {
+        console.log('openDpDetailsModal called with:', { leadId, clientName, developer, projectModel, price, trackerData, mode });
+        
         // Store basic lead info
         currentLeadData = { leadId, clientName, developer, projectModel, price };
-        currentTrackerData = trackerData; // Directly assign the passed tracker data
-        initialReservationDate = trackerData ? trackerData.reservation_date : null; // Store initial date
+        
+        // Debug: Log the raw tracker data
+        console.log('Raw tracker data received:', trackerData);
+        console.log('Type of tracker data:', typeof trackerData);
+        
+        // Parse tracker data if it's a string (JSON)
+        if (typeof trackerData === 'string' && trackerData !== 'null') {
+            try {
+                currentTrackerData = JSON.parse(trackerData);
+                console.log('Parsed tracker data:', currentTrackerData);
+            } catch (e) {
+                console.error('Error parsing tracker data:', e);
+                currentTrackerData = null;
+            }
+        } else if (trackerData && trackerData !== 'null') {
+            currentTrackerData = trackerData;
+            console.log('Using tracker data as object:', currentTrackerData);
+        } else {
+            currentTrackerData = null;
+            console.log('No tracker data available');
+        }
+        
+        initialReservationDate = currentTrackerData ? currentTrackerData.reservation_date : null; // Store initial date
 
         // Set basic info for both view and edit sections
         document.getElementById('view_client_name').textContent = clientName;
@@ -2371,12 +2782,20 @@ if (isset($_GET['success'])) {
         // Load uploaded receipts for this lead
         loadUploadedReceipts(leadId);
         
+        // Attach event listeners for edit form elements (they now exist)
+        attachEditFormEventListeners();
+        
         // Display in requested mode
         toggleMode(mode);
         
         // Show the modal
-        document.getElementById('dpDetailsModal').style.display = 'block';
-        document.body.style.overflow = 'hidden';
+        const modal = document.getElementById('dpDetailsModal');
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        } else {
+            console.error('Modal element not found!');
+        }
     }
 
     // Function to close the unified DP Details modal
@@ -2405,7 +2824,10 @@ if (isset($_GET['success'])) {
             saveBtn.style.display = 'inline-flex';
             cancelEditBtn.style.display = 'inline-flex';
             modalTitle.innerHTML = '<i class="fas fa-edit"></i> Update Downpayment Tracker';
-            populateEditForm(currentTrackerData); // Populate form when switching to edit
+            // Small delay to ensure form elements are ready, then populate
+            setTimeout(() => {
+                populateEditForm(currentTrackerData);
+            }, 100);
         } else { // mode === 'view'
             viewContent.style.display = 'block';
             editForm.style.display = 'none';
@@ -2611,9 +3033,10 @@ if (isset($_GET['success'])) {
 
     // Function to populate the edit form fields
     function populateEditForm(tracker) {
+        console.log('Populating edit form with tracker data:', tracker);
         document.getElementById('edit_lead_id').value = currentLeadData.leadId;
         
-        // Clear form fields first
+        // Set default values first
         document.getElementById('edit_reservation_date').value = '';
         document.getElementById('edit_requirements_complete').checked = false;
         document.getElementById('edit_spot_dp').checked = false;
@@ -2622,48 +3045,71 @@ if (isset($_GET['success'])) {
         document.getElementById('edit_loan_takeout').checked = false;
         document.getElementById('edit_turnover').checked = false;
         
-        // Populate DP stages dropdown with default terms
-        updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
-        
-        // Generate receipt upload fields with default terms
-        generateDPReceiptFields(document.getElementById('edit_dp_terms').value);
-
+        // Populate form with existing tracker data if available
         if (tracker) {
-            if (tracker.reservation_date) {
-                document.getElementById('edit_reservation_date').value = tracker.reservation_date;
+            console.log('Loading existing tracker data into form');
+            
+            // Set reservation date
+            if (tracker.reservation_date && tracker.reservation_date !== '0000-00-00' && tracker.reservation_date !== null) {
+                // Convert MySQL date format to HTML date input format (YYYY-MM-DD)
+                var dateValue = tracker.reservation_date;
+                if (dateValue.includes(' ')) {
+                    dateValue = dateValue.split(' ')[0]; // Remove time part if exists
+                }
+                document.getElementById('edit_reservation_date').value = dateValue;
+                console.log('Set reservation date to:', dateValue);
             }
             
-            document.getElementById('edit_requirements_complete').checked = tracker.requirements_complete == 1;
-            document.getElementById('edit_spot_dp').checked = tracker.spot_dp == 1;
+            // Set milestone checkboxes
+            document.getElementById('edit_requirements_complete').checked = (tracker.requirements_complete == 1 || tracker.requirements_complete === true);
+            document.getElementById('edit_spot_dp').checked = (tracker.spot_dp == 1 || tracker.spot_dp === true);
+            document.getElementById('edit_pagibig_bank_approval').checked = (tracker.pagibig_bank_approval == 1 || tracker.pagibig_bank_approval === true);
+            document.getElementById('edit_loan_takeout').checked = (tracker.loan_takeout == 1 || tracker.loan_takeout === true);
+            document.getElementById('edit_turnover').checked = (tracker.turnover == 1 || tracker.turnover === true);
             
-            // Set DP terms first, then update stages, then set current stage
-            document.getElementById('edit_dp_terms').value = tracker.dp_terms;
-            updateDpStages('edit_dp_terms', 'edit_current_dp_stage'); // Re-populate based on fetched terms
-            document.getElementById('edit_current_dp_stage').value = tracker.current_dp_stage;
+            console.log('Set milestones:', {
+                requirements_complete: tracker.requirements_complete,
+                spot_dp: tracker.spot_dp,
+                pagibig_bank_approval: tracker.pagibig_bank_approval,
+                loan_takeout: tracker.loan_takeout,
+                turnover: tracker.turnover
+            });
             
-            // Regenerate receipt fields based on tracker's DP terms
-            generateDPReceiptFields(tracker.dp_terms);
-            
-            document.getElementById('edit_pagibig_bank_approval').checked = tracker.pagibig_bank_approval == 1;
-            document.getElementById('edit_loan_takeout').checked = tracker.loan_takeout == 1;
-            document.getElementById('edit_turnover').checked = tracker.turnover == 1;
-            
-            // Update terms section visibility
-            toggleTermsSection('edit_terms_section', 'edit_spot_dp', 'edit_dp_terms', 'edit_current_dp_stage');
-        } else {
-            // If no tracker data, ensure terms section is enabled and default values are set
-            toggleTermsSection('edit_terms_section', 'edit_spot_dp', 'edit_dp_terms', 'edit_current_dp_stage');
-            document.getElementById('edit_spot_dp').checked = false;
-            document.getElementById('edit_dp_terms').value = '12'; // Default back to 12 months
-            updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
-            document.getElementById('edit_current_dp_stage').value = '1';
+            // Set DP terms and stages
+            if (tracker.dp_terms) {
+                document.getElementById('edit_dp_terms').value = tracker.dp_terms;
+                console.log('Set DP terms to:', tracker.dp_terms);
+            }
         }
+        
+        // Update DP stages dropdown and generate receipt fields after setting all values
+        updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+        
+        // Set current stage if tracker data exists
+        if (tracker && tracker.current_dp_stage) {
+            document.getElementById('edit_current_dp_stage').value = tracker.current_dp_stage;
+            console.log('Set current DP stage to:', tracker.current_dp_stage);
+        }
+        
+        // Generate receipt upload fields
+        generateDPReceiptFields(document.getElementById('edit_dp_terms').value);
+        
+        // Update receipt counter after loading existing data
+        updateReceiptCounter();
     }
     
     // Function to update DP stages dropdown based on selected terms
     function updateDpStages(termsSelectId, currentStageSelectId) {
-        var terms = parseInt(document.getElementById(termsSelectId).value);
+        var termsSelect = document.getElementById(termsSelectId);
         var currentStage = document.getElementById(currentStageSelectId);
+        
+        // Check if elements exist before proceeding
+        if (!termsSelect || !currentStage) {
+            console.log('updateDpStages: Elements not found', { termsSelectId, currentStageSelectId });
+            return;
+        }
+        
+        var terms = parseInt(termsSelect.value);
         var selectedValue = currentStage.value;
         
         // Clear current options
@@ -2705,27 +3151,95 @@ if (isset($_GET['success'])) {
         }
     }
 
-    // Event listeners for edit form
-    document.getElementById('edit_spot_dp').addEventListener('change', function() {
-        toggleTermsSection('edit_terms_section', 'edit_spot_dp', 'edit_dp_terms', 'edit_current_dp_stage');
-        if (this.checked) {
-            document.getElementById('edit_dp_terms').value = '1';
-            updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
-            document.getElementById('edit_current_dp_stage').value = '1';
-            // Generate receipt field for spot DP (single payment)
-            generateDPReceiptFields('1');
-        } else {
-            document.getElementById('edit_dp_terms').value = '12'; // Default back to 12 months
-            updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
-            // Generate receipt fields for installment plan
-            generateDPReceiptFields('12');
+    // Event listeners for edit form - only attach if elements exist
+    function attachEditFormEventListeners() {
+        const editSpotDp = document.getElementById('edit_spot_dp');
+        const editDpTerms = document.getElementById('edit_dp_terms');
+        
+        if (editSpotDp) {
+            editSpotDp.addEventListener('change', function() {
+                toggleTermsSection('edit_terms_section', 'edit_spot_dp', 'edit_dp_terms', 'edit_current_dp_stage');
+                if (this.checked) {
+                    document.getElementById('edit_dp_terms').value = '6'; // Use valid ENUM value
+                    updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+                    document.getElementById('edit_current_dp_stage').value = '1';
+                    // Generate receipt field for spot DP (single payment)
+                    generateDPReceiptFields('6');
+                } else {
+                    document.getElementById('edit_dp_terms').value = '12'; // Default back to 12 months
+                    updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+                    // Generate receipt fields for installment plan
+                    generateDPReceiptFields('12');
+                }
+            });
         }
-    });
+        
+        if (editDpTerms) {
+            editDpTerms.addEventListener('change', function() {
+                updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+                // Regenerate receipt upload fields based on new DP terms
+                generateDPReceiptFields(this.value);
+            });
+            
+            editDpTerms.addEventListener('input', function() {
+                updateReceiptCounter();
+            });
+        }
+        
+        if (editSpotDp) {
+            editSpotDp.addEventListener('change', function() {
+                const currentStageField = document.getElementById('edit_current_dp_stage');
+                if (this.checked) {
+                    if (currentStageField) {
+                        currentStageField.value = 1;
+                        currentStageField.readOnly = true;
+                    }
+                } else {
+                    updateReceiptCounter();
+                }
+            });
+        }
+    }
     
-    document.getElementById('edit_dp_terms').addEventListener('change', function() {
-        updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
-        // Regenerate receipt upload fields based on new DP terms
-        generateDPReceiptFields(this.value);
+    // Call the function to attach event listeners
+    attachEditFormEventListeners();
+    
+    // Add event listener for Manage DP buttons using data attributes
+    document.addEventListener('click', function(event) {
+        console.log('Click event detected on:', event.target);
+        console.log('Event target class:', event.target.className);
+        console.log('Event target closest manage-dp-btn:', event.target.closest('.manage-dp-btn'));
+        
+        if (event.target.closest('.manage-dp-btn')) {
+            console.log('Manage DP button click detected!');
+            event.preventDefault();
+            event.stopPropagation();
+            const button = event.target.closest('.manage-dp-btn');
+            const leadId = button.getAttribute('data-lead-id');
+            const clientName = button.getAttribute('data-client-name');
+            const developer = button.getAttribute('data-developer');
+            const projectModel = button.getAttribute('data-project-model');
+            const price = button.getAttribute('data-price');
+            const trackerData = button.getAttribute('data-tracker-data');
+            const mode = button.getAttribute('data-mode');
+            
+            console.log('Manage DP button clicked with data:', {
+                leadId, clientName, developer, projectModel, price, trackerData, mode
+            });
+            
+            // Parse tracker data if it exists
+            let parsedTrackerData = null;
+            if (trackerData && trackerData !== '') {
+                try {
+                    parsedTrackerData = JSON.parse(trackerData);
+                } catch (e) {
+                    console.error('Error parsing tracker data:', e);
+                    parsedTrackerData = null;
+                }
+            }
+            
+            openDpDetailsModal(leadId, clientName, developer, projectModel, price, parsedTrackerData, mode);
+        }
     });
     
     // Close modals when clicking outside
@@ -2793,14 +3307,14 @@ if (isset($_GET['success'])) {
         
         if (urlParams.has('developer') && urlParams.get('developer') !== '') {
             document.getElementById('developer').classList.add('filter-active');
-        }
+        }   
         
         if (urlParams.has('progress') && urlParams.get('progress') !== '') {
             document.getElementById('progress').classList.add('filter-active');
         }
         
-        // Initialize DP stages dropdown for the edit form
-        updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
+        // Initialize DP stages dropdown for the edit form - removed as elements don't exist on page load
+        // updateDpStages('edit_dp_terms', 'edit_current_dp_stage');
     });
 
     // Function to display monthly progress
@@ -2810,6 +3324,11 @@ if (isset($_GET['success'])) {
 
         const totalMonths = parseInt(tracker.dp_terms);
         const currentMonth = parseInt(tracker.current_dp_stage);
+
+        const currentStageDisplay = document.querySelector('.current-stage-display');
+        if (currentStageDisplay) {
+            currentStageDisplay.textContent = `Month ${currentMonth} of ${totalMonths}`;
+        }
 
         // Determine if the entire DP term is completed
         const isDpTermFullyCompleted = (currentMonth === totalMonths);
@@ -2823,14 +3342,14 @@ if (isset($_GET['success'])) {
                 // If the entire term is completed, all months are 'completed'
                 monthStatus = 'completed';
                 monthItem.classList.add('completed');
-            } else if (i < currentMonth) {
+            } else if (i <= currentMonth) {
                 monthStatus = 'completed';
                 monthItem.classList.add('completed');
-            } else if (i === currentMonth) {
+            } else if (i === currentMonth + 1 && currentMonth < totalMonths) {
                 monthStatus = 'current';
                 monthItem.classList.add('current');
             } else {
-                monthItem.classList.add('pending');
+                monthStatus = 'pending';
             }
 
             monthItem.innerHTML = `

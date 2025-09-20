@@ -1,5 +1,11 @@
 <?php
 session_start();
+
+// Debugging (REMOVE in production)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
@@ -11,605 +17,341 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $user = getUserById($user_id);
-
-// Maintenance configuration
-$maintenance_start = "2025-01-10 02:00:00";
-$maintenance_end = "2025-01-15 09:00:00";
-$current_time = date('Y-m-d H:i:s');
-$is_maintenance_active = true; // Set to false when maintenance is complete
-
-// Calculate time remaining
-$end_timestamp = strtotime($maintenance_end);
-$current_timestamp = time();
-$time_remaining = $end_timestamp - $current_timestamp;
-
-// Emergency contacts
-$emergency_contacts = [
-    'phone' => '(555) 123-REAL',
-    'email' => 'emergency@innersparc.com',
-    'after_hours' => '(555) 456-7890'
-];
-
-// Services being updated
-$services_updating = [
-    [
-        'icon' => 'fas fa-search',
-        'title' => 'Property Search',
-        'description' => 'Enhanced search filters and faster results'
-    ],
-    [
-        'icon' => 'fas fa-home',
-        'title' => 'Virtual Tours',
-        'description' => 'Improved 3D viewing experience'
-    ],
-    [
-        'icon' => 'fas fa-users',
-        'title' => 'Client Portal',
-        'description' => 'Better communication tools'
-    ],
-    [
-        'icon' => 'fas fa-chart-line',
-        'title' => 'Market Analytics',
-        'description' => 'Real-time market data and insights'
-    ]
-];
+$conn = getDbConnection();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maintenance - Inner SPARC Realty Corporation</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        .maintenance-container {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .maintenance-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-            max-width: 900px;
-            width: 100%;
-            overflow: hidden;
-        }
-        
-        .maintenance-header {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            color: white;
-            padding: 3rem 2rem;
-            text-align: center;
-            position: relative;
-        }
-        
-        .maintenance-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-        }
-        
-        .company-logo {
-            position: relative;
-            z-index: 1;
-            margin-bottom: 1rem;
-        }
-        
-        .company-logo i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            display: block;
-        }
-        
-        .company-name {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .maintenance-content {
-            padding: 3rem 2rem;
-        }
-        
-        .maintenance-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 2rem;
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
-        }
-        
-        .maintenance-icon i {
-            font-size: 2rem;
-            color: white;
-        }
-        
-        .maintenance-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #1f2937;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        
-        .maintenance-description {
-            font-size: 1.125rem;
-            color: #6b7280;
-            text-align: center;
-            line-height: 1.6;
-            margin-bottom: 2rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .countdown-container {
-            background: linear-gradient(135deg, #fef3c7, #fbbf24);
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            text-align: center;
-            border: 2px solid #f59e0b;
-        }
-        
-        .countdown-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #92400e;
-            margin-bottom: 1rem;
-        }
-        
-        .countdown-timer {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        
-        .countdown-item {
-            background: white;
-            border-radius: 10px;
-            padding: 1rem;
-            min-width: 80px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        .countdown-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #1f2937;
-            display: block;
-        }
-        
-        .countdown-label {
-            font-size: 0.875rem;
-            color: #6b7280;
-            text-transform: uppercase;
-            font-weight: 500;
-        }
-        
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin: 2rem 0;
-        }
-        
-        .service-item {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            border: 2px solid #e2e8f0;
-            transition: all 0.3s ease;
-        }
-        
-        .service-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            border-color: #3b82f6;
-        }
-        
-        .service-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-        }
-        
-        .service-icon i {
-            color: white;
-            font-size: 1.25rem;
-        }
-        
-        .service-title {
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-        }
-        
-        .service-description {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        
-        .contact-section {
-            background: #f1f5f9;
-            border-radius: 15px;
-            padding: 2rem;
-            margin-top: 2rem;
-        }
-        
-        .contact-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1f2937;
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        
-        .contact-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-        
-        .contact-item {
-            background: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            text-align: center;
-            border: 2px solid #e2e8f0;
-            transition: all 0.3s ease;
-        }
-        
-        .contact-item:hover {
-            border-color: #3b82f6;
-            transform: translateY(-2px);
-        }
-        
-        .contact-icon {
-            font-size: 2rem;
-            color: #3b82f6;
-            margin-bottom: 1rem;
-        }
-        
-        .contact-method {
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-        }
-        
-        .contact-info {
-            color: #3b82f6;
-            font-weight: 500;
-            text-decoration: none;
-        }
-        
-        .contact-info:hover {
-            text-decoration: underline;
-        }
-        
-        .progress-bar {
-            background: #e5e7eb;
-            border-radius: 10px;
-            height: 8px;
-            margin: 1rem 0;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            background: linear-gradient(90deg, #3b82f6, #1e40af);
-            height: 100%;
-            border-radius: 10px;
-            transition: width 0.3s ease;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
-        
-        .footer-info {
-            text-align: center;
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 2px solid #e5e7eb;
-            color: #6b7280;
-        }
-        
-        .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        
-        .social-link {
-            width: 40px;
-            height: 40px;
-            background: #3b82f6;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        
-        .social-link:hover {
-            background: #1e40af;
-            transform: translateY(-2px);
-        }
-        
-        @media (max-width: 768px) {
-            .maintenance-container {
-                padding: 1rem;
-            }
-            
-            .maintenance-header {
-                padding: 2rem 1rem;
-            }
-            
-            .maintenance-content {
-                padding: 2rem 1rem;
-            }
-            
-            .maintenance-title {
-                font-size: 2rem;
-            }
-            
-            .countdown-timer {
-                gap: 0.5rem;
-            }
-            
-            .countdown-item {
-                min-width: 60px;
-                padding: 0.75rem;
-            }
-            
-            .countdown-number {
-                font-size: 1.5rem;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance - Lead Management System</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #ecf0f1;
+      margin: 0;
+    }
+    .maintenance-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 90vh;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .maintenance-container h1 {
+      font-size: 38px;
+      margin: 20px 0 10px;
+      color: #2c3e50;
+    }
+    .maintenance-container p {
+      font-size: 18px;
+      color: #555;
+      max-width: 520px;
+    }
+
+    /* Scene */
+    .scene {
+      position: relative;
+      width: 320px;
+      height: 280px;
+      margin-bottom: 30px;
+    }
+
+    /* Sun */
+    .sun {
+      position: absolute;
+      top: -30px;
+      right: -50px;
+      width: 70px;
+      height: 70px;
+      background: #f1c40f;
+      border-radius: 50%;
+      box-shadow: 0 0 30px rgba(241,196,15,0.7);
+      animation: spin 25s linear infinite;
+    }
+
+    /* Clouds */
+    .cloud {
+      position: absolute;
+      background: #fff;
+      border-radius: 50px;
+      height: 40px;
+      width: 110px;
+      top: 40px;
+      left: -200px;
+      opacity: 0.9;
+      animation: cloudMove 35s linear infinite;
+    }
+    .cloud::before, .cloud::after {
+      content: '';
+      position: absolute;
+      background: #fff;
+      border-radius: 50%;
+    }
+    .cloud::before {
+      width: 55px;
+      height: 55px;
+      top: -20px;
+      left: 15px;
+    }
+    .cloud::after {
+      width: 70px;
+      height: 70px;
+      top: -30px;
+      right: 15px;
+    }
+
+    /* Birds */
+    .bird {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 60px;
+      left: -40px;
+      font-size: 20px;
+      color: #2c3e50;
+      animation: birdFly 18s linear infinite;
+    }
+
+    /* Ground */
+    .ground {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 50px;
+      background: linear-gradient(to top, #27ae60, #2ecc71);
+      border-top-left-radius: 50% 20px;
+      border-top-right-radius: 50% 20px;
+    }
+
+    /* House */
+    .house {
+      position: absolute;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.9);
+      animation: bounceIn 2s ease-out forwards;
+    }
+    .walls {
+      width: 200px;
+      height: 140px;
+      background: #f39c12;
+      border-radius: 6px;
+      position: relative;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    .roof {
+      width: 0;
+      height: 0;
+      border-left: 110px solid transparent;
+      border-right: 110px solid transparent;
+      border-bottom: 90px solid #c0392b;
+      position: absolute;
+      top: -90px;
+      left: -10px;
+    }
+    .chimney {
+      width: 30px;
+      height: 50px;
+      background: #7f8c8d;
+      position: absolute;
+      top: -70px;
+      right: 40px;
+      border-radius: 3px;
+    }
+    .door {
+      width: 50px;
+      height: 80px;
+      background: #6d4c41;
+      border-radius: 4px;
+      position: absolute;
+      bottom: 0;
+      left: 75px;
+    }
+    .window {
+      width: 45px;
+      height: 45px;
+      background: #ecf0f1;
+      border: 3px solid #2980b9;
+      position: absolute;
+      top: 25px;
+      border-radius: 5px;
+    }
+    .window.left { left: 25px; }
+    .window.right { right: 25px; }
+
+    /* Worker */
+    .worker {
+      position: absolute;
+      bottom: 60px;
+      right: -70px;
+      font-size: 60px;
+      color: #34495e;
+      animation: hammerWork 1s infinite alternate;
+    }
+
+    /* Crane */
+    .crane {
+      position: absolute;
+      left: -80px;
+      bottom: 50px;
+      width: 100px;
+      height: 150px;
+    }
+    .crane .mast {
+      width: 10px;
+      height: 100%;
+      background: #7f8c8d;
+      position: absolute;
+      left: 45px;
+    }
+    .crane .arm {
+      width: 120px;
+      height: 10px;
+      background: #7f8c8d;
+      position: absolute;
+      top: 20px;
+      left: -20px;
+    }
+    .crane .hook {
+      width: 6px;
+      height: 40px;
+      background: #2c3e50;
+      position: absolute;
+      top: 30px;
+      left: 90px;
+      animation: hookMove 2s ease-in-out infinite;
+    }
+    .crane .load {
+      width: 30px;
+      height: 20px;
+      background: #e67e22;
+      position: absolute;
+      top: 70px;
+      left: 78px;
+    }
+
+    /* Gears */
+    .gear {
+      position: absolute;
+      bottom: 20px;
+      font-size: 30px;
+      color: #7f8c8d;
+      animation: gearSpin 6s linear infinite;
+    }
+    .gear.left { left: -50px; }
+    .gear.right { right: -50px; }
+
+    /* Progress bar */
+    .progress {
+      margin-top: 20px;
+      width: 250px;
+      height: 18px;
+      background: #ccc;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar {
+      width: 65%;
+      height: 100%;
+      background: linear-gradient(90deg, #27ae60, #2ecc71);
+      animation: progressAnim 4s infinite;
+    }
+
+    /* Animations */
+    @keyframes bounceIn {
+      0% { transform: translateX(-50%) scale(0.3); opacity: 0; }
+      60% { transform: translateX(-50%) scale(1.05); opacity: 1; }
+      80% { transform: translateX(-50%) scale(0.95); }
+      100% { transform: translateX(-50%) scale(0.9); }
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes cloudMove {
+      from { left: -220px; }
+      to { left: 400px; }
+    }
+    @keyframes birdFly {
+      from { left: -50px; top: 70px; }
+      to { left: 350px; top: 50px; }
+    }
+    @keyframes hammerWork {
+      from { transform: rotate(-20deg); }
+      to { transform: rotate(20deg); }
+    }
+    @keyframes hookMove {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(20px); }
+    }
+    @keyframes gearSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes progressAnim {
+      0% { width: 0%; }
+      100% { width: 65%; }
+    }
+  </style>
 </head>
 <body>
-    <div class="maintenance-container">
-        <div class="maintenance-card">
-            <!-- Header -->
-            <div class="maintenance-header">
-                <div class="company-logo">
-                    <i class="fas fa-building"></i>
-                    <div class="company-name">Inner SPARC Realty Corporation</div>
-                    <div style="font-size: 1rem; opacity: 0.9;">Your Trusted Real Estate Partner</div>
-                </div>
+  <div class="container">
+    <?php include 'includes/sidebar.php'; ?>
+    <div class="main-content">
+      <?php include 'includes/header.php'; ?>
+
+      <div class="maintenance-container">
+        <div class="scene">
+          <div class="sun"></div>
+          <div class="cloud"></div>
+          <div class="bird">🐦</div>
+
+          <!-- Crane -->
+          <div class="crane">
+            <div class="mast"></div>
+            <div class="arm"></div>
+            <div class="hook"></div>
+            <div class="load"></div>
+          </div>
+
+          <!-- House -->
+          <div class="house">
+            <div class="roof"></div>
+            <div class="chimney"></div>
+            <div class="walls">
+              <div class="door"></div>
+              <div class="window left"></div>
+              <div class="window right"></div>
             </div>
+            <i class="fas fa-hard-hat worker"></i>
+          </div>
 
-            <!-- Main Content -->
-            <div class="maintenance-content">
-                <div class="maintenance-icon">
-                    <i class="fas fa-tools"></i>
-                </div>
+          <!-- Gears -->
+          <i class="fas fa-cog gear left"></i>
+          <i class="fas fa-cog gear right"></i>
 
-                <h1 class="maintenance-title">We're Under Maintenance</h1>
-
-                <p class="maintenance-description">
-                    We're currently upgrading our systems to provide you with an even better real estate experience. 
-                    Our platform will be back online soon with enhanced features and improved performance.
-                </p>
-
-                <!-- Countdown Timer -->
-                <?php if ($time_remaining > 0): ?>
-                <div class="countdown-container">
-                    <div class="countdown-title">Expected Return Time</div>
-                    <div class="countdown-timer" id="countdown">
-                        <!-- Countdown will be populated by JavaScript -->
-                    </div>
-                    <div style="margin-top: 1rem; font-weight: 600; color: #92400e;">
-                        <?php echo date('F j, Y \a\t g:i A T', strtotime($maintenance_end)); ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <!-- Progress Bar -->
-                <div style="text-align: center; margin: 2rem 0;">
-                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Maintenance Progress</div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 65%;"></div>
-                    </div>
-                    <div style="font-size: 0.875rem; color: #6b7280;">65% Complete</div>
-                </div>
-
-                <!-- Services Being Updated -->
-                <div style="text-align: center; margin: 2rem 0;">
-                    <h3 style="font-size: 1.5rem; font-weight: 600; color: #1f2937; margin-bottom: 1rem;">
-                        What We're Improving
-                    </h3>
-                    <div class="services-grid">
-                        <?php foreach ($services_updating as $service): ?>
-                        <div class="service-item">
-                            <div class="service-icon">
-                                <i class="<?php echo $service['icon']; ?>"></i>
-                            </div>
-                            <div class="service-title"><?php echo $service['title']; ?></div>
-                            <div class="service-description"><?php echo $service['description']; ?></div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-
-                <!-- Emergency Contact -->
-                <div class="contact-section">
-                    <h3 class="contact-title">Need Immediate Assistance?</h3>
-                    <div class="contact-grid">
-                        <div class="contact-item">
-                            <i class="fas fa-phone contact-icon"></i>
-                            <div class="contact-method">Call Our Office</div>
-                            <a href="tel:<?php echo $emergency_contacts['phone']; ?>" class="contact-info">
-                                <?php echo $emergency_contacts['phone']; ?>
-                            </a>
-                            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
-                                Mon-Fri: 9AM-6PM
-                            </div>
-                        </div>
-
-                        <div class="contact-item">
-                            <i class="fas fa-envelope contact-icon"></i>
-                            <div class="contact-method">Email Support</div>
-                            <a href="mailto:<?php echo $emergency_contacts['email']; ?>" class="contact-info">
-                                <?php echo $emergency_contacts['email']; ?>
-                            </a>
-                            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
-                                Response within 2 hours
-                            </div>
-                        </div>
-
-                        <div class="contact-item">
-                            <i class="fas fa-clock contact-icon"></i>
-                            <div class="contact-method">After Hours</div>
-                            <a href="tel:<?php echo $emergency_contacts['after_hours']; ?>" class="contact-info">
-                                <?php echo $emergency_contacts['after_hours']; ?>
-                            </a>
-                            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
-                                Emergency line only
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="footer-info">
-                    <p>&copy; <?php echo date('Y'); ?> Inner SPARC Realty Corporation. All rights reserved.</p>
-                    <p style="font-size: 0.875rem; margin-top: 0.5rem;">
-                        Licensed Real Estate Brokerage | License #RE123456
-                    </p>
-                    
-                    <div class="social-links">
-                        <a href="#" class="social-link" title="Facebook">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="#" class="social-link" title="Twitter">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="#" class="social-link" title="LinkedIn">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                        <a href="#" class="social-link" title="Instagram">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
+          <!-- Ground -->
+          <div class="ground"></div>
         </div>
+
+        <h1>We’re working on it!</h1>
+        <p>Our system is under maintenance with some new improvements.<br>
+        Please check back soon. Thanks for your patience!</p>
+
+        <!-- Progress bar -->
+        <div class="progress">
+          <div class="progress-bar"></div>
+        </div>
+      </div>
     </div>
-
-    <script>
-        // Countdown Timer
-        function updateCountdown() {
-            const endTime = new Date('<?php echo $maintenance_end; ?>').getTime();
-            const now = new Date().getTime();
-            const timeLeft = endTime - now;
-
-            if (timeLeft > 0) {
-                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-                document.getElementById('countdown').innerHTML = `
-                    <div class="countdown-item">
-                        <span class="countdown-number">${days}</span>
-                        <span class="countdown-label">Days</span>
-                    </div>
-                    <div class="countdown-item">
-                        <span class="countdown-number">${hours}</span>
-                        <span class="countdown-label">Hours</span>
-                    </div>
-                    <div class="countdown-item">
-                        <span class="countdown-number">${minutes}</span>
-                        <span class="countdown-label">Minutes</span>
-                    </div>
-                    <div class="countdown-item">
-                        <span class="countdown-number">${seconds}</span>
-                        <span class="countdown-label">Seconds</span>
-                    </div>
-                `;
-            } else {
-                document.getElementById('countdown').innerHTML = '<div style="font-size: 1.5rem; font-weight: 600; color: #10b981;">Maintenance Complete!</div>';
-            }
-        }
-
-        // Update countdown every second
-        <?php if ($time_remaining > 0): ?>
-        updateCountdown();
-        setInterval(updateCountdown, 1000);
-        <?php endif; ?>
-
-        // Copy email functionality
-        document.querySelectorAll('a[href^="mailto:"]').forEach(emailLink => {
-            emailLink.addEventListener('contextmenu', function(e) {
-                e.preventDefault();
-                const email = this.href.replace('mailto:', '').split('?')[0];
-                navigator.clipboard.writeText(email).then(() => {
-                    // Show notification
-                    const notification = document.createElement('div');
-                    notification.textContent = 'Email copied to clipboard!';
-                    notification.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        background: #10b981;
-                        color: white;
-                        padding: 0.75rem 1rem;
-                        border-radius: 0.5rem;
-                        z-index: 1000;
-                        font-size: 0.875rem;
-                        font-weight: 500;
-                        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-                    `;
-                    document.body.appendChild(notification);
-                    
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                });
-            });
-        });
-
-        // Auto-refresh page every 5 minutes to check if maintenance is complete
-        setTimeout(() => {
-            location.reload();
-        }, 300000); // 5 minutes
-    </script>
+  </div>
 </body>
 </html>

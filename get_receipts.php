@@ -34,7 +34,7 @@ try {
                 END as stage_display
               FROM stage_receipts sr 
               WHERE sr.lead_id = ? AND sr.stage_type = 'downpayment'
-              ORDER BY sr.uploaded_at DESC";
+              ORDER BY sr.uploaded_at ASC";
     
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $lead_id);
