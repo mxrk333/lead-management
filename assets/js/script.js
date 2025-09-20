@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebarToggle = document.getElementById("sidebar-toggle")
   const sidebar = document.querySelector(".sidebar")
 
-  if (sidebarToggle) {
+  if (sidebarToggle && sidebar) {
     sidebarToggle.addEventListener("click", () => {
       sidebar.classList.toggle("active")
     })
@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Close sidebar when clicking outside on mobile
   document.addEventListener("click", (event) => {
     if (
+      sidebar &&
       window.innerWidth <= 768 &&
       !event.target.closest(".sidebar") &&
       !event.target.closest("#sidebar-toggle") &&

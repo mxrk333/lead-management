@@ -1840,53 +1840,123 @@ function getUniqueStatuses() {
     return $statuses;
 }
 
-function getRecruitmentStats() {
-    global $pdo;
-    
-    if (!isset($pdo)) {
-        return [
-            'success' => false, 
-            'message' => 'Database connection not available'
-        ];
-    }
+function getRecruitmentStats($user_id, $user_role) {
+    $stats = [
+        'total_recruited' => 0,
+        'active_agents' => 0,
+        'inactive_agents' => 0,
+        'hot_prospects' => 0,
+        'in_training' => 0,
+        'onboarded_agents' => 0,
+        'pending_onboard' => 0
+    ];
     
     try {
-        $stats = [];
+        $conn = getDbConnection();
+        if (!$conn) {
+            error_log("Database connection failed in getRecruitmentStats");
+            return $stats;
+        }
         
-        // Total leads
-        $stmt = $pdo->query("SELECT COUNT(*) as total FROM recruitment_leads");
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $stats['total_leads'] = $result ? (int)$result['total'] : 0;
+        // Base query conditions based on user role
+        $where_clause = "";
+        $params = [];
+        $param_types = "";
         
-        // Leads by interest level
-        $stmt = $pdo->query("SELECT interest_level, COUNT(*) as count FROM recruitment_leads GROUP BY interest_level");
-        $stats['by_interest_level'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($user_role === 'manager') {
+            // Manager sees their team's recruitment data
+            $user = getUserById($user_id);
+            if (!empty($user['team_id'])) {
+                $where_clause = " WHERE rl.recruiter_team_id = ?";
+                $params[] = $user['team_id'];
+                $param_types = "i";
+            }
+        } elseif ($user_role !== 'admin') {
+            // Regular users see only their own data
+            $where_clause = " WHERE rl.recruiter_id = ?";
+            $params[] = $user_id;
+            $param_types = "i";
+        }
+        // Admin sees all data (no WHERE clause)
         
-        // Leads by status
-        $stmt = $pdo->query("SELECT status, COUNT(*) as count FROM recruitment_leads GROUP BY status ORDER BY count DESC");
-        $stats['by_status'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Total recruited leads
+        $query = "SELECT COUNT(*) as total FROM recruitment_leads rl" . $where_clause;
+        $stmt = $conn->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($param_types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $stats['total_recruited'] = (int)$row['total'];
+        }
+        $stmt->close();
         
-        // Leads by source
-        $stmt = $pdo->query("SELECT source, COUNT(*) as count FROM recruitment_leads GROUP BY source ORDER BY count DESC LIMIT 10");
-        $stats['by_source'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Active agents (onboarding_status = 1)
+        $query = "SELECT COUNT(*) as count FROM recruitment_leads rl" . $where_clause . 
+                 ($where_clause ? " AND" : " WHERE") . " rl.onboarding_status = 1";
+        $stmt = $conn->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($param_types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $stats['active_agents'] = (int)$row['count'];
+            $stats['onboarded_agents'] = (int)$row['count'];
+        }
+        $stmt->close();
         
-        // Recent leads (last 7 days)
-        $stmt = $pdo->query("SELECT COUNT(*) as count FROM recruitment_leads WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $stats['recent_leads'] = $result ? (int)$result['count'] : 0;
+        // Inactive agents (onboarding_status = 0 or NULL)
+        $query = "SELECT COUNT(*) as count FROM recruitment_leads rl" . $where_clause . 
+                 ($where_clause ? " AND" : " WHERE") . " (rl.onboarding_status = 0 OR rl.onboarding_status IS NULL)";
+        $stmt = $conn->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($param_types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $stats['inactive_agents'] = (int)$row['count'];
+            $stats['pending_onboard'] = (int)$row['count'];
+        }
+        $stmt->close();
         
-        return [
-            'success' => true,
-            'data' => $stats
-        ];
+        // Hot prospects
+        $query = "SELECT COUNT(*) as count FROM recruitment_leads rl" . $where_clause . 
+                 ($where_clause ? " AND" : " WHERE") . " rl.status = 'Hot'";
+        $stmt = $conn->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($param_types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $stats['hot_prospects'] = (int)$row['count'];
+        }
+        $stmt->close();
         
-    } catch (PDOException $e) {
-        error_log("Database error in getRecruitmentStats: " . $e->getMessage());
-        return [
-            'success' => false, 
-            'message' => 'Database error: ' . $e->getMessage()
-        ];
+        // In training
+        $query = "SELECT COUNT(*) as count FROM recruitment_leads rl" . $where_clause . 
+                 ($where_clause ? " AND" : " WHERE") . " rl.status LIKE '%training%'";
+        $stmt = $conn->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($param_types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $stats['in_training'] = (int)$row['count'];
+        }
+        $stmt->close();
+        
+        $conn->close();
+        
+    } catch (Exception $e) {
+        error_log("Error fetching recruitment stats: " . $e->getMessage());
     }
+    
+    return $stats;
 }
 
 /**

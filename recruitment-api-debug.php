@@ -67,7 +67,7 @@ function get_recruitment_leads(PDO $pdo, array $filters = [])
         // LEFT JOIN teams t ON rl.recruiter_team_id = t.id
         // WHERE 1=1";
 
-        $sql = "SELECT rl.id, rl.timestamp, rl.full_name, rl.contact_number, rl.email, rl.recruiter_name, rl.status, rl.source, u.name AS source_name, rl.agent_onboarding_status, rl.remarks, rl.created_at, rl.updated_at, rl.recruiter_id, rl.recruiter_team_id, t.name AS recruiter_team, rl.pre_assessment, rl.accreditation, rl.assessment, rl.sales_training, rl.site_tour, rl.onboarding, rl.habit_forming, rl.digital_training, rl.sales_training_materials, rl.objection_handling, rl.VAST, rl.sales_monitoring, rl.LMS, rl.comm_structure, rl.terminologies, rl.focus_projects
+        $sql = "SELECT rl.id, rl.timestamp, rl.full_name, rl.contact_number, rl.email, rl.recruiter_name, rl.status, rl.source, u.name AS source_name, rl.agent_onboarding_status, rl.onboarding_status, rl.remarks, rl.created_at, rl.updated_at, rl.recruiter_id, rl.recruiter_team_id, t.name AS recruiter_team, rl.pre_assessment, rl.accreditation, rl.assessment, rl.sales_training, rl.site_tour, rl.onboarding, rl.habit_forming, rl.digital_training, rl.sales_training_materials, rl.objection_handling, rl.VAST, rl.sales_monitoring, rl.LMS, rl.comm_structure, rl.terminologies, rl.focus_projects
         FROM recruitment_leads rl
         LEFT JOIN teams t ON rl.recruiter_team_id = t.id
         LEFT JOIN users u ON rl.source = u.id
@@ -96,12 +96,38 @@ function get_recruitment_leads(PDO $pdo, array $filters = [])
             $params[':team'] = $filters['team'];
         }
 
+        // Important: allow filtering when value is 0 (Not Onboarded)
+        if (isset($filters['onboardStatus']) && $filters['onboardStatus'] !== '') {
+            $sql .= " AND rl.onboarding_status = :onboardStatus";
+            // Ensure we bind as int 0/1
+            $params[':onboardStatus'] = (int)$filters['onboardStatus'];
+        }
+
         if (!empty($filters['search'])) {
             $searchTerm = '%' . $filters['search'] . '%';
             $sql .= " AND (rl.full_name LIKE :search_name OR rl.email LIKE :search_email OR rl.contact_number LIKE :search_contact)";
             $params[':search_name'] = $searchTerm;
             $params[':search_email'] = $searchTerm;
             $params[':search_contact'] = $searchTerm;
+        }
+
+        if (!empty($filters['onboarding'])) {
+            if ($filters['onboarding'] === 'Onboarded') {
+                $sql .= " AND rl.LMS = 1";
+            } elseif ($filters['onboarding'] === 'Not Onboarded') {
+                $sql .= " AND (rl.LMS = 0 OR rl.LMS IS NULL)";
+            }
+        }
+
+        // Add year and month filters
+        if (!empty($filters['year'])) {
+            $sql .= " AND YEAR(rl.created_at) = :year";
+            $params[':year'] = (int)$filters['year'];
+        }
+
+        if (!empty($filters['month'])) {
+            $sql .= " AND MONTH(rl.created_at) = :month";
+            $params[':month'] = (int)$filters['month'];
         }
 
         // Add sorting
@@ -214,11 +240,11 @@ function add_recruitment_lead(PDO $pdo, array $data)
 
         $sql = "INSERT INTO recruitment_leads (
                   created_at, full_name, contact_number, email, recruiter_name, recruiter_id, recruiter_team_id,
-                  status, source, agent_onboarding_status, remarks,
+                  status, source, agent_onboarding_status, onboarding_status, remarks,
                   pre_assessment, accreditation, assessment, sales_training, site_tour, onboarding, digital_training, sales_training_materials, objection_handling, VAST, sales_monitoring, LMS, comm_structure, terminologies, focus_projects, habit_forming
               ) VALUES (
                   :created_at, :full_name, :contact_number, :email, :recruiter_name, :recruiter_id, :recruiter_team_id,
-                  :status, :source, :agent_onboarding_status, :remarks,
+                  :status, :source, :agent_onboarding_status, :onboarding_status, :remarks,
                   :pre_assessment, :accreditation, :assessment, :sales_training, :site_tour, :onboarding, :digital_training, :sales_training_materials, :objection_handling, :VAST, :sales_monitoring, :LMS, :comm_structure, :terminologies, :focus_projects, :habit_forming
               )";
 
@@ -234,7 +260,8 @@ function add_recruitment_lead(PDO $pdo, array $data)
             // ':recruiter_team_id' => $data['recruiter_team_id'],
             ':status' => $data['status'],
             ':source' => $data['source'],
-            ':agent_onboarding_status' => $data['agent_onboarding_status'] ?? null,
+            ':agent_onboarding_status' => $data['agent_onboarding_status'] ?? 0,
+            ':onboarding_status' => $data['onboarding_status'] ?? 0,
             ':remarks' => $data['remarks'] ?? '',
             ':pre_assessment' => !empty($data['pre-assessment']) ? 1 : 0,
             ':accreditation' => !empty($data['accreditation']) ? 1 : 0,
@@ -350,6 +377,7 @@ function update_recruitment_lead(PDO $pdo, array $data)
                   status = :status,
                   source = :source,
                   agent_onboarding_status = :agent_onboarding_status,
+                  onboarding_status = :onboarding_status,
                   remarks = :remarks,
                   pre_assessment = :pre_assessment,
                   accreditation = :accreditation,
@@ -383,6 +411,7 @@ function update_recruitment_lead(PDO $pdo, array $data)
             ':status' => $data['status'],
             ':source' => $data['source'],
             ':agent_onboarding_status' => $data['agent_onboarding_status'] ?? null,
+            ':onboarding_status' => $data['onboarding_status'] ?? null,
             ':remarks' => $data['remarks'] ?? '',
             ':pre_assessment' => !empty($data['pre-assessment']) ? 1 : 0,
             ':accreditation' => !empty($data['accreditation']) ? 1 : 0,
@@ -461,22 +490,130 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             try {
                 $stats = [];
 
-                // Total leads
+                // Total agents
                 $stmt = $pdo->query("SELECT COUNT(*) as total FROM recruitment_leads");
                 $result = $stmt->fetch();
-                $stats['total_leads'] = $result ? (int) $result['total'] : 0;
+                $stats['total_agents'] = $result ? (int) $result['total'] : 0;
 
-                // Recent leads (last 7 days)
-                $stmt = $pdo->query("SELECT COUNT(*) as count FROM recruitment_leads WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
+                // Active agents
+                $stmt = $pdo->query("SELECT COUNT(*) as count FROM recruitment_leads WHERE status = 'Active'");
                 $result = $stmt->fetch();
-                $stats['recent_leads'] = $result ? (int) $result['count'] : 0;
+                $stats['active_agents'] = $result ? (int) $result['count'] : 0;
+
+                // Inactive agents
+                $stmt = $pdo->query("SELECT COUNT(*) as count FROM recruitment_leads WHERE status = 'Inactive'");
+                $result = $stmt->fetch();
+                $stats['inactive_agents'] = $result ? (int) $result['count'] : 0;
+
+                // Onboarded agents (those with LMS = 1 or onboarding_status = 1)
+                $stmt = $pdo->query("SELECT COUNT(*) as count FROM recruitment_leads WHERE (LMS = 1 OR onboarding_status = 1)");
+                $result = $stmt->fetch();
+                $stats['onboarded_agents'] = $result ? (int) $result['count'] : 0;
 
                 debugLog("Stats loaded successfully", $stats);
-                echo json_encode(['success' => true, 'data' => $stats]);
+                echo json_encode(['success' => true, 'stats' => $stats]);
 
             } catch (Exception $e) {
                 debugLog("Stats error", $e->getMessage());
                 echo json_encode(['success' => false, 'message' => 'Error loading statistics: ' . $e->getMessage()]);
+            }
+            break;
+            
+        case 'get_recruitment_stats_with_filters':
+            try {
+                // Parse filters
+                $filters = [];
+                if (isset($_POST['filters']) && !empty($_POST['filters'])) {
+                    $filters = json_decode($_POST['filters'], true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        debugLog("JSON decode error for filters", json_last_error_msg());
+                        $filters = [];
+                    }
+                }
+                
+                debugLog("Stats filters received", $filters);
+                
+                $stats = [];
+                
+                // Build base SQL with filters
+                $where_conditions = [];
+                $params = [];
+                
+                if (!empty($filters['status'])) {
+                    $where_conditions[] = 'rl.status = :filter_status';
+                    $params[':filter_status'] = $filters['status'];
+                }
+                
+                if (!empty($filters['team'])) {
+                    $where_conditions[] = 'rl.recruiter_team_id = :team';
+                    $params[':team'] = $filters['team'];
+                }
+                
+                if (isset($filters['onboardStatus']) && $filters['onboardStatus'] !== '') {
+                    $where_conditions[] = 'rl.onboarding_status = :onboardStatus';
+                    $params[':onboardStatus'] = (int)$filters['onboardStatus'];
+                }
+                
+                if (!empty($filters['search'])) {
+                    $searchTerm = '%' . $filters['search'] . '%';
+                    $where_conditions[] = '(rl.full_name LIKE :search_name OR rl.email LIKE :search_email OR rl.contact_number LIKE :search_contact)';
+                    $params[':search_name'] = $searchTerm;
+                    $params[':search_email'] = $searchTerm;
+                    $params[':search_contact'] = $searchTerm;
+                }
+                
+                if (!empty($filters['year'])) {
+                    $where_conditions[] = 'YEAR(rl.created_at) = :year';
+                    $params[':year'] = (int)$filters['year'];
+                }
+                
+                if (!empty($filters['month'])) {
+                    $where_conditions[] = 'MONTH(rl.created_at) = :month';
+                    $params[':month'] = (int)$filters['month'];
+                }
+                
+                $where_clause = '';
+                if (!empty($where_conditions)) {
+                    $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
+                }
+                
+                // Total recruited agents
+                $sql = "SELECT COUNT(*) as total FROM recruitment_leads rl {$where_clause}";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+                $result = $stmt->fetch();
+                $stats['total_recruited'] = $result ? (int) $result['total'] : 0;
+                
+                // Active agents
+                $active_where = $where_clause ? $where_clause . ' AND rl.status = \'Active\'' : 'WHERE rl.status = \'Active\'';
+                $sql = "SELECT COUNT(*) as count FROM recruitment_leads rl {$active_where}";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+                $result = $stmt->fetch();
+                $stats['active_agents'] = $result ? (int) $result['count'] : 0;
+                
+                // Inactive agents
+                $inactive_where = $where_clause ? $where_clause . ' AND rl.status = \'Inactive\'' : 'WHERE rl.status = \'Inactive\'';
+                $sql = "SELECT COUNT(*) as count FROM recruitment_leads rl {$inactive_where}";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+                $result = $stmt->fetch();
+                $stats['inactive_agents'] = $result ? (int) $result['count'] : 0;
+                
+                // Onboarded agents
+                $onboarded_where = $where_clause ? $where_clause . ' AND (rl.LMS = 1 OR rl.onboarding_status = 1)' : 'WHERE (rl.LMS = 1 OR rl.onboarding_status = 1)';
+                $sql = "SELECT COUNT(*) as count FROM recruitment_leads rl {$onboarded_where}";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
+                $result = $stmt->fetch();
+                $stats['onboarded_agents'] = $result ? (int) $result['count'] : 0;
+                
+                debugLog("Filtered stats loaded successfully", $stats);
+                echo json_encode(['success' => true, 'stats' => $stats]);
+                
+            } catch (Exception $e) {
+                debugLog("Filtered stats error", $e->getMessage());
+                echo json_encode(['success' => false, 'message' => 'Error loading filtered statistics: ' . $e->getMessage()]);
             }
             break;
 
@@ -505,6 +642,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } catch (Exception $e) {
                 debugLog("Query error", $e->getMessage());
                 echo json_encode(['success' => false, 'message' => 'Error fetching leads: ' . $e->getMessage()]);
+            }
+            break;
+
+        case 'get_lead':
+            try {
+                $id = $_POST['id'] ?? null;
+                if (!$id || !is_numeric($id)) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid or missing ID']);
+                    break;
+                }
+
+                debugLog("get_lead called", ['id' => $id]);
+
+                // Use the existing function with ID filter
+                $filters = ['id' => $id];
+                $result = get_recruitment_leads($pdo, $filters);
+                
+                if ($result['success'] && !empty($result['data'])) {
+                    echo json_encode($result);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Lead not found']);
+                }
+
+            } catch (Exception $e) {
+                debugLog("Get lead error", $e->getMessage());
+                echo json_encode(['success' => false, 'message' => 'Error fetching lead: ' . $e->getMessage()]);
             }
             break;
 
@@ -548,7 +711,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $success = $stmt->execute([$team_id, $username, $password, $name, $email, $phone, $role]);
 
             if ($success) {
-                echo json_encode(['success' => true]);
+                // Update both agent_onboarding_status and onboarding_status to 1 in recruitment_leads table
+                // First check for duplicates
+                $checkStmt = $pdo->prepare("SELECT id, full_name, email, contact_number, onboarding_status FROM recruitment_leads WHERE email = ? OR contact_number = ?");
+                $checkStmt->execute([$email, $phone]);
+                $duplicates = $checkStmt->fetchAll(PDO::FETCH_ASSOC);
+                error_log("Found " . count($duplicates) . " records for Email: $email, Phone: $phone");
+                foreach ($duplicates as $dup) {
+                    error_log("Record ID: {$dup['id']}, Name: {$dup['full_name']}, Email: {$dup['email']}, Phone: {$dup['contact_number']}, Current onboarding_status: {$dup['onboarding_status']}");
+                }
+                
+                // Update all matching records to be onboarded
+                $updateStmt = $pdo->prepare("UPDATE recruitment_leads SET onboarding_status = 1 WHERE email = ? OR contact_number = ?");
+                $updateResult = $updateStmt->execute([$email, $phone]);
+                $rowsAffected = $updateStmt->rowCount();
+                
+                // Debug logging
+                error_log("Onboard update - Email: $email, Phone: $phone, Rows affected: $rowsAffected, Update result: " . ($updateResult ? 'true' : 'false'));
+                
+                echo json_encode(['success' => true, 'debug' => ['rows_affected' => $rowsAffected, 'email' => $email, 'phone' => $phone]]);
             } else {
                 $errorInfo = $stmt->errorInfo();
                 echo json_encode(['success' => false, 'message' => 'Failed to insert user', 'error' => $errorInfo]);
@@ -577,12 +758,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 echo json_encode(['success' => false, 'message' => 'No username provided']);
                 exit;
             }
-            $stmt = $pdo->prepare("DELETE FROM users WHERE username = ?");
-            $success = $stmt->execute([$username]);
-            echo json_encode(['success' => $success]);
+
+            // 1) Fetch email and phone before deleting the user
+            $infoStmt = $pdo->prepare("SELECT email, phone FROM users WHERE username = ? LIMIT 1");
+            $infoStmt->execute([$username]);
+            $userInfo = $infoStmt->fetch(PDO::FETCH_ASSOC);
+
+            // Read optional overrides from POST (from the front-end modal)
+            $postedEmail = isset($_POST['email']) ? trim((string)$_POST['email']) : '';
+            $postedPhone = isset($_POST['phone']) ? trim((string)$_POST['phone']) : '';
+            $postedLeadId = isset($_POST['lead_id']) ? (int)$_POST['lead_id'] : null;
+
+            // 2) Delete the user record
+            $delStmt = $pdo->prepare("DELETE FROM users WHERE username = ?");
+            $deleted = $delStmt->execute([$username]);
+
+            // 3) If we have email/phone, reset onboarding flags on matching recruitment leads
+            $updatedRows = 0;
+            // Determine best-available identifiers: prefer POSTed values, fallback to user's stored values
+            $email = $postedEmail !== '' ? $postedEmail : ($userInfo['email'] ?? null);
+            $phone = $postedPhone !== '' ? $postedPhone : ($userInfo['phone'] ?? null);
+
+            // Build dynamic WHERE clauses
+            $whereParts = [];
+            $params = [];
+            if (!empty($postedLeadId)) {
+                $whereParts[] = 'id = :lead_id';
+                $params[':lead_id'] = $postedLeadId;
+            }
+            if (!empty($email)) {
+                $whereParts[] = 'email = :email';
+                $params[':email'] = $email;
+            }
+            if (!empty($phone)) {
+                $whereParts[] = 'contact_number = :phone';
+                $params[':phone'] = $phone;
+            }
+
+            if (!empty($whereParts)) {
+                // Build normalized WHERE for email/phone to handle case/format differences
+                $normalizedWhere = [];
+                $normalizedParams = [];
+
+                foreach ($whereParts as $part) {
+                    if ($part === 'id = :lead_id') {
+                        $normalizedWhere[] = $part;
+                        $normalizedParams[':lead_id'] = $params[':lead_id'];
+                    } elseif ($part === 'email = :email') {
+                        $normalizedWhere[] = 'LOWER(email) = LOWER(:email)';
+                        $normalizedParams[':email'] = $params[':email'];
+                    } elseif ($part === 'contact_number = :phone') {
+                        // Strip spaces, dashes, and plus signs for comparison
+                        $normalizedWhere[] = "REPLACE(REPLACE(REPLACE(contact_number, '-', ''), ' ', ''), '+', '') = REPLACE(REPLACE(REPLACE(:phone, '-', ''), ' ', ''), '+', '')";
+                        $normalizedParams[':phone'] = $params[':phone'];
+                    }
+                }
+
+                $sql = 'UPDATE recruitment_leads SET onboarding_status = 0, agent_onboarding_status = 0 WHERE ' . implode(' OR ', $normalizedWhere);
+                $updStmt = $pdo->prepare($sql);
+                $updStmt->execute($normalizedParams);
+                $updatedRows = $updStmt->rowCount();
+            }
+
+            echo json_encode([
+                'success' => (bool)$deleted,
+                'updated_leads' => $updatedRows
+            ]);
             exit;
 
         case 'get_team_status_summary':
+            debugLog("get_team_status_summary called");
+            
             $filters = [];
             if (isset($_POST['filters']) && !empty($_POST['filters'])) {
                 $filters = json_decode($_POST['filters'], true);
@@ -590,78 +836,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $filters = [];
                 }
             }
+            debugLog("Filters received", $filters);
 
-            $where = [];
+            // First, let's check if there's any data in recruitment_leads
+            $check_sql = "SELECT COUNT(*) as total, 
+                                 SUM(CASE WHEN onboarding_status = 1 THEN 1 ELSE 0 END) as active_count,
+                                 SUM(CASE WHEN onboarding_status = 0 OR onboarding_status IS NULL THEN 1 ELSE 0 END) as inactive_count
+                          FROM recruitment_leads";
+            $check_stmt = $pdo->query($check_sql);
+            $data_check = $check_stmt->fetch(PDO::FETCH_ASSOC);
+            debugLog("Data check", $data_check);
+
+            // Build date filters
+            $where_conditions = [];
             $params = [];
-            // Date filtering
+            
             if (!empty($filters['year'])) {
-                $where[] = 'YEAR(rl.created_at) = ?';
+                $where_conditions[] = 'YEAR(rl.created_at) = ?';
                 $params[] = $filters['year'];
             }
             if (!empty($filters['month'])) {
-                $where[] = 'MONTH(rl.created_at) = ?';
+                $where_conditions[] = 'MONTH(rl.created_at) = ?';
                 $params[] = $filters['month'];
             }
             if (!empty($filters['quarter'])) {
-                $where[] = 'QUARTER(rl.created_at) = ?';
+                $where_conditions[] = 'QUARTER(rl.created_at) = ?';
                 $params[] = $filters['quarter'];
             }
-            $where_sql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
-
-            $status_list = ['Active', 'Inactive'];
-            $status_placeholders = implode(',', array_fill(0, count($status_list), '?'));
-
-            $sql = "SELECT t.id as team_id, t.name as team_name, rl.status, COUNT(rl.id) as count
-                    FROM teams t
-                    LEFT JOIN recruitment_leads rl ON rl.recruiter_team_id = t.id
-                    " . ($where_sql ? $where_sql . " AND rl.status IN ($status_placeholders)" : "WHERE rl.status IN ($status_placeholders)") . "
-                    GROUP BY t.id, rl.status
-                    ORDER BY t.name, rl.status";
-
-            foreach ($status_list as $s)
-                $params[] = $s;
+            
+            // Fix the WHERE clause positioning - use onboarding_status for Active/Inactive
+            $where_sql = '';
+            if (!empty($where_conditions)) {
+                $where_sql = 'WHERE ' . implode(' AND ', $where_conditions);
+            }
+            
+            $sql = "SELECT 
+                        COALESCE(t.id, 0) as team_id, 
+                        COALESCE(t.name, 'No Team') as team_name, 
+                        CASE WHEN rl.onboarding_status = 1 THEN 'Active' ELSE 'Inactive' END as status, 
+                        COUNT(*) as count
+                    FROM recruitment_leads rl
+                    LEFT JOIN teams t ON rl.recruiter_team_id = t.id
+                    $where_sql
+                    GROUP BY t.id, t.name, CASE WHEN rl.onboarding_status = 1 THEN 'Active' ELSE 'Inactive' END
+                    ORDER BY t.name, status";
+            
+            debugLog("SQL Query", $sql);
+            debugLog("SQL Parameters", $params);
 
             try {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($params);
                 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                debugLog("Raw query results", $results);
 
-                // Ensure every team has both statuses
-                $all_teams_stmt = $pdo->query('SELECT id, name FROM teams');
-                $all_teams = $all_teams_stmt->fetchAll(PDO::FETCH_ASSOC);
-                $output = [];
-
-                foreach ($all_teams as $team) {
-                    foreach ($status_list as $status) {
-                        $found = false;
-                        foreach ($results as $row) {
-                            if ($row['team_id'] == $team['id'] && $row['status'] === $status) {
+                if (empty($results)) {
+                    // If no results, create dummy data for all teams
+                    $all_teams_stmt = $pdo->query('SELECT id, name FROM teams ORDER BY name');
+                    $all_teams = $all_teams_stmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    $output = [];
+                    foreach ($all_teams as $team) {
+                        $output[] = [
+                            'team_id' => $team['id'],
+                            'team_name' => $team['name'],
+                            'status' => 'Active',
+                            'count' => 0
+                        ];
+                        $output[] = [
+                            'team_id' => $team['id'],
+                            'team_name' => $team['name'],
+                            'status' => 'Inactive',
+                            'count' => 0
+                        ];
+                    }
+                } else {
+                    // Process results and fill in missing combinations
+                    $all_teams_stmt = $pdo->query('SELECT id, name FROM teams ORDER BY name');
+                    $all_teams = $all_teams_stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $output = [];
+                    
+                    foreach ($all_teams as $team) {
+                        foreach (['Active', 'Inactive'] as $status) {
+                            $found = false;
+                            foreach ($results as $row) {
+                                if ($row['team_id'] == $team['id'] && $row['status'] === $status) {
+                                    $output[] = [
+                                        'team_id' => $team['id'],
+                                        'team_name' => $team['name'],
+                                        'status' => $status,
+                                        'count' => (int) $row['count']
+                                    ];
+                                    $found = true;
+                                    break;
+                                }
+                            }
+                            if (!$found) {
                                 $output[] = [
                                     'team_id' => $team['id'],
                                     'team_name' => $team['name'],
                                     'status' => $status,
-                                    'count' => (int) $row['count']
+                                    'count' => 0
                                 ];
-                                $found = true;
-                                break;
                             }
-                        }
-                        if (!$found) {
-                            $output[] = [
-                                'team_id' => $team['id'],
-                                'team_name' => $team['name'],
-                                'status' => $status,
-                                'count' => 0
-                            ];
                         }
                     }
                 }
-                echo json_encode(['success' => true, 'data' => $output]);
+                
+                debugLog("Final output", $output);
+                echo json_encode(['success' => true, 'data' => $output, 'debug' => ['sql' => $sql, 'params' => $params, 'raw_results' => $results]]);
+                
             } catch (Exception $e) {
-                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                debugLog("SQL Error", $e->getMessage());
+                echo json_encode(['success' => false, 'message' => $e->getMessage(), 'debug' => ['sql' => $sql, 'params' => $params]]);
             }
             exit;
-            break;
 
         default:
             echo json_encode(['success' => false, 'message' => 'Invalid action']);

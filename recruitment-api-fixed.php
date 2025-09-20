@@ -103,6 +103,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $params[':source'] = $filters['source'];
                 }
 
+                // Check status of ID 28 for debugging
+                $debugQuery = "SELECT id, full_name, email, contact_number, onboarding_status FROM recruitment_leads WHERE id = 28";
+                $debugStmt = $pdo->query($debugQuery);
+                $debugRecord = $debugStmt->fetch(PDO::FETCH_ASSOC);
+                error_log("DEBUG: Status of ID 28: " . json_encode($debugRecord));
+
+                // First, clean up any duplicated email/phone records to ensure consistent status
+                $cleanupQuery = "SELECT email, contact_number, COUNT(*) as count, GROUP_CONCAT(id) as ids, GROUP_CONCAT(onboarding_status) as statuses 
+                               FROM recruitment_leads 
+                               WHERE email != '' OR contact_number != ''
+                               GROUP BY email, contact_number 
+                               HAVING count > 1";
+                $cleanupStmt = $pdo->query($cleanupQuery);
+                while ($row = $cleanupStmt->fetch(PDO::FETCH_ASSOC)) {
+                    error_log("DEBUG: Found duplicate records: " . json_encode($row));
+                    // If any record is onboarded, make all duplicates onboarded
+                    if (strpos($row['statuses'], '1') !== false) {
+                        $ids = explode(',', $row['ids']);
+                        $updateQuery = "UPDATE recruitment_leads SET onboarding_status = 1 WHERE id IN (" . implode(',', $ids) . ")";
+                        $pdo->exec($updateQuery);
+                        error_log("DEBUG: Updated duplicate records to onboarded: " . implode(',', $ids));
+                    }
+                }
+
+                if (isset($filters['onboardStatus']) && $filters['onboardStatus'] !== '') {
+                    $onboard_status = $filters['onboardStatus'];
+                    error_log("DEBUG: Recruitment filter applied with status: " . $onboard_status);
+                    $checkSql = "SELECT id, full_name, email, contact_number, onboarding_status 
+                               FROM recruitment_leads 
+                               WHERE onboarding_status IS NULL 
+                               OR onboarding_status NOT IN (0, 1)";
+                    $checkStmt = $pdo->query($checkSql);
+                    $inconsistentRecords = $checkStmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    if (!empty($inconsistentRecords)) {
+                        error_log("DEBUG: Found inconsistent records:");
+                        foreach ($inconsistentRecords as $record) {
+                            error_log(json_encode($record));
+                            // Fix inconsistent records
+                            $fixSql = "UPDATE recruitment_leads SET onboarding_status = 0 WHERE id = " . $record['id'];
+                            $pdo->exec($fixSql);
+                        }
+                    }
+
+                    // Now apply the filter with fixed logic
+                    if ($onboard_status === '1') {
+                        $sql .= " AND onboarding_status = 1";
+                        error_log("DEBUG: Filtering for onboarded records only");
+                    } else {
+                        $sql .= " AND (onboarding_status = 0 OR onboarding_status IS NULL)";
+                        error_log("DEBUG: Filtering for non-onboarded records only");
+                    }
+
+                    // Add debug select to see what records we're getting
+                    $debugSql = $sql . " LIMIT 5";
+                    $debugStmt = $pdo->prepare($debugSql);
+                    $debugStmt->execute($params);
+                    $debugResults = $debugStmt->fetchAll(PDO::FETCH_ASSOC);
+                    error_log("DEBUG: Sample records for this filter:");
+                    foreach ($debugResults as $record) {
+                        error_log(json_encode($record));
+                    }
+                }
+
                 if (!empty($filters['search'])) {
                     $searchTerm = '%' . $filters['search'] . '%';
                     $sql .= " AND (full_name LIKE :search_name OR email LIKE :search_email OR contact_number LIKE :search_contact)";
@@ -164,10 +228,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
                 $sql = "INSERT INTO recruitment_leads (
                           full_name, contact_number, email, recruiter_name, 
-                          status, source, agent_onboarding_status, remarks
+                          status, source, onboarding_status, remarks
                       ) VALUES (
-                          :full_name, :contact_number, :email, :recruiter_name, 
-                          :status, :source, :agent_onboarding_status, :remarks
+                          :status, :source, :onboarding_status, :remarks
                       )";
 
                 $stmt = $pdo->prepare($sql);
@@ -178,7 +241,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     ':recruiter_name' => $current_recruiter_name, // Use the automatically determined recruiter name
                     ':status' => $_POST['status'],
                     ':source' => $_POST['source'],
-                    ':agent_onboarding_status' => $_POST['agent_onboarding_status'] ?? null,
+                    ':agent_onboarding_status' => $_POST['agent_onboarding_status'] ?? 0, // Default to 0 (not onboarded)
+                    ':onboarding_status' => $_POST['onboarding_status'] ?? 0, // Default to 0 (not onboarded)
                     ':remarks' => $_POST['remarks'] ?? ''
                 ]);
 
@@ -212,7 +276,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                           recruiter_name = :recruiter_name,
                           status = :status,
                           source = :source,
-                          agent_onboarding_status = :agent_onboarding_status,
+                          onboarding_status = :onboarding_status,
                           remarks = :remarks,
                           updated_at = NOW()
                       WHERE id = :id";
@@ -226,7 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     ':recruiter_name' => $current_recruiter_name, // Use the automatically determined recruiter name
                     ':status' => $_POST['status'],
                     ':source' => $_POST['source'],
-                    ':agent_onboarding_status' => $_POST['agent_onboarding_status'] ?? null,
+                    ':onboarding_status' => (isset($_POST['onboarding_status']) && $_POST['onboarding_status'] == '1') ? 1 : 0,
                     ':remarks' => $_POST['remarks'] ?? ''
                 ]);
 

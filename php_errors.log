@@ -106,3 +106,474 @@
 [03-Sep-2025 08:26:28 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 08:26:28 - Add lead script started
 [03-Sep-2025 08:28:01 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 08:28:01 - Add lead script started
 [03-Sep-2025 08:35:39 Europe/Berlin] [ADD-LEAD DEBUG] 2025-09-03 08:35:39 - Add lead script started
+[12-Sep-2025 12:23:08 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[12-Sep-2025 12:23:08 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[12-Sep-2025 12:23:08 Europe/Berlin] User logged in: ID=7, Role=admin, Team ID=1
+[12-Sep-2025 12:23:08 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[12-Sep-2025 12:23:08 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[12-Sep-2025 12:23:08 Europe/Berlin] Entering getEnhancedDashboardData for User ID: 7, Role: admin
+[12-Sep-2025 12:23:08 Europe/Berlin] Is SuperUser: false
+[12-Sep-2025 12:23:08 Europe/Berlin] User's Team ID: 1
+[12-Sep-2025 12:23:08 Europe/Berlin] Is Admin/Superuser: false, Is Manager: false
+[12-Sep-2025 12:23:08 Europe/Berlin] Query mode: Agent - filtering by user_id: 7
+[12-Sep-2025 12:23:08 Europe/Berlin] Executing query: SELECT COUNT(*) as total FROM leads l WHERE l.user_id = ?
+[12-Sep-2025 12:23:08 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:23:08 Europe/Berlin] Total Leads: 0
+[12-Sep-2025 12:23:08 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status = 'Presentation Stage'
+[12-Sep-2025 12:23:08 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:23:08 Europe/Berlin] Presentation Stage: 0
+[12-Sep-2025 12:23:08 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[12-Sep-2025 12:23:08 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:23:08 Europe/Berlin] Closed Deals: 0
+[12-Sep-2025 12:23:08 Europe/Berlin] Executing query: SELECT SUM(l.price) as total FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[12-Sep-2025 12:23:08 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:23:08 Europe/Berlin] Portfolio Value: 0.00
+[12-Sep-2025 12:23:08 Europe/Berlin] Executing query: SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.user_id = u.id WHERE l.user_id = ? ORDER BY l.created_at DESC LIMIT 10
+[12-Sep-2025 12:23:08 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:23:08 Europe/Berlin] Recent Leads Count: 0
+[12-Sep-2025 12:23:08 Europe/Berlin] Executing query: SELECT project_model, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY project_model ORDER BY count DESC LIMIT 10
+[12-Sep-2025 12:23:08 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:23:08 Europe/Berlin] Most Inquired Models Count: 0
+[12-Sep-2025 12:23:08 Europe/Berlin] Executing query: SELECT developer, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY developer ORDER BY count DESC LIMIT 10
+[12-Sep-2025 12:23:08 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:23:08 Europe/Berlin] Top Projects Count: 0
+[12-Sep-2025 12:23:08 Europe/Berlin] Executing query: SELECT 
+            COUNT(*) as total_tracked,
+            SUM(CASE WHEN requirements_complete = 1 THEN 1 ELSE 0 END) as requirements_complete,
+            SUM(CASE WHEN pagibig_bank_approval = 1 THEN 1 ELSE 0 END) as bank_approved,
+            SUM(CASE WHEN loan_takeout = 1 THEN 1 ELSE 0 END) as loan_takeouts,
+            SUM(CASE WHEN turnover = 1 THEN 1 ELSE 0 END) as turnovers,
+            AVG(progress_rate) as avg_progress
+        FROM downpayment_tracker dt JOIN leads l ON dt.lead_id = l.id WHERE l.user_id = ?
+[12-Sep-2025 12:23:08 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:23:08 Europe/Berlin] Downpayment Stats: {"total_tracked":0,"requirements_complete":null,"bank_approved":null,"loan_takeouts":null,"turnovers":null,"avg_progress":null}
+[12-Sep-2025 12:23:08 Europe/Berlin] Memo Query Params: user_id=7, team_id=1
+[12-Sep-2025 12:23:08 Europe/Berlin] Executing query: SELECT m.*, u.name as created_by_name 
+                       FROM memos m 
+                       LEFT JOIN users u ON m.created_by = u.id 
+                       WHERE m.is_active = 1 AND (
+                               m.visible_to_all = 1 
+                               OR EXISTS (
+                                   SELECT 1 FROM memo_person_visibility mpv 
+                                   WHERE mpv.memo_id = m.id AND mpv.user_id = ?
+                               ) OR EXISTS (
+                                   SELECT 1 FROM memo_team_visibility mtv 
+                                   WHERE mtv.memo_id = m.id AND mtv.team_id = ?
+                               )) ORDER BY m.memo_when DESC LIMIT 5
+[12-Sep-2025 12:23:08 Europe/Berlin] With params: 7, 1 (types: ii)
+[12-Sep-2025 12:23:08 Europe/Berlin] Recent Memos Count: 2
+[12-Sep-2025 12:23:10 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[12-Sep-2025 12:23:10 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[12-Sep-2025 12:23:10 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[12-Sep-2025 12:28:12 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[12-Sep-2025 12:28:12 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[12-Sep-2025 12:28:12 Europe/Berlin] User logged in: ID=7, Role=admin, Team ID=1
+[12-Sep-2025 12:28:12 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[12-Sep-2025 12:28:12 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[12-Sep-2025 12:28:12 Europe/Berlin] Entering getEnhancedDashboardData for User ID: 7, Role: admin
+[12-Sep-2025 12:28:12 Europe/Berlin] Is SuperUser: false
+[12-Sep-2025 12:28:12 Europe/Berlin] User's Team ID: 1
+[12-Sep-2025 12:28:12 Europe/Berlin] Is Admin/Superuser: false, Is Manager: false
+[12-Sep-2025 12:28:12 Europe/Berlin] Query mode: Agent - filtering by user_id: 7
+[12-Sep-2025 12:28:12 Europe/Berlin] Executing query: SELECT COUNT(*) as total FROM leads l WHERE l.user_id = ?
+[12-Sep-2025 12:28:12 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:28:12 Europe/Berlin] Total Leads: 0
+[12-Sep-2025 12:28:12 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status = 'Presentation Stage'
+[12-Sep-2025 12:28:12 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:28:12 Europe/Berlin] Presentation Stage: 0
+[12-Sep-2025 12:28:12 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[12-Sep-2025 12:28:12 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:28:12 Europe/Berlin] Closed Deals: 0
+[12-Sep-2025 12:28:12 Europe/Berlin] Executing query: SELECT SUM(l.price) as total FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[12-Sep-2025 12:28:12 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:28:12 Europe/Berlin] Portfolio Value: 0.00
+[12-Sep-2025 12:28:12 Europe/Berlin] Executing query: SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.user_id = u.id WHERE l.user_id = ? ORDER BY l.created_at DESC LIMIT 10
+[12-Sep-2025 12:28:12 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:28:12 Europe/Berlin] Recent Leads Count: 0
+[12-Sep-2025 12:28:12 Europe/Berlin] Executing query: SELECT project_model, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY project_model ORDER BY count DESC LIMIT 10
+[12-Sep-2025 12:28:12 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:28:12 Europe/Berlin] Most Inquired Models Count: 0
+[12-Sep-2025 12:28:12 Europe/Berlin] Executing query: SELECT developer, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY developer ORDER BY count DESC LIMIT 10
+[12-Sep-2025 12:28:12 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:28:12 Europe/Berlin] Top Projects Count: 0
+[12-Sep-2025 12:28:12 Europe/Berlin] Executing query: SELECT 
+            COUNT(*) as total_tracked,
+            SUM(CASE WHEN requirements_complete = 1 THEN 1 ELSE 0 END) as requirements_complete,
+            SUM(CASE WHEN pagibig_bank_approval = 1 THEN 1 ELSE 0 END) as bank_approved,
+            SUM(CASE WHEN loan_takeout = 1 THEN 1 ELSE 0 END) as loan_takeouts,
+            SUM(CASE WHEN turnover = 1 THEN 1 ELSE 0 END) as turnovers,
+            AVG(progress_rate) as avg_progress
+        FROM downpayment_tracker dt JOIN leads l ON dt.lead_id = l.id WHERE l.user_id = ?
+[12-Sep-2025 12:28:12 Europe/Berlin] With params: 7 (types: i)
+[12-Sep-2025 12:28:12 Europe/Berlin] Downpayment Stats: {"total_tracked":0,"requirements_complete":null,"bank_approved":null,"loan_takeouts":null,"turnovers":null,"avg_progress":null}
+[12-Sep-2025 12:28:12 Europe/Berlin] Memo Query Params: user_id=7, team_id=1
+[12-Sep-2025 12:28:12 Europe/Berlin] Executing query: SELECT m.*, u.name as created_by_name 
+                       FROM memos m 
+                       LEFT JOIN users u ON m.created_by = u.id 
+                       WHERE m.is_active = 1 AND (
+                               m.visible_to_all = 1 
+                               OR EXISTS (
+                                   SELECT 1 FROM memo_person_visibility mpv 
+                                   WHERE mpv.memo_id = m.id AND mpv.user_id = ?
+                               ) OR EXISTS (
+                                   SELECT 1 FROM memo_team_visibility mtv 
+                                   WHERE mtv.memo_id = m.id AND mtv.team_id = ?
+                               )) ORDER BY m.memo_when DESC LIMIT 5
+[12-Sep-2025 12:28:12 Europe/Berlin] With params: 7, 1 (types: ii)
+[12-Sep-2025 12:28:12 Europe/Berlin] Recent Memos Count: 2
+[12-Sep-2025 12:28:12 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[12-Sep-2025 12:28:12 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[12-Sep-2025 12:28:12 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[12-Sep-2025 13:47:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[12-Sep-2025 13:47:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[12-Sep-2025 13:47:52 Europe/Berlin] User logged in: ID=8, Role=manager, Team ID=8
+[12-Sep-2025 13:47:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[12-Sep-2025 13:47:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[12-Sep-2025 13:47:52 Europe/Berlin] Entering getEnhancedDashboardData for User ID: 8, Role: manager
+[12-Sep-2025 13:47:52 Europe/Berlin] Is SuperUser: false
+[12-Sep-2025 13:47:52 Europe/Berlin] User's Team ID: 8
+[12-Sep-2025 13:47:52 Europe/Berlin] Is Admin/Superuser: false, Is Manager: false
+[12-Sep-2025 13:47:52 Europe/Berlin] Query mode: Agent - filtering by user_id: 8
+[12-Sep-2025 13:47:52 Europe/Berlin] Executing query: SELECT COUNT(*) as total FROM leads l WHERE l.user_id = ?
+[12-Sep-2025 13:47:52 Europe/Berlin] With params: 8 (types: i)
+[12-Sep-2025 13:47:52 Europe/Berlin] Total Leads: 4
+[12-Sep-2025 13:47:52 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status = 'Presentation Stage'
+[12-Sep-2025 13:47:52 Europe/Berlin] With params: 8 (types: i)
+[12-Sep-2025 13:47:52 Europe/Berlin] Presentation Stage: 3
+[12-Sep-2025 13:47:52 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[12-Sep-2025 13:47:52 Europe/Berlin] With params: 8 (types: i)
+[12-Sep-2025 13:47:52 Europe/Berlin] Closed Deals: 0
+[12-Sep-2025 13:47:52 Europe/Berlin] Executing query: SELECT SUM(l.price) as total FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[12-Sep-2025 13:47:52 Europe/Berlin] With params: 8 (types: i)
+[12-Sep-2025 13:47:52 Europe/Berlin] Portfolio Value: 0.00
+[12-Sep-2025 13:47:52 Europe/Berlin] Executing query: SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.user_id = u.id WHERE l.user_id = ? ORDER BY l.created_at DESC LIMIT 10
+[12-Sep-2025 13:47:52 Europe/Berlin] With params: 8 (types: i)
+[12-Sep-2025 13:47:52 Europe/Berlin] Recent Leads Count: 4
+[12-Sep-2025 13:47:52 Europe/Berlin] Executing query: SELECT project_model, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY project_model ORDER BY count DESC LIMIT 10
+[12-Sep-2025 13:47:52 Europe/Berlin] With params: 8 (types: i)
+[12-Sep-2025 13:47:52 Europe/Berlin] Most Inquired Models Count: 3
+[12-Sep-2025 13:47:52 Europe/Berlin] Executing query: SELECT developer, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY developer ORDER BY count DESC LIMIT 10
+[12-Sep-2025 13:47:52 Europe/Berlin] With params: 8 (types: i)
+[12-Sep-2025 13:47:52 Europe/Berlin] Top Projects Count: 4
+[12-Sep-2025 13:47:52 Europe/Berlin] Executing query: SELECT 
+            COUNT(*) as total_tracked,
+            SUM(CASE WHEN requirements_complete = 1 THEN 1 ELSE 0 END) as requirements_complete,
+            SUM(CASE WHEN pagibig_bank_approval = 1 THEN 1 ELSE 0 END) as bank_approved,
+            SUM(CASE WHEN loan_takeout = 1 THEN 1 ELSE 0 END) as loan_takeouts,
+            SUM(CASE WHEN turnover = 1 THEN 1 ELSE 0 END) as turnovers,
+            AVG(progress_rate) as avg_progress
+        FROM downpayment_tracker dt JOIN leads l ON dt.lead_id = l.id WHERE l.user_id = ?
+[12-Sep-2025 13:47:52 Europe/Berlin] With params: 8 (types: i)
+[12-Sep-2025 13:47:52 Europe/Berlin] Downpayment Stats: {"total_tracked":0,"requirements_complete":null,"bank_approved":null,"loan_takeouts":null,"turnovers":null,"avg_progress":null}
+[12-Sep-2025 13:47:52 Europe/Berlin] Memo Query Params: user_id=8, team_id=8
+[12-Sep-2025 13:47:52 Europe/Berlin] Executing query: SELECT m.*, u.name as created_by_name 
+                       FROM memos m 
+                       LEFT JOIN users u ON m.created_by = u.id 
+                       WHERE m.is_active = 1 AND (
+                               m.visible_to_all = 1 
+                               OR EXISTS (
+                                   SELECT 1 FROM memo_person_visibility mpv 
+                                   WHERE mpv.memo_id = m.id AND mpv.user_id = ?
+                               ) OR EXISTS (
+                                   SELECT 1 FROM memo_team_visibility mtv 
+                                   WHERE mtv.memo_id = m.id AND mtv.team_id = ?
+                               )) ORDER BY m.memo_when DESC LIMIT 5
+[12-Sep-2025 13:47:52 Europe/Berlin] With params: 8, 8 (types: ii)
+[12-Sep-2025 13:47:52 Europe/Berlin] Recent Memos Count: 2
+[12-Sep-2025 13:47:52 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[12-Sep-2025 13:47:52 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[12-Sep-2025 13:47:52 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[14-Sep-2025 17:33:55 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Sep-2025 17:33:55 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Sep-2025 17:33:55 Europe/Berlin] User logged in: ID=7, Role=admin, Team ID=1
+[14-Sep-2025 17:33:55 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Sep-2025 17:33:55 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Sep-2025 17:33:55 Europe/Berlin] Entering getEnhancedDashboardData for User ID: 7, Role: admin
+[14-Sep-2025 17:33:55 Europe/Berlin] Is SuperUser: false
+[14-Sep-2025 17:33:55 Europe/Berlin] User's Team ID: 1
+[14-Sep-2025 17:33:55 Europe/Berlin] Is Admin/Superuser: false, Is Manager: false
+[14-Sep-2025 17:33:55 Europe/Berlin] Query mode: Agent - filtering by user_id: 7
+[14-Sep-2025 17:33:55 Europe/Berlin] Executing query: SELECT COUNT(*) as total FROM leads l WHERE l.user_id = ?
+[14-Sep-2025 17:33:55 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 17:33:55 Europe/Berlin] Total Leads: 0
+[14-Sep-2025 17:33:55 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status = 'Presentation Stage'
+[14-Sep-2025 17:33:55 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 17:33:55 Europe/Berlin] Presentation Stage: 0
+[14-Sep-2025 17:33:55 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[14-Sep-2025 17:33:55 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 17:33:55 Europe/Berlin] Closed Deals: 0
+[14-Sep-2025 17:33:55 Europe/Berlin] Executing query: SELECT SUM(l.price) as total FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[14-Sep-2025 17:33:55 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 17:33:55 Europe/Berlin] Portfolio Value: 0.00
+[14-Sep-2025 17:33:55 Europe/Berlin] Executing query: SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.user_id = u.id WHERE l.user_id = ? ORDER BY l.created_at DESC LIMIT 10
+[14-Sep-2025 17:33:55 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 17:33:55 Europe/Berlin] Recent Leads Count: 0
+[14-Sep-2025 17:33:55 Europe/Berlin] Executing query: SELECT project_model, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY project_model ORDER BY count DESC LIMIT 10
+[14-Sep-2025 17:33:55 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 17:33:55 Europe/Berlin] Most Inquired Models Count: 0
+[14-Sep-2025 17:33:55 Europe/Berlin] Executing query: SELECT developer, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY developer ORDER BY count DESC LIMIT 10
+[14-Sep-2025 17:33:55 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 17:33:55 Europe/Berlin] Top Projects Count: 0
+[14-Sep-2025 17:33:55 Europe/Berlin] Executing query: SELECT 
+            COUNT(*) as total_tracked,
+            SUM(CASE WHEN requirements_complete = 1 THEN 1 ELSE 0 END) as requirements_complete,
+            SUM(CASE WHEN pagibig_bank_approval = 1 THEN 1 ELSE 0 END) as bank_approved,
+            SUM(CASE WHEN loan_takeout = 1 THEN 1 ELSE 0 END) as loan_takeouts,
+            SUM(CASE WHEN turnover = 1 THEN 1 ELSE 0 END) as turnovers,
+            AVG(progress_rate) as avg_progress
+        FROM downpayment_tracker dt JOIN leads l ON dt.lead_id = l.id WHERE l.user_id = ?
+[14-Sep-2025 17:33:55 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 17:33:55 Europe/Berlin] Downpayment Stats: {"total_tracked":0,"requirements_complete":null,"bank_approved":null,"loan_takeouts":null,"turnovers":null,"avg_progress":null}
+[14-Sep-2025 17:33:55 Europe/Berlin] Memo Query Params: user_id=7, team_id=1
+[14-Sep-2025 17:33:55 Europe/Berlin] Executing query: SELECT m.*, u.name as created_by_name 
+                       FROM memos m 
+                       LEFT JOIN users u ON m.created_by = u.id 
+                       WHERE m.is_active = 1 AND (
+                               m.visible_to_all = 1 
+                               OR EXISTS (
+                                   SELECT 1 FROM memo_person_visibility mpv 
+                                   WHERE mpv.memo_id = m.id AND mpv.user_id = ?
+                               ) OR EXISTS (
+                                   SELECT 1 FROM memo_team_visibility mtv 
+                                   WHERE mtv.memo_id = m.id AND mtv.team_id = ?
+                               )) ORDER BY m.memo_when DESC LIMIT 5
+[14-Sep-2025 17:33:55 Europe/Berlin] With params: 7, 1 (types: ii)
+[14-Sep-2025 17:33:55 Europe/Berlin] Recent Memos Count: 2
+[14-Sep-2025 17:33:55 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Sep-2025 17:33:55 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Sep-2025 17:33:55 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[14-Sep-2025 19:04:25 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Sep-2025 19:04:25 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Sep-2025 19:04:25 Europe/Berlin] User logged in: ID=7, Role=admin, Team ID=1
+[14-Sep-2025 19:04:25 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Sep-2025 19:04:25 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Sep-2025 19:04:25 Europe/Berlin] Entering getEnhancedDashboardData for User ID: 7, Role: admin
+[14-Sep-2025 19:04:25 Europe/Berlin] Is SuperUser: false
+[14-Sep-2025 19:04:25 Europe/Berlin] User's Team ID: 1
+[14-Sep-2025 19:04:25 Europe/Berlin] Is Admin/Superuser: false, Is Manager: false
+[14-Sep-2025 19:04:25 Europe/Berlin] Query mode: Agent - filtering by user_id: 7
+[14-Sep-2025 19:04:25 Europe/Berlin] Executing query: SELECT COUNT(*) as total FROM leads l WHERE l.user_id = ?
+[14-Sep-2025 19:04:25 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 19:04:25 Europe/Berlin] Total Leads: 0
+[14-Sep-2025 19:04:25 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status = 'Presentation Stage'
+[14-Sep-2025 19:04:25 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 19:04:25 Europe/Berlin] Presentation Stage: 0
+[14-Sep-2025 19:04:25 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[14-Sep-2025 19:04:25 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 19:04:25 Europe/Berlin] Closed Deals: 0
+[14-Sep-2025 19:04:25 Europe/Berlin] Executing query: SELECT SUM(l.price) as total FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[14-Sep-2025 19:04:25 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 19:04:25 Europe/Berlin] Portfolio Value: 0.00
+[14-Sep-2025 19:04:25 Europe/Berlin] Executing query: SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.user_id = u.id WHERE l.user_id = ? ORDER BY l.created_at DESC LIMIT 10
+[14-Sep-2025 19:04:25 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 19:04:25 Europe/Berlin] Recent Leads Count: 0
+[14-Sep-2025 19:04:25 Europe/Berlin] Executing query: SELECT project_model, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY project_model ORDER BY count DESC LIMIT 10
+[14-Sep-2025 19:04:25 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 19:04:25 Europe/Berlin] Most Inquired Models Count: 0
+[14-Sep-2025 19:04:25 Europe/Berlin] Executing query: SELECT developer, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY developer ORDER BY count DESC LIMIT 10
+[14-Sep-2025 19:04:25 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 19:04:25 Europe/Berlin] Top Projects Count: 0
+[14-Sep-2025 19:04:25 Europe/Berlin] Executing query: SELECT 
+            COUNT(*) as total_tracked,
+            SUM(CASE WHEN requirements_complete = 1 THEN 1 ELSE 0 END) as requirements_complete,
+            SUM(CASE WHEN pagibig_bank_approval = 1 THEN 1 ELSE 0 END) as bank_approved,
+            SUM(CASE WHEN loan_takeout = 1 THEN 1 ELSE 0 END) as loan_takeouts,
+            SUM(CASE WHEN turnover = 1 THEN 1 ELSE 0 END) as turnovers,
+            AVG(progress_rate) as avg_progress
+        FROM downpayment_tracker dt JOIN leads l ON dt.lead_id = l.id WHERE l.user_id = ?
+[14-Sep-2025 19:04:25 Europe/Berlin] With params: 7 (types: i)
+[14-Sep-2025 19:04:25 Europe/Berlin] Downpayment Stats: {"total_tracked":0,"requirements_complete":null,"bank_approved":null,"loan_takeouts":null,"turnovers":null,"avg_progress":null}
+[14-Sep-2025 19:04:25 Europe/Berlin] Memo Query Params: user_id=7, team_id=1
+[14-Sep-2025 19:04:25 Europe/Berlin] Executing query: SELECT m.*, u.name as created_by_name 
+                       FROM memos m 
+                       LEFT JOIN users u ON m.created_by = u.id 
+                       WHERE m.is_active = 1 AND (
+                               m.visible_to_all = 1 
+                               OR EXISTS (
+                                   SELECT 1 FROM memo_person_visibility mpv 
+                                   WHERE mpv.memo_id = m.id AND mpv.user_id = ?
+                               ) OR EXISTS (
+                                   SELECT 1 FROM memo_team_visibility mtv 
+                                   WHERE mtv.memo_id = m.id AND mtv.team_id = ?
+                               )) ORDER BY m.memo_when DESC LIMIT 5
+[14-Sep-2025 19:04:25 Europe/Berlin] With params: 7, 1 (types: ii)
+[14-Sep-2025 19:04:25 Europe/Berlin] Recent Memos Count: 2
+[14-Sep-2025 19:04:25 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[14-Sep-2025 19:04:25 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[14-Sep-2025 19:04:25 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[16-Sep-2025 07:34:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[16-Sep-2025 07:34:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[16-Sep-2025 07:34:27 Europe/Berlin] User logged in: ID=7, Role=admin, Team ID=1
+[16-Sep-2025 07:34:27 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[16-Sep-2025 07:34:27 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[16-Sep-2025 07:34:27 Europe/Berlin] Entering getEnhancedDashboardData for User ID: 7, Role: admin
+[16-Sep-2025 07:34:27 Europe/Berlin] Is SuperUser: false
+[16-Sep-2025 07:34:27 Europe/Berlin] User's Team ID: 1
+[16-Sep-2025 07:34:27 Europe/Berlin] Is Admin/Superuser: false, Is Manager: false
+[16-Sep-2025 07:34:27 Europe/Berlin] Query mode: Agent - filtering by user_id: 7
+[16-Sep-2025 07:34:27 Europe/Berlin] Executing query: SELECT COUNT(*) as total FROM leads l WHERE l.user_id = ?
+[16-Sep-2025 07:34:27 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 07:34:27 Europe/Berlin] Total Leads: 0
+[16-Sep-2025 07:34:27 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status = 'Presentation Stage'
+[16-Sep-2025 07:34:27 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 07:34:27 Europe/Berlin] Presentation Stage: 0
+[16-Sep-2025 07:34:27 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[16-Sep-2025 07:34:27 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 07:34:27 Europe/Berlin] Closed Deals: 0
+[16-Sep-2025 07:34:27 Europe/Berlin] Executing query: SELECT SUM(l.price) as total FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[16-Sep-2025 07:34:27 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 07:34:27 Europe/Berlin] Portfolio Value: 0.00
+[16-Sep-2025 07:34:27 Europe/Berlin] Executing query: SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.user_id = u.id WHERE l.user_id = ? ORDER BY l.created_at DESC LIMIT 10
+[16-Sep-2025 07:34:27 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 07:34:27 Europe/Berlin] Recent Leads Count: 0
+[16-Sep-2025 07:34:27 Europe/Berlin] Executing query: SELECT project_model, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY project_model ORDER BY count DESC LIMIT 10
+[16-Sep-2025 07:34:27 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 07:34:27 Europe/Berlin] Most Inquired Models Count: 0
+[16-Sep-2025 07:34:27 Europe/Berlin] Executing query: SELECT developer, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY developer ORDER BY count DESC LIMIT 10
+[16-Sep-2025 07:34:27 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 07:34:27 Europe/Berlin] Top Projects Count: 0
+[16-Sep-2025 07:34:27 Europe/Berlin] Executing query: SELECT 
+            COUNT(*) as total_tracked,
+            SUM(CASE WHEN requirements_complete = 1 THEN 1 ELSE 0 END) as requirements_complete,
+            SUM(CASE WHEN pagibig_bank_approval = 1 THEN 1 ELSE 0 END) as bank_approved,
+            SUM(CASE WHEN loan_takeout = 1 THEN 1 ELSE 0 END) as loan_takeouts,
+            SUM(CASE WHEN turnover = 1 THEN 1 ELSE 0 END) as turnovers,
+            AVG(progress_rate) as avg_progress
+        FROM downpayment_tracker dt JOIN leads l ON dt.lead_id = l.id WHERE l.user_id = ?
+[16-Sep-2025 07:34:27 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 07:34:27 Europe/Berlin] Downpayment Stats: {"total_tracked":0,"requirements_complete":null,"bank_approved":null,"loan_takeouts":null,"turnovers":null,"avg_progress":null}
+[16-Sep-2025 07:34:27 Europe/Berlin] Memo Query Params: user_id=7, team_id=1
+[16-Sep-2025 07:34:27 Europe/Berlin] Executing query: SELECT m.*, u.name as created_by_name 
+                       FROM memos m 
+                       LEFT JOIN users u ON m.created_by = u.id 
+                       WHERE m.is_active = 1 AND (
+                               m.visible_to_all = 1 
+                               OR EXISTS (
+                                   SELECT 1 FROM memo_person_visibility mpv 
+                                   WHERE mpv.memo_id = m.id AND mpv.user_id = ?
+                               ) OR EXISTS (
+                                   SELECT 1 FROM memo_team_visibility mtv 
+                                   WHERE mtv.memo_id = m.id AND mtv.team_id = ?
+                               )) ORDER BY m.memo_when DESC LIMIT 5
+[16-Sep-2025 07:34:27 Europe/Berlin] With params: 7, 1 (types: ii)
+[16-Sep-2025 07:34:27 Europe/Berlin] Recent Memos Count: 2
+[16-Sep-2025 07:34:28 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[16-Sep-2025 07:34:28 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[16-Sep-2025 07:34:28 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[16-Sep-2025 15:53:32 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[16-Sep-2025 15:53:32 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[16-Sep-2025 15:53:32 Europe/Berlin] User logged in: ID=7, Role=admin, Team ID=1
+[16-Sep-2025 15:53:32 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[16-Sep-2025 15:53:32 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[16-Sep-2025 15:53:32 Europe/Berlin] Entering getEnhancedDashboardData for User ID: 7, Role: admin
+[16-Sep-2025 15:53:32 Europe/Berlin] Is SuperUser: false
+[16-Sep-2025 15:53:32 Europe/Berlin] User's Team ID: 1
+[16-Sep-2025 15:53:32 Europe/Berlin] Is Admin/Superuser: false, Is Manager: false
+[16-Sep-2025 15:53:32 Europe/Berlin] Query mode: Agent - filtering by user_id: 7
+[16-Sep-2025 15:53:32 Europe/Berlin] Executing query: SELECT COUNT(*) as total FROM leads l WHERE l.user_id = ?
+[16-Sep-2025 15:53:32 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 15:53:32 Europe/Berlin] Total Leads: 0
+[16-Sep-2025 15:53:32 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status = 'Presentation Stage'
+[16-Sep-2025 15:53:32 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 15:53:32 Europe/Berlin] Presentation Stage: 0
+[16-Sep-2025 15:53:32 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[16-Sep-2025 15:53:32 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 15:53:32 Europe/Berlin] Closed Deals: 0
+[16-Sep-2025 15:53:32 Europe/Berlin] Executing query: SELECT SUM(l.price) as total FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[16-Sep-2025 15:53:32 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 15:53:32 Europe/Berlin] Portfolio Value: 0.00
+[16-Sep-2025 15:53:32 Europe/Berlin] Executing query: SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.user_id = u.id WHERE l.user_id = ? ORDER BY l.created_at DESC LIMIT 10
+[16-Sep-2025 15:53:32 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 15:53:32 Europe/Berlin] Recent Leads Count: 0
+[16-Sep-2025 15:53:32 Europe/Berlin] Executing query: SELECT project_model, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY project_model ORDER BY count DESC LIMIT 10
+[16-Sep-2025 15:53:32 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 15:53:32 Europe/Berlin] Most Inquired Models Count: 0
+[16-Sep-2025 15:53:32 Europe/Berlin] Executing query: SELECT developer, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY developer ORDER BY count DESC LIMIT 10
+[16-Sep-2025 15:53:32 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 15:53:32 Europe/Berlin] Top Projects Count: 0
+[16-Sep-2025 15:53:32 Europe/Berlin] Executing query: SELECT 
+            COUNT(*) as total_tracked,
+            SUM(CASE WHEN requirements_complete = 1 THEN 1 ELSE 0 END) as requirements_complete,
+            SUM(CASE WHEN pagibig_bank_approval = 1 THEN 1 ELSE 0 END) as bank_approved,
+            SUM(CASE WHEN loan_takeout = 1 THEN 1 ELSE 0 END) as loan_takeouts,
+            SUM(CASE WHEN turnover = 1 THEN 1 ELSE 0 END) as turnovers,
+            AVG(progress_rate) as avg_progress
+        FROM downpayment_tracker dt JOIN leads l ON dt.lead_id = l.id WHERE l.user_id = ?
+[16-Sep-2025 15:53:32 Europe/Berlin] With params: 7 (types: i)
+[16-Sep-2025 15:53:32 Europe/Berlin] Downpayment Stats: {"total_tracked":0,"requirements_complete":null,"bank_approved":null,"loan_takeouts":null,"turnovers":null,"avg_progress":null}
+[16-Sep-2025 15:53:32 Europe/Berlin] Memo Query Params: user_id=7, team_id=1
+[16-Sep-2025 15:53:32 Europe/Berlin] Executing query: SELECT m.*, u.name as created_by_name 
+                       FROM memos m 
+                       LEFT JOIN users u ON m.created_by = u.id 
+                       WHERE m.is_active = 1 AND (
+                               m.visible_to_all = 1 
+                               OR EXISTS (
+                                   SELECT 1 FROM memo_person_visibility mpv 
+                                   WHERE mpv.memo_id = m.id AND mpv.user_id = ?
+                               ) OR EXISTS (
+                                   SELECT 1 FROM memo_team_visibility mtv 
+                                   WHERE mtv.memo_id = m.id AND mtv.team_id = ?
+                               )) ORDER BY m.memo_when DESC LIMIT 5
+[16-Sep-2025 15:53:32 Europe/Berlin] With params: 7, 1 (types: ii)
+[16-Sep-2025 15:53:32 Europe/Berlin] Recent Memos Count: 2
+[16-Sep-2025 15:53:33 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[16-Sep-2025 15:53:33 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[16-Sep-2025 15:53:33 Europe/Berlin] Error fetching notifications: Unknown column 'last_notification_read' in 'field list'
+[19-Sep-2025 18:56:59 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Sep-2025 18:56:59 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Sep-2025 18:56:59 Europe/Berlin] User logged in: ID=7, Role=admin, Team ID=1
+[19-Sep-2025 18:56:59 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Sep-2025 18:56:59 Europe/Berlin] Database connection successful to localhost/real_estate_leads
+[19-Sep-2025 18:56:59 Europe/Berlin] Entering getEnhancedDashboardData for User ID: 7, Role: admin
+[19-Sep-2025 18:56:59 Europe/Berlin] Is SuperUser: false
+[19-Sep-2025 18:56:59 Europe/Berlin] User's Team ID: 1
+[19-Sep-2025 18:56:59 Europe/Berlin] Is Admin/Superuser: false, Is Manager: false
+[19-Sep-2025 18:56:59 Europe/Berlin] Query mode: Agent - filtering by user_id: 7
+[19-Sep-2025 18:56:59 Europe/Berlin] Executing query: SELECT COUNT(*) as total FROM leads l WHERE l.user_id = ?
+[19-Sep-2025 18:56:59 Europe/Berlin] With params: 7 (types: i)
+[19-Sep-2025 18:56:59 Europe/Berlin] Total Leads: 0
+[19-Sep-2025 18:56:59 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status = 'Presentation Stage'
+[19-Sep-2025 18:56:59 Europe/Berlin] With params: 7 (types: i)
+[19-Sep-2025 18:56:59 Europe/Berlin] Presentation Stage: 0
+[19-Sep-2025 18:56:59 Europe/Berlin] Executing query: SELECT COUNT(*) as count FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[19-Sep-2025 18:56:59 Europe/Berlin] With params: 7 (types: i)
+[19-Sep-2025 18:56:59 Europe/Berlin] Closed Deals: 0
+[19-Sep-2025 18:56:59 Europe/Berlin] Executing query: SELECT SUM(l.price) as total FROM leads l WHERE l.user_id = ? AND l.status IN ('Closed Deal', 'Closed')
+[19-Sep-2025 18:56:59 Europe/Berlin] With params: 7 (types: i)
+[19-Sep-2025 18:56:59 Europe/Berlin] Portfolio Value: 0.00
+[19-Sep-2025 18:56:59 Europe/Berlin] Executing query: SELECT l.*, u.name as agent_name FROM leads l LEFT JOIN users u ON l.user_id = u.id WHERE l.user_id = ? ORDER BY l.created_at DESC LIMIT 10
+[19-Sep-2025 18:56:59 Europe/Berlin] With params: 7 (types: i)
+[19-Sep-2025 18:56:59 Europe/Berlin] Recent Leads Count: 0
+[19-Sep-2025 18:56:59 Europe/Berlin] Executing query: SELECT project_model, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY project_model ORDER BY count DESC LIMIT 10
+[19-Sep-2025 18:56:59 Europe/Berlin] With params: 7 (types: i)
+[19-Sep-2025 18:56:59 Europe/Berlin] Most Inquired Models Count: 0
+[19-Sep-2025 18:56:59 Europe/Berlin] Executing query: SELECT developer, COUNT(*) as count FROM leads l WHERE l.user_id = ? GROUP BY developer ORDER BY count DESC LIMIT 10
+[19-Sep-2025 18:56:59 Europe/Berlin] With params: 7 (types: i)
+[19-Sep-2025 18:56:59 Europe/Berlin] Top Projects Count: 0
+[19-Sep-2025 18:56:59 Europe/Berlin] Executing query: SELECT 
+            COUNT(*) as total_tracked,
+            SUM(CASE WHEN requirements_complete = 1 THEN 1 ELSE 0 END) as requirements_complete,
+            SUM(CASE WHEN pagibig_bank_approval = 1 THEN 1 ELSE 0 END) as bank_approved,
+            SUM(CASE WHEN loan_takeout = 1 THEN 1 ELSE 0 END) as loan_takeouts,
+            SUM(CASE WHEN turnover = 1 THEN 1 ELSE 0 END) as turnovers,
+            AVG(progress_rate) as avg_progress
+        FROM downpayment_tracker dt JOIN leads l ON dt.lead_id = l.id WHERE l.user_id = ?
+[19-Sep-2025 18:56:59 Europe/Berlin] With params: 7 (types: i)
+[19-Sep-2025 18:56:59 Europe/Berlin] Downpayment Stats: {"total_tracked":0,"requirements_complete":null,"bank_approved":null,"loan_takeouts":null,"turnovers":null,"avg_progress":null}
+[19-Sep-2025 18:56:59 Europe/Berlin] Memo Query Params: user_id=7, team_id=1
+[19-Sep-2025 18:56:59 Europe/Berlin] Executing query: SELECT m.*, u.name as created_by_name 
+                       FROM memos m 
+                       LEFT JOIN users u ON m.created_by = u.id 
+                       WHERE m.is_active = 1 AND (
+                               m.visible_to_all = 1 
+                               OR EXISTS (
+                                   SELECT 1 FROM memo_person_visibility mpv 
+                                   WHERE mpv.memo_id = m.id AND mpv.user_id = ?
+                               ) OR EXISTS (
+                                   SELECT 1 FROM memo_team_visibility mtv 
+                                   WHERE mtv.memo_id = m.id AND mtv.team_id = ?
+                               )) ORDER BY m.memo_when DESC LIMIT 5
+[19-Sep-2025 18:56:59 Europe/Berlin] With params: 7, 1 (types: ii)
+[19-Sep-2025 18:56:59 Europe/Berlin] Recent Memos Count: 2
+[19-Sep-2025 18:56:59 Europe/Berlin] Attempting database connection. DreamHost environment: false
+[19-Sep-2025 18:56:59 Europe/Berlin] Database connection successful to localhost/real_estate_leads
