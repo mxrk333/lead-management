@@ -3,17 +3,7 @@ session_start();
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
-// Add superuser function if not exists
-if (!function_exists('isSuperUser')) {
-    function isSuperUser($username) {
-        $superusers = [
-            'markpatigayon.itadmin',
-            'gabriellibacao.founder', 
-            'romeocorberta.itdept'
-        ];
-        return in_array($username, $superusers);
-    }
-}
+// isSuperUser is provided globally in includes/functions.php
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {

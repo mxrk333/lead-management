@@ -193,7 +193,7 @@ if (!empty($user['profile_picture'])) {
                         <li class="nav-item">
                             <a href="<?php echo $base_url; ?>incentives.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'incentives.php' ? 'active' : ''; ?>">
                                 <i class="fas fa-coins nav-icon"></i>
-                                <span class="nav-text">Incentives</span>
+                                <span class="nav-text">My Raffle Entries</span>
                             </a>
                         </li>
                         

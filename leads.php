@@ -7,7 +7,7 @@ require_once 'includes/functions.php';
 function isSuperUser($username) {
     $superusers = [
         'markpatigayon.itadmin',
-        'gabriellibacao.founder', 
+        'gabriellibacao.founder',
         'romeocorberta.itdept'
     ];
     return in_array($username, $superusers);
@@ -26,12 +26,12 @@ $user = getUserById($user_id);
 // Function to check if current user can edit a lead
 function canEditLead($lead, $current_user_id) {
     global $user; // Access the global user variable
-    
+
     // Check if user is a superuser
     if (isSuperUser($user['username'])) {
         return true;
     }
-    
+
     // User can edit if they are the assigned agent
     return ($lead['user_id'] == $current_user_id);
 }
@@ -39,9 +39,9 @@ function canEditLead($lead, $current_user_id) {
 // Helper functions for active leads (excluding closed deals)
 function getActiveLeads($user_id, $role, $username = null) {
     $conn = getDbConnection();
-    
+
     $whereClause = "WHERE l.status != 'Closed Deal'";
-    
+
     // Superusers can see all leads
     if ($username && isSuperUser($username)) {
         // No additional WHERE clause needed - show all active leads
@@ -55,25 +55,144 @@ function getActiveLeads($user_id, $role, $username = null) {
             $whereClause .= " AND u.team_id = " . $team_data['team_id'];
         }
     }
-    
+
     $query = "
-        SELECT l.*, u.name as agent_name, t.name as team_name
+        SELECT l.*, u.name as agent_name, u.profile_picture as agent_profile_picture, t.name as team_name
         FROM leads l
         LEFT JOIN users u ON l.user_id = u.id
         LEFT JOIN teams t ON u.team_id = t.id
         $whereClause
         ORDER BY l.created_at DESC
     ";
-    
+
     $result = mysqli_query($conn, $query);
     return mysqli_fetch_all($result, MYSQLI_ASSOC);
 }
 
-function getPaginatedActiveLeads($user_id, $role, $offset, $limit) {
+// Build a combined WHERE clause for active leads with optional filters
+function buildActiveLeadsWhereClause($conn, $user_id, $role, $username, $filters) {
+    $conditions = ["l.status != 'Closed Deal'"];
+
+    // Role-based visibility unless superuser
+    if (!($username && isSuperUser($username))) {
+        if ($role === 'agent') {
+            $conditions[] = "l.user_id = $user_id";
+        } elseif ($role === 'supervisor' || $role === 'manager') {
+            $team_query = "SELECT team_id FROM users WHERE id = $user_id";
+            $team_result = mysqli_query($conn, $team_query);
+            $team_data = mysqli_fetch_assoc($team_result);
+            if ($team_data && $team_data['team_id']) {
+                $conditions[] = "u.team_id = " . $team_data['team_id'];
+            }
+        }
+    }
+
+    // Apply filters if present
+    if (!empty($filters['search'])) {
+        $s = mysqli_real_escape_string($conn, $filters['search']);
+        $conditions[] = "(l.client_name LIKE '%$s%' OR l.email LIKE '%$s%' OR l.phone LIKE '%$s%')";
+    }
+
+    if (!empty($filters['status'])) {
+        $status = mysqli_real_escape_string($conn, $filters['status']);
+        $conditions[] = "l.status = '$status'";
+    }
+
+    if (!empty($filters['temperature'])) {
+        $temperature = mysqli_real_escape_string($conn, $filters['temperature']);
+        $conditions[] = "l.temperature = '$temperature'";
+    }
+
+    if (!empty($filters['source'])) {
+        $source = mysqli_real_escape_string($conn, $filters['source']);
+        $conditions[] = "l.source = '$source'";
+    }
+
+    if (!empty($filters['my_leads'])) {
+        // Explicitly restrict to current user's leads
+        $conditions[] = "l.user_id = $user_id";
+    }
+
+    if (!empty($filters['agent'])) {
+        // Filter by specific agent (for superusers and managers)
+        $agent_id = mysqli_real_escape_string($conn, $filters['agent']);
+        $conditions[] = "l.user_id = '$agent_id'";
+    }
+
+    return 'WHERE ' . implode(' AND ', $conditions);
+}
+
+// Get all active leads with combined filters applied (no pagination)
+function getFilteredActiveLeads($user_id, $role, $username, $filters) {
     $conn = getDbConnection();
-    
-    $whereClause = "WHERE l.status != 'Closed Deal'";
-    
+    $whereClause = buildActiveLeadsWhereClause($conn, $user_id, $role, $username, $filters);
+
+    $query = "
+        SELECT l.*, u.name as agent_name, u.profile_picture as agent_profile_picture, t.name as team_name
+        FROM leads l
+        LEFT JOIN users u ON l.user_id = u.id
+        LEFT JOIN teams t ON u.team_id = t.id
+        $whereClause
+        ORDER BY l.created_at DESC
+    ";
+
+    $result = mysqli_query($conn, $query);
+    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+}
+
+// Get paginated active leads with combined filters
+function getPaginatedFilteredActiveLeads($user_id, $role, $username, $filters, $offset, $limit) {
+    $conn = getDbConnection();
+    $whereClause = buildActiveLeadsWhereClause($conn, $user_id, $role, $username, $filters);
+
+    $query = "
+        SELECT l.*, u.name as agent_name, u.profile_picture as agent_profile_picture, t.name as team_name
+        FROM leads l
+        LEFT JOIN users u ON l.user_id = u.id
+        LEFT JOIN teams t ON u.team_id = t.id
+        $whereClause
+        ORDER BY l.created_at DESC
+        LIMIT $offset, $limit
+    ";
+
+    $result = mysqli_query($conn, $query);
+    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+}
+
+// Function to get all agents for filtering (superusers see all, managers see team only)
+function getAllAgents($team_id = null) {
+    $conn = getDbConnection();
+
+    if ($team_id) {
+        // Get agents from specific team
+        $query = "SELECT id, name, profile_picture FROM users WHERE role = 'agent' AND team_id = ? ORDER BY name ASC";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $team_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        // Get all agents (for superusers)
+        $query = "SELECT id, name, profile_picture FROM users WHERE role = 'agent' ORDER BY name ASC";
+        $result = mysqli_query($conn, $query);
+    }
+
+    $agents = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $agents[] = $row;
+    }
+
+    if ($team_id) {
+        $stmt->close();
+    }
+
+    return $agents;
+}
+
+function getClosedDealsCount($user_id, $role) {
+    $conn = getDbConnection();
+
+    $whereClause = "WHERE l.status = 'Closed Deal'";
+
     if ($role === 'agent') {
         $whereClause .= " AND l.user_id = $user_id";
     } elseif ($role === 'supervisor' || $role === 'manager') {
@@ -84,184 +203,11 @@ function getPaginatedActiveLeads($user_id, $role, $offset, $limit) {
             $whereClause .= " AND u.team_id = " . $team_data['team_id'];
         }
     }
-    
-    $query = "
-        SELECT l.*, u.name as agent_name, t.name as team_name
-        FROM leads l
-        LEFT JOIN users u ON l.user_id = u.id
-        LEFT JOIN teams t ON u.team_id = t.id
-        $whereClause
-        ORDER BY l.created_at DESC
-        LIMIT $offset, $limit
-    ";
-    
-    $result = mysqli_query($conn, $query);
-    return mysqli_fetch_all($result, MYSQLI_ASSOC);
-}
 
-function searchActiveLeads($search, $user_id, $role, $username = null) {
-    $conn = getDbConnection();
-    $search = mysqli_real_escape_string($conn, $search);
-    
-    if ($username && isSuperUser($username)) {
-        // Superusers see all results, no additional filtering by user/team
-        $whereClause = "WHERE l.status != 'Closed Deal' AND (
-            l.client_name LIKE '%$search%' OR 
-            l.email LIKE '%$search%' OR 
-            l.phone LIKE '%$search%'
-        )";
-    } else {
-        $whereClause = "WHERE l.status != 'Closed Deal' AND (
-            l.client_name LIKE '%$search%' OR 
-            l.email LIKE '%$search%' OR 
-            l.phone LIKE '%$search%'
-        )";
-        
-        if ($role === 'agent') {
-            $whereClause .= " AND l.user_id = $user_id";
-        } elseif ($role === 'supervisor' || $role === 'manager') {
-            $team_query = "SELECT team_id FROM users WHERE id = $user_id";
-            $team_result = mysqli_query($conn, $team_query);
-            $team_data = mysqli_fetch_assoc($team_result);
-            if ($team_data && $team_data['team_id']) {
-                $whereClause .= " AND u.team_id = " . $team_data['team_id'];
-            }
-        }
-    }
-    
-    $query = "
-        SELECT l.*, u.name as agent_name, t.name as team_name
-        FROM leads l
-        LEFT JOIN users u ON l.user_id = u.id
-        LEFT JOIN teams t ON u.team_id = t.id
-        $whereClause
-        ORDER BY l.created_at DESC
-    ";
-    
+    $query = "SELECT COUNT(*) as count FROM leads l LEFT JOIN users u ON l.user_id = u.id $whereClause";
     $result = mysqli_query($conn, $query);
-    return mysqli_fetch_all($result, MYSQLI_ASSOC);
-}
-
-function filterActiveLeadsByStatus($status, $user_id, $role, $username = null) {
-    $conn = getDbConnection();
-    $status = mysqli_real_escape_string($conn, $status);
-    
-    if ($username && isSuperUser($username)) {
-        // Superusers see all results, no additional filtering by user/team
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.status = '$status'";
-    } else {
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.status = '$status'";
-        
-        if ($role === 'agent') {
-            $whereClause .= " AND l.user_id = $user_id";
-        } elseif ($role === 'supervisor' || $role === 'manager') {
-            $team_query = "SELECT team_id FROM users WHERE id = $user_id";
-            $team_result = mysqli_query($conn, $team_query);
-            $team_data = mysqli_fetch_assoc($team_result);
-            if ($team_data && $team_data['team_id']) {
-                $whereClause .= " AND u.team_id = " . $team_data['team_id'];
-            }
-        }
-    }
-    
-    $query = "
-        SELECT l.*, u.name as agent_name, t.name as team_name
-        FROM leads l
-        LEFT JOIN users u ON l.user_id = u.id
-        LEFT JOIN teams t ON u.team_id = t.id
-        $whereClause
-        ORDER BY l.created_at DESC
-    ";
-    
-    $result = mysqli_query($conn, $query);
-    return mysqli_fetch_all($result, MYSQLI_ASSOC);
-}
-
-function filterActiveLeadsByTemperature($temperature, $user_id, $role, $username = null) {
-    $conn = getDbConnection();
-    $temperature = mysqli_real_escape_string($conn, $temperature);
-    
-    if ($username && isSuperUser($username)) {
-        // Superusers see all results, no additional filtering by user/team
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.temperature = '$temperature'";
-    } else {
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.temperature = '$temperature'";
-        
-        if ($role === 'agent') {
-            $whereClause .= " AND l.user_id = $user_id";
-        } elseif ($role === 'supervisor' || $role === 'manager') {
-            $team_query = "SELECT team_id FROM users WHERE id = $user_id";
-            $team_result = mysqli_query($conn, $team_query);
-            $team_data = mysqli_fetch_assoc($team_result);
-            if ($team_data && $team_data['team_id']) {
-                $whereClause .= " AND u.team_id = " . $team_data['team_id'];
-            }
-        }
-    }
-    
-    $query = "
-        SELECT l.*, u.name as agent_name, t.name as team_name
-        FROM leads l
-        LEFT JOIN users u ON l.user_id = u.id
-        LEFT JOIN teams t ON u.team_id = t.id
-        $whereClause
-        ORDER BY l.created_at DESC
-    ";
-    
-    $result = mysqli_query($conn, $query);
-    return mysqli_fetch_all($result, MYSQLI_ASSOC);
-}
-
-function filterActiveLeadsBySource($source, $user_id, $role, $username = null) {
-    $conn = getDbConnection();
-    $source = mysqli_real_escape_string($conn, $source);
-    
-    if ($username && isSuperUser($username)) {
-        // Superusers see all results, no additional filtering by user/team
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.source = '$source'";
-    } else {
-        $whereClause = "WHERE l.status != 'Closed Deal' AND l.source = '$source'";
-        
-        if ($role === 'agent') {
-            $whereClause .= " AND l.user_id = $user_id";
-        } elseif ($role === 'supervisor' || $role === 'manager') {
-            $team_query = "SELECT team_id FROM users WHERE id = $user_id";
-            $team_result = mysqli_query($conn, $team_query);
-            $team_data = mysqli_fetch_assoc($team_result);
-            if ($team_data && $team_data['team_id']) {
-                $whereClause .= " AND u.team_id = " . $team_data['team_id'];
-            }
-        }
-    }
-    
-    $query = "
-        SELECT l.*, u.name as agent_name, t.name as team_name
-        FROM leads l
-        LEFT JOIN users u ON l.user_id = u.id
-        LEFT JOIN teams t ON u.team_id = t.id
-        $whereClause
-        ORDER BY l.created_at DESC
-    ";
-    
-    $result = mysqli_query($conn, $query);
-    return mysqli_fetch_all($result, MYSQLI_ASSOC);
-}
-
-// Function to filter leads by ownership (My Leads)
-function filterMyLeads($user_id) {
-    $conn = getDbConnection();
-    
-    $query = "
-        SELECT l.*, u.name as agent_name, t.name as team_name
-        FROM leads l
-        LEFT JOIN users u ON l.user_id = u.id
-        LEFT JOIN teams t ON u.team_id = t.id
-        WHERE l.status != 'Closed Deal' AND l.user_id = $user_id
-        ORDER BY l.created_at DESC
-    ";
-    
-    $result = mysqli_query($conn, $query);
-    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+    $data = mysqli_fetch_assoc($result);
+    return $data['count'];
 }
 
 function getUniqueActiveStatuses() {
@@ -275,26 +221,382 @@ function getUniqueActiveStatuses() {
     return $statuses;
 }
 
-function getClosedDealsCount($user_id, $role) {
+function getUniqueSources() {
     $conn = getDbConnection();
+    $query = "SELECT DISTINCT source FROM leads WHERE source IS NOT NULL AND source != '' ORDER BY source";
+    $result = mysqli_query($conn, $query);
+    $sources = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $sources[] = $row['source'];
+    }
+    return $sources;
+}
+
+function getUniqueTemperatures() {
+    $conn = getDbConnection();
+    $query = "SELECT DISTINCT temperature FROM leads WHERE temperature IS NOT NULL AND temperature != '' ORDER BY temperature";
+    $result = mysqli_query($conn, $query);
+    $temperatures = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $temperatures[] = $row['temperature'];
+    }
+    return $temperatures;
+}
+
+// Handle AJAX requests for live filtering
+if (isset($_POST['ajax']) && $_POST['ajax'] == '1') {
+    // Collect filters from POST data
+    $filters = [
+        'search' => isset($_POST['search']) ? trim($_POST['search']) : '',
+        'status' => isset($_POST['status']) ? trim($_POST['status']) : '',
+        'temperature' => isset($_POST['temperature']) ? trim($_POST['temperature']) : '',
+        'source' => isset($_POST['source']) ? trim($_POST['source']) : '',
+        'my_leads' => (isset($_POST['my_leads']) && $_POST['my_leads'] == '1') ? '1' : '',
+        'agent' => isset($_POST['agent']) ? trim($_POST['agent']) : ''
+    ];
     
-    $whereClause = "WHERE l.status = 'Closed Deal'";
+    // Pagination settings for AJAX
+    $leads_per_page = 10;
+    $current_page = isset($_POST['page']) ? max(1, (int)$_POST['page']) : 1;
+    $offset = ($current_page - 1) * $leads_per_page;
     
-    if ($role === 'agent') {
-        $whereClause .= " AND l.user_id = $user_id";
-    } elseif ($role === 'supervisor' || $role === 'manager') {
-        $team_query = "SELECT team_id FROM users WHERE id = $user_id";
-        $team_result = mysqli_query($conn, $team_query);
-        $team_data = mysqli_fetch_assoc($team_result);
-        if ($team_data && $team_data['team_id']) {
-            $whereClause .= " AND u.team_id = " . $team_data['team_id'];
-        }
+    // Get filtered data
+    $filtered_all = getFilteredActiveLeads($user_id, $user['role'], $user['username'], $filters);
+    $total_leads = count($filtered_all);
+    $leads = getPaginatedFilteredActiveLeads($user_id, $user['role'], $user['username'], $filters, $offset, $leads_per_page);
+    
+    // Calculate total pages
+    $total_pages = ceil(max(0, $total_leads) / $leads_per_page);
+    if ($total_pages > 0) {
+        $current_page = min($current_page, $total_pages);
     }
     
-    $query = "SELECT COUNT(*) as count FROM leads l LEFT JOIN users u ON l.user_id = u.id $whereClause";
-    $result = mysqli_query($conn, $query);
-    $data = mysqli_fetch_assoc($result);
-    return $data['count'];
+    // Recalculate summary data with filters applied
+    $all_leads = $filtered_all; // Use filtered data for summary cards
+    
+    // Update temperature counts based on filtered data
+    $hotLeads = array_filter($all_leads, function($lead) {
+        return $lead['temperature'] === 'Hot';
+    });
+    $hotLeadsCount = count($hotLeads);
+    
+    $warmLeads = array_filter($all_leads, function($lead) {
+        return $lead['temperature'] === 'Warm';
+    });
+    $warmLeadsCount = count($warmLeads);
+    
+    $coldLeads = array_filter($all_leads, function($lead) {
+        return $lead['temperature'] === 'Cold';
+    });
+    $coldLeadsCount = count($coldLeads);
+    
+    // Get my leads count from filtered data
+    $myLeads = array_filter($all_leads, function($lead) use ($user_id) {
+        return $lead['user_id'] == $user_id;
+    });
+    $myLeadsCount = count($myLeads);
+    
+    // Summary card title and count for AJAX
+    $my_leads_filter_active = $filters['my_leads'] !== '';
+    $activeCardTitle = $my_leads_filter_active ? 'My Leads' : 'All Leads';
+    $activeCardCount = $my_leads_filter_active ? count($filtered_all) : count($filtered_all);
+    
+    // Function to build pagination URL for AJAX
+    function buildPaginationUrlAjax($page, $filters) {
+        $params = $filters;
+        $params['page'] = $page;
+        return '?' . http_build_query($params);
+    }
+    
+    // Generate only the necessary HTML and return it
+    ob_start();
+    ?>
+    <!DOCTYPE html>
+    <html>
+    <head><title>AJAX Response</title></head>
+    <body>
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-icon" style="background: var(--primary-light); color: var(--primary);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="summary-info">
+                    <h3><?php echo $activeCardTitle; ?></h3>
+                    <p><?php echo $activeCardCount; ?></p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon" style="background: var(--danger-light); color: var(--danger);">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="summary-info">
+                    <h3>Hot Leads</h3>
+                    <p><?php echo $hotLeadsCount; ?></p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon" style="background: var(--warning-light); color: var(--warning);">
+                    <i class="fas fa-thermometer-half"></i>
+                </div>
+                <div class="summary-info">
+                    <h3>Warm Leads</h3>
+                    <p><?php echo $warmLeadsCount; ?></p>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-icon" style="background: var(--info-light); color: var(--info);">
+                    <i class="fas fa-icicles"></i>
+                </div>
+                <div class="summary-info">
+                    <h3>Cold Leads</h3>
+                    <p><?php echo $coldLeadsCount; ?></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="leads-table-container">
+            <table class="leads-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Temperature</th>
+                        <th>Status</th>
+                        <th>Source</th>
+                        <th>Agent</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($leads)): ?>
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2rem;">
+                            <div style="color: var(--gray-400);">
+                                <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                                <p>No active leads found</p>
+                                <?php if (!empty(array_filter($filters))): ?>
+                                    <p style="font-size: 0.875rem; margin-top: 0.5rem;">
+                                        Try adjusting your filters or <a href="leads.php" style="color: var(--primary);">clear all filters</a>
+                                    </p>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php else: ?>
+                        <?php foreach ($leads as $lead): ?>
+                        <tr>
+                            <td><?php
+                                // Check if user can see full contact info (superuser or lead owner)
+                                if (isSuperUser($user['username']) || $lead['user_id'] == $user_id) {
+                                    echo htmlspecialchars($lead['client_name']);
+                                } else {
+                                    // Mask name for privacy
+                                    $name = $lead['client_name'];
+                                    $spacePos = strpos($name, ' ');
+                                    if ($spacePos !== false && $spacePos > 2) {
+                                        $maskedName = substr($name, 0, 2) . str_repeat('*', $spacePos - 2) . substr($name, $spacePos);
+                                        echo htmlspecialchars($maskedName);
+                                    } else {
+                                        echo '************';
+                                    }
+                                }
+                            ?></td>
+                            <td>
+                                <?php
+                                 // Check if user can see full contact info (superuser or lead owner)
+                                if (isSuperUser($user['username']) || $lead['user_id'] == $user_id) {
+                                    echo htmlspecialchars($lead['email']);
+                                } else {
+                                    // Mask email for privacy
+                                    $email = $lead['email'];
+                                    $atPos = strpos($email, '@');
+                                    if ($atPos !== false && $atPos > 2) {
+                                        $maskedEmail = substr($email, 0, 2) . str_repeat('*', $atPos - 2) . substr($email, $atPos);
+                                        echo htmlspecialchars($maskedEmail);
+                                    } else {
+                                        echo '***@***';
+                                    }
+                                }
+                                ?>
+                            </td>
+                            <td>
+                                <?php
+                                 // Check if user can see full contact info (superuser or lead owner)
+                                if (isSuperUser($user['username']) || $lead['user_id'] == $user_id) {
+                                    echo htmlspecialchars($lead['phone']);
+                                } else {
+                                    // Mask phone for privacy
+                                    $phone = $lead['phone'];
+                                    if (strlen($phone) > 4) {
+                                        $maskedPhone = substr($phone, 0, 3) . str_repeat('*', strlen($phone) - 6) . substr($phone, -3);
+                                        echo htmlspecialchars($maskedPhone);
+                                    } else {
+                                        echo '***-***';
+                                    }
+                                }
+                                ?>
+                            </td>
+                            <td>
+                                <span class="temperature <?php echo strtolower($lead['temperature']); ?>">
+                                    <?php echo htmlspecialchars($lead['temperature']); ?>
+                                </span>
+                            </td>
+                            <td><?php echo htmlspecialchars($lead['status']); ?></td>
+                            <td><?php echo htmlspecialchars($lead['source']); ?></td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <?php
+                                    $profile_picture = $lead['agent_profile_picture'] ?? '';
+                                    $agent_name = $lead['agent_name'] ?? 'Unknown Agent';
+
+                                    $possible_paths = [
+                                        'uploads/profile_pictures/' . $profile_picture,
+                                        'profile_pictures/' . $profile_picture,
+                                        'images/profiles/' . $profile_picture,
+                                        'assets/images/profiles/' . $profile_picture,
+                                        $profile_picture // In case it's already a full path
+                                    ];
+                                    
+                                    $working_path = null;
+                                    $image_exists = false;
+                                    
+                                    if (!empty($profile_picture) && trim($profile_picture) !== '') {
+                                        foreach ($possible_paths as $path) {
+                                            if (file_exists($path)) {
+                                                $working_path = $path;
+                                                $image_exists = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    ?>
+                                        <?php if ($image_exists && $working_path): ?>
+                                            <img src="<?php echo htmlspecialchars($working_path); ?>"
+                                                 alt="<?php echo htmlspecialchars($agent_name); ?>"
+                                                 class="agent-profile-picture"
+                                                 style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            <div class="agent-profile-fallback" style="display: none; width: 32px; height: 32px; border-radius: 50%; background: #f3f4f6; color: #6b7280; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">
+                                                <?php
+                                                $initials = '';
+                                                $nameParts = explode(' ', trim($agent_name));
+                                                foreach ($nameParts as $part) {
+                                                    if (!empty($part)) {
+                                                        $initials .= strtoupper($part[0]);
+                                                        if (strlen($initials) >= 2) break;
+                                                    }
+                                                }
+                                                echo htmlspecialchars($initials ?: 'U');
+                                                ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="agent-profile-fallback" style="width: 32px; height: 32px; border-radius: 50%; background: #f3f4f6; color: #6b7280; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">
+                                                <?php
+                                                $initials = '';
+                                                $nameParts = explode(' ', trim($agent_name));
+                                                foreach ($nameParts as $part) {
+                                                    if (!empty($part)) {
+                                                        $initials .= strtoupper($part[0]);
+                                                        if (strlen($initials) >= 2) break;
+                                                    }
+                                                }
+                                                echo htmlspecialchars($initials ?: 'U');
+                                                ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    <span><?php echo htmlspecialchars($agent_name); ?></span>
+                                </div>
+                            </td>
+                            <td><?php echo date('M j, Y', strtotime($lead['created_at'])); ?></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="lead-details.php?id=<?php echo $lead['id']; ?>" class="btn-view" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+
+                                    <?php if (canEditLead($lead, $user_id)): ?>
+                                        <a href="edit-lead.php?id=<?php echo $lead['id']; ?>" class="btn-edit" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    <?php else: ?>
+                                        <button type="button" class="btn-edit disabled"
+                                                title="You can only edit leads assigned to you"
+                                                disabled>
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    <?php endif; ?>
+
+                                    <?php if (isSuperUser($user['username']) || $lead['user_id'] == $user_id): ?>
+                                        <button class="btn-call" onclick="openCallModal('<?php echo htmlspecialchars($lead['client_name']); ?>', '<?php echo htmlspecialchars($lead['phone']); ?>')" title="Call">
+                                            <i class="fas fa-phone"></i>
+                                        </button>
+                                    <?php else: ?>
+                                        <button type="button" class="btn-call disabled"
+                                                title="You can only call leads assigned to you"
+                                                disabled>
+                                            <i class="fas fa-phone"></i>
+                                        </button>
+                                    <?php endif; ?>
+
+                                    <button class="btn-delete" onclick="deleteLead(<?php echo $lead['id']; ?>)" title="Delete">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination for AJAX -->
+        <?php if ($total_pages > 1): ?>
+        <div class="pagination">
+            <div>
+                <?php if ($current_page > 1): ?>
+                    <a href="<?php echo buildPaginationUrlAjax($current_page - 1, $filters); ?>" class="pagination-button">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                <?php endif; ?>
+
+                <?php
+                $pagination_range = getPaginationRange($current_page, $total_pages);
+                foreach ($pagination_range as $page):
+                    if ($page === '...'):
+                ?>
+                    <span class="pagination-button disabled">...</span>
+                <?php else: ?>
+                    <a href="<?php echo buildPaginationUrlAjax($page, $filters); ?>"
+                       class="pagination-button <?php echo ($current_page == $page) ? 'active' : ''; ?>">
+                        <?php echo $page; ?>
+                    </a>
+                <?php endif; ?>
+                <?php endforeach; ?>
+
+                <?php if ($current_page < $total_pages): ?>
+                    <a href="<?php echo buildPaginationUrlAjax($current_page + 1, $filters); ?>" class="pagination-button">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php endif; ?>
+
+                <div class="pagination-info">
+                    Showing <?php echo min(($current_page - 1) * $leads_per_page + 1, $total_leads); ?> to
+                    <?php echo min($current_page * $leads_per_page, $total_leads); ?> of
+                    <?php echo $total_leads; ?> active leads
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+    </body>
+    </html>
+    <?php
+    $response = ob_get_clean();
+    echo $response;
+    exit;
 }
 
 // Pagination settings
@@ -303,63 +605,45 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $current_page = max(1, $current_page);
 $offset = ($current_page - 1) * $leads_per_page;
 
-// Get all active leads based on user role (for counting total)
+// Get all active leads based on user role (for summary cards and default view)
 $all_leads = getActiveLeads($user_id, $user['role'], $user['username']);
 
-// Initialize filter flags
-$search_active = false;
-$status_filter_active = false;
-$temp_filter_active = false;
-$source_filter_active = false;
-$my_leads_filter_active = false;
+// Collect filters (allow multiple to work together)
+$filters = [
+    'search' => isset($_GET['search']) ? trim($_GET['search']) : '',
+    'status' => isset($_GET['status']) ? trim($_GET['status']) : '',
+    'temperature' => isset($_GET['temperature']) ? trim($_GET['temperature']) : '',
+    'source' => isset($_GET['source']) ? trim($_GET['source']) : '',
+    'my_leads' => (isset($_GET['my_leads']) && $_GET['my_leads'] == '1') ? '1' : '',
+    'agent' => isset($_GET['agent']) ? trim($_GET['agent']) : ''
+];
 
-// Apply filters if set
-// Apply filters if set
-if (isset($_GET['my_leads']) && $_GET['my_leads'] == '1') {
-    $my_leads_filter_active = true;
-    $leads = filterMyLeads($user_id);
-    $total_leads = count($leads); // Set total from filtered results
-} elseif (isset($_GET['search']) && !empty($_GET['search'])) {
-    $search = $_GET['search'];
-    $search_active = true;
-    $leads = searchActiveLeads($search, $user_id, $user['role'], $user['username']);
-    $total_leads = count($leads); // Set total from filtered results
-} elseif (isset($_GET['status']) && !empty($_GET['status'])) {
-    $status = $_GET['status'];
-    $status_filter_active = true;
-    $leads = filterActiveLeadsByStatus($status, $user_id, $user['role'], $user['username']);
-    $total_leads = count($leads); // Set total from filtered results
-} elseif (isset($_GET['temperature']) && !empty($_GET['temperature'])) {
-    $temperature = $_GET['temperature'];
-    $temp_filter_active = true;
-    $leads = filterActiveLeadsByTemperature($temperature, $user_id, $user['role'], $user['username']);
-    $total_leads = count($leads); // Set total from filtered results
-} elseif (isset($_GET['source']) && !empty($_GET['source'])) {
-    $source = $_GET['source'];
-    $source_filter_active = true;
-    $leads = filterActiveLeadsBySource($source, $user_id, $user['role'], $user['username']);
-    $total_leads = count($leads); // Set total from filtered results
-} else {
-    // NO FILTERS: Use the count from the complete list of leads
-    $total_leads = count($all_leads);
-    // Fetch only the leads needed for the current page
-    $leads = getPaginatedActiveLeads($user_id, $user['role'], $offset, $leads_per_page);
-}
+// Mirror to individual variables used in the template
+$search = $filters['search'];
+$status = $filters['status'];
+$temperature = $filters['temperature'];
+$source = $filters['source'];
+$agent = $filters['agent'];
 
-// Count total leads after filtering (before slicing for pagination)
-// This line is now replaced by the logic above.
+// Flags for UI highlighting
+$search_active = $filters['search'] !== '';
+$status_filter_active = $filters['status'] !== '';
+$temp_filter_active = $filters['temperature'] !== '';
+$source_filter_active = $filters['source'] !== '';
+$my_leads_filter_active = $filters['my_leads'] !== '';
+$agent_filter_active = $filters['agent'] !== '';
 
-// Calculate total pages from the correctly determined total
-$total_pages = ceil($total_leads / $leads_per_page);
+// Determine dataset using combined filters
+$filtered_all = getFilteredActiveLeads($user_id, $user['role'], $user['username'], $filters);
+$total_leads = count($filtered_all);
+$leads = getPaginatedFilteredActiveLeads($user_id, $user['role'], $user['username'], $filters, $offset, $leads_per_page);
+
+// Calculate total pages
+$total_pages = ceil(max(0, $total_leads) / $leads_per_page);
 
 // Adjust current page if it exceeds total pages
 if ($total_pages > 0) {
     $current_page = min($current_page, $total_pages);
-}
-
-// Apply pagination to filtered results
-if ($search_active || $status_filter_active || $temp_filter_active || $source_filter_active || $my_leads_filter_active) {
-    $leads = array_slice($leads, $offset, $leads_per_page);
 }
 
 // Function to build pagination URL
@@ -374,25 +658,25 @@ function getPaginationRange($current_page, $total_pages, $range = 2) {
     $result = [];
     $start = max(1, $current_page - $range);
     $end = min($total_pages, $current_page + $range);
-    
+
     if ($start > 1) {
         $result[] = 1;
         if ($start > 2) {
             $result[] = '...';
         }
     }
-    
+
     for ($i = $start; $i <= $end; $i++) {
         $result[] = $i;
     }
-    
+
     if ($end < $total_pages) {
         if ($end < $total_pages - 1) {
             $result[] = '...';
         }
         $result[] = $total_pages;
     }
-    
+
     return $result;
 }
 
@@ -428,14 +712,68 @@ $statuses = getUniqueActiveStatuses();
 
 // Check if current user is superuser
 $isSuperUser = isSuperUser($user['username']);
-?>
 
+// Build allowed users list for Agent typeahead
+$filterUsers = [];
+$managerTeamId = null;
+
+if ($isSuperUser) {
+    // Super Admin: all users
+    $conn = getDbConnection();
+    $q = "SELECT id, name, role, team_id, profile_picture FROM users ORDER BY name ASC";
+    if ($res = mysqli_query($conn, $q)) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $filterUsers[] = $row;
+        }
+    }
+} elseif ($user['role'] === 'manager') {
+    // Manager: only supervisors and agents within their team
+    $conn = getDbConnection();
+    $team_query = "SELECT team_id FROM users WHERE id = ?";
+    $stmt = $conn->prepare($team_query);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $team_data = $result->fetch_assoc();
+    $stmt->close();
+
+    if ($team_data && $team_data['team_id']) {
+        $managerTeamId = (int)$team_data['team_id'];
+        $q = "SELECT id, name, role, team_id, profile_picture FROM users WHERE team_id = ? AND role IN ('agent','supervisor') ORDER BY role ASC, name ASC";
+        $stmt2 = $conn->prepare($q);
+        $stmt2->bind_param("i", $managerTeamId);
+        $stmt2->execute();
+        $r2 = $stmt2->get_result();
+        while ($row = $r2->fetch_assoc()) {
+            $filterUsers[] = $row;
+        }
+        $stmt2->close();
+    }
+}
+
+// Resolve selected agent name for typeahead display
+$selectedAgentName = '';
+if (!empty($agent) && !empty($filterUsers)) {
+    foreach ($filterUsers as $a) {
+        if (strval($a['id']) === strval($agent)) {
+            $selectedAgentName = $a['name'];
+            break;
+        }
+    }
+}
+
+// Summary card title and count: switch to "My Leads" when filter is active
+$activeCardTitle = $my_leads_filter_active ? 'My Leads' : 'All Leads';
+$activeCardCount = $my_leads_filter_active ? count($filtered_all) : count($all_leads);
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Active Leads - InnerSPARC Lead Management System</title>
+    <title>Leads - InnerSPARC Lead Management System</title>
+    <link rel="icon" href="assets/images/logo.png">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -486,7 +824,7 @@ $isSuperUser = isSuperUser($user['username']);
             min-height: 100vh;
             display: flex;
         }
-        
+
         .container {
             display: flex;
             width: 100%;
@@ -500,7 +838,7 @@ $isSuperUser = isSuperUser($user['username']);
             min-height: 100vh;
             background-color: var(--gray-50);
         }
-        
+
         .leads-page {
             flex: 1;
             padding: 1.5rem;
@@ -664,7 +1002,7 @@ $isSuperUser = isSuperUser($user['username']);
             margin-left: auto;
             margin-right: auto;
         }
-        
+
         .search-form {
             display: grid;
             grid-template-columns: repeat(5, minmax(180px, 1fr));
@@ -676,13 +1014,19 @@ $isSuperUser = isSuperUser($user['username']);
             margin-left: auto;
             margin-right: auto;
         }
-        
+
+        /* Make Agent filter span all columns and fill full width */
+        .filter-select-container[data-label="Agent"] {
+            grid-column: 1 / -1;
+            justify-self: stretch;
+        }
+
         .search-form > * {
             justify-self: center;
             width: 100%;
             max-width: 250px;
         }
-        
+
         .search-form input,
         .filter-select-container select {
             width: 100%;
@@ -698,21 +1042,21 @@ $isSuperUser = isSuperUser($user['username']);
             text-align: left;
             margin: 0 auto;
         }
-        
+
         .search-form input:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px var(--primary-light);
             background-color: white;
         }
-        
+
         .filter-options {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 1rem;
             width: 100%;
         }
-        
+
         .filter-select-container {
             position: relative;
             width: 100%;
@@ -769,6 +1113,122 @@ $isSuperUser = isSuperUser($user['username']);
             text-align: left;
         }
 
+        /* Agent autocomplete styles */
+        .agent-typeahead-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .agent-input {
+            width: 100%;
+            min-width: 300px;
+            max-width: 100%;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            background-color: var(--gray-50);
+            height: 2.75rem;
+        }
+
+        .agent-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+            background: white;
+        }
+
+        .agent-suggestions {
+            position: absolute;
+            top: calc(100% + 2px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-top: none;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            box-shadow: var(--shadow-md);
+            z-index: 20;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .agent-suggestion-item {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .agent-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--gray-200);
+            color: var(--gray-700);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        /* Added styles for profile picture display */
+        .agent-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .agent-profile-picture {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--gray-200);
+        }
+
+        .agent-profile-fallback {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gray-200);
+            color: var(--gray-700);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 2px solid var(--gray-200);
+        }
+
+        .agent-meta {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            color: var(--gray-800);
+            font-size: 0.9rem;
+        }
+
+        .agent-role {
+            color: var(--gray-500);
+            font-size: 0.75rem;
+        }
+
+        .agent-suggestion-item:hover,
+        .agent-suggestion-item.active {
+            background-color: var(--gray-50);
+        }
+
         .leads-table-container {
             flex: 1;
             background: white;
@@ -778,20 +1238,20 @@ $isSuperUser = isSuperUser($user['username']);
             margin-bottom: 1.5rem;
             position: relative;
         }
-        
+
         .leads-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
         }
-        
+
         .leads-table thead {
             position: sticky;
             top: 0;
             z-index: 1;
             background: var(--gray-50);
         }
-        
+
         .leads-table th {
             background: var(--gray-50);
             padding: 1rem;
@@ -804,7 +1264,7 @@ $isSuperUser = isSuperUser($user['username']);
             text-align: left;
             white-space: nowrap;
         }
-        
+
         .leads-table td {
             padding: 1rem;
             font-size: 0.875rem;
@@ -918,11 +1378,6 @@ $isSuperUser = isSuperUser($user['username']);
             transform: translateY(-1px);
         }
 
-
-
-        
-
-        
         .call-options {
             display: flex;
             flex-direction: column;
@@ -978,12 +1433,15 @@ $isSuperUser = isSuperUser($user['username']);
             color: #25d366;
         }
 
+        .call-option.viber i {
+            color: #665cac;
+        }
+
         .pagination {
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 0.5rem;
-           
         }
 
         .pagination-info {
@@ -996,7 +1454,6 @@ $isSuperUser = isSuperUser($user['username']);
         .pagination-button {
             display: inline-flex;
             align-items: center;
-            
             min-width: 2rem;
             height: 2rem;
             padding: 0 0.5rem;
@@ -1108,10 +1565,16 @@ $isSuperUser = isSuperUser($user['username']);
             .container {
                 flex-direction: column;
             }
-            
+
             .leads-page {
                 padding: 1rem;
                 min-height: calc(100vh - 60px);
+            }
+
+            /* Reset Agent filter to single column on mobile */
+            .filter-select-container[data-label="Agent"] {
+                grid-column: 1;
+                justify-self: center;
             }
 
             .leads-table-container {
@@ -1172,116 +1635,110 @@ $isSuperUser = isSuperUser($user['username']);
                 gap: 0.75rem;
                 margin-top: 1rem;
             }
-            
+
             .btn-search,
             .btn-clear-filters {
                 width: 100%;
                 max-width: 280px;
             }
+        }
 
-            
+        #callModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            inset: 0;
+            background-color: rgba(0,0,0,0.5);
+        }
 
-#callModal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  inset: 0;                        /* top/right/bottom/left = 0 */
-  background-color: rgba(0,0,0,0.5);
-}
+        /* When shown, center & allow page-level scrolling */
+        #callModal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
 
-/* When shown, center & allow page-level scrolling */
-#callModal.show {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;                  /* space around content */
-  overflow-y: auto;               /* enable vertical scrolling */
-  scrollbar-width: none;          /* Firefox: hide scrollbar */
-  -ms-overflow-style: none;       /* IE 10+: hide scrollbar */
-}
+        /* Hide WebKit scrollbar */
+        #callModal.show::-webkit-scrollbar {
+            display: none;
+        }
 
-/* Hide WebKit scrollbar */
-#callModal.show::-webkit-scrollbar {
-  display: none;
-}
+        /* The white "card" */
+        #callModal .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            max-width: 400px;
+            width: 90%;
+            max-height: 90vh;
+        }
 
-/* The white “card” */
-#callModal .modal-content {
-  background: white;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
-  max-width: 400px;
-  width: 90%;
-  /* Add a value for max-height or remove if not needed */
-  max-height: 90vh;
-}
+        /* Scale up on show */
+        #callModal.show .modal-content {
+            transform: scale(1);
+        }
 
+        /* Header */
+        #callModal .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-/* Scale up on show */
-#callModal.show .modal-content {
-  transform: scale(1);
-}
+        /* Title */
+        #callModal .modal-header h3 {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-/* Header */
-#callModal .modal-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--gray-200);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+        /* Close button */
+        #callModal .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--gray-400);
+            cursor: pointer;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+        }
 
-/* Title */
-#callModal .modal-header h3 {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+        #callModal .modal-close:hover {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
 
-/* Close button */
-#callModal .modal-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--gray-400);
-  cursor: pointer;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--border-radius);
-  transition: all 0.2s ease;
-}
-
-#callModal .modal-close:hover {
-  background: var(--gray-100);
-  color: var(--gray-600);
-}
-
-/* Body */
-#callModal .modal-body {
-  padding: 1.5rem;
-}
-
-
-        
+        /* Body */
+        #callModal .modal-body {
+            padding: 1.5rem;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <?php include 'includes/sidebar.php'; ?>
-        
+
         <div class="main-content">
             <?php include 'includes/header.php'; ?>
-            
+
             <div class="leads-page">
                 <div class="page-header">
                     <h2>
-                        <i class="fas fa-users"></i> Active Leads Management
+                        <i class="fas fa-users"></i>Leads Management
                         <?php if ($isSuperUser): ?>
                             <span class="superuser-badge">
                                 <i class="fas fa-crown"></i> Super Admin
@@ -1299,24 +1756,15 @@ $isSuperUser = isSuperUser($user['username']);
                         </a>
                     </div>
                 </div>
-                
+
                 <div class="summary-cards">
                     <div class="summary-card">
                         <div class="summary-icon" style="background: var(--primary-light); color: var(--primary);">
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="summary-info">
-                            <h3>Active Leads</h3>
-                            <p><?php echo count($all_leads); ?></p>
-                        </div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-icon" style="background: var(--success-light); color: var(--success);">
-                            <i class="fas fa-user-check"></i>
-                        </div>
-                        <div class="summary-info">
-                            <h3>My Leads</h3>
-                            <p><?php echo $myLeadsCount; ?></p>
+                            <h3><?php echo $activeCardTitle; ?></h3>
+                            <p><?php echo $activeCardCount; ?></p>
                         </div>
                     </div>
                     <div class="summary-card">
@@ -1347,54 +1795,73 @@ $isSuperUser = isSuperUser($user['username']);
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="filters-container">
-                    <form class="search-form" method="GET" action="">
+                    <form class="search-form" method="GET" action="" id="searchForm">
+                        <input type="hidden" name="page" value="1">
+
                         <div class="filter-select-container" data-label="Search">
-                            <input type="text" name="search" placeholder="Search by name, email, phone..." 
+                            <input type="text" name="search" placeholder="Search by name, email, phone..."
                                    value="<?php echo htmlspecialchars($search ?? ''); ?>"
                                    class="<?php echo $search_active ? 'filter-active' : ''; ?>">
                         </div>
+
                         <div class="filter-select-container" data-label="My Leads">
                             <select name="my_leads" id="my_leads" class="<?php echo $my_leads_filter_active ? 'filter-active' : ''; ?>">
                                 <option value="">All Leads</option>
                                 <option value="1" <?php echo $my_leads_filter_active ? 'selected' : ''; ?>>My Leads Only</option>
                             </select>
                         </div>
+
                         <div class="filter-select-container" data-label="Temperature">
                             <select name="temperature" id="temperature" class="<?php echo $temp_filter_active ? 'filter-active' : ''; ?>">
                                 <option value="">All Temperatures</option>
                                 <?php foreach ($temperatures as $temp): ?>
-                                    <option value="<?php echo htmlspecialchars($temp); ?>" 
-                                        <?php echo (isset($temperature) && $temperature === $temp) ? 'selected' : ''; ?>>
+                                    <option value="<?php echo htmlspecialchars($temp); ?>"
+                                            <?php echo (isset($temperature) && $temperature === $temp) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($temp); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
+
                         <div class="filter-select-container" data-label="Status">
                             <select name="status" id="status" class="<?php echo $status_filter_active ? 'filter-active' : ''; ?>">
                                 <option value="">All Status</option>
                                 <?php foreach ($statuses as $stat): ?>
-                                    <option value="<?php echo htmlspecialchars($stat); ?>" 
-                                        <?php echo (isset($status) && $status === $stat) ? 'selected' : ''; ?>>
+                                    <option value="<?php echo htmlspecialchars($stat); ?>"
+                                            <?php echo (isset($status) && $status === $stat) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($stat); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
+
                         <div class="filter-select-container" data-label="Source">
                             <select name="source" id="source" class="<?php echo $source_filter_active ? 'filter-active' : ''; ?>">
                                 <option value="">All Sources</option>
                                 <?php foreach ($sources as $src): ?>
-                                    <option value="<?php echo htmlspecialchars($src); ?>" 
-                                        <?php echo (isset($source) && $source === $src) ? 'selected' : ''; ?>>
+                                    <option value="<?php echo htmlspecialchars($src); ?>"
+                                            <?php echo (isset($source) && $source === $src) ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($src); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        
+
+                        <?php if (($isSuperUser || $user['role'] === 'manager') && !empty($filterUsers)): ?>
+                        <div class="filter-select-container" data-label="Agent">
+                            <div class="agent-typeahead-wrapper">
+                                <input type="text" id="agentInput" class="agent-input <?php echo $agent_filter_active ? 'filter-active' : ''; ?>"
+                                       placeholder="Type to search user..."
+                                       value="<?php echo htmlspecialchars($selectedAgentName); ?>"
+                                       autocomplete="off">
+                                <input type="hidden" name="agent" id="agentHidden" value="<?php echo htmlspecialchars($agent); ?>">
+                                <div id="agentSuggestions" class="agent-suggestions"></div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
                         <div class="filter-actions">
                             <button type="submit" class="btn-search">
                                 <i class="fas fa-search"></i> Search
@@ -1405,7 +1872,7 @@ $isSuperUser = isSuperUser($user['username']);
                         </div>
                     </form>
                 </div>
-                
+
                 <div class="leads-table-container">
                     <table class="leads-table">
                         <thead>
@@ -1416,17 +1883,22 @@ $isSuperUser = isSuperUser($user['username']);
                                 <th>Temperature</th>
                                 <th>Status</th>
                                 <th>Source</th>
-                                <th>Created</th>
+                                <th>Agent</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($leads)): ?>
                             <tr>
-                                <td colspan="8" style="text-align: center; padding: 2rem;">
+                                <td colspan="9" style="text-align: center; padding: 2rem;">
                                     <div style="color: var(--gray-400);">
                                         <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem;"></i>
                                         <p>No active leads found</p>
+                                        <?php if (!empty(array_filter($filters))): ?>
+                                            <p style="font-size: 0.875rem; margin-top: 0.5rem;">
+                                                Try adjusting your filters or <a href="leads.php" style="color: var(--primary);">clear all filters</a>
+                                            </p>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
@@ -1450,8 +1922,8 @@ $isSuperUser = isSuperUser($user['username']);
                                         }
                                     ?></td>
                                     <td>
-                                        <?php 
-                                        // Check if user can see full contact info (superuser or lead owner)
+                                        <?php
+                                         // Check if user can see full contact info (superuser or lead owner)
                                         if (isSuperUser($user['username']) || $lead['user_id'] == $user_id) {
                                             echo htmlspecialchars($lead['email']);
                                         } else {
@@ -1468,8 +1940,8 @@ $isSuperUser = isSuperUser($user['username']);
                                         ?>
                                     </td>
                                     <td>
-                                        <?php 
-                                        // Check if user can see full contact info (superuser or lead owner)
+                                        <?php
+                                         // Check if user can see full contact info (superuser or lead owner)
                                         if (isSuperUser($user['username']) || $lead['user_id'] == $user_id) {
                                             echo htmlspecialchars($lead['phone']);
                                         } else {
@@ -1491,37 +1963,110 @@ $isSuperUser = isSuperUser($user['username']);
                                     </td>
                                     <td><?php echo htmlspecialchars($lead['status']); ?></td>
                                     <td><?php echo htmlspecialchars($lead['source']); ?></td>
-                                    <td><?php echo date('M j, Y', strtotime($lead['created_at'])); ?></td>
                                     <td>
-                                        <div class="action-buttons">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <?php
+                                            $profile_picture = $lead['agent_profile_picture'] ?? '';
+                                            $agent_name = $lead['agent_name'] ?? 'Unknown Agent';
+
+                                            if (isset($_GET['debug_profiles']) || true) { // Temporarily always show
+                                                echo "<!-- Debug Lead ID {$lead['id']}: Profile Picture = '{$profile_picture}', Agent = '{$agent_name}' -->";
+                                            }
+
+                                            $possible_paths = [
+                                                'uploads/profile_pictures/' . $profile_picture,
+                                                'profile_pictures/' . $profile_picture,
+                                                'images/profiles/' . $profile_picture,
+                                                'assets/images/profiles/' . $profile_picture,
+                                                $profile_picture // In case it's already a full path
+                                            ];
+                                            
+                                            $working_path = null;
+                                            $image_exists = false;
+                                            
+                                            if (!empty($profile_picture) && trim($profile_picture) !== '') {
+                                                foreach ($possible_paths as $path) {
+                                                    if (file_exists($path)) {
+                                                        $working_path = $path;
+                                                        $image_exists = true;
+                                                        break;
+                                                    }
+                                                }
+                                                
+                                                if (isset($_GET['debug_profiles']) || true) {
+                                                    echo "<!-- Debug: Tried paths: " . implode(', ', $possible_paths) . " | Working path: " . ($working_path ?? 'NONE') . " -->";
+                                                }
+                                            }
+                                            ?>
+                                                <?php if ($image_exists && $working_path): ?>
+                                                    <img src="<?php echo htmlspecialchars($working_path); ?>"
+                                                         alt="<?php echo htmlspecialchars($agent_name); ?>"
+                                                         class="agent-profile-picture"
+                                                         style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;"
+                                                         onerror="console.log('[v0] Profile image failed to load: <?php echo $working_path; ?>'); this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                    <div class="agent-profile-fallback" style="display: none; width: 32px; height: 32px; border-radius: 50%; background: #f3f4f6; color: #6b7280; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">
+                                                        <?php
+                                                        $initials = '';
+                                                        $nameParts = explode(' ', trim($agent_name));
+                                                        foreach ($nameParts as $part) {
+                                                            if (!empty($part)) {
+                                                                $initials .= strtoupper($part[0]);
+                                                                if (strlen($initials) >= 2) break;
+                                                            }
+                                                        }
+                                                        echo htmlspecialchars($initials ?: 'U');
+                                                        ?>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <!-- No profile picture in database or file not found, show initials -->
+                                                    <div class="agent-profile-fallback" style="width: 32px; height: 32px; border-radius: 50%; background: #f3f4f6; color: #6b7280; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">
+                                                        <?php
+                                                        $initials = '';
+                                                        $nameParts = explode(' ', trim($agent_name));
+                                                        foreach ($nameParts as $part) {
+                                                            if (!empty($part)) {
+                                                                $initials .= strtoupper($part[0]);
+                                                                if (strlen($initials) >= 2) break;
+                                                            }
+                                                        }
+                                                        echo htmlspecialchars($initials ?: 'U');
+                                                        ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                    <span><?php echo htmlspecialchars($agent_name); ?></span>
+                                </div>
+                            </td>
+                            <td><?php echo date('M j, Y', strtotime($lead['created_at'])); ?></td>
+                            <td>
+                                <div class="action-buttons">
                                             <a href="lead-details.php?id=<?php echo $lead['id']; ?>" class="btn-view" title="View">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            
+
                                             <?php if (canEditLead($lead, $user_id)): ?>
                                                 <a href="edit-lead.php?id=<?php echo $lead['id']; ?>" class="btn-edit" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                             <?php else: ?>
-                                                <button type="button" class="btn-edit disabled" 
-                                                        title="You can only edit leads assigned to you" 
+                                                <button type="button" class="btn-edit disabled"
+                                                        title="You can only edit leads assigned to you"
                                                         disabled>
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                             <?php endif; ?>
-                                            
+
                                             <?php if (isSuperUser($user['username']) || $lead['user_id'] == $user_id): ?>
                                                 <button class="btn-call" onclick="openCallModal('<?php echo htmlspecialchars($lead['client_name']); ?>', '<?php echo htmlspecialchars($lead['phone']); ?>')" title="Call">
                                                     <i class="fas fa-phone"></i>
                                                 </button>
                                             <?php else: ?>
-                                                <button type="button" class="btn-call disabled" 
-                                                        title="You can only call leads assigned to you" 
+                                                <button type="button" class="btn-call disabled"
+                                                        title="You can only call leads assigned to you"
                                                         disabled>
                                                     <i class="fas fa-phone"></i>
                                                 </button>
                                             <?php endif; ?>
-                                            
+
                                             <button class="btn-delete" onclick="deleteLead(<?php echo $lead['id']; ?>)" title="Delete">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
@@ -1533,11 +2078,10 @@ $isSuperUser = isSuperUser($user['username']);
                         </tbody>
                     </table>
                 </div>
-                
+
                 <!-- Pagination -->
                 <?php if ($total_pages > 1): ?>
                 <div class="pagination">
-                    
                     <div>
                         <?php if ($current_page > 1): ?>
                             <a href="<?php echo buildPaginationUrl($current_page - 1); ?>" class="pagination-button">
@@ -1545,14 +2089,14 @@ $isSuperUser = isSuperUser($user['username']);
                             </a>
                         <?php endif; ?>
 
-                        <?php 
+                        <?php
                         $pagination_range = getPaginationRange($current_page, $total_pages);
-                        foreach ($pagination_range as $page): 
-                            if ($page === '...'): 
+                        foreach ($pagination_range as $page):
+                            if ($page === '...'):
                         ?>
                             <span class="pagination-button disabled">...</span>
                         <?php else: ?>
-                            <a href="<?php echo buildPaginationUrl($page); ?>" 
+                            <a href="<?php echo buildPaginationUrl($page); ?>"
                                class="pagination-button <?php echo ($current_page == $page) ? 'active' : ''; ?>">
                                 <?php echo $page; ?>
                             </a>
@@ -1566,10 +2110,10 @@ $isSuperUser = isSuperUser($user['username']);
                         <?php endif; ?>
 
                         <div class="pagination-info">
-                        Showing <?php echo min(($current_page - 1) * $leads_per_page + 1, $total_leads); ?> to 
-                        <?php echo min($current_page * $leads_per_page, $total_leads); ?> of 
-                        <?php echo $total_leads; ?> active leads
-                    </div>
+                            Showing <?php echo min(($current_page - 1) * $leads_per_page + 1, $total_leads); ?> to
+                            <?php echo min($current_page * $leads_per_page, $total_leads); ?> of
+                            <?php echo $total_leads; ?> active leads
+                        </div>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -1579,40 +2123,198 @@ $isSuperUser = isSuperUser($user['username']);
     </div>
 
     <!-- Call Modal -->
-<div id="callModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>
-        <i class="fas fa-phone"></i>
-        Contact <span id="modalClientName"></span>
-      </h3>
-      <button class="modal-close" onclick="closeCallModal()">
-        <i class="fas fa-times"></i>
-      </button>
+    <div id="callModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-phone"></i>
+                    Contact <span id="modalClientName"></span>
+                </h3>
+                <button class="modal-close" onclick="closeCallModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="call-options">
+                    <a href="#" id="phoneCallLink" class="call-option phone">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <strong>Phone Call</strong>
+                            <p>Make a regular phone call</p>
+                        </div>
+                    </a>
+                    <a href="#" id="whatsappLink" class="call-option whatsapp" target="_blank">
+                        <i class="fab fa-whatsapp"></i>
+                        <div class="call-option-content">
+                            <div class="call-option-title">WhatsApp</div>
+                            <div class="call-option-description">Send a WhatsApp message</div>
+                        </div>
+                    </a>
+                    <a href="#" id="viberLink" class="call-option viber" target="_blank">
+                        <i class="fab fa-viber"></i>
+                        <div class="call-option-content">
+                            <div class="call-option-title">Viber</div>
+                            <div class="call-option-description">Send a Viber message</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="modal-body">
-      <div class="call-options">
-        <a href="#" id="phoneCallLink" class="call-option phone">
-          <i class="fas fa-phone"></i>
-          <div>
-            <strong>Phone Call</strong>
-            <p>Make a regular phone call</p>
-          </div>
-        </a>
-        <a href="#" id="whatsappLink" class="call-option whatsapp" target="_blank">
-          <i class="fab fa-whatsapp"></i>
-          <div>
-            <strong>WhatsApp</strong>
-            <p>Send a WhatsApp message</p>
-          </div>
-        </a>
-      </div>
-    </div>
-  </div>
-</div>
 
-    
     <script>
+    // Enhanced live search functionality with AJAX for seamless filtering
+    (function() {
+        const form = document.getElementById('searchForm');
+        const tableContainer = document.querySelector('.leads-table-container');
+        if (!form || !tableContainer) return;
+
+        // Debounce function to prevent excessive requests
+        function debounce(fn, delay) {
+            let t;
+            return function(...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        // Function to show loading state
+        function showLoading() {
+            const tableContainer = document.querySelector('.leads-table-container');
+            if (tableContainer) {
+                tableContainer.style.opacity = '0.6';
+                tableContainer.style.pointerEvents = 'none';
+                
+                // Add loading overlay if it doesn't exist
+                if (!document.querySelector('.loading-overlay')) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'loading-overlay';
+                    overlay.style.cssText = `
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(255, 255, 255, 0.8);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 10;
+                        border-radius: var(--border-radius);
+                    `;
+                    overlay.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary);"></i>';
+                    tableContainer.style.position = 'relative';
+                    tableContainer.appendChild(overlay);
+                }
+            }
+        }
+        
+        // Function to hide loading state
+        function hideLoading() {
+            const tableContainer = document.querySelector('.leads-table-container');
+            const overlay = document.querySelector('.loading-overlay');
+            if (tableContainer) {
+                tableContainer.style.opacity = '';
+                tableContainer.style.pointerEvents = '';
+            }
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        // Function to update table content via AJAX
+        async function updateTableContent(formData) {
+            // Make this function globally accessible
+            window.updateTableContent = updateTableContent;
+            try {
+                showLoading();
+                
+                // Add a flag to indicate AJAX request
+                formData.append('ajax', '1');
+                formData.set('page', '1'); // Reset to first page
+
+                const response = await fetch(window.location.pathname, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const html = await response.text();
+                    
+                    // Parse the response HTML
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Update the table content
+                    const newTableContainer = doc.querySelector('.leads-table-container');
+                    const newPagination = doc.querySelector('.pagination');
+                    const newSummaryCards = doc.querySelector('.summary-cards');
+                    
+                    if (newTableContainer) {
+                        tableContainer.innerHTML = newTableContainer.innerHTML;
+                    }
+                    
+                    // Update pagination if it exists
+                    const currentPagination = document.querySelector('.pagination');
+                    if (newPagination && currentPagination) {
+                        currentPagination.outerHTML = newPagination.outerHTML;
+                    } else if (newPagination && !currentPagination) {
+                        // Add pagination if it doesn't exist
+                        tableContainer.insertAdjacentHTML('afterend', newPagination.outerHTML);
+                    } else if (!newPagination && currentPagination) {
+                        // Remove pagination if no longer needed
+                        currentPagination.remove();
+                    }
+                    
+                    // Update summary cards
+                    if (newSummaryCards) {
+                        const currentSummaryCards = document.querySelector('.summary-cards');
+                        if (currentSummaryCards) {
+                            currentSummaryCards.innerHTML = newSummaryCards.innerHTML;
+                        }
+                    }
+                }
+                
+                hideLoading();
+            } catch (error) {
+                console.error('Error updating table:', error);
+                hideLoading();
+                // Fallback to form submission if AJAX fails
+                form.submit();
+            }
+        }
+
+        // Live search for text input
+        const searchInput = form.querySelector('input[name="search"]');
+        if (searchInput) {
+            const debouncedSearch = debounce(() => {
+                const formData = new FormData(form);
+                updateTableContent(formData);
+            }, 300); // Reduced delay for more responsive search
+
+            searchInput.addEventListener('input', debouncedSearch);
+        }
+
+        // Immediate filtering for select dropdowns
+        const selects = form.querySelectorAll('select');
+        selects.forEach(sel => {
+            sel.addEventListener('change', () => {
+                const formData = new FormData(form);
+                updateTableContent(formData);
+            });
+        });
+
+        // Manual search button (fallback)
+        const searchButton = form.querySelector('.btn-search');
+        if (searchButton) {
+            searchButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                const formData = new FormData(form);
+                updateTableContent(formData);
+            });
+        }
+    })();
+
     function deleteLead(id) {
         if (confirm('Are you sure you want to delete this lead?')) {
             fetch(`delete-lead.php?id=${id}`, {
@@ -1638,17 +2340,37 @@ $isSuperUser = isSuperUser($user['username']);
         const modalClientName = document.getElementById('modalClientName');
         const phoneCallLink = document.getElementById('phoneCallLink');
         const whatsappLink = document.getElementById('whatsappLink');
-        
+        const viberLink = document.getElementById('viberLink');
+
         // Set client name
         modalClientName.textContent = clientName;
-        
+
         // Set phone call link
         phoneCallLink.href = `tel:${phoneNumber}`;
+
+        // Clean phone number for messaging apps
+        let cleanPhone = phoneNumber.replace(/[^0-9+]/g, '');
         
-        // Set WhatsApp link (remove all non-numeric characters)
-        const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+        // Handle Philippine numbers - add country code if missing
+        if (cleanPhone.startsWith('09') && cleanPhone.length === 11) {
+            cleanPhone = '63' + cleanPhone.substring(1); // Convert 09XXXXXXXXX to 639XXXXXXXXX
+        } else if (cleanPhone.startsWith('639') && cleanPhone.length === 12) {
+            // Already formatted correctly
+        } else if (cleanPhone.startsWith('+63')) {
+            cleanPhone = cleanPhone.substring(1); // Remove + symbol
+        } else if (cleanPhone.startsWith('63') && cleanPhone.length === 12) {
+            // Already has correct format
+        } else if (!cleanPhone.startsWith('63') && cleanPhone.length === 10) {
+            // Handle 10-digit numbers without leading 0
+            cleanPhone = '639' + cleanPhone;
+        }
+        
+        // Set WhatsApp link with proper formatting
         whatsappLink.href = `https://wa.me/${cleanPhone}`;
         
+        // Set Viber link - Viber can use either tel: protocol or viber://chat?number=
+        viberLink.href = `viber://chat?number=${cleanPhone}`;
+
         // Show modal
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
@@ -1659,6 +2381,162 @@ $isSuperUser = isSuperUser($user['username']);
         modal.classList.remove('show');
         document.body.style.overflow = '';
     }
+
+    (function() {
+        const agentInput = document.getElementById('agentInput');
+        const agentHidden = document.getElementById('agentHidden');
+        const suggestions = document.getElementById('agentSuggestions');
+
+        if (!agentInput || !agentHidden || !suggestions) return;
+
+        // Build local list from PHP-provided agents
+        const agents = <?php echo json_encode($filterUsers); ?>;
+        let items = agents || [];
+        let activeIndex = -1;
+
+        function render(list) {
+            if (!list || list.length === 0) {
+                suggestions.style.display = 'none';
+                suggestions.innerHTML = '';
+                activeIndex = -1;
+                return;
+            }
+
+            suggestions.innerHTML = '';
+            list.forEach((a, idx) => {
+                const div = document.createElement('div');
+                div.className = 'agent-suggestion-item' + (idx === activeIndex ? ' active' : '');
+
+                let avatarHtml = '';
+                if (a.profile_picture && a.profile_picture.trim() !== '') {
+                    // Show profile picture if available
+                    const profilePicPath = `uploads/profile_pictures/${a.profile_picture}`;
+                    avatarHtml = `<span class="agent-avatar">
+                        <img src="${profilePicPath}"
+                             alt="${a.name || 'User'}"
+                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+                             onerror="this.style.display='none'; this.parentElement.innerHTML='${(a.name || 'U').split(' ').map(p => p.charAt(0)).slice(0,2).join('').toUpperCase()}';"
+                             onload="this.style.display='block';">
+                    </span>`;
+                } else {
+                    // Show initials if no profile picture
+                    const initials = (a.name || 'U').split(' ').map(p => p.charAt(0)).slice(0,2).join('').toUpperCase();
+                    avatarHtml = `<span class="agent-avatar">${initials}</span>`;
+                }
+
+                const role = (a.role || '').charAt(0).toUpperCase() + (a.role || '').slice(1);
+
+                div.innerHTML = `
+                    ${avatarHtml}
+                    <span class="agent-meta">
+                        <span class="agent-name">${a.name}</span>
+                        <span class="agent-role">${role}</span>
+                    </span>
+                `;
+
+                div.addEventListener('click', () => {
+                    agentInput.value = a.name;
+                    agentHidden.value = a.id;
+                    suggestions.style.display = 'none';
+
+                    // Use AJAX to filter immediately when agent is selected
+                    const form = document.getElementById('searchForm');
+                    if (form) {
+                        const formData = new FormData(form);
+                        // Make sure the agent value is set
+                        formData.set('agent', a.id);
+                        formData.set('page', '1');
+                        
+                        // Use the AJAX update function directly
+                        if (typeof updateTableContent === 'function') {
+                            updateTableContent(formData);
+                        } else {
+                            // Fallback to form submission if AJAX function is not available
+                            form.submit();
+                        }
+                    }
+                });
+
+                suggestions.appendChild(div);
+            });
+
+            suggestions.style.display = 'block';
+        }
+
+        function filter(query) {
+            const q = (query || '').toLowerCase().trim();
+            if (q === '') return [];
+            return items.filter(a => a.name.toLowerCase().includes(q)).slice(0, 20);
+        }
+
+        function debounce(fn, delay) {
+            let t;
+            return function(...args){
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        const onInput = debounce(() => {
+            const q = agentInput.value;
+
+            // If cleared, clear hidden value
+            if (q.trim() === '') {
+                agentHidden.value = '';
+                suggestions.style.display = 'none';
+                return;
+            }
+
+            activeIndex = -1;
+            render(filter(q));
+        }, 150);
+
+        agentInput.addEventListener('input', onInput);
+
+        agentInput.addEventListener('focus', () => {
+            if (agentInput.value.trim() !== '') {
+                render(filter(agentInput.value));
+            }
+        });
+
+        agentInput.addEventListener('keydown', (e) => {
+            const visible = suggestions.style.display === 'block';
+            const children = Array.from(suggestions.children);
+
+            if (!visible || children.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = (activeIndex + 1) % children.length;
+                updateActiveItem(children);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = (activeIndex - 1 + children.length) % children.length;
+                updateActiveItem(children);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (activeIndex >= 0 && activeIndex < children.length) {
+                    children[activeIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                suggestions.style.display = 'none';
+            }
+        });
+
+        function updateActiveItem(children) {
+            children.forEach((child, idx) => {
+                child.classList.toggle('active', idx === activeIndex);
+            });
+        }
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', (evt) => {
+            const container = document.querySelector('.filter-select-container[data-label="Agent"]');
+            if (container && !container.contains(evt.target)) {
+                suggestions.style.display = 'none';
+            }
+        });
+    })();
 
     // Close modal when clicking outside
     document.getElementById('callModal').addEventListener('click', function(e) {
@@ -1674,8 +2552,7 @@ $isSuperUser = isSuperUser($user['username']);
         }
     });
     </script>
-    
+
     <script src="assets/js/script.js"></script>
 </body>
 </html>
-<?php ?>

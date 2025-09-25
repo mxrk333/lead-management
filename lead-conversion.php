@@ -60,17 +60,7 @@ function canEditLead($lead, $current_user_id) {
     return ($lead['user_id'] == $current_user_id);
 }
 
-// Enhanced role-based filtering with superuser support
-if (!function_exists('isSuperUser')) {
-    function isSuperUser($username) {
-        $superusers = [
-            'markpatigayon.intern',
-            'gabriellibacao.founder', 
-            'romeocorberta.itdept'
-        ];
-        return in_array($username, $superusers);
-    }
-}
+// isSuperUser is provided globally in includes/functions.php
 
 // Pagination settings
 $leads_per_page = 10;

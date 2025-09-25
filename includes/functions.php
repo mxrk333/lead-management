@@ -1,4 +1,14 @@
 <?php
+if (!function_exists('isSuperUser')) {
+    function isSuperUser($username) {
+        $superusers = [
+            'markpatigayon.itadmin',
+            'gabriellibacao.founder',
+            'romeocorberta.itdept'
+        ];
+        return in_array($username, $superusers);
+    }
+}
 // Goal tracking functions
 function createGoal($user_id, $target_amount, $start_date, $end_date) {
     $conn = getDbConnection();
@@ -1589,6 +1599,9 @@ function updateLeadStatus($conn, $lead_id, $new_status, $user_id) {
         $activity_note = "Status changed from {$old_status} to {$new_status}";
         addLeadActivity($lead_id, $user_id, "Status Change", $activity_note);
         
+        // Award raffle ticket for status change
+        awardRaffleTicketsForStatusChange($lead_id, $user_id, $new_status, $old_status);
+        
         // Handle Downpayment Stage
         if ($new_status == 'Downpayment Stage') {
             $check_stmt = $conn->prepare("SELECT id FROM downpayment_tracker WHERE lead_id = ?");
@@ -1644,50 +1657,33 @@ function getDeveloperNameById($developer_id) {
     return '';
 }
 
-// Function to get unique sources from leads table
-function getUniqueSources() {
-    $conn = getDbConnection();
-    $sources = array();
-    
-    $query = "SELECT DISTINCT source FROM leads ORDER BY source";
-    $result = $conn->query($query);
-    
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $sources[] = $row['source'];
-        }
-    }
-    
-    // Don't close the connection here
-    return $sources;
-}
 
 if (!function_exists('getUniqueSources')) {
     function getUniqueSources() {
         $conn = getDbConnection();
         $sources = array();
-        
+
         $query = "SELECT DISTINCT source FROM leads WHERE source IS NOT NULL AND source != '' ORDER BY source";
         $result = $conn->query($query);
-        
+
         if ($result && $result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 $sources[] = $row['source'];
             }
         }
-        
+
         // If no sources found in database, return default enum values
         if (empty($sources)) {
             $sources = [
                 'Facebook Groups', 'KKK', 'Facebook Ads', 'TikTok ads', 'Google Ads', 
-                'Facebook live', 'Referral', 'Teleprospecting', 'Video Message', 
-                'Organic Posting', 'Email Marketing', 'Follow up', 'Manning', 
-                'Walk in', 'Flyering', 'Chat messaging', 'Property Listing', 
-                'Landing Page', 'Networking Events', 'Organic Sharing', 
+                'Facebook live', 'Referral', 'Teleprospecting', 'Video Message',
+                'Organic Posting', 'Email Marketing', 'Follow up', 'Manning',
+                'Walk in', 'Flyering', 'Chat messaging', 'Property Listing',
+                'Landing Page', 'Networking Events', 'Organic Sharing',
                 'Youtube Marketing', 'LinkedIn', 'Open House'
             ];
         }
-        
+
         return $sources;
     }
 }
@@ -1786,58 +1782,62 @@ if (!function_exists('getLeadSources')) {
 
 // Find and replace the existing getUniqueTemperatures function with this:
 
-function getUniqueTemperatures() {
-    $conn = getDbConnection();
-    $temperatures = array();
-    
-    $query = "SELECT DISTINCT temperature FROM leads WHERE temperature IS NOT NULL AND temperature != '' ORDER BY 
-              CASE temperature 
-                WHEN 'Hot' THEN 1 
-                WHEN 'Warm' THEN 2 
-                WHEN 'Cold' THEN 3 
-              END";
-    $result = $conn->query($query);
-    
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $temperatures[] = $row['temperature'];
+if (!function_exists('getUniqueTemperatures')) {
+    function getUniqueTemperatures() {
+        $conn = getDbConnection();
+        $temperatures = array();
+
+        $query = "SELECT DISTINCT temperature FROM leads WHERE temperature IS NOT NULL AND temperature != '' ORDER BY
+                  CASE temperature 
+                    WHEN 'Hot' THEN 1 
+                    WHEN 'Warm' THEN 2 
+                    WHEN 'Cold' THEN 3 
+                  END";
+        $result = $conn->query($query);
+
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $temperatures[] = $row['temperature'];
+            }
         }
+
+        // If no temperatures found in database, return default enum values
+        if (empty($temperatures)) {
+            $temperatures = ['Hot', 'Warm', 'Cold'];
+        }
+
+        return $temperatures;
     }
-    
-    // If no temperatures found in database, return default enum values
-    if (empty($temperatures)) {
-        $temperatures = ['Hot', 'Warm', 'Cold'];
-    }
-    
-    return $temperatures;
 }
 
 // Find and replace the existing getUniqueStatuses function with this:
 
-function getUniqueStatuses() {
-    $conn = getDbConnection();
-    $statuses = array();
-    
-    $query = "SELECT DISTINCT status FROM leads WHERE status IS NOT NULL AND status != '' ORDER BY status";
-    $result = $conn->query($query);
-    
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $statuses[] = $row['status'];
+if (!function_exists('getUniqueStatuses')) {
+    function getUniqueStatuses() {
+        $conn = getDbConnection();
+        $statuses = array();
+
+        $query = "SELECT DISTINCT status FROM leads WHERE status IS NOT NULL AND status != '' ORDER BY status";
+        $result = $conn->query($query);
+
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $statuses[] = $row['status'];
+            }
         }
-    }
-    
-    // If no statuses found in database, return default enum values
-    if (empty($statuses)) {
-        $statuses = [
-            'Inquiry', 'Presentation Stage', 'Negotiation', 'Closed', 'Lost', 
-            'Site Tour', 'Closed Deal', 'Requirement Stage', 'Downpayment Stage', 
-            'Housing Loan Application', 'Loan Approval', 'Loan Takeout', 
+
+        // If no statuses found in database, return default enum values
+        if (empty($statuses)) {
+            $statuses = [
+            'Inquiry', 'Presentation Stage', 'Negotiation', 'Closed', 
+            'Site Tour', 'Closed Deal', 'Requirement Stage', 'Downpayment Stage',
+            'Housing Loan Application', 'Loan Approval', 'Loan Takeout',
             'House Inspection', 'House Turn Over'
-        ];
+            ];
+        }
+
+        return $statuses;
     }
-    
-    return $statuses;
 }
 
 function getRecruitmentStats($user_id, $user_role) {
@@ -2098,11 +2098,524 @@ function deleteRecruitmentLead($id) {
     }
 }
 
+/**
+ * Generate a unique raffle ticket number
+ * 
+ * @return string Unique ticket number
+ */
+function generateRaffleTicketNumber() {
+    $conn = getDbConnection();
+    
+    // Get the next sequential number
+    $result = $conn->query("SELECT COUNT(*) as count FROM raffle_tickets");
+    $count = $result->fetch_assoc()['count'];
+    
+    // Generate LMS + sequential number (padded to 3 digits)
+    $ticket_number = 'LMS' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+    
+    return $ticket_number;
+}
+
+/**
+ * Award raffle tickets for lead status progression
+ * 
+ * @param int $lead_id Lead ID
+ * @param int $user_id User ID
+ * @param string $new_status New lead status
+ * @param string $old_status Old lead status
+ * @return bool Success status
+ */
+function awardRaffleTicketsForStatusChange($lead_id, $user_id, $new_status, $old_status) {
+    $conn = getDbConnection();
+    if (!$conn) {
+        error_log("Database connection failed in awardRaffleTicketsForStatusChange");
+        return false;
+    }
+
+    try {
+        // Define the stages that award tickets
+        $raffle_stages = [
+            'Inquiry',
+            'Presentation Stage', 
+            'Negotiation',
+            'Closed',
+            'Lost',
+            'Site Tour',
+            'Closed Deal',
+            'Requirement Stage',
+            'Downpayment Stage',
+            'Housing Loan Application',
+            'Loan Approval',
+            'Loan Takeout',
+            'House Inspection',
+            'House Turn Over'
+        ];
+
+        // Only award ticket if the new status is in our raffle stages
+        if (!in_array($new_status, $raffle_stages)) {
+            return true; // Not an error, just no ticket to award
+        }
+
+        // Get lead and user information
+        $lead_stmt = $conn->prepare("SELECT l.client_name, l.phone, l.email, u.name as full_name, u.team_id 
+                                   FROM leads l 
+                                   JOIN users u ON l.user_id = u.id 
+                                   WHERE l.id = ?");
+        $lead_stmt->bind_param("i", $lead_id);
+        $lead_stmt->execute();
+        $lead_data = $lead_stmt->get_result()->fetch_assoc();
+        $lead_stmt->close();
+
+        if (!$lead_data) {
+            error_log("Lead not found for raffle ticket generation: " . $lead_id);
+            return false;
+        }
+
+        // Generate and insert raffle ticket
+        $ticket_number = generateRaffleTicketNumber();
+        $stage_source = "Lead Status: " . $new_status;
+        
+        $insert_stmt = $conn->prepare("INSERT INTO raffle_tickets 
+                                     (user_id, lead_id, ticket_number, full_name, phone_number, email_address, team_id, stage_source) 
+                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $insert_stmt->bind_param("iissssis", 
+            $user_id, 
+            $lead_id, 
+            $ticket_number, 
+            $lead_data['full_name'], 
+            $lead_data['phone'], 
+            $lead_data['email'], 
+            $lead_data['team_id'], 
+            $stage_source
+        );
+
+        $result = $insert_stmt->execute();
+        $insert_stmt->close();
+
+        if ($result) {
+            error_log("Raffle ticket awarded for lead status change: Lead ID $lead_id, Status: $new_status, Ticket: $ticket_number");
+            return true;
+        } else {
+            error_log("Failed to award raffle ticket for lead status change: Lead ID $lead_id");
+            return false;
+        }
+
+    } catch (Exception $e) {
+        error_log("Error awarding raffle tickets for status change: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Award raffle tickets for downpayment tracker stage updates
+ * 
+ * @param int $lead_id Lead ID
+ * @param int $user_id User ID
+ * @param int $current_stage Current DP stage
+ * @return bool Success status
+ */
+function awardRaffleTicketsForDPStage($lead_id, $user_id, $current_stage) {
+    $conn = getDbConnection();
+    if (!$conn) {
+        error_log("Database connection failed in awardRaffleTicketsForDPStage");
+        return false;
+    }
+
+    try {
+        // Get lead and user information
+        $lead_stmt = $conn->prepare("SELECT l.client_name, l.phone, l.email, u.name as full_name, u.team_id 
+                                   FROM leads l 
+                                   JOIN users u ON l.user_id = u.id 
+                                   WHERE l.id = ?");
+        $lead_stmt->bind_param("i", $lead_id);
+        $lead_stmt->execute();
+        $lead_data = $lead_stmt->get_result()->fetch_assoc();
+        $lead_stmt->close();
+
+        if (!$lead_data) {
+            error_log("Lead not found for DP stage raffle ticket generation: " . $lead_id);
+            return false;
+        }
+
+        // Award tickets equal to the current stage number
+        for ($i = 1; $i <= $current_stage; $i++) {
+            $ticket_number = generateRaffleTicketNumber();
+            $stage_source = "DP Stage: " . $i;
+            
+            $insert_stmt = $conn->prepare("INSERT INTO raffle_tickets 
+                                         (user_id, lead_id, ticket_number, full_name, phone_number, email_address, team_id, stage_source) 
+                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $insert_stmt->bind_param("iissssis", 
+                $user_id, 
+                $lead_id, 
+                $ticket_number, 
+                $lead_data['full_name'], 
+                $lead_data['phone'], 
+                $lead_data['email'], 
+                $lead_data['team_id'], 
+                $stage_source
+            );
+
+            $result = $insert_stmt->execute();
+            $insert_stmt->close();
+
+            if (!$result) {
+                error_log("Failed to award raffle ticket for DP stage $i: Lead ID $lead_id");
+                return false;
+            }
+        }
+
+        error_log("Raffle tickets awarded for DP stage update: Lead ID $lead_id, Stage: $current_stage");
+        return true;
+
+    } catch (Exception $e) {
+        error_log("Error awarding raffle tickets for DP stage: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Award raffle tickets for requirements completion
+ * 
+ * @param int $lead_id Lead ID
+ * @param int $user_id User ID
+ * @param array $requirements Array of requirement fields and their values
+ * @return bool Success status
+ */
+function awardRaffleTicketsForRequirements($lead_id, $user_id, $requirements) {
+    $conn = getDbConnection();
+    if (!$conn) {
+        error_log("Database connection failed in awardRaffleTicketsForRequirements");
+        return false;
+    }
+
+    try {
+        // Define requirement fields that award tickets
+        $requirement_fields = [
+            'requirements_complete' => 'Requirements Complete',
+            'pagibig_bank_approval' => 'Pag-IBIG Bank Approval',
+            'loan_takeout' => 'Loan Takeout',
+            'turnover' => 'Turnover'
+        ];
+
+        // Get lead and user information
+        $lead_stmt = $conn->prepare("SELECT l.client_name, l.phone, l.email, u.name as full_name, u.team_id 
+                                   FROM leads l 
+                                   JOIN users u ON l.user_id = u.id 
+                                   WHERE l.id = ?");
+        $lead_stmt->bind_param("i", $lead_id);
+        $lead_stmt->execute();
+        $lead_data = $lead_stmt->get_result()->fetch_assoc();
+        $lead_stmt->close();
+
+        if (!$lead_data) {
+            error_log("Lead not found for requirements raffle ticket generation: " . $lead_id);
+            return false;
+        }
+
+        $tickets_awarded = 0;
+
+        // Check each requirement field
+        foreach ($requirement_fields as $field => $description) {
+            if (isset($requirements[$field]) && $requirements[$field] == 1) {
+                $ticket_number = generateRaffleTicketNumber();
+                $stage_source = "Requirement: " . $description;
+                
+                $insert_stmt = $conn->prepare("INSERT INTO raffle_tickets 
+                                             (user_id, lead_id, ticket_number, full_name, phone_number, email_address, team_id, stage_source) 
+                                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $insert_stmt->bind_param("iissssis", 
+                    $user_id, 
+                    $lead_id, 
+                    $ticket_number, 
+                    $lead_data['full_name'], 
+                    $lead_data['phone'], 
+                    $lead_data['email'], 
+                    $lead_data['team_id'], 
+                    $stage_source
+                );
+
+                $result = $insert_stmt->execute();
+                $insert_stmt->close();
+
+                if ($result) {
+                    $tickets_awarded++;
+                    error_log("Raffle ticket awarded for requirement: $description, Lead ID: $lead_id");
+                } else {
+                    error_log("Failed to award raffle ticket for requirement $description: Lead ID $lead_id");
+                }
+            }
+        }
+
+        error_log("Requirements raffle tickets awarded: $tickets_awarded tickets for Lead ID $lead_id");
+        return true;
+
+    } catch (Exception $e) {
+        error_log("Error awarding raffle tickets for requirements: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Award raffle tickets for spot downpayment based on DP terms
+ * 
+ * @param int $lead_id Lead ID
+ * @param int $user_id User ID
+ * @param int $dp_terms DP terms in months
+ * @return bool Success status
+ */
+function awardRaffleTicketsForSpotDP($lead_id, $user_id, $dp_terms) {
+    $conn = getDbConnection();
+    if (!$conn) {
+        error_log("Database connection failed in awardRaffleTicketsForSpotDP");
+        return false;
+    }
+
+    try {
+        // Get lead and user information
+        $lead_stmt = $conn->prepare("SELECT l.client_name, l.phone, l.email, u.name as full_name, u.team_id 
+                                   FROM leads l 
+                                   JOIN users u ON l.user_id = u.id 
+                                   WHERE l.id = ?");
+        $lead_stmt->bind_param("i", $lead_id);
+        $lead_stmt->execute();
+        $lead_data = $lead_stmt->get_result()->fetch_assoc();
+        $lead_stmt->close();
+
+        if (!$lead_data) {
+            error_log("Lead not found for spot DP raffle ticket generation: " . $lead_id);
+            return false;
+        }
+
+        // Award tickets equal to DP terms
+        for ($i = 1; $i <= $dp_terms; $i++) {
+            $ticket_number = generateRaffleTicketNumber();
+            $stage_source = "Spot DP: " . $i . "/" . $dp_terms . " months";
+            
+            $insert_stmt = $conn->prepare("INSERT INTO raffle_tickets 
+                                         (user_id, lead_id, ticket_number, full_name, phone_number, email_address, team_id, stage_source) 
+                                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $insert_stmt->bind_param("iissssis", 
+                $user_id, 
+                $lead_id, 
+                $ticket_number, 
+                $lead_data['full_name'], 
+                $lead_data['phone'], 
+                $lead_data['email'], 
+                $lead_data['team_id'], 
+                $stage_source
+            );
+
+            $result = $insert_stmt->execute();
+            $insert_stmt->close();
+
+            if (!$result) {
+                error_log("Failed to award raffle ticket for spot DP $i: Lead ID $lead_id");
+                return false;
+            }
+        }
+
+        error_log("Raffle tickets awarded for spot DP: Lead ID $lead_id, Terms: $dp_terms months");
+        return true;
+
+    } catch (Exception $e) {
+        error_log("Error awarding raffle tickets for spot DP: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Get raffle tickets with filtering options
+ * 
+ * @param array $filters Filter options
+ * @param int $limit Limit results
+ * @param int $offset Offset for pagination
+ * @return array Raffle tickets data
+ */
+function getRaffleTickets($filters = [], $limit = null, $offset = 0) {
+    $conn = getDbConnection();
+    if (!$conn) {
+        return ['success' => false, 'message' => 'Database connection failed'];
+    }
+
+    try {
+        $where_conditions = [];
+        $params = [];
+        $types = '';
+
+        // Build WHERE conditions based on filters
+        if (!empty($filters['team_id'])) {
+            $where_conditions[] = "rt.team_id = ?";
+            $params[] = $filters['team_id'];
+            $types .= 'i';
+        }
+
+        if (!empty($filters['user_id'])) {
+            $where_conditions[] = "rt.user_id = ?";
+            $params[] = $filters['user_id'];
+            $types .= 'i';
+        }
+
+        if (!empty($filters['stage_source'])) {
+            $where_conditions[] = "rt.stage_source LIKE ?";
+            $params[] = '%' . $filters['stage_source'] . '%';
+            $types .= 's';
+        }
+
+        if (!empty($filters['date_from'])) {
+            $where_conditions[] = "DATE(rt.created_at) >= ?";
+            $params[] = $filters['date_from'];
+            $types .= 's';
+        }
+
+        if (!empty($filters['date_to'])) {
+            $where_conditions[] = "DATE(rt.created_at) <= ?";
+            $params[] = $filters['date_to'];
+            $types .= 's';
+        }
+
+        $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+
+        // Build query - group by user and get ticket counts with original modification dates
+        $query = "SELECT rt.user_id, rt.full_name, u.phone as phone_number, u.email as email_address, rt.team_id,
+                         COUNT(*) as ticket_count,
+                         GROUP_CONCAT(rt.ticket_number ORDER BY rt.created_at DESC) as ticket_numbers,
+                         GROUP_CONCAT(rt.stage_source ORDER BY rt.created_at DESC) as stage_sources,
+                         GROUP_CONCAT(rt.created_at ORDER BY rt.created_at DESC) as created_dates,
+                         GROUP_CONCAT(
+                             CASE 
+                                 WHEN rt.stage_source LIKE 'Lead Status:%' THEN l.updated_at
+                                 WHEN rt.stage_source LIKE 'DP Stage:%' THEN dt.updated_at
+                                 WHEN rt.stage_source LIKE 'Requirement:%' THEN dt.updated_at
+                                 WHEN rt.stage_source LIKE 'Spot DP:%' THEN dt.updated_at
+                                 ELSE rt.created_at
+                             END ORDER BY rt.created_at DESC
+                         ) as modification_dates,
+                         MIN(rt.created_at) as first_ticket_date,
+                         MAX(rt.created_at) as latest_ticket_date
+                 FROM raffle_tickets rt 
+                 LEFT JOIN users u ON rt.user_id = u.id
+                 LEFT JOIN leads l ON rt.lead_id = l.id 
+                 LEFT JOIN downpayment_tracker dt ON rt.lead_id = dt.lead_id
+                 $where_clause 
+                 GROUP BY rt.user_id
+                 ORDER BY latest_ticket_date DESC";
+
+        if ($limit) {
+            $query .= " LIMIT ? OFFSET ?";
+            $params[] = $limit;
+            $params[] = $offset;
+            $types .= 'ii';
+        }
+
+        $stmt = $conn->prepare($query);
+        if (!empty($params) && !empty($types)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $tickets = [];
+        while ($row = $result->fetch_assoc()) {
+            $tickets[] = $row;
+        }
+        $stmt->close();
+
+        // Get total count for pagination
+        $count_query = "SELECT COUNT(*) as total FROM raffle_tickets rt $where_clause";
+        $count_stmt = $conn->prepare($count_query);
+        
+        // Prepare count parameters (exclude limit/offset)
+        $count_params = [];
+        $count_types = '';
+        if (!empty($params)) {
+            // Remove the last 2 parameters (limit and offset) if they exist
+            $count_params = array_slice($params, 0, -2);
+            $count_types = substr($types, 0, -2);
+        }
+        
+        if (!empty($count_params) && !empty($count_types)) {
+            $count_stmt->bind_param($count_types, ...$count_params);
+        }
+        
+        $count_stmt->execute();
+        $total = $count_stmt->get_result()->fetch_assoc()['total'];
+        $count_stmt->close();
+
+        return [
+            'success' => true,
+            'tickets' => $tickets,
+            'total' => $total,
+            'limit' => $limit,
+            'offset' => $offset
+        ];
+
+    } catch (Exception $e) {
+        error_log("Error getting raffle tickets: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Failed to retrieve raffle tickets'];
+    }
+}
+
+/**
+ * Get detailed raffle tickets for a specific user
+ * 
+ * @param int $user_id User ID
+ * @return array Detailed tickets data
+ */
+function getUserRaffleTickets($user_id) {
+    $conn = getDbConnection();
+    if (!$conn) {
+        return ['success' => false, 'message' => 'Database connection failed'];
+    }
+
+        try {
+            $query = "SELECT rt.*, l.client_name, l.status as lead_status, l.updated_at as lead_updated_at, dt.updated_at as dp_updated_at,
+                             CASE 
+                                 WHEN rt.stage_source LIKE 'Lead Status:%' THEN l.updated_at
+                                 WHEN rt.stage_source LIKE 'DP Stage:%' THEN dt.updated_at
+                                 WHEN rt.stage_source LIKE 'Requirement:%' THEN dt.updated_at
+                                 WHEN rt.stage_source LIKE 'Spot DP:%' THEN dt.updated_at
+                                 ELSE rt.created_at
+                             END as modification_date
+                     FROM raffle_tickets rt 
+                     LEFT JOIN leads l ON rt.lead_id = l.id 
+                     LEFT JOIN downpayment_tracker dt ON rt.lead_id = dt.lead_id
+                     WHERE rt.user_id = ?
+                     ORDER BY rt.created_at DESC";
+        
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $tickets = [];
+        while ($row = $result->fetch_assoc()) {
+            $tickets[] = $row;
+        }
+        $stmt->close();
+
+        return [
+            'success' => true,
+            'tickets' => $tickets,
+            'total' => count($tickets)
+        ];
+
+    } catch (Exception $e) {
+        error_log("Error getting user raffle tickets: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Failed to retrieve user raffle tickets'];
+    }
+}
+
 // AJAX Handler - This is crucial for the dashboard to work
 if (isset($_POST['action'])) {
     // Enable error logging for AJAX requests
     error_log("AJAX request received: " . $_POST['action']);
     error_log("POST data: " . print_r($_POST, true));
+    
+    // Include database connection for AJAX requests
+    if (!function_exists('getDbConnection')) {
+        require_once __DIR__ . '/../config/database.php';
+    }
     
     header('Content-Type: application/json');
     
@@ -2131,6 +2644,45 @@ if (isset($_POST['action'])) {
                 
             case 'get_recruitment_stats':
                 $result = getRecruitmentStats();
+                echo json_encode($result);
+                exit;
+                
+            case 'get_raffle_tickets':
+                $filters = [
+                    'team_id' => $_POST['team_id'] ?? null,
+                    'user_id' => $_POST['user_id'] ?? null,
+                    'stage_source' => $_POST['stage_source'] ?? null,
+                    'date_from' => $_POST['date_from'] ?? null,
+                    'date_to' => $_POST['date_to'] ?? null
+                ];
+                
+                $limit = isset($_POST['limit']) ? (int)$_POST['limit'] : 50;
+                $offset = isset($_POST['offset']) ? (int)$_POST['offset'] : 0;
+                
+                $result = getRaffleTickets($filters, $limit, $offset);
+                echo json_encode($result);
+                exit;
+                
+            case 'get_teams':
+                $conn = getDbConnection();
+                $stmt = $conn->prepare("SELECT id, name FROM teams ORDER BY name");
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $teams = [];
+                while ($row = $result->fetch_assoc()) {
+                    $teams[] = $row;
+                }
+                $stmt->close();
+                echo json_encode(['success' => true, 'teams' => $teams]);
+                exit;
+                
+            case 'get_user_tickets':
+                $user_id = $_POST['user_id'] ?? null;
+                if (!$user_id) {
+                    echo json_encode(['success' => false, 'message' => 'User ID is required']);
+                    exit;
+                }
+                $result = getUserRaffleTickets($user_id);
                 echo json_encode($result);
                 exit;
                 

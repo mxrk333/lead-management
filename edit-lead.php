@@ -17,15 +17,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $user = getUserById($user_id);
 
-// Function to check if user is superuser
-function isSuperUser($username) {
-    $superusers = [
-        'markpatigayon.intern',
-        'gabriellibacao.founder', 
-        'romeocorberta.itdept'
-    ];
-    return in_array($username, $superusers);
-}
+// isSuperUser is provided globally in includes/functions.php
 
 // Function to get current Philippine time
 function getCurrentPhilippineTime($format = 'Y-m-d H:i:s') {
@@ -236,7 +228,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         // Collect and sanitize form data
         $clientName = trim($_POST['client_name']);
-        $phone = trim($_POST['phone']);
+        // Use the full international phone number if available, otherwise fallback to regular phone
+        $phone = isset($_POST['phone_full']) && !empty(trim($_POST['phone_full'])) ? trim($_POST['phone_full']) : (isset($_POST['phone']) ? trim($_POST['phone']) : '');
         $email = trim($_POST['email']);
         $facebook = trim($_POST['facebook']);
         $linkedin = trim($_POST['linkedin']);
@@ -416,6 +409,10 @@ foreach ($projectModels as $model) {
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- International Phone Input -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/css/intlTelInput.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/js/intlTelInput.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -727,6 +724,212 @@ foreach ($projectModels as $model) {
             margin-right: 0.5rem;
             color: #0288d1;
         }
+
+        /* International phone input styles - Proper separated design */
+        .iti {
+            width: 100%;
+            position: relative;
+        }
+        
+        .iti__country-list {
+            z-index: 9999;
+            max-height: 250px;
+            width: 400px;
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #d1d5db;
+        }
+        
+        .iti__selected-flag {
+            padding: 0.75rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            border-bottom-right-radius: 0;
+            border-top-right-radius: 0;
+            border-right: none;
+            background: #f9fafb;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .iti__selected-flag:hover {
+            border-color: #9ca3af;
+            background-color: #f3f4f6;
+        }
+        
+        .iti__selected-flag:focus {
+            border-color: #f59e0b;
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+        
+        .iti__flag {
+            margin-right: 0.5rem;
+        }
+        
+        .iti__selected-dial-code {
+            color: #374151;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .iti__arrow {
+            margin-left: 0.5rem;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #6b7280;
+        }
+        
+        .iti input[type="tel"] {
+            border-left: none;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            padding-left: 1rem;
+        }
+        
+        .iti input[type="tel"]:focus {
+            border-color: #f59e0b;
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+        
+        /* Make sure the flag and input align properly */
+        .iti--separate-dial-code .iti__selected-flag {
+            background-color: #f9fafb;
+            min-width: 100px;
+        }
+        
+        .iti--separate-dial-code input[type="tel"] {
+            padding-left: 1rem;
+        }
+
+        /* Autocomplete dropdown styles */
+        .autocomplete-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+        
+        .autocomplete-input {
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background-color: #fff;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .autocomplete-input:focus {
+            border-color: #f59e0b;
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+        
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 0.5rem 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .autocomplete-dropdown.show {
+            display: block;
+        }
+        
+        .autocomplete-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+            transition: background-color 0.15s ease;
+        }
+        
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        
+        .autocomplete-item:hover,
+        .autocomplete-item.active {
+            background-color: #f3f4f6;
+        }
+        
+        .autocomplete-item.selected {
+            background-color: #fef3c7;
+            color: #f59e0b;
+            font-weight: 500;
+        }
+        
+        .autocomplete-no-results {
+            padding: 1rem;
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+            font-size: 0.875rem;
+        }
+        
+        /* Clear button styles */
+        .autocomplete-clear {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 50%;
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            transition: color 0.15s ease, background-color 0.15s ease;
+            z-index: 2;
+        }
+        
+        .autocomplete-clear:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        
+        .autocomplete-clear:focus {
+            outline: 2px solid #f59e0b;
+            outline-offset: 2px;
+        }
+        
+        /* Add project item styles */
+        .autocomplete-add-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+            background-color: #f8fafc;
+            color: #f59e0b;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .autocomplete-add-item:hover,
+        .autocomplete-add-item.active {
+            background-color: #fef3c7;
+        }
+        
+        .autocomplete-add-item .fas {
+            font-size: 0.75rem;
+        }
     </style>
 </head>
 <body>
@@ -776,10 +979,11 @@ foreach ($projectModels as $model) {
                             
                             <div class="form-group">
                                 <label for="phone">Phone Number <span class="optional-field">(Optional)</span></label>
-                                <input type="text" id="phone" name="phone" 
+                                <input type="tel" id="phone" name="phone" 
                                        value="<?php echo htmlspecialchars($lead['phone']); ?>"
-                                       placeholder="e.g. 09123456789" maxlength="11">
-                            </div>      
+                                       placeholder="Enter phone number">
+                                <input type="hidden" id="phone_full" name="phone_full" value="">
+                            </div>
                         </div>
                         
                         <div class="form-row">
@@ -792,23 +996,15 @@ foreach ($projectModels as $model) {
                             
                             <div class="form-group required-field">
                                 <label for="source">Lead Source</label>
-                                <select id="source" name="source" required onchange="toggleSourceOthers(this.value)">
-                                    <option value="">Select Lead Source</option>
-                                    <?php foreach ($leadSources as $source): ?>
-                                    <option value="<?php echo htmlspecialchars($source['name']); ?>"
-                                            <?php echo ($currentSourceValue === $source['name']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($source['name']); ?>
-                                    </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <div class="others-input <?php echo $isCustomSource ? 'show' : ''; ?>" id="source-others">
-                                    <label for="source_other">Specify Lead Source</label>
-                                    <input type="text" id="source_other" name="source_other" 
-                                           value="<?php echo $isCustomSource ? htmlspecialchars($customSourceValue) : ''; ?>"
-                                           placeholder="Enter lead source" maxlength="100"
-                                           <?php echo $isCustomSource ? 'required' : ''; ?>>
+                                <div class="autocomplete-container">
+                                    <input type="text" id="source" name="source" required 
+                                           class="autocomplete-input" 
+                                           value="<?php echo $isCustomSource ? htmlspecialchars($customSourceValue) : htmlspecialchars($currentSourceValue); ?>"
+                                           placeholder="Type to search or select lead source..."
+                                           autocomplete="off">
+                                    <div id="source-dropdown" class="autocomplete-dropdown"></div>
                                 </div>
-                            </div>
+                                <input type="hidden" id="source_original" name="source_original" value="<?php echo htmlspecialchars($lead['source']); ?>">
                         </div>
                         
                         <div class="form-row">
@@ -883,23 +1079,18 @@ foreach ($projectModels as $model) {
                         <div class="form-row">
                             <div class="form-group required-field">
                                 <label for="developer">Project</label>
-                                <select id="developer" name="developer" required onchange="loadProjectModels(this.value)">
-                                    <option value="">Select Project</option>
-                                    <?php foreach ($developers as $dev): ?>
-                                    <option value="<?php echo htmlspecialchars($dev['name']); ?>"
-                                            <?php echo ($lead['developer'] === $dev['name']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($dev['name']); ?>
-                                    </option>
-                                    <?php endforeach; ?>
-                                    <option value="Others" <?php echo $isCustomDeveloper ? 'selected' : ''; ?>>Others</option>
-                                </select>
-                                <div class="others-input <?php echo $isCustomDeveloper ? 'show' : ''; ?>" id="developer-others">
-                                    <label for="developer_other">Specify Project</label>
-                                    <input type="text" id="developer_other" name="developer_other" 
-                                           value="<?php echo $isCustomDeveloper ? htmlspecialchars($lead['developer']) : ''; ?>"
-                                           placeholder="Enter project name" maxlength="100"
-                                           <?php echo $isCustomDeveloper ? 'required' : ''; ?>>
+                                <div class="autocomplete-container">
+                                    <input type="text" id="developer" name="developer" required 
+                                           class="autocomplete-input" 
+                                           value="<?php echo htmlspecialchars($lead['developer']); ?>"
+                                           placeholder="Type to search or select project..."
+                                           autocomplete="off">
+                                    <button type="button" class="autocomplete-clear" id="developer-clear" title="Clear project" style="display: <?php echo $lead['developer'] ? 'flex' : 'none'; ?>">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <div id="developer-dropdown" class="autocomplete-dropdown"></div>
                                 </div>
+                                <input type="hidden" id="developer_id" name="developer_id" value="">
                             </div>
                             
                             <div class="form-group required-field">
@@ -949,6 +1140,9 @@ foreach ($projectModels as $model) {
         // Store original status for comparison
         const originalStatus = '<?php echo htmlspecialchars($lead['status']); ?>';
         
+        // Initialize international telephone input
+        let iti;
+        
         // Project models data from PHP
         let projectModelsData = {};
         try {
@@ -973,6 +1167,443 @@ foreach ($projectModels as $model) {
             project_model: '<?php echo htmlspecialchars($lead['project_model']); ?>',
             source: '<?php echo htmlspecialchars($lead['source']); ?>'
         };
+        
+        // Initialize International Telephone Input
+        function initIntlTelInput() {
+            const input = document.querySelector("#phone");
+            if (!input) return;
+            
+            iti = window.intlTelInput(input, {
+                separateDialCode: true,
+                initialCountry: "ph",
+                preferredCountries: ["ph", "us", "gb", "au", "ca"],
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/js/utils.js"
+            });
+            
+            // Set initial value if exists
+            const currentPhone = '<?php echo htmlspecialchars($lead['phone']); ?>';
+            if (currentPhone) {
+                input.value = currentPhone;
+            }
+            
+            // On form submit, set the hidden field value to the full international number
+            document.querySelector("#editLeadForm").addEventListener("submit", function() {
+                if (iti && iti.getNumber()) {
+                    const fullNumber = iti.getNumber();
+                    document.querySelector("#phone_full").value = fullNumber;
+                    console.log('International phone number:', fullNumber);
+                }
+            });
+            
+            // Add formatting on blur
+            input.addEventListener("blur", function() {
+                if (iti) {
+                    // Format number if it's valid
+                    if (iti.isValidNumber()) {
+                        const nationalNumber = iti.getNumber(intlTelInputUtils.numberFormat.NATIONAL);
+                        input.value = nationalNumber;
+                    }
+                }
+            });
+            
+            // Validate phone number on change
+            input.addEventListener("change", function() {
+                if (iti && input.value.trim()) {
+                    const isValid = iti.isValidNumber();
+                    input.classList.toggle('error', !isValid);
+                    
+                    if (isValid) {
+                        input.title = 'Valid phone number';
+                    } else {
+                        input.title = 'Invalid phone number';
+                    }
+                }
+            });
+        }
+        
+        // Initialize Lead Source Autocomplete
+        function initLeadSourceAutocomplete() {
+            const input = document.querySelector("#source");
+            const dropdown = document.querySelector("#source-dropdown");
+            const originalInput = document.querySelector("#source_original");
+            
+            if (!input || !dropdown) return;
+            
+            // Setup input event listeners
+            input.addEventListener("input", function() {
+                const query = this.value.trim();
+                if (query.length >= 1) {
+                    fetchLeadSources(query, dropdown);
+                } else {
+                    dropdown.innerHTML = '';
+                    dropdown.classList.remove('show');
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+            
+            // Handle focus on input
+            input.addEventListener('focus', function() {
+                const query = this.value.trim();
+                if (query.length >= 1) {
+                    fetchLeadSources(query, dropdown);
+                } else {
+                    fetchLeadSources('', dropdown);
+                }
+            });
+            
+            // Fetch lead sources from API
+            function fetchLeadSources(query, dropdown) {
+                // Make AJAX call
+                fetch('api/get_lead_sources.php?search=' + encodeURIComponent(query))
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Lead sources data:', data);
+                        renderLeadSourceDropdown(data.sources, dropdown);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching lead sources:', error);
+                    });
+            }
+            
+            // Render lead sources dropdown
+            function renderLeadSourceDropdown(sources, dropdown) {
+                dropdown.innerHTML = '';
+                
+                if (sources.length === 0) {
+                    dropdown.innerHTML = '<div class="autocomplete-no-results">No lead sources found</div>';
+                    dropdown.classList.add('show');
+                    return;
+                }
+                
+                sources.forEach(source => {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    item.textContent = source.name;
+                    item.setAttribute('data-value', source.name);
+                    item.setAttribute('data-type', source.type || 'custom');
+                    
+                    item.addEventListener('click', function() {
+                        input.value = source.name;
+                        originalInput.value = source.name;
+                        dropdown.classList.remove('show');
+                    });
+                    
+                    dropdown.appendChild(item);
+                });
+                
+                // Add custom option if not in the list and the current value is not empty
+                const currentValue = input.value.trim();
+                if (currentValue && !sources.some(source => source.name.toLowerCase() === currentValue.toLowerCase())) {
+                    const addItem = document.createElement('div');
+                    addItem.className = 'autocomplete-add-item';
+                    addItem.innerHTML = `<i class="fas fa-plus-circle"></i> Create "${currentValue}"`;;
+                    addItem.setAttribute('data-value', currentValue);
+                    
+                    addItem.addEventListener('click', function() {
+                        input.value = currentValue;
+                        originalInput.value = currentValue;
+                        dropdown.classList.remove('show');
+                    });
+                    
+                    dropdown.appendChild(addItem);
+                }
+                
+                dropdown.classList.add('show');
+            }
+            
+            // Keyboard navigation and selection
+            input.addEventListener('keydown', function(e) {
+                const items = dropdown.querySelectorAll('.autocomplete-item, .autocomplete-add-item');
+                if (!items.length || !dropdown.classList.contains('show')) return;
+                
+                let activeItem = dropdown.querySelector('.active');
+                let activeIndex = -1;
+                
+                if (activeItem) {
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i] === activeItem) {
+                            activeIndex = i;
+                            break;
+                        }
+                    }
+                }
+                
+                switch (e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = (activeIndex + 1) % items.length;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        break;
+                        
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = (activeIndex <= 0) ? items.length - 1 : activeIndex - 1;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        break;
+                        
+                    case 'Enter':
+                        e.preventDefault();
+                        if (activeItem) {
+                            const value = activeItem.getAttribute('data-value');
+                            input.value = value;
+                            originalInput.value = value;
+                            dropdown.classList.remove('show');
+                        }
+                        break;
+                        
+                    case 'Escape':
+                        dropdown.classList.remove('show');
+                        break;
+                }
+            });
+        }
+        
+        // Initialize Project Autocomplete
+        function initProjectAutocomplete() {
+            const input = document.querySelector("#developer");
+            const dropdown = document.querySelector("#developer-dropdown");
+            const clearBtn = document.querySelector("#developer-clear");
+            const idInput = document.querySelector("#developer_id");
+            
+            if (!input || !dropdown || !clearBtn) return;
+            
+            // Setup input event listeners
+            input.addEventListener("input", function() {
+                const query = this.value.trim();
+                if (query.length >= 1) {
+                    fetchProjects(query, dropdown);
+                    clearBtn.style.display = 'flex';
+                } else {
+                    dropdown.innerHTML = '';
+                    dropdown.classList.remove('show');
+                    clearBtn.style.display = 'none';
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !dropdown.contains(e.target) && !clearBtn.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+            
+            // Handle focus on input
+            input.addEventListener('focus', function() {
+                const query = this.value.trim();
+                if (query.length >= 1) {
+                    fetchProjects(query, dropdown);
+                } else {
+                    fetchProjects('', dropdown);
+                }
+                if (input.value) {
+                    clearBtn.style.display = 'flex';
+                }
+            });
+            
+            // Clear button functionality
+            clearBtn.addEventListener('click', function() {
+                input.value = '';
+                idInput.value = '';
+                clearBtn.style.display = 'none';
+                dropdown.innerHTML = '';
+                dropdown.classList.remove('show');
+                
+                // Clear house models as well
+                const projectModelSelect = document.getElementById('project_model');
+                if (projectModelSelect) {
+                    projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
+                }
+                
+                input.focus();
+            });
+            
+            // Fetch projects from API
+            function fetchProjects(query, dropdown) {
+                // Make AJAX call
+                fetch('api/get_projects.php?search=' + encodeURIComponent(query))
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Projects data:', data);
+                        renderProjectDropdown(data.projects, dropdown);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching projects:', error);
+                    });
+            }
+            
+            // Render projects dropdown
+            function renderProjectDropdown(projects, dropdown) {
+                dropdown.innerHTML = '';
+                
+                if (projects.length === 0) {
+                    dropdown.innerHTML = '<div class="autocomplete-no-results">No projects found</div>';
+                    dropdown.classList.add('show');
+                    return;
+                }
+                
+                projects.forEach(project => {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    if (!project.is_active) {
+                        item.className += ' inactive';
+                    }
+                    item.textContent = project.name;
+                    item.setAttribute('data-value', project.name);
+                    item.setAttribute('data-id', project.id);
+                    
+                    item.addEventListener('click', function() {
+                        input.value = project.name;
+                        idInput.value = project.id;
+                        dropdown.classList.remove('show');
+                        clearBtn.style.display = 'flex';
+                        
+                        // Load house models for this project
+                        loadProjectModels(project.name);
+                    });
+                    
+                    dropdown.appendChild(item);
+                });
+                
+                // Add custom option if not in the list and the current value is not empty
+                const currentValue = input.value.trim();
+                if (currentValue && !projects.some(project => project.name.toLowerCase() === currentValue.toLowerCase())) {
+                    const addItem = document.createElement('div');
+                    addItem.className = 'autocomplete-add-item';
+                    addItem.innerHTML = `<i class="fas fa-plus-circle"></i> Create "${currentValue}"`;;
+                    addItem.setAttribute('data-value', currentValue);
+                    
+                    addItem.addEventListener('click', function() {
+                        input.value = currentValue;
+                        idInput.value = ''; // No ID for custom project
+                        dropdown.classList.remove('show');
+                        clearBtn.style.display = 'flex';
+                        
+                        // For custom projects, set empty house models
+                        const projectModelSelect = document.getElementById('project_model');
+                        if (projectModelSelect) {
+                            projectModelSelect.innerHTML = '<option value="">Select House Model</option><option value="Others">Others</option>';
+                            toggleProjectModelOthers('Others');
+                        }
+                    });
+                    
+                    dropdown.appendChild(addItem);
+                }
+                
+                dropdown.classList.add('show');
+            }
+            
+            // Keyboard navigation and selection
+            input.addEventListener('keydown', function(e) {
+                const items = dropdown.querySelectorAll('.autocomplete-item, .autocomplete-add-item');
+                if (!items.length || !dropdown.classList.contains('show')) return;
+                
+                let activeItem = dropdown.querySelector('.active');
+                let activeIndex = -1;
+                
+                if (activeItem) {
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i] === activeItem) {
+                            activeIndex = i;
+                            break;
+                        }
+                    }
+                }
+                
+                switch (e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = (activeIndex + 1) % items.length;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        break;
+                        
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = (activeIndex <= 0) ? items.length - 1 : activeIndex - 1;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        break;
+                        
+                    case 'Enter':
+                        e.preventDefault();
+                        if (activeItem) {
+                            const value = activeItem.getAttribute('data-value');
+                            input.value = value;
+                            
+                            // If it's a project from the database
+                            if (activeItem.hasAttribute('data-id')) {
+                                idInput.value = activeItem.getAttribute('data-id');
+                                // Load house models for this project
+                                loadProjectModels(value);
+                            } else {
+                                // It's a custom project
+                                idInput.value = '';
+                                // For custom projects, set empty house models
+                                const projectModelSelect = document.getElementById('project_model');
+                                if (projectModelSelect) {
+                                    projectModelSelect.innerHTML = '<option value="">Select House Model</option><option value="Others">Others</option>';
+                                    toggleProjectModelOthers('Others');
+                                }
+                            }
+                            
+                            dropdown.classList.remove('show');
+                            clearBtn.style.display = 'flex';
+                        }
+                        break;
+                        
+                    case 'Escape':
+                        dropdown.classList.remove('show');
+                        break;
+                }
+            });
+        }
+        
+        // Price formatting function
+        function initPriceFormatting() {
+            const priceInput = document.getElementById('price');
+            if (priceInput) {
+                priceInput.addEventListener('input', function(e) {
+                    let value = this.value.replace(/[^\d.]/g, '');
+                    
+                    const parts = value.split('.');
+                    if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    
+                    if (parts[1] && parts[1].length > 2) {
+                        value = parts[0] + '.' + parts[1].substring(0, 2);
+                    }
+                    
+                    if (value) {
+                        const numParts = value.split('.');
+                        numParts[0] = numParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                        this.value = numParts.join('.');
+                    }
+                });
+            }
+        }
         
         // NEW: Function to highlight status changes with Philippine time notice
         function highlightStatusChange(newStatus) {
@@ -1095,28 +1726,16 @@ foreach ($projectModels as $model) {
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize project models if developer is already selected
-            const developerSelect = document.getElementById('developer');
-            if (developerSelect && developerSelect.value) {
-                loadProjectModels(developerSelect.value);
-            }
+            // Initialize components
+            initIntlTelInput();
+            initLeadSourceAutocomplete();
+            initProjectAutocomplete();
+            initPriceFormatting();
             
-            // Initialize source others if needed
-            const sourceSelect = document.getElementById('source');
-            const isCustomSource = <?php echo $isCustomSource ? 'true' : 'false'; ?>;
-
-            if (sourceSelect && isCustomSource) {
-                // Set dropdown to "Others" and show the custom input
-                sourceSelect.value = 'Others';
-                toggleSourceOthers('Others');
-                
-                // Set the custom value
-                const customInput = document.getElementById('source_other');
-                if (customInput) {
-                    customInput.value = '<?php echo htmlspecialchars($customSourceValue); ?>';
-                }
-            } else if (sourceSelect && sourceSelect.value === 'Others') {
-                toggleSourceOthers('Others');
+            // Initialize project models if developer is already selected
+            const developerInput = document.getElementById('developer');
+            if (developerInput && developerInput.value) {
+                loadProjectModels(developerInput.value);
             }
             
             // Price formatting

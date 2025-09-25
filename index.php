@@ -12,16 +12,7 @@ error_reporting(E_ALL);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/php_errors.log');
 
-if (!function_exists('isSuperUser')) {
-    function isSuperUser($username) {
-        $superusers = [
-            'markpatigayon.itadmin',
-            'gabriellibacao.founder', 
-            'romeocorberta.itdept'
-        ];
-        return in_array($username, $superusers);
-    }
-}
+// isSuperUser is provided globally via includes/functions.php (with function_exists guard)
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -220,15 +211,19 @@ function getEnhancedDashboardData($user_id, $user_role) {
         $data['total_leads'] = $result ? $result->fetch_assoc()['total'] : 0;
         error_log("Total Leads: " . $data['total_leads']);
 
-        $result = $executeAndLog("SELECT COUNT(*) as count " . $leads_from_clause . $leads_where_clause . " AND l.status = 'Presentation Stage'", $leads_param_type, ...$leads_params);
+        // Safely append WHERE/AND clauses
+        $where_prefix = (trim($leads_where_clause) === '') ? ' WHERE ' : ' AND ';
+        $result = $executeAndLog("SELECT COUNT(*) as count " . $leads_from_clause . $leads_where_clause . $where_prefix . "l.status = 'Presentation Stage'", $leads_param_type, ...$leads_params);
         $data['presentation_stage'] = $result ? $result->fetch_assoc()['count'] : 0;
         error_log("Presentation Stage: " . $data['presentation_stage']);
         
-        $result = $executeAndLog("SELECT COUNT(*) as count " . $leads_from_clause . $leads_where_clause . " AND l.status IN ('Closed Deal', 'Closed')", $leads_param_type, ...$leads_params);
+        $where_prefix = (trim($leads_where_clause) === '') ? ' WHERE ' : ' AND ';
+        $result = $executeAndLog("SELECT COUNT(*) as count " . $leads_from_clause . $leads_where_clause . $where_prefix . "l.status IN ('Closed Deal', 'Closed')", $leads_param_type, ...$leads_params);
         $data['closed_deals'] = $result ? $result->fetch_assoc()['count'] : 0;
         error_log("Closed Deals: " . $data['closed_deals']);
         
-        $result = $executeAndLog("SELECT SUM(l.price) as total " . $leads_from_clause . $leads_where_clause . " AND l.status IN ('Closed Deal', 'Closed')", $leads_param_type, ...$leads_params);
+        $where_prefix = (trim($leads_where_clause) === '') ? ' WHERE ' : ' AND ';
+        $result = $executeAndLog("SELECT SUM(l.price) as total " . $leads_from_clause . $leads_where_clause . $where_prefix . "l.status IN ('Closed Deal', 'Closed')", $leads_param_type, ...$leads_params);
         $portfolio_result = $result ? $result->fetch_assoc() : ['total' => 0];
         $data['portfolio_value'] = $portfolio_result['total'] ? number_format($portfolio_result['total'], 2) : '0.00';
         error_log("Portfolio Value: " . $data['portfolio_value']);
@@ -1493,7 +1488,7 @@ $isAdmin = ($user['role'] === 'Admin');
                         </div>
                     </div>
 
-                    <div class="stat-card success">
+                <!--    <div class="stat-card success">
                         <div class="stat-icon success">
                             <i class="fas fa-coins"></i>
                         </div>
@@ -1501,7 +1496,7 @@ $isAdmin = ($user['role'] === 'Admin');
                             <h3>Portfolio Value</h3>
                             <p>₱<?php echo htmlspecialchars($dashboardData['portfolio_value']); ?></p>
                         </div>
-                    </div>
+                    </div> -->
 
                     <!-- Downpayment Statistics -->
                     <?php if (!empty($dashboardData['downpayment_stats'])): ?>
@@ -1626,13 +1621,14 @@ $isAdmin = ($user['role'] === 'Admin');
                                                             if (canSeeFullLeadInfo($lead, $user_id)) {
                                                                 echo htmlspecialchars($lead['client_name']);
                                                             } else {
+                                                                // Match masking logic used in leads.php
                                                                 $name = $lead['client_name'];
                                                                 $spacePos = strpos($name, ' ');
                                                                 if ($spacePos !== false && $spacePos > 2) {
-                                                                    $maskedName = substr($name, 0, 2) . str_repeat('*', strlen($name) - 2);
+                                                                    $maskedName = substr($name, 0, 2) . str_repeat('*', $spacePos - 2) . substr($name, $spacePos);
                                                                     echo htmlspecialchars($maskedName);
                                                                 } else {
-                                                                    echo '******';
+                                                                    echo '************';
                                                                 }
                                                             }
                                                         ?>
@@ -1697,7 +1693,7 @@ $isAdmin = ($user['role'] === 'Admin');
                             <div class="card-header">
                                 <h3><i class="fas fa-bullhorn"></i> Recent Memos</h3>
                                 <?php if ($isManager || $isAdmin || $isSuperUser): ?>
-                                    <a href="memos.php" class="view-all">
+                                    <a href="users/memo/memo.php" class="view-all">
                                         View All <i class="fas fa-arrow-right"></i>
                                     </a>
                                 <?php endif; ?>

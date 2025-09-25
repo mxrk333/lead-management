@@ -356,12 +356,10 @@ function getDevelopersEnhanced() {
         
         $developers = [];
         
+        // Use the developers table as the primary source for projects
         $possible_queries = [
-            "SELECT DISTINCT name FROM developers WHERE status = 'active' ORDER BY name",
-            "SELECT DISTINCT name FROM developers ORDER BY name",
-            "SELECT DISTINCT developer_name as name FROM project_models ORDER BY developer_name",
-            "SELECT DISTINCT developer as name FROM leads ORDER BY developer",
-            "SELECT DISTINCT project as name FROM leads ORDER BY project"
+            "SELECT DISTINCT name FROM developers WHERE is_active = 1 ORDER BY name",
+            "SELECT DISTINCT name FROM developers ORDER BY name"
         ];
         
         foreach ($possible_queries as $query) {
@@ -425,11 +423,17 @@ function getProjectModelsEnhanced() {
         
         $models = [];
         
+        // Get project models with proper developer relationship
         $possible_queries = [
-            "SELECT developer_name, name FROM project_models WHERE status = 'active' ORDER BY developer_name, name",
-            "SELECT developer_name, name FROM project_models ORDER BY developer_name, name",
-            "SELECT developer_name, model_name as name FROM project_models ORDER BY developer_name, model_name",
-            "SELECT project as developer_name, model as name FROM project_models ORDER BY project, model"
+            "SELECT d.name as developer_name, pm.name 
+             FROM project_models pm 
+             JOIN developers d ON pm.developer_id = d.id 
+             WHERE pm.is_active = 1 AND d.is_active = 1 
+             ORDER BY d.name, pm.name",
+            "SELECT d.name as developer_name, pm.name 
+             FROM project_models pm 
+             JOIN developers d ON pm.developer_id = d.id 
+             ORDER BY d.name, pm.name"
         ];
         
         foreach ($possible_queries as $query) {
@@ -525,7 +529,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         // Collect and sanitize form data
         $clientName = isset($_POST['client_name']) ? trim($_POST['client_name']) : '';
-        $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
+        // Use the full international phone number if available, otherwise fallback to regular phone
+        $phone = isset($_POST['phone_full']) && !empty(trim($_POST['phone_full'])) ? trim($_POST['phone_full']) : (isset($_POST['phone']) ? trim($_POST['phone']) : '');
         $email = isset($_POST['email']) ? trim($_POST['email']) : '';
         $facebook = isset($_POST['facebook']) ? trim($_POST['facebook']) : '';
         $linkedin = isset($_POST['linkedin']) ? trim($_POST['linkedin']) : '';
@@ -605,11 +610,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $validation_errors[] = "Lead source is required";
         }
         
-        if (empty($leadClassification)) {
-            $validation_errors[] = "Lead classification is required";
-        } elseif (!in_array($leadClassification, ['Locally/Internationally Employed', 'OFW', 'Self employed'])) {
-            $validation_errors[] = "Invalid lead classification value";
-        }
         
         // ENHANCED: Comprehensive duplicate check across all teams
         if (empty($validation_errors) && !empty($clientName)) {
@@ -781,6 +781,11 @@ debugLog("Page rendering started");
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- International Phone Input -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/css/intlTelInput.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/js/intlTelInput.min.js"></script>
+    
     <style>
         /* Enhanced styles for comprehensive duplicate detection */
         :root {
@@ -1550,6 +1555,212 @@ debugLog("Page rendering started");
             }
         }
 
+        /* International phone input styles - Proper separated design */
+        .iti {
+            width: 100%;
+            position: relative;
+        }
+        
+        .iti__country-list {
+            z-index: 9999;
+            max-height: 250px;
+            width: 400px;
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #d1d5db;
+        }
+        
+        .iti__selected-flag {
+            padding: 0.75rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            border-bottom-right-radius: 0;
+            border-top-right-radius: 0;
+            border-right: none;
+            background: #f9fafb;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .iti__selected-flag:hover {
+            border-color: #9ca3af;
+            background-color: #f3f4f6;
+        }
+        
+        .iti__selected-flag:focus {
+            border-color: var(--primary-color);
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .iti__flag {
+            margin-right: 0.5rem;
+        }
+        
+        .iti__selected-dial-code {
+            color: #374151;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .iti__arrow {
+            margin-left: 0.5rem;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #6b7280;
+        }
+        
+        .iti input[type="tel"] {
+            border-left: none;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            padding-left: 1rem;
+        }
+        
+        .iti input[type="tel"]:focus {
+            border-color: var(--primary-color);
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        /* Make sure the flag and input align properly */
+        .iti--separate-dial-code .iti__selected-flag {
+            background-color: #f9fafb;
+            min-width: 100px;
+        }
+        
+        .iti--separate-dial-code input[type="tel"] {
+            padding-left: 1rem;
+        }
+        
+        /* Autocomplete dropdown styles */
+        .autocomplete-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+        
+        .autocomplete-input {
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background-color: #fff;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .autocomplete-input:focus {
+            border-color: var(--primary-color);
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 0.5rem 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .autocomplete-dropdown.show {
+            display: block;
+        }
+        
+        .autocomplete-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+            transition: background-color 0.15s ease;
+        }
+        
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        
+        .autocomplete-item:hover,
+        .autocomplete-item.active {
+            background-color: #f3f4f6;
+        }
+        
+        .autocomplete-item.selected {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .autocomplete-no-results {
+            padding: 1rem;
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+            font-size: 0.875rem;
+        }
+        
+        /* Clear button styles */
+        .autocomplete-clear {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 50%;
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            transition: color 0.15s ease, background-color 0.15s ease;
+            z-index: 2;
+        }
+        
+        .autocomplete-clear:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        
+        .autocomplete-clear:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        
+        /* Add project item styles */
+        .autocomplete-add-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+            background-color: #f8fafc;
+            color: var(--primary-color);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .autocomplete-add-item:hover,
+        .autocomplete-add-item.active {
+            background-color: #e0e7ff;
+        }
+        
+        .autocomplete-add-item .fas {
+            font-size: 0.75rem;
+        }
+
         @media (hover: none) {
             .btn-save:hover,
             .btn-cancel:hover,
@@ -1620,10 +1831,11 @@ debugLog("Page rendering started");
                             
                             <div class="form-group">
                                 <label for="phone">Phone Number <span class="optional-field">(Optional)</span></label>
-                                <input type="text" id="phone" name="phone" 
+                                <input type="tel" id="phone" name="phone" 
                                        value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
-                                       placeholder="e.g. 09123456789" maxlength="11" pattern="\d{11}">
-                            </div>      
+                                       placeholder="Enter phone number">
+                                <input type="hidden" id="phone_full" name="phone_full" value="">
+                            </div>
                         </div>
                         
                         <div class="form-row">
@@ -1636,31 +1848,25 @@ debugLog("Page rendering started");
                             
                             <div class="form-group required-field">
                                 <label for="source">Lead Source</label>
-                                <select id="source" name="source" required class="source-select" onchange="toggleSourceOthers(this.value)">
-                                    <option value="">Select Lead Source</option>
-                                    <?php foreach ($leadSources as $source): ?>
-                                    <option value="<?php echo htmlspecialchars($source['name']); ?>"
-                                            <?php echo (isset($_POST['source']) && $_POST['source'] === $source['name']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($source['name']); ?>
-                                    </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <div class="others-input" id="source-others">
-                                    <label for="source_other">Specify Lead Source</label>
-                                    <input type="text" id="source_other" name="source_other" 
-                                           value="<?php echo htmlspecialchars($_POST['source_other'] ?? ''); ?>"
-                                           placeholder="Enter lead source" maxlength="100">
+                                <div class="autocomplete-container">
+                                    <input type="text" id="source" name="source" required 
+                                           class="autocomplete-input" 
+                                           value="<?php echo htmlspecialchars($_POST['source'] ?? ''); ?>"
+                                           placeholder="Type to search or select lead source..."
+                                           autocomplete="off">
+                                    <div id="source-dropdown" class="autocomplete-dropdown"></div>
                                 </div>
+                                <input type="hidden" id="source_original" name="source_original" value="">
                             </div>
                         </div>
                         
                         <div class="form-row">
-                            <div class="form-group required-field">
+                            <div class="form-group">
                                 <label for="lead_classification">Lead Classification</label>
-                                <select id="lead_classification" name="lead_classification" required>
+                                <select id="lead_classification" name="lead_classification">
                                     <option value="">Select Lead Classification</option>
                                     <option value="Locally/Internationally Employed" <?php echo (isset($_POST['lead_classification']) && $_POST['lead_classification'] === 'Locally/Internationally Employed') ? 'selected' : ''; ?>>
-                                        Locally/Internationally Employed
+                                        Locally Employed
                                     </option>
                                     <option value="OFW" <?php echo (isset($_POST['lead_classification']) && $_POST['lead_classification'] === 'OFW') ? 'selected' : ''; ?>>
                                         OFW
@@ -1726,22 +1932,18 @@ debugLog("Page rendering started");
                         <div class="form-row">
                             <div class="form-group required-field">
                                 <label for="developer">Project</label>
-                                <select id="developer" name="developer" required onchange="loadProjectModels(this.value)">
-                                    <option value="">Select Project</option>
-                                    <?php foreach ($developers as $dev): ?>
-                                    <option value="<?php echo htmlspecialchars($dev['name']); ?>"
-                                            <?php echo (isset($_POST['developer']) && $_POST['developer'] === $dev['name']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($dev['name']); ?>
-                                    </option>
-                                    <?php endforeach; ?>
-                                    <option value="Others" <?php echo (isset($_POST['developer']) && $_POST['developer'] === 'Others') ? 'selected' : ''; ?>>Others</option>
-                                </select>
-                                <div class="others-input" id="developer-others">
-                                    <label for="developer_other">Specify Project</label>
-                                    <input type="text" id="developer_other" name="developer_other" 
-                                           value="<?php echo htmlspecialchars($_POST['developer_other'] ?? ''); ?>"
-                                           placeholder="Enter project name" maxlength="100">
+                                <div class="autocomplete-container">
+                                    <input type="text" id="developer" name="developer" required 
+                                           class="autocomplete-input" 
+                                           value="<?php echo htmlspecialchars($_POST['developer'] ?? ''); ?>"
+                                           placeholder="Type to search or select project..."
+                                           autocomplete="off">
+                                    <button type="button" class="autocomplete-clear" id="developer-clear" title="Clear project" style="display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <div id="developer-dropdown" class="autocomplete-dropdown"></div>
                                 </div>
+                                <input type="hidden" id="developer_id" name="developer_id" value="">
                             </div>
                             
                             <div class="form-group required-field">
@@ -1987,20 +2189,14 @@ debugLog("Page rendering started");
         });
         <?php endif; ?>
         
-        // Function to toggle source others input
-        function toggleSourceOthers(value) {
-            const othersDiv = document.getElementById('source-others');
-            const othersInput = document.getElementById('source_other');
-            
-            if (value === 'Others') {
-                othersDiv.classList.add('show');
-                othersInput.required = true;
-            } else {
-                othersDiv.classList.remove('show');
-                othersInput.required = false;
-                othersInput.value = '';
-            }
-        }
+        // Initialize international telephone input
+        let iti;
+        
+        // Lead source autocomplete functionality
+        let leadSourceAutocomplete;
+        
+        // Project autocomplete functionality
+        let projectAutocomplete;
         
         // Project models data from PHP - with enhanced error handling
         let projectModelsData = {};
@@ -2028,21 +2224,6 @@ debugLog("Page rendering started");
             };
         }
         
-        // Function to toggle developer others input
-        function toggleDeveloperOthers(value) {
-            const othersDiv = document.getElementById('developer-others');
-            const othersInput = document.getElementById('developer_other');
-            
-            if (value === 'Others') {
-                othersDiv.classList.add('show');
-                othersInput.required = true;
-            } else {
-                othersDiv.classList.remove('show');
-                othersInput.required = false;
-                othersInput.value = '';
-            }
-        }
-
         // Function to toggle project model others input
         function toggleProjectModelOthers(value) {
             const othersDiv = document.getElementById('project-model-others');
@@ -2058,9 +2239,440 @@ debugLog("Page rendering started");
             }
         }
         
-        // Function to load project models based on selected developer
-        function loadProjectModels(developer) {
-            console.log('Loading project models for developer:', developer);
+        // Initialize International Telephone Input
+        function initIntlTelInput() {
+            const input = document.querySelector("#phone");
+            if (!input) return;
+            
+            iti = window.intlTelInput(input, {
+                separateDialCode: true,
+                initialCountry: "ph",
+                preferredCountries: ["ph", "us", "gb", "au", "ca"],
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/js/utils.js"
+            });
+            
+            // On form submit, set the hidden field value to the full international number
+            document.querySelector("#leadForm").addEventListener("submit", function() {
+                if (iti && iti.getNumber()) {
+                    const fullNumber = iti.getNumber();
+                    document.querySelector("#phone_full").value = fullNumber;
+                    console.log('International phone number:', fullNumber);
+                }
+            });
+            
+            // Add formatting on blur
+            input.addEventListener("blur", function() {
+                if (iti) {
+                    // Format number if it's valid
+                    if (iti.isValidNumber()) {
+                        const nationalNumber = iti.getNumber(intlTelInputUtils.numberFormat.NATIONAL);
+                        input.value = nationalNumber;
+                    }
+                }
+            });
+            
+            // Validate phone number on change
+            input.addEventListener("change", function() {
+                if (iti && input.value.trim()) {
+                    const isValid = iti.isValidNumber();
+                    input.classList.toggle('error', !isValid);
+                    
+                    if (isValid) {
+                        input.title = 'Valid phone number';
+                    } else {
+                        input.title = 'Invalid phone number';
+                    }
+                }
+            });
+        }
+        
+        // Initialize Lead Source Autocomplete
+        function initLeadSourceAutocomplete() {
+            const input = document.querySelector("#source");
+            const dropdown = document.querySelector("#source-dropdown");
+            const originalInput = document.querySelector("#source_original");
+            
+            if (!input || !dropdown) return;
+            
+            // Setup input event listeners
+            input.addEventListener("input", function() {
+                const query = this.value.trim();
+                if (query.length >= 1) {
+                    fetchLeadSources(query, dropdown);
+                } else {
+                    dropdown.innerHTML = '';
+                    dropdown.classList.remove('show');
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+            
+            // Handle focus on input
+            input.addEventListener('focus', function() {
+                const query = this.value.trim();
+                if (query.length >= 1) {
+                    fetchLeadSources(query, dropdown);
+                } else {
+                    fetchLeadSources('', dropdown);
+                }
+            });
+            
+            // Fetch lead sources from API
+            function fetchLeadSources(query, dropdown) {
+                // Make AJAX call
+                fetch('api/get_lead_sources.php?search=' + encodeURIComponent(query))
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Lead sources data:', data);
+                        renderLeadSourceDropdown(data.sources, dropdown);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching lead sources:', error);
+                    });
+            }
+            
+            // Render lead sources dropdown
+            function renderLeadSourceDropdown(sources, dropdown) {
+                dropdown.innerHTML = '';
+                
+                if (sources.length === 0) {
+                    dropdown.innerHTML = '<div class="autocomplete-no-results">No lead sources found</div>';
+                    dropdown.classList.add('show');
+                    return;
+                }
+                
+                sources.forEach(source => {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    item.textContent = source.name;
+                    item.setAttribute('data-value', source.name);
+                    item.setAttribute('data-type', source.type || 'custom');
+                    
+                    item.addEventListener('click', function() {
+                        input.value = source.name;
+                        originalInput.value = source.name;
+                        dropdown.classList.remove('show');
+                    });
+                    
+                    dropdown.appendChild(item);
+                });
+                
+                // Add custom option if not in the list and the current value is not empty
+                const currentValue = input.value.trim();
+                if (currentValue && !sources.some(source => source.name.toLowerCase() === currentValue.toLowerCase())) {
+                    const addItem = document.createElement('div');
+                    addItem.className = 'autocomplete-add-item';
+                    addItem.innerHTML = `<i class="fas fa-plus-circle"></i> Create "${currentValue}"`;;
+                    addItem.setAttribute('data-value', currentValue);
+                    
+                    addItem.addEventListener('click', function() {
+                        input.value = currentValue;
+                        originalInput.value = currentValue;
+                        dropdown.classList.remove('show');
+                    });
+                    
+                    dropdown.appendChild(addItem);
+                }
+                
+                dropdown.classList.add('show');
+            }
+            
+            // Keyboard navigation and selection
+            input.addEventListener('keydown', function(e) {
+                const items = dropdown.querySelectorAll('.autocomplete-item, .autocomplete-add-item');
+                if (!items.length || !dropdown.classList.contains('show')) return;
+                
+                let activeItem = dropdown.querySelector('.active');
+                let activeIndex = -1;
+                
+                if (activeItem) {
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i] === activeItem) {
+                            activeIndex = i;
+                            break;
+                        }
+                    }
+                }
+                
+                switch (e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = (activeIndex + 1) % items.length;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        break;
+                        
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = (activeIndex <= 0) ? items.length - 1 : activeIndex - 1;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        break;
+                        
+                    case 'Enter':
+                        e.preventDefault();
+                        if (activeItem) {
+                            const value = activeItem.getAttribute('data-value');
+                            input.value = value;
+                            originalInput.value = value;
+                            dropdown.classList.remove('show');
+                        }
+                        break;
+                        
+                    case 'Escape':
+                        dropdown.classList.remove('show');
+                        break;
+                }
+            });
+        }
+        
+        // Initialize Project Autocomplete
+        function initProjectAutocomplete() {
+            const input = document.querySelector("#developer");
+            const dropdown = document.querySelector("#developer-dropdown");
+            const clearBtn = document.querySelector("#developer-clear");
+            const idInput = document.querySelector("#developer_id");
+            
+            if (!input || !dropdown || !clearBtn) return;
+            
+            // Setup input event listeners
+            input.addEventListener("input", function() {
+                const query = this.value.trim();
+                if (query.length >= 1) {
+                    fetchProjects(query, dropdown);
+                    clearBtn.style.display = 'flex';
+                } else {
+                    dropdown.innerHTML = '';
+                    dropdown.classList.remove('show');
+                    clearBtn.style.display = 'none';
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !dropdown.contains(e.target) && !clearBtn.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+            
+            // Handle focus on input
+            input.addEventListener('focus', function() {
+                const query = this.value.trim();
+                if (query.length >= 1) {
+                    fetchProjects(query, dropdown);
+                } else {
+                    fetchProjects('', dropdown);
+                }
+                if (input.value) {
+                    clearBtn.style.display = 'flex';
+                }
+            });
+            
+            // Clear button functionality
+            clearBtn.addEventListener('click', function() {
+                input.value = '';
+                idInput.value = '';
+                clearBtn.style.display = 'none';
+                dropdown.innerHTML = '';
+                dropdown.classList.remove('show');
+                
+                // Clear house models as well
+                const projectModelSelect = document.getElementById('project_model');
+                if (projectModelSelect) {
+                    projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
+                }
+                
+                input.focus();
+            });
+            
+            // Fetch projects from API
+            function fetchProjects(query, dropdown) {
+                // Make AJAX call
+                fetch('api/get_projects.php?search=' + encodeURIComponent(query))
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Projects data:', data);
+                        renderProjectDropdown(data.projects, dropdown);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching projects:', error);
+                    });
+            }
+            
+            // Render projects dropdown
+            function renderProjectDropdown(projects, dropdown) {
+                dropdown.innerHTML = '';
+                
+                if (projects.length === 0) {
+                    dropdown.innerHTML = '<div class="autocomplete-no-results">No projects found</div>';
+                    dropdown.classList.add('show');
+                    return;
+                }
+                
+                projects.forEach(project => {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    if (!project.is_active) {
+                        item.className += ' inactive';
+                    }
+                    item.textContent = project.name;
+                    item.setAttribute('data-value', project.name);
+                    item.setAttribute('data-id', project.id);
+                    
+                    item.addEventListener('click', function() {
+                        input.value = project.name;
+                        idInput.value = project.id;
+                        dropdown.classList.remove('show');
+                        clearBtn.style.display = 'flex';
+                        
+                        // Load house models for this project
+                        loadProjectModelsFromAPI(project.name);
+                    });
+                    
+                    dropdown.appendChild(item);
+                });
+                
+                // Add custom option if not in the list and the current value is not empty
+                const currentValue = input.value.trim();
+                if (currentValue && !projects.some(project => project.name.toLowerCase() === currentValue.toLowerCase())) {
+                    const addItem = document.createElement('div');
+                    addItem.className = 'autocomplete-add-item';
+                    addItem.innerHTML = `<i class="fas fa-plus-circle"></i> Create "${currentValue}"`;;
+                    addItem.setAttribute('data-value', currentValue);
+                    
+                    addItem.addEventListener('click', function() {
+                        input.value = currentValue;
+                        idInput.value = ''; // No ID for custom project
+                        dropdown.classList.remove('show');
+                        clearBtn.style.display = 'flex';
+                        
+                        // For custom projects, set empty house models
+                        const projectModelSelect = document.getElementById('project_model');
+                        if (projectModelSelect) {
+                            projectModelSelect.innerHTML = '<option value="">Select House Model</option><option value="Others">Others</option>';
+                            toggleProjectModelOthers('Others');
+                        }
+                    });
+                    
+                    dropdown.appendChild(addItem);
+                }
+                
+                dropdown.classList.add('show');
+            }
+            
+            // Keyboard navigation and selection
+            input.addEventListener('keydown', function(e) {
+                const items = dropdown.querySelectorAll('.autocomplete-item, .autocomplete-add-item');
+                if (!items.length || !dropdown.classList.contains('show')) return;
+                
+                let activeItem = dropdown.querySelector('.active');
+                let activeIndex = -1;
+                
+                if (activeItem) {
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i] === activeItem) {
+                            activeIndex = i;
+                            break;
+                        }
+                    }
+                }
+                
+                switch (e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = (activeIndex + 1) % items.length;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        break;
+                        
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = (activeIndex <= 0) ? items.length - 1 : activeIndex - 1;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        break;
+                        
+                    case 'Enter':
+                        e.preventDefault();
+                        if (activeItem) {
+                            const value = activeItem.getAttribute('data-value');
+                            input.value = value;
+                            
+                            // If it's a project from the database
+                            if (activeItem.hasAttribute('data-id')) {
+                                idInput.value = activeItem.getAttribute('data-id');
+                                // Load house models for this project
+                                loadProjectModelsFromAPI(value);
+                            } else {
+                                // It's a custom project
+                                idInput.value = '';
+                                // For custom projects, set empty house models
+                                const projectModelSelect = document.getElementById('project_model');
+                                if (projectModelSelect) {
+                                    projectModelSelect.innerHTML = '<option value="">Select House Model</option><option value="Others">Others</option>';
+                                    toggleProjectModelOthers('Others');
+                                }
+                            }
+                            
+                            dropdown.classList.remove('show');
+                            clearBtn.style.display = 'flex';
+                        }
+                        break;
+                        
+                    case 'Escape':
+                        dropdown.classList.remove('show');
+                        break;
+                }
+            });
+        }
+        
+        // Price formatting function
+        function initPriceFormatting() {
+            const priceInput = document.getElementById('price');
+            if (priceInput) {
+                priceInput.addEventListener('input', function(e) {
+                    let value = this.value.replace(/[^\d.]/g, '');
+                    
+                    const parts = value.split('.');
+                    if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    
+                    if (parts[1] && parts[1].length > 2) {
+                        value = parts[0] + '.' + parts[1].substring(0, 2);
+                    }
+                    
+                    if (value) {
+                        const numParts = value.split('.');
+                        numParts[0] = numParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                        this.value = numParts.join('.');
+                    }
+                });
+            }
+        }
+        
+        // Function to load project models from API based on selected project
+        function loadProjectModelsFromAPI(projectName) {
+            console.log('Loading project models from API for project:', projectName);
             
             const projectModelSelect = document.getElementById('project_model');
             if (!projectModelSelect) {
@@ -2068,38 +2680,79 @@ debugLog("Page rendering started");
                 return;
             }
             
-            // Clear existing options
-            projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
+            // Show loading state
+            projectModelSelect.innerHTML = '<option value="">Loading models...</option>';
+            projectModelSelect.disabled = true;
             
-            // Toggle developer others input
-            toggleDeveloperOthers(developer);
+            if (!projectName || projectName.trim() === '') {
+                projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
+                projectModelSelect.disabled = false;
+                return;
+            }
             
-            if (developer && developer !== 'Others') {
-                try {
-                    // Get models for the selected developer
-                    const models = projectModelsData[developer] || [];
+            // Make AJAX call to fetch house models
+            fetch('api/get_project_models.php?project=' + encodeURIComponent(projectName.trim()))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Response for project "' + projectName + '":', data);
                     
-                    console.log('Models for', developer, ':', models);
+                    // Clear loading state
+                    projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
+                    projectModelSelect.disabled = false;
                     
-                    if (models.length === 0) {
-                        console.warn('No models found for developer:', developer);
-                        // Add a message option
-                        const option = document.createElement('option');
-                        option.value = '';
-                        option.textContent = 'No models available';
-                        option.disabled = true;
-                        projectModelSelect.appendChild(option);
-                    } else {
-                        // Add model options
-                        models.forEach(model => {
+                    if (data.success && data.models && data.models.length > 0) {
+                        // Add model options from API
+                        data.models.forEach(model => {
                             const option = document.createElement('option');
-                            option.value = model;
-                            option.textContent = model;
+                            option.value = model.name;
+                            option.textContent = model.name;
+                            
+                            // Add additional info as data attributes for potential future use
+                            if (model.base_price) {
+                                option.setAttribute('data-base-price', model.base_price);
+                            }
+                            if (model.bedrooms) {
+                                option.setAttribute('data-bedrooms', model.bedrooms);
+                            }
+                            if (model.bathrooms) {
+                                option.setAttribute('data-bathrooms', model.bathrooms);
+                            }
+                            
                             projectModelSelect.appendChild(option);
                         });
+                        
+                        console.log('✅ Successfully loaded', data.models.length, 'models for project:', projectName);
+                        
+                        // Show brief success notification for debugging
+                        if (data.models.length > 0) {
+                            showBriefNotification(`Found ${data.models.length} house models for ${projectName}`, 'success');
+                        }
+                    } else if (data.success && !data.project_found) {
+                        // Project not found in database, this might be a new project
+                        console.log('⚠️ Project not found in developers table:', projectName);
+                        
+                        const noModelsOption = document.createElement('option');
+                        noModelsOption.value = '';
+                        noModelsOption.textContent = 'No models available (New project)';
+                        noModelsOption.disabled = true;
+                        projectModelSelect.appendChild(noModelsOption);
+                    } else {
+                        // No models found for existing project
+                        console.log('⚠️ No models found for existing project:', projectName);
+                        
+                        const noModelsOption = document.createElement('option');
+                        noModelsOption.value = '';
+                        noModelsOption.textContent = 'No models available';
+                        noModelsOption.disabled = true;
+                        projectModelSelect.appendChild(noModelsOption);
                     }
                     
-                    // Add "Others" option
+                    // Always add "Others" option
                     const othersOption = document.createElement('option');
                     othersOption.value = 'Others';
                     othersOption.textContent = 'Others';
@@ -2107,56 +2760,374 @@ debugLog("Page rendering started");
                     
                     // Restore selected value if form was submitted with errors
                     const selectedModel = '<?php echo htmlspecialchars($_POST['project_model'] ?? ''); ?>';
-                    if (selectedModel && (models.includes(selectedModel) || selectedModel === 'Others')) {
-                        projectModelSelect.value = selectedModel;
-                        toggleProjectModelOthers(selectedModel);
-                        console.log('Restored selected model:', selectedModel);
+                    if (selectedModel) {
+                        // Check if the selected model exists in the options
+                        const optionExists = Array.from(projectModelSelect.options).some(option => option.value === selectedModel);
+                        if (optionExists) {
+                            projectModelSelect.value = selectedModel;
+                            toggleProjectModelOthers(selectedModel);
+                            console.log('Restored selected model:', selectedModel);
+                        }
                     }
                     
-                } catch (error) {
-                    console.error('Error loading project models:', error);
+                })
+                .catch(error => {
+                    console.error('Error fetching project models:', error);
+                    
+                    // Reset to default state on error
+                    projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
+                    projectModelSelect.disabled = false;
                     
                     // Add error option
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'Error loading models';
-                    option.disabled = true;
-                    projectModelSelect.appendChild(option);
-                }
-            } else if (developer === 'Others') {
-                // Add "Others" option for custom developer
-                const othersOption = document.createElement('option');
-                othersOption.value = 'Others';
-                othersOption.textContent = 'Others';
-                projectModelSelect.appendChild(othersOption);
-                
-                // Auto-select Others if it was previously selected
-                const selectedModel = '<?php echo htmlspecialchars($_POST['project_model'] ?? ''); ?>';
-                if (selectedModel === 'Others') {
-                    projectModelSelect.value = 'Others';
-                    toggleProjectModelOthers('Others');
-                }
-            }
+                    const errorOption = document.createElement('option');
+                    errorOption.value = '';
+                    errorOption.textContent = 'Error loading models';
+                    errorOption.disabled = true;
+                    projectModelSelect.appendChild(errorOption);
+                    
+                    // Always add "Others" option even on error
+                    const othersOption = document.createElement('option');
+                    othersOption.value = 'Others';
+                    othersOption.textContent = 'Others';
+                    projectModelSelect.appendChild(othersOption);
+                    
+                    showBriefNotification('Failed to load house models. Please try again.', 'error');
+                });
+        }
+        
+        // Legacy function for backward compatibility (keeping the old static approach as fallback)
+        function loadProjectModels(developer) {
+            console.log('Using legacy loadProjectModels for:', developer);
+            // Call the new API-based function
+            loadProjectModelsFromAPI(developer);
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing enhanced form');
+        // International phone input instance
+        let phoneInput;
+        
+        // Lead sources data from PHP
+        const leadSourcesData = <?php echo json_encode(array_column($leadSources, 'name'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+        
+        // Developers data from PHP
+        const developersData = <?php echo json_encode(array_column($developers, 'name'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+        
+        // Autocomplete functionality
+        function initAutocomplete(inputId, dropdownId, data) {
+            const input = document.getElementById(inputId);
+            const dropdown = document.getElementById(dropdownId);
+            const clearButton = document.getElementById(inputId + '-clear');
             
-            try {
-                // Initialize project models if developer is already selected
-                const developerSelect = document.getElementById('developer');
-                if (developerSelect && developerSelect.value) {
-                    console.log('Initializing with pre-selected developer:', developerSelect.value);
-                    loadProjectModels(developerSelect.value);
+            if (!input || !dropdown) return;
+            
+            let activeIndex = -1;
+            const isProjectField = inputId === 'developer';
+            
+            function showDropdown(items, query = '') {
+                dropdown.innerHTML = '';
+                
+                // For project field, add "Add New Project" option when there's a query
+                if (isProjectField && query.trim() && !items.includes(query.trim())) {
+                    const addNewItem = document.createElement('div');
+                    addNewItem.className = 'autocomplete-add-item';
+                    addNewItem.innerHTML = `<i class="fas fa-plus"></i> Add "${query.trim()}" as new project`;
+                    addNewItem.addEventListener('click', () => addNewProject(query.trim()));
+                    dropdown.appendChild(addNewItem);
                 }
                 
-                // Add event listener for developer select change
-                if (developerSelect) {
-                    developerSelect.addEventListener('change', function() {
-                        loadProjectModels(this.value);
+                if (items.length === 0 && (!isProjectField || !query.trim())) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'autocomplete-no-results';
+                    noResults.textContent = 'No results found';
+                    dropdown.appendChild(noResults);
+                } else {
+                    items.forEach((item, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-item';
+                        div.textContent = item;
+                        div.addEventListener('click', () => selectItem(item));
+                        
+                        // Adjust active index for add item
+                        const adjustedIndex = isProjectField && query.trim() && !items.includes(query.trim()) ? index + 1 : index;
+                        if (adjustedIndex === activeIndex) {
+                            div.classList.add('active');
+                        }
+                        
+                        dropdown.appendChild(div);
                     });
                 }
-
+                
+                dropdown.classList.add('show');
+            }
+            
+            function hideDropdown() {
+                dropdown.classList.remove('show');
+                activeIndex = -1;
+            }
+            
+            function selectItem(value) {
+                input.value = value;
+                hideDropdown();
+                updateClearButtonVisibility();
+                input.focus();
+                
+                // Trigger change event for any dependent functionality
+                if (inputId === 'developer') {
+                    loadProjectModelsFromAPI(value);
+                }
+            }
+            
+            function addNewProject(projectName) {
+                // Show loading state
+                const addItem = dropdown.querySelector('.autocomplete-add-item');
+                if (addItem) {
+                    addItem.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding project...';
+                    addItem.style.pointerEvents = 'none';
+                }
+                
+                // Make AJAX call to add project
+                fetch('api/quick_add_project.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: projectName
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Add to the autocomplete data array for future use
+                        if (!developersData.includes(projectName)) {
+                            developersData.push(projectName);
+                        }
+                        
+                        // Set the input value
+                        input.value = projectName;
+                        hideDropdown();
+                        updateClearButtonVisibility();
+                        
+                        // For new projects, load models if they exist, otherwise show Others
+                        loadProjectModelsFromAPI(projectName);
+                        
+                        input.focus();
+                        
+                        // Show success message
+                        if (data.exists) {
+                            console.log('Project already exists:', projectName);
+                        } else {
+                            console.log('New project added successfully:', projectName);
+                            
+                            // Optional: Show a brief success notification
+                            showBriefNotification('Project "' + projectName + '" added successfully!', 'success');
+                        }
+                    } else {
+                        console.error('Failed to add project:', data.message);
+                        showBriefNotification('Failed to add project: ' + data.message, 'error');
+                        
+                        // Reset the dropdown
+                        hideDropdown();
+                        
+                        // Still set the input value so user doesn't lose their entry
+                        input.value = projectName;
+                        updateClearButtonVisibility();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding project:', error);
+                    showBriefNotification('Error adding project. Please try again.', 'error');
+                    
+                    // Reset the dropdown
+                    hideDropdown();
+                    
+                    // Still set the input value so user doesn't lose their entry
+                    input.value = projectName;
+                    updateClearButtonVisibility();
+                });
+            }
+            
+            function updateClearButtonVisibility() {
+                if (clearButton) {
+                    clearButton.style.display = input.value.trim() ? 'flex' : 'none';
+                }
+            }
+            
+            function filterItems(query) {
+                if (!query.trim()) return data.slice(0, 10);
+                
+                return data.filter(item => 
+                    item.toLowerCase().includes(query.toLowerCase())
+                ).slice(0, 10); // Limit to 10 results
+            }
+            
+            // Input event listener
+            input.addEventListener('input', function() {
+                const query = this.value;
+                const filteredItems = filterItems(query);
+                updateClearButtonVisibility();
+                
+                if (query.trim()) {
+                    showDropdown(filteredItems, query);
+                } else {
+                    hideDropdown();
+                }
+                
+                activeIndex = -1;
+            });
+            
+            // Focus event listener
+            input.addEventListener('focus', function() {
+                const query = this.value;
+                if (query.trim()) {
+                    const filteredItems = filterItems(query);
+                    showDropdown(filteredItems, query);
+                } else {
+                    showDropdown(data.slice(0, 10)); // Show first 10 items
+                }
+            });
+            
+            // Keyboard navigation
+            input.addEventListener('keydown', function(e) {
+                const items = dropdown.querySelectorAll('.autocomplete-item, .autocomplete-add-item');
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    activeIndex = Math.min(activeIndex + 1, items.length - 1);
+                    updateActiveItem(items);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    activeIndex = Math.max(activeIndex - 1, -1);
+                    updateActiveItem(items);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (activeIndex >= 0 && items[activeIndex]) {
+                        const activeItem = items[activeIndex];
+                        if (activeItem.classList.contains('autocomplete-add-item')) {
+                            // Extract project name from the add item text
+                            const query = this.value.trim();
+                            addNewProject(query);
+                        } else {
+                            selectItem(activeItem.textContent);
+                        }
+                    }
+                } else if (e.key === 'Escape') {
+                    hideDropdown();
+                }
+            });
+            
+            function updateActiveItem(items) {
+                items.forEach((item, index) => {
+                    item.classList.toggle('active', index === activeIndex);
+                });
+            }
+            
+            // Clear button functionality
+            if (clearButton) {
+                clearButton.addEventListener('click', function() {
+                    input.value = '';
+                    hideDropdown();
+                    updateClearButtonVisibility();
+                    
+                    // Clear project models if this is the project field
+                    if (inputId === 'developer') {
+                        const projectModelSelect = document.getElementById('project_model');
+                        if (projectModelSelect) {
+                            projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
+                        }
+                    }
+                    
+                    input.focus();
+                });
+                
+                // Initial visibility update
+                updateClearButtonVisibility();
+            }
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.autocomplete-container')) {
+                document.querySelectorAll('.autocomplete-dropdown').forEach(dropdown => {
+                    dropdown.classList.remove('show');
+                });
+            }
+        });
+        
+        // Brief notification system
+        function showBriefNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existing = document.querySelector('.brief-notification');
+            if (existing) {
+                existing.remove();
+            }
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `brief-notification ${type}`;
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            // Add styles
+            Object.assign(notification.style, {
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                padding: '12px 16px',
+                backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6',
+                color: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                zIndex: '10000',
+                fontSize: '14px',
+                fontWeight: '500',
+                maxWidth: '300px',
+                opacity: '0',
+                transform: 'translateX(100%)',
+                transition: 'all 0.3s ease'
+            });
+            
+            // Add to document
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 10);
+            
+            // Remove after delay
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing enhanced form with international phone and autocomplete');
+            
+            try {
+                // Initialize components
+                initIntlTelInput();
+                initLeadSourceAutocomplete();
+                initProjectAutocomplete();
+                initPriceFormatting();
+                
+                // Initialize project models if developer is already selected
+                const developerInput = document.getElementById('developer');
+                if (developerInput && developerInput.value) {
+                    console.log('Initializing with pre-selected developer:', developerInput.value);
+                    loadProjectModelsFromAPI(developerInput.value);
+                }
+                
                 // Add event listener for project model select change
                 const projectModelSelect = document.getElementById('project_model');
                 if (projectModelSelect) {
@@ -2164,105 +3135,40 @@ debugLog("Page rendering started");
                         toggleProjectModelOthers(this.value);
                     });
                 }
-
-                // Add event listener for source select change
-                const sourceSelect = document.getElementById('source');
-                if (sourceSelect) {
-                    sourceSelect.addEventListener('change', function() {
-                        toggleSourceOthers(this.value);
-                    });
-                }
                 
-                // Enhanced price formatting
-                const priceInput = document.getElementById('price');
-                if (priceInput) {
-                    priceInput.addEventListener('input', function(e) {
-                        try {
-                            // Get the current value and remove all non-digits and decimal points
-                            let value = this.value.replace(/[^\d.]/g, '');
-                            
-                            // Ensure only one decimal point
-                            const parts = value.split('.');
-                            if (parts.length > 2) {
-                                value = parts[0] + '.' + parts.slice(1).join('');
-                            }
-                            
-                            // Limit decimal places to 2
-                            if (parts[1] && parts[1].length > 2) {
-                                value = parts[0] + '.' + parts[1].substring(0, 2);
-                            }
-                            
-                            // Add commas for thousands
-                            if (value) {
-                                const numParts = value.split('.');
-                                numParts[0] = numParts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                                this.value = numParts.join('.');
-                            }
-                            
-                        } catch (error) {
-                            console.error('Error formatting price:', error);
-                        }
-                    });
-                }
-                
-                // Enhanced phone number validation
-                const phoneInput = document.getElementById('phone');
-                if (phoneInput) {
-                    phoneInput.addEventListener('input', function(e) {
-                        // Remove all non-digits
-                        this.value = this.value.replace(/\D/g, '');
-                        
-                        // Limit to 11 digits
-                        if (this.value.length > 11) {
-                            this.value = this.value.substring(0, 11);
-                        }
-                    });
-                }
-                
-                // Enhanced form submission handling
+                // Form validation on submit
                 const form = document.getElementById('leadForm');
                 const saveBtn = document.getElementById('saveBtn');
                 
-                if (form && saveBtn) {
+                if (form) {
                     form.addEventListener('submit', function(e) {
-                        console.log('Enhanced form submission started');
+                        const requiredFields = form.querySelectorAll('[required]');
+                        let isValid = true;
                         
-                        try {
-                            // Show loading state
-                            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating across teams...';
-                            saveBtn.disabled = true;
-                            
-                            // Clean price value for submission
-                            if (priceInput) {
-                                const price = priceInput.value.replace(/,/g, '');
-                                priceInput.value = price;
+                        requiredFields.forEach(field => {
+                            if (!field.value.trim()) {
+                                isValid = false;
+                                field.classList.add('error');
+                            } else {
+                                field.classList.remove('error');
                             }
-                            
-                            console.log('Form data prepared for comprehensive validation');
-                            
-                        } catch (error) {
-                            console.error('Error preparing form submission:', error);
+                        });
+                        
+                        if (!isValid) {
                             e.preventDefault();
-                            
-                            // Reset button state
-                            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Lead';
-                            saveBtn.disabled = false;
+                            alert('Please fill in all required fields.');
+                            return false;
+                        }
+                        
+                        if (saveBtn) {
+                            saveBtn.disabled = true;
+                            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
                         }
                     });
                 }
                 
                 // Initialize others inputs based on current values
-                const currentSource = '<?php echo htmlspecialchars($_POST['source'] ?? ''); ?>';
-                const currentDeveloper = '<?php echo htmlspecialchars($_POST['developer'] ?? ''); ?>';
                 const currentProjectModel = '<?php echo htmlspecialchars($_POST['project_model'] ?? ''); ?>';
-                
-                if (currentSource === 'Others') {
-                    toggleSourceOthers('Others');
-                }
-                
-                if (currentDeveloper === 'Others') {
-                    toggleDeveloperOthers('Others');
-                }
                 
                 if (currentProjectModel === 'Others') {
                     toggleProjectModelOthers('Others');
@@ -2271,7 +3177,7 @@ debugLog("Page rendering started");
                 // Debug: Log current state
                 console.log('Enhanced form initialization complete');
                 console.log('Cross-team validation enabled');
-                console.log('Available developers:', Object.keys(projectModelsData));
+                console.log('Available project models:', Object.keys(projectModelsData));
                 console.log('Total project models:', Object.values(projectModelsData).flat().length);
                 
             } catch (error) {

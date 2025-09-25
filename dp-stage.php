@@ -1,11 +1,24 @@
 <?php
 session_start();
-// Add these lines right after `session_start();` and before `require_once 'config/database.php';`
-// This will display all PHP errors directly on the page for debugging.
-// REMOVE these lines in a production environment for security.
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+// Production-safe error handling
+if (isset($_GET['debug']) && $_GET['debug'] == '1') {
+    // Only show errors in debug mode
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+} else {
+    // Production mode - log errors but don't display them
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
+    ini_set('log_errors', 1);
+    ini_set('error_log', __DIR__ . '/logs/php_errors.log');
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+}
+
+// Increase memory and execution time limits for production
+ini_set('memory_limit', '256M');
+ini_set('max_execution_time', 60);
 
 require_once 'config/database.php';
 require_once 'includes/functions.php';
@@ -83,29 +96,39 @@ $query .= " ORDER BY l.updated_at DESC";
 
 // Prepare and execute the query with parameters
 $stmt = $conn->prepare($query);
-
-// Bind parameters if needed
-if (!empty($search_query)) {
-    if (!empty($filter_agent) && !empty($filter_developer)) {
-        $stmt->bind_param("sssss", $search_param, $search_param, $search_param, $filter_agent, $filter_developer);
-    } elseif (!empty($filter_agent)) {
-        $stmt->bind_param("ssss", $search_param, $search_param, $search_param, $filter_agent);
-    } elseif (!empty($filter_developer)) {
-        $stmt->bind_param("ssss", $search_param, $search_param, $search_param, $filter_developer);
-    } else {
-        $stmt->bind_param("sss", $search_param, $search_param, $search_param);
-    }
-} else {
-    if (!empty($filter_agent) && !empty($filter_developer)) {
-        $stmt->bind_param("ss", $filter_agent, $filter_developer);
-    } elseif (!empty($filter_agent)) {
-        $stmt->bind_param("s", $filter_agent);
-    } elseif (!empty($filter_developer)) {
-        $stmt->bind_param("s", $filter_developer);
-    }
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error);
 }
 
-$stmt->execute();
+// Bind parameters if needed
+$param_types = "";
+$param_values = [];
+
+if (!empty($search_query)) {
+    $param_types .= "sss";
+    $param_values[] = $search_param;
+    $param_values[] = $search_param;
+    $param_values[] = $search_param;
+}
+
+if (!empty($filter_agent)) {
+    $param_types .= "s";
+    $param_values[] = $filter_agent;
+}
+
+if (!empty($filter_developer)) {
+    $param_types .= "s";
+    $param_values[] = $filter_developer;
+}
+
+if (!empty($param_values)) {
+    $stmt->bind_param($param_types, ...$param_values);
+}
+
+if (!$stmt->execute()) {
+    die("Execute failed: " . $stmt->error);
+}
+
 $result = $stmt->get_result();
 $leads = [];
 while ($row = $result->fetch_assoc()) {
@@ -262,31 +285,61 @@ function updateCurrentDpStage($conn, $lead_id) {
 
 // Handle file upload for receipts
 function handleReceiptUpload($files, $lead_id, $stage_type) {
-    $upload_dir = 'uploads/receipts/';
+    // Use absolute path for better compatibility
+    $upload_dir = dirname(__FILE__) . '/uploads/receipts/';
+    
+    // Ensure directory exists with proper permissions
     if (!file_exists($upload_dir)) {
-        mkdir($upload_dir, 0777, true);
+        if (!mkdir($upload_dir, 0755, true)) {
+            throw new Exception("Failed to create upload directory");
+        }
+    }
+    
+    // Check if directory is writable
+    if (!is_writable($upload_dir)) {
+        throw new Exception("Upload directory is not writable");
     }
     
     $uploaded_files = [];
     
-    if (isset($files['tmp_name']) && is_array($files['tmp_name'])) {
-        for ($i = 0; $i < count($files['tmp_name']); $i++) {
-            if ($files['error'][$i] === UPLOAD_ERR_OK) {
-                $file_extension = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+    // Handle both single file and multiple file uploads
+    if (isset($files['tmp_name'])) {
+        $file_count = is_array($files['tmp_name']) ? count($files['tmp_name']) : 1;
+        
+        for ($i = 0; $i < $file_count; $i++) {
+            $tmp_name = is_array($files['tmp_name']) ? $files['tmp_name'][$i] : $files['tmp_name'];
+            $file_name = is_array($files['name']) ? $files['name'][$i] : $files['name'];
+            $file_error = is_array($files['error']) ? $files['error'][$i] : $files['error'];
+            
+            if ($file_error === UPLOAD_ERR_OK && !empty($tmp_name)) {
+                $file_extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
                 
                 // Validate file type (only PNG and JPEG)
                 if (in_array($file_extension, ['png', 'jpg', 'jpeg'])) {
                     $new_filename = $lead_id . '_' . $stage_type . '_' . time() . '_' . $i . '.' . $file_extension;
                     $upload_path = $upload_dir . $new_filename;
                     
-                    if (move_uploaded_file($files['tmp_name'][$i], $upload_path)) {
-                        $uploaded_files[] = [
-                            'filename' => $new_filename,
-                            'original_name' => $files['name'][$i],
-                            'path' => $upload_path
-                        ];
+                    // Additional security check
+                    if (is_uploaded_file($tmp_name)) {
+                        if (move_uploaded_file($tmp_name, $upload_path)) {
+                            $uploaded_files[] = [
+                                'filename' => $new_filename,
+                                'original_name' => $file_name,
+                                'path' => 'uploads/receipts/' . $new_filename, // Use relative path for database
+                                'size' => filesize($upload_path),
+                                'type' => mime_content_type($upload_path)
+                            ];
+                        } else {
+                            throw new Exception("Failed to move uploaded file: " . $file_name);
+                        }
+                    } else {
+                        throw new Exception("Invalid file upload: " . $file_name);
                     }
+                } else {
+                    throw new Exception("Invalid file type. Only PNG and JPEG files are allowed.");
                 }
+            } elseif ($file_error !== UPLOAD_ERR_NO_FILE) {
+                throw new Exception("File upload error: " . $file_error);
             }
         }
     }
@@ -296,216 +349,303 @@ function handleReceiptUpload($files, $lead_id, $stage_type) {
 
 // Handle form submission for updating tracker
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_tracker'])) {
-    $lead_id = $_POST['lead_id'];
-    $reservation_date = !empty($_POST['reservation_date']) ? $_POST['reservation_date'] : null;
-    $requirements_complete = isset($_POST['requirements_complete']) ? 1 : 0;
-    $spot_dp = isset($_POST['spot_dp']) ? 1 : 0;
-    // Validate and sanitize dp_terms to match ENUM values
-    $allowed_dp_terms = ['6', '9', '12', '15', '18', '24', '36'];
-    $raw_dp_terms = $spot_dp ? '6' : (isset($_POST['dp_terms']) ? trim($_POST['dp_terms']) : '12');
-    $dp_terms = in_array($raw_dp_terms, $allowed_dp_terms) ? (string)$raw_dp_terms : '12'; // Default to 12 if invalid
-    
-    // Force to string and ensure it's exactly one of the allowed values
-    $dp_terms = (string)$dp_terms;
-    if (!in_array($dp_terms, $allowed_dp_terms)) {
-        $dp_terms = '12'; // Fallback to default
-    }
-    
-    // Additional validation - ensure it's exactly what we expect
-    $dp_terms = trim($dp_terms);
-    $dp_terms = preg_replace('/[^0-9]/', '', $dp_terms); // Remove any non-numeric characters
-    if (!in_array($dp_terms, $allowed_dp_terms)) {
-        $dp_terms = '12'; // Final fallback
-    }
-    
-    // Comprehensive debugging
-    error_log("=== DP TERMS DEBUG ===");
-    error_log("POST data: " . print_r($_POST, true));
-    error_log("FILES data: " . print_r($_FILES, true));
-    error_log("Spot DP: " . ($spot_dp ? 'true' : 'false'));
-    error_log("Raw dp_terms: " . var_export($raw_dp_terms, true));
-    error_log("Processed dp_terms: " . var_export($dp_terms, true));
-    error_log("dp_terms type: " . gettype($dp_terms));
-    error_log("dp_terms length: " . strlen($dp_terms));
-    error_log("Is in allowed array: " . (in_array($dp_terms, $allowed_dp_terms) ? 'true' : 'false'));
-    
-    // Additional validation - check for any non-printable characters
-    error_log("dp_terms hex: " . bin2hex($dp_terms));
-    error_log("dp_terms ord values: " . implode(',', array_map('ord', str_split($dp_terms))));
-    
-    $pagibig_bank_approval = isset($_POST['pagibig_bank_approval']) ? 1 : 0;
-    $loan_takeout = isset($_POST['loan_takeout']) ? 1 : 0;
-    $turnover = isset($_POST['turnover']) ? 1 : 0;
-    
-    // Handle receipt uploads (only DP receipts)
-    $receipt_uploads = [];
-    if (isset($_FILES['dp_receipt'])) {
-        $receipt_uploads['downpayment'] = handleReceiptUpload($_FILES['dp_receipt'], $lead_id, 'downpayment');
-    }
-    
-    if (!$spot_dp) {
-        // Count existing receipts for this lead
-        $receipt_count_stmt = $conn->prepare("SELECT COUNT(*) as total_receipts FROM stage_receipts WHERE lead_id = ? AND stage_type = 'downpayment'");
-        $receipt_count_stmt->bind_param("i", $lead_id);
-        $receipt_count_stmt->execute();
-        $receipt_count_result = $receipt_count_stmt->get_result();
-        $total_receipts = $receipt_count_result->fetch_assoc()['total_receipts'];
-        $receipt_count_stmt->close();
+    try {
+        // Validate required fields
+        if (empty($_POST['lead_id'])) {
+            throw new Exception("Lead ID is required");
+        }
         
-        // Add newly uploaded receipts to count
+        $lead_id = intval($_POST['lead_id']);
+        if ($lead_id <= 0) {
+            throw new Exception("Invalid Lead ID");
+        }
+        
+        $reservation_date = !empty($_POST['reservation_date']) ? $_POST['reservation_date'] : null;
+        $requirements_complete = isset($_POST['requirements_complete']) ? 1 : 0;
+        $spot_dp = isset($_POST['spot_dp']) ? 1 : 0;
+        
+        // Validate and sanitize dp_terms to match ENUM values
+        $allowed_dp_terms = ['6', '9', '12', '15', '18', '24', '36'];
+        $raw_dp_terms = $spot_dp ? '6' : (isset($_POST['dp_terms']) ? trim($_POST['dp_terms']) : '12');
+        $dp_terms = in_array($raw_dp_terms, $allowed_dp_terms) ? (string)$raw_dp_terms : '12';
+        
+        // Force to string and ensure it's exactly one of the allowed values
+        $dp_terms = (string)$dp_terms;
+        if (!in_array($dp_terms, $allowed_dp_terms)) {
+            $dp_terms = '12'; // Fallback to default
+        }
+        
+        // Additional validation - ensure it's exactly what we expect
+        $dp_terms = trim($dp_terms);
+        $dp_terms = preg_replace('/[^0-9]/', '', $dp_terms); // Remove any non-numeric characters
+        if (!in_array($dp_terms, $allowed_dp_terms)) {
+            $dp_terms = '12'; // Final fallback
+        }
+    
+        $pagibig_bank_approval = isset($_POST['pagibig_bank_approval']) ? 1 : 0;
+        $loan_takeout = isset($_POST['loan_takeout']) ? 1 : 0;
+        $turnover = isset($_POST['turnover']) ? 1 : 0;
+    
+        // Handle receipt uploads (only DP receipts)
+        $receipt_uploads = [];
+        if (isset($_FILES['dp_receipt']) && !empty($_FILES['dp_receipt']['name'][0])) {
+            $receipt_uploads['downpayment'] = handleReceiptUpload($_FILES['dp_receipt'], $lead_id, 'downpayment');
+        }
+        
+        if (!$spot_dp) {
+            // Count existing receipts for this lead
+            $receipt_count_stmt = $conn->prepare("SELECT COUNT(*) as total_receipts FROM stage_receipts WHERE lead_id = ? AND stage_type = 'downpayment'");
+            if (!$receipt_count_stmt) {
+                throw new Exception("Failed to prepare receipt count query: " . $conn->error);
+            }
+            
+            $receipt_count_stmt->bind_param("i", $lead_id);
+            if (!$receipt_count_stmt->execute()) {
+                throw new Exception("Failed to execute receipt count query: " . $receipt_count_stmt->error);
+            }
+            
+            $receipt_count_result = $receipt_count_stmt->get_result();
+            $total_receipts = $receipt_count_result->fetch_assoc()['total_receipts'];
+            $receipt_count_stmt->close();
+            
+            // Add newly uploaded receipts to count
+            if (!empty($receipt_uploads['downpayment'])) {
+                $total_receipts += count($receipt_uploads['downpayment']);
+            }
+            
+            // Current stage should be at least 1 if there are any receipts, and not exceed total terms
+            $current_dp_stage = $total_receipts > 0 ? max(1, min($total_receipts, intval($dp_terms))) : 0;
+        } else {
+            $current_dp_stage = 1; // Spot DP is always stage 1
+        }
+        
+        // Calculate total stages based on DP terms
+        $total_dp_stages = intval($dp_terms);
+        
+        // Calculate progress rate
+        $progress_rate = $total_dp_stages > 0 ? ($current_dp_stage / $total_dp_stages) * 100 : 0;
+        
+        // Ensure dp_terms is a string for ENUM compatibility
+        $dp_terms = (string)$dp_terms;
+    
         if (!empty($receipt_uploads['downpayment'])) {
-            $total_receipts += count($receipt_uploads['downpayment']);
+            foreach ($receipt_uploads['downpayment'] as $receipt) {
+                $receipt_stmt = $conn->prepare("INSERT INTO stage_receipts (lead_id, stage_type, filename, original_name, file_path, file_size, mime_type) VALUES (?, 'downpayment', ?, ?, ?, ?, ?)");
+                if (!$receipt_stmt) {
+                    throw new Exception("Failed to prepare receipt insert query: " . $conn->error);
+                }
+                
+                $file_path = 'uploads/receipts/' . $receipt['filename'];
+                $file_size = isset($receipt['size']) ? $receipt['size'] : null;
+                $mime_type = isset($receipt['type']) ? $receipt['type'] : null;
+                $receipt_stmt->bind_param("isssis", $lead_id, $receipt['filename'], $receipt['original_name'], $file_path, $file_size, $mime_type);
+                
+                if (!$receipt_stmt->execute()) {
+                    throw new Exception("Failed to insert receipt: " . $receipt_stmt->error);
+                }
+                $receipt_stmt->close();
+            }
+            
+            // Update the current_dp_stage in the database after uploading receipts
+            updateCurrentDpStage($conn, $lead_id);
+        }
+
+        // Check if tracker entry exists for this lead
+        $check_stmt = $conn->prepare("SELECT id FROM downpayment_tracker WHERE lead_id = ? ORDER BY created_at DESC LIMIT 1");
+        if (!$check_stmt) {
+            throw new Exception("Failed to prepare tracker check query: " . $conn->error);
         }
         
-        // Current stage should be at least 1 if there are any receipts, and not exceed total terms
-        $current_dp_stage = $total_receipts > 0 ? max(1, min($total_receipts, intval($dp_terms))) : 0;
-    } else {
-        $current_dp_stage = 1; // Spot DP is always stage 1
+        $check_stmt->bind_param("i", $lead_id);
+        if (!$check_stmt->execute()) {
+            throw new Exception("Failed to execute tracker check query: " . $check_stmt->error);
+        }
+        
+        $check_result = $check_stmt->get_result();
+        $existing_tracker = $check_result->fetch_assoc();
+        $check_stmt->close();
+
+        if ($existing_tracker) {
+            // Update existing tracker entry
+            $update_stmt = $conn->prepare("
+                UPDATE downpayment_tracker 
+                SET reservation_date = ?, requirements_complete = ?, spot_dp = ?, dp_terms = ?, 
+                    current_dp_stage = ?, total_dp_stages = ?, progress_rate = ?, 
+                    pagibig_bank_approval = ?, loan_takeout = ?, turnover = ?, updated_at = NOW()
+                WHERE id = ?
+            ");
+            
+            if (!$update_stmt) {
+                throw new Exception("Failed to prepare tracker update query: " . $conn->error);
+            }
+            
+            $update_stmt->bind_param(
+                "siisiidiiii",
+                $reservation_date,
+                $requirements_complete,
+                $spot_dp,
+                $dp_terms,
+                $current_dp_stage,
+                $total_dp_stages,
+                $progress_rate,
+                $pagibig_bank_approval,
+                $loan_takeout,
+                $turnover,
+                $existing_tracker['id']
+            );
+            
+            if (!$update_stmt->execute()) {
+                throw new Exception("Failed to update tracker: " . $update_stmt->error);
+            }
+            $update_stmt->close();
+        } else {
+            // Insert new tracker entry if none exists
+            $insert_stmt = $conn->prepare("
+                INSERT INTO downpayment_tracker 
+                (lead_id, reservation_date, requirements_complete, spot_dp, dp_terms, 
+                 current_dp_stage, total_dp_stages, progress_rate, pagibig_bank_approval, 
+                 loan_takeout, turnover, created_at, updated_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ");
+
+            if (!$insert_stmt) {
+                throw new Exception("Failed to prepare tracker insert query: " . $conn->error);
+            }
+
+            $insert_stmt->bind_param(
+                "isiisidiii",
+                $lead_id,
+                $reservation_date,
+                $requirements_complete,
+                $spot_dp,
+                $dp_terms,
+                $current_dp_stage,
+                $total_dp_stages,
+                $progress_rate,
+                $pagibig_bank_approval,
+                $loan_takeout,
+                $turnover
+            );
+            
+            if (!$insert_stmt->execute()) {
+                throw new Exception("Failed to insert tracker: " . $insert_stmt->error);
+            }
+            $insert_stmt->close();
+        }
+
+        $success_message = "Tracker updated successfully! Current DP Stage: $current_dp_stage out of $total_dp_stages";
+        if (!empty($receipt_uploads['downpayment'])) {
+            $receipt_count = count($receipt_uploads['downpayment']);
+            $success_message .= " ($receipt_count new receipt(s) uploaded)";
+        }
+        
+        // Add JavaScript to update main dashboard display
+        $success_message .= "
+        <script>
+            // Update main dashboard stage display after successful upload
+            if (typeof updateMainDashboardStage === 'function') {
+                updateMainDashboardStage($lead_id, $current_dp_stage, $total_dp_stages);
+            }
+        </script>";
+        
+        // Add activity log
+        addLeadActivity($lead_id, $user_id, "Downpayment Tracker", "Updated downpayment tracker information");
+        
+        // Award raffle tickets for DP stage progression
+        awardRaffleTicketsForDPStage($lead_id, $user_id, $current_dp_stage);
+        
+        // Award raffle tickets for requirements completion
+        $requirements = [
+            'requirements_complete' => $requirements_complete,
+            'pagibig_bank_approval' => $pagibig_bank_approval,
+            'loan_takeout' => $loan_takeout,
+            'turnover' => $turnover
+        ];
+        awardRaffleTicketsForRequirements($lead_id, $user_id, $requirements);
+        
+        // Award raffle tickets for spot downpayment
+        if ($spot_dp) {
+            awardRaffleTicketsForSpotDP($lead_id, $user_id, intval($dp_terms));
+        }
+        
+        // Redirect to refresh the page
+        $redirect_url = "dp-stage.php?success=1";
+        if (!empty($search_query)) $redirect_url .= "&search=" . urlencode($search_query);
+        if (!empty($filter_agent)) $redirect_url .= "&agent=" . urlencode($filter_agent);
+        if (!empty($filter_developer)) $redirect_url .= "&developer=" . urlencode($filter_developer);
+        if (!empty($filter_progress)) $redirect_url .= "&progress=" . urlencode($filter_progress);
+        
+        header("Location: $redirect_url");
+        exit();
+        
+    } catch (Exception $e) {
+        // Log detailed error information
+        $error_details = [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString(),
+            'post_data' => $_POST,
+            'files_data' => $_FILES,
+            'timestamp' => date('Y-m-d H:i:s')
+        ];
+        
+        error_log("DP Stage Form Error: " . json_encode($error_details));
+        
+        // Set user-friendly error message
+        $error_message = "Error processing request. Please try again.";
+        
+        // In debug mode, show more details
+        if (isset($_GET['debug']) && $_GET['debug'] == '1') {
+            $error_message = "Error: " . $e->getMessage() . " (Line: " . $e->getLine() . ")";
+        }
+        
+        // Redirect back with error
+        $redirect_url = "dp-stage.php?error=" . urlencode($error_message);
+        if (!empty($search_query)) $redirect_url .= "&search=" . urlencode($search_query);
+        if (!empty($filter_agent)) $redirect_url .= "&agent=" . urlencode($filter_agent);
+        if (!empty($filter_developer)) $redirect_url .= "&developer=" . urlencode($filter_developer);
+        if (!empty($filter_progress)) $redirect_url .= "&progress=" . urlencode($filter_progress);
+        
+        header("Location: $redirect_url");
+        exit();
+    }
+}
+
+// Debug endpoint for production troubleshooting
+if (isset($_GET['debug']) && $_GET['debug'] == '1') {
+    echo "<h2>Debug Information</h2>";
+    echo "<p><strong>PHP Version:</strong> " . phpversion() . "</p>";
+    echo "<p><strong>Memory Limit:</strong> " . ini_get('memory_limit') . "</p>";
+    echo "<p><strong>Max Execution Time:</strong> " . ini_get('max_execution_time') . "</p>";
+    echo "<p><strong>Upload Max Filesize:</strong> " . ini_get('upload_max_filesize') . "</p>";
+    echo "<p><strong>Post Max Size:</strong> " . ini_get('post_max_size') . "</p>";
+    echo "<p><strong>Current Directory:</strong> " . getcwd() . "</p>";
+    echo "<p><strong>File Path:</strong> " . __FILE__ . "</p>";
+    echo "<p><strong>Upload Directory Exists:</strong> " . (file_exists('uploads/receipts/') ? 'Yes' : 'No') . "</p>";
+    echo "<p><strong>Upload Directory Writable:</strong> " . (is_writable('uploads/receipts/') ? 'Yes' : 'No') . "</p>";
+    
+    // Test database connection
+    try {
+        $test_conn = getDbConnection();
+        echo "<p><strong>Database Connection:</strong> Success</p>";
+        $test_conn->close();
+    } catch (Exception $e) {
+        echo "<p><strong>Database Connection:</strong> Failed - " . $e->getMessage() . "</p>";
     }
     
-    // Calculate total stages based on DP terms
-    $total_dp_stages = intval($dp_terms);
-    
-    // Calculate progress rate
-    $progress_rate = $total_dp_stages > 0 ? ($current_dp_stage / $total_dp_stages) * 100 : 0;
-    
-    // Ensure dp_terms is a string for ENUM compatibility
-    $dp_terms = (string)$dp_terms;
-    
-    if (!empty($receipt_uploads['downpayment'])) {
-        foreach ($receipt_uploads['downpayment'] as $receipt) {
-            $receipt_stmt = $conn->prepare("INSERT INTO stage_receipts (lead_id, stage_type, filename, original_name, file_path, file_size, mime_type) VALUES (?, 'downpayment', ?, ?, ?, ?, ?)");
-            $file_path = 'uploads/receipts/' . $receipt['filename'];
-            $file_size = isset($receipt['size']) ? $receipt['size'] : null;
-            $mime_type = isset($receipt['type']) ? $receipt['type'] : null;
-            $receipt_stmt->bind_param("issssi", $lead_id, $receipt['filename'], $receipt['original_name'], $file_path, $file_size, $mime_type);
-            $receipt_stmt->execute();
-            $receipt_stmt->close();
-        }
-        
-        // Update the current_dp_stage in the database after uploading receipts
-        updateCurrentDpStage($conn, $lead_id);
-    }
-
-    // Check if tracker entry exists for this lead
-    $check_stmt = $conn->prepare("SELECT id FROM downpayment_tracker WHERE lead_id = ? ORDER BY created_at DESC LIMIT 1");
-    $check_stmt->bind_param("i", $lead_id);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
-    $existing_tracker = $check_result->fetch_assoc();
-    $check_stmt->close();
-
-    if ($existing_tracker) {
-        // Update existing tracker entry
-        $update_stmt = $conn->prepare("
-            UPDATE downpayment_tracker 
-            SET reservation_date = ?, requirements_complete = ?, spot_dp = ?, dp_terms = ?, 
-                current_dp_stage = ?, total_dp_stages = ?, progress_rate = ?, 
-                pagibig_bank_approval = ?, loan_takeout = ?, turnover = ?, updated_at = NOW()
-            WHERE id = ?
-        ");
-        
-        $update_stmt->bind_param(
-            "siisiiidiii",
-            $reservation_date,
-            $requirements_complete,
-            $spot_dp,
-            $dp_terms,
-            $current_dp_stage,
-            $total_dp_stages,
-            $progress_rate,
-            $pagibig_bank_approval,
-            $loan_takeout,
-            $turnover,
-            $existing_tracker['id']
-        );
-        
-        // Debug the actual values being bound
-        error_log("About to execute update with values:");
-        error_log("dp_terms: " . var_export($dp_terms, true) . " (type: " . gettype($dp_terms) . ")");
-        error_log("All bound values: lead_id=$lead_id, reservation_date=$reservation_date, requirements_complete=$requirements_complete, spot_dp=$spot_dp, dp_terms=$dp_terms, current_dp_stage=$current_dp_stage, total_dp_stages=$total_dp_stages, progress_rate=$progress_rate, pagibig_bank_approval=$pagibig_bank_approval, loan_takeout=$loan_takeout, turnover=$turnover, tracker_id=" . $existing_tracker['id']);
-        
-        // Test the prepared statement before executing
-        if (!$update_stmt) {
-            error_log("Update statement is null!");
-            throw new Exception("Update statement is null");
-        }
-        
-        if (!$update_stmt->execute()) {
-            error_log("Update failed: " . $update_stmt->error);
-            error_log("Update error code: " . $update_stmt->errno);
-            throw new Exception("Update failed: " . $update_stmt->error);
-        }
-        $update_stmt->close();
-    } else {
-        // Insert new tracker entry if none exists
-        $insert_stmt = $conn->prepare("
-            INSERT INTO downpayment_tracker 
-            (lead_id, reservation_date, requirements_complete, spot_dp, dp_terms, 
-             current_dp_stage, total_dp_stages, progress_rate, pagibig_bank_approval, 
-             loan_takeout, turnover, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-        ");
-
-        $insert_stmt->bind_param(
-            "isisiidiii",
-            $lead_id,
-            $reservation_date,
-            $requirements_complete,
-            $spot_dp,
-            $dp_terms,
-            $current_dp_stage,
-            $total_dp_stages,
-            $progress_rate,
-            $pagibig_bank_approval,
-            $loan_takeout,
-            $turnover
-        );
-
-        // Debug the actual values being bound for insert
-        error_log("About to execute insert with values:");
-        error_log("dp_terms: " . var_export($dp_terms, true) . " (type: " . gettype($dp_terms) . ")");
-        
-        if (!$insert_stmt->execute()) {
-            error_log("Insert failed: " . $insert_stmt->error);
-            throw new Exception("Insert failed: " . $insert_stmt->error);
-        }
-        $insert_stmt->close();
-    }
-
-    $success_message = "Tracker updated successfully! Current DP Stage: $current_dp_stage out of $total_dp_stages";
-    if (!empty($receipt_uploads['downpayment'])) {
-        $receipt_count = count($receipt_uploads['downpayment']);
-        $success_message .= " ($receipt_count new receipt(s) uploaded)";
-    }
-    
-    // Add JavaScript to update main dashboard display
-    $success_message .= "
-    <script>
-        // Update main dashboard stage display after successful upload
-        if (typeof updateMainDashboardStage === 'function') {
-            updateMainDashboardStage($lead_id, $current_dp_stage, $total_dp_stages);
-        }
-    </script>";
-    
-    // Add activity log
-    addLeadActivity($lead_id, $user_id, "Downpayment Tracker", "Updated downpayment tracker information");
-    
-    // Redirect to refresh the page
-    $redirect_url = "dp-stage.php?success=1";
-    if (!empty($search_query)) $redirect_url .= "&search=" . urlencode($search_query);
-    if (!empty($filter_agent)) $redirect_url .= "&agent=" . urlencode($filter_agent);
-    if (!empty($filter_developer)) $redirect_url .= "&developer=" . urlencode($filter_developer);
-    if (!empty($filter_progress)) $redirect_url .= "&progress=" . urlencode($filter_progress);
-    
-    header("Location: $redirect_url");
+    echo "<p><a href='dp-stage.php'>Back to DP Stage</a></p>";
     exit();
 }
 
-// Check for success message
+// Check for success and error messages
 $success = '';
+$error = '';
 if (isset($_GET['success'])) {
     $success = "Tracker updated successfully!";
+}
+if (isset($_GET['error'])) {
+    $error = htmlspecialchars($_GET['error']);
 }
 ?>
 
@@ -1904,6 +2044,12 @@ if (isset($_GET['success'])) {
                 <?php if (!empty($success)): ?>
                 <div class="success-message">
                     <i class="fas fa-check-circle"></i> <?= $success ?>
+                </div>
+                <?php endif; ?>
+                
+                <?php if (!empty($error)): ?>
+                <div class="error-message" style="background-color: var(--danger-light); color: #991b1b; border-left: 4px solid var(--danger); border-radius: var(--border-radius); padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; animation: fadeIn 0.5s ease-out;">
+                    <i class="fas fa-exclamation-triangle" style="margin-right: 0.75rem; font-size: 1.25rem;"></i> <?= $error ?>
                 </div>
                 <?php endif; ?>
                 
