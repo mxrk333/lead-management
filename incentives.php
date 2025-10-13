@@ -63,6 +63,17 @@ try {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+        }
+        
         .raffle-container {
             padding: 24px;
             background: #f8fafc;
@@ -313,7 +324,7 @@ try {
             border-radius: 8px;
         }
         
-        /* Modal Styles */
+        /* Made modal much wider and close button more visible */
         .modal {
             display: none;
             position: fixed;
@@ -322,7 +333,7 @@ try {
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(4px);
         }
         
@@ -336,11 +347,23 @@ try {
             background: white;
             border-radius: 16px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            max-width: 800px;
-            width: 90%;
-            max-height: 80vh;
+            max-width: 1400px;
+            width: 95%;
+            max-height: 90vh;
             overflow: hidden;
             animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @media (min-width: 1600px) {
+            .modal-content {
+                max-width: 1600px;
+            }
+        }
+        
+        @media (min-width: 1920px) {
+            .modal-content {
+                max-width: 1800px;
+            }
         }
         
         @keyframes modalSlideIn {
@@ -357,56 +380,59 @@ try {
         .modal-header {
             background: #2563eb;
             color: white;
-            padding: 24px;
+            padding: 28px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .modal-title {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 700;
             margin: 0;
         }
         
         .modal-close {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.4);
             color: white;
-            font-size: 24px;
-            width: 40px;
-            height: 40px;
+            font-size: 28px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
+            font-weight: 700;
+            line-height: 1;
         }
         
         .modal-close:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.1) rotate(90deg);
         }
         
         .modal-body {
-            padding: 24px;
-            max-height: 60vh;
+            padding: 32px;
+            max-height: calc(90vh - 200px);
             overflow-y: auto;
         }
         
         .user-info-header {
             background: #f8fafc;
-            padding: 20px;
+            padding: 24px;
             border-radius: 12px;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             border: 1px solid #e2e8f0;
         }
         
         .user-info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
+            gap: 20px;
         }
         
         .user-info-item {
@@ -417,32 +443,34 @@ try {
         
         .user-info-item i {
             color: #2563eb;
-            font-size: 18px;
-            width: 20px;
+            font-size: 20px;
+            width: 24px;
         }
         
         .user-info-item span {
             font-weight: 600;
             color: #374151;
+            font-size: 15px;
         }
         
         .tickets-section {
-            margin-top: 24px;
+            margin-top: 28px;
         }
         
         .section-title {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
             color: #1f2937;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         
         .tickets-grid {
             display: grid;
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 16px;
         }
         
         .ticket-item {
@@ -548,7 +576,7 @@ try {
         
         .modal-footer {
             background: #f8fafc;
-            padding: 20px 24px;
+            padding: 24px 32px;
             border-top: 1px solid #e2e8f0;
             display: flex;
             justify-content: flex-end;
@@ -569,10 +597,25 @@ try {
         
         .tickets-table-container {
             background: white;
-            border-radius: 8px;
+            border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             border: 1px solid #e5e7eb;
             overflow: hidden;
+        }
+        
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
         }
         
         .pagination {
@@ -581,18 +624,23 @@ try {
             align-items: center;
             gap: 10px;
             padding: 20px;
+            border-top: 1px solid #e5e7eb;
         }
         
         .pagination button {
-            padding: 8px 12px;
+            padding: 10px 16px;
             border: 1px solid #d1d5db;
             background: white;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
         
         .pagination button:hover:not(:disabled) {
             background: #f3f4f6;
+            border-color: #2563eb;
+            color: #2563eb;
         }
         
         .pagination button:disabled {
@@ -600,15 +648,25 @@ try {
             cursor: not-allowed;
         }
         
+        .pagination span {
+            font-weight: 600;
+            color: #374151;
+        }
+        
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 60px 40px;
             color: #6b7280;
+        }
+        
+        .loading i {
+            font-size: 32px;
+            margin-bottom: 12px;
         }
         
         .no-data {
             text-align: center;
-            padding: 40px;
+            padding: 60px 40px;
             color: #6b7280;
         }
         
@@ -643,6 +701,22 @@ try {
                 page-break-inside: avoid;
             }
         }
+        
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 98%;
+                max-height: 95vh;
+            }
+            
+            .modal-body {
+                padding: 20px;
+                max-height: calc(95vh - 180px);
+            }
+            
+            .tickets-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -662,7 +736,7 @@ try {
                     </div>
                 </div>
                 
-                <!-- Statistics Cards -->
+                 Statistics Cards 
                 <div class="raffle-stats">
                     <div class="stat-card">
                         <div class="stat-number" id="total-tickets">-</div>
@@ -682,7 +756,7 @@ try {
                     </div>
                 </div>
                 
-                <!-- Filters Section -->
+                 Filters Section 
                 <div class="filters-section">
                     <div class="filters-grid">
                         <div class="filter-group">
@@ -723,7 +797,7 @@ try {
                     </div>
                 </div>
                 
-                <!-- Users Grid -->
+                 Users Grid 
                 <div class="tickets-table-container">
                     <div class="table-header">
                         <h2 class="table-title">Raffle Tickets by User</h2>
@@ -736,12 +810,13 @@ try {
                     
                     <div id="tickets-content">
                         <div class="loading">
-                            <i class="fas fa-spinner fa-spin"></i> Loading tickets...
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <div>Loading tickets...</div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Modal for Ticket Details -->
+                 Modal for Ticket Details 
                 <div id="ticketModal" class="modal">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -749,7 +824,7 @@ try {
                             <button class="modal-close" onclick="closeModal()">&times;</button>
                         </div>
                         <div class="modal-body" id="modalBody">
-                            <!-- Modal content will be loaded here -->
+                             Modal content will be loaded here 
                         </div>
                         <div class="modal-footer">
                             <button class="btn btn-secondary" onclick="closeModal()">
@@ -933,18 +1008,6 @@ try {
             loadTickets(currentPage);
         }
         
-        function applyFilters() {
-            loadTickets(1);
-        }
-        
-        function clearFilters() {
-            document.getElementById('team-filter').value = '';
-            document.getElementById('stage-source-filter').value = '';
-            document.getElementById('date-from-filter').value = '';
-            document.getElementById('date-to-filter').value = '';
-            loadTickets(1);
-        }
-        
         function printTicket(ticketNumber, fullName, phone, email) {
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
@@ -967,7 +1030,7 @@ try {
                             <div class="ticket-number">${ticketNumber}</div>
                         </div>
                         <div class="ticket-info"><strong>Name:</strong> ${fullName}</div>
-                        <div class="ticket-info"><strong>Date:</strong> ${new Date(ticket.modification_date || ticket.created_at).toLocaleDateString()}</div>
+                        <div class="ticket-info"><strong>Date:</strong> ${new Date().toLocaleDateString()}</div>
                     </div>
                 </body>
                 </html>
@@ -989,7 +1052,7 @@ try {
             const modalBody = document.getElementById('modalBody');
             
             modalTitle.textContent = userName + ' - Ticket Details';
-            modalBody.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading ticket details...</div>';
+            modalBody.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i><div>Loading ticket details...</div></div>';
             modal.classList.add('show');
             
             // Fetch user tickets

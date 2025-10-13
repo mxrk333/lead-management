@@ -12,6 +12,9 @@ if (session_status() === PHP_SESSION_NONE) {
 // Include database configuration
 require_once 'config/database.php';
 
+// Include functions
+require_once 'includes/functions.php';
+
 try {
     // Get database connection using the function from database.php
     $conn = getDbConnection();
@@ -29,22 +32,11 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Get user information - create a simple fallback if getUserById doesn't exist
-if (function_exists('getUserById')) {
-    $user = getUserById($_SESSION['user_id']);
-} else {
-    // Simple fallback to get user data
-    $user_id = $_SESSION['user_id'];
-    $user_query = "SELECT * FROM users WHERE id = $user_id";
-    $user_stmt = $conn->prepare($user_query);
-    $user_stmt->execute();
-    $user_result = $user_stmt->get_result();
-    $user = $user_result->fetch_assoc();
-    
-    if (!$user) {
-        header("Location: login.php");
-        exit();
-    }
+// Get user information
+$user = getUserById($_SESSION['user_id']);
+if (!$user) {
+    header("Location: login.php");
+    exit();
 }
 
 // Function to check if current user can edit a lead

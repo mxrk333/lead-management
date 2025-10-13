@@ -513,7 +513,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_tracker'])) {
             }
 
             $insert_stmt->bind_param(
-                "isiisidiii",
+                "isiisidiiii",
                 $lead_id,
                 $reservation_date,
                 $requirements_complete,
@@ -877,6 +877,23 @@ if (isset($_GET['error'])) {
         background-color: var(--primary-hover);
         box-shadow: var(--shadow);
     }
+
+    /* Force blue theme for specific UI areas */
+    .view-toggle .btn,
+    .search-filter-buttons .btn,
+    #edit_mode_btn {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: #ffffff;
+    }
+
+    .view-toggle .btn:hover,
+    .search-filter-buttons .btn:hover,
+    #edit_mode_btn:hover {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+    }
     
     .btn-outline {
         background-color: white;
@@ -1077,13 +1094,13 @@ if (isset($_GET['error'])) {
         animation: fadeIn 0.2s ease-out;
     }
     
-    .modal-content {
+    #dpDetailsModal .modal-content {
         background-color: #fff;
         margin: 2rem auto;
         border-radius: 1rem;
         box-shadow: var(--shadow-lg);
-        width: 95%; /* Increased from 90% */
-        max-width: 1600px; /* Much larger max width for big screens */
+        width: 90%; /* Modest width by default */
+        max-width: 1000px; /* Hard cap to avoid oversized modals */
         position: relative;
         max-height: calc(100vh - 4rem);
         display: flex;
@@ -1093,27 +1110,27 @@ if (isset($_GET['error'])) {
     
     /* Responsive modal sizing - just make the modal bigger on larger screens */
     @media (min-width: 1024px) {
-        .modal-content {
-            width: 90%;
-            max-width: 1800px;
+        #dpDetailsModal .modal-content {
+            width: 85%;
+            max-width: 1000px; /* keep cap steady */
         }
     }
     
     @media (min-width: 1280px) {
-        .modal-content {
-            width: 85%;
-            max-width: 2000px;
+        #dpDetailsModal .modal-content {
+            width: 80%;
+            max-width: 1000px; /* keep cap steady */
         }
     }
     
     @media (min-width: 1536px) {
-        .modal-content {
-            width: 80%;
-            max-width: 2200px;
+        #dpDetailsModal .modal-content {
+            width: 78%;
+            max-width: 1000px; /* keep cap steady */
         }
     }
     
-    .modal-header {
+    #dpDetailsModal .modal-header {
         background: var(--primary);
         color: white;
         padding: 1.5rem 2rem;
@@ -1125,7 +1142,7 @@ if (isset($_GET['error'])) {
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     
-    .modal-header h3 {
+    #dpDetailsModal .modal-header h3 {
         margin: 0;
         font-size: 1.5rem;
         font-weight: 700;
@@ -1134,12 +1151,12 @@ if (isset($_GET['error'])) {
         gap: 0.75rem;
     }
     
-    .modal-header h3 i {
+    #dpDetailsModal .modal-header h3 i {
         font-size: 1.75rem;
         opacity: 0.9;
     }
     
-    .modal-header .close {
+    #dpDetailsModal .modal-header .close {
         font-size: 2rem;
         font-weight: 300;
         cursor: pointer;
@@ -1156,20 +1173,20 @@ if (isset($_GET['error'])) {
         justify-content: center;
     }
     
-    .modal-header .close:hover {
+    #dpDetailsModal .modal-header .close:hover {
         opacity: 1;
         background: rgba(255, 255, 255, 0.2);
         transform: scale(1.05);
     }
     
-    .modal-body {
+    #dpDetailsModal .modal-body {
         padding: 2rem;
         overflow-y: auto;
         max-height: calc(100vh - 16rem);
         flex: 1;
     }
     
-    .modal-footer {
+    #dpDetailsModal .modal-footer {
         padding: 1.5rem 2rem;
         border-top: 1px solid var(--gray-200);
         display: flex;
@@ -1783,7 +1800,7 @@ if (isset($_GET['error'])) {
         padding: 1rem;
         text-align: center;
         transition: all 0.2s ease;
-        cursor: pointer;
+        position: relative;
     }
     
     .receipt-item:hover {
@@ -1792,17 +1809,52 @@ if (isset($_GET['error'])) {
         box-shadow: var(--shadow-md);
     }
     
+    .receipt-image-container {
+        cursor: pointer;
+        margin-bottom: 0.5rem;
+    }
+    
     .receipt-thumbnail {
         width: 100%;
         height: 100px;
         object-fit: cover;
         border-radius: var(--border-radius);
-        margin-bottom: 0.5rem;
     }
     
     .receipt-info {
         font-size: 0.75rem;
         color: var(--gray-600);
+        margin-bottom: 0.5rem;
+    }
+    
+    .receipt-delete-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 2rem; /* Larger for easier tapping */
+        height: 2rem; /* Larger for easier tapping */
+        border: none;
+        border-radius: 9999px;
+        background: var(--danger);
+        color: white;
+        font-size: 0.875rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 1; /* Always visible */
+        transition: all 0.2s ease;
+        z-index: 20; /* Ensure above image */
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    
+    .receipt-item:hover .receipt-delete-btn {
+        transform: scale(1.05);
+    }
+    
+    .receipt-delete-btn:hover {
+        background: #dc2626;
+        transform: scale(1.1);
     }
     
     .receipt-stage {
@@ -2519,11 +2571,25 @@ if (isset($_GET['error'])) {
                                     <div style="margin-bottom: 1rem;">
                                         <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
                                         <div style="font-weight: 600; color: var(--primary-dark); margin-bottom: 0.25rem;">Upload Receipt</div>
-                                        <div style="font-size: 0.875rem; color: var(--gray-600);">Select receipt image (PNG/JPEG only)</div>
+                                        <div style="font-size: 0.875rem; color: var(--gray-600);">Take a photo or choose from gallery</div>
                                     </div>
-                                    <input type="file" id="dp_receipt_single" name="dp_receipt[]" 
-                                           accept=".png,.jpg,.jpeg" class="file-input" 
-                                           style="margin-bottom: 0.5rem;" onchange="updateReceiptCounter()">
+
+                                    <!-- Explicit options for better mobile UX -->
+                                    <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.75rem;">
+                                        <button type="button" class="btn btn-primary" onclick="document.getElementById('dp_receipt_camera').click();">
+                                            <i class="fas fa-camera"></i> Use Camera
+                                        </button>
+                                        <button type="button" class="btn btn-outline" onclick="document.getElementById('dp_receipt_gallery').click();">
+                                            <i class="fas fa-image"></i> Choose from Gallery
+                                        </button>
+                                    </div>
+
+                                    <!-- Hidden inputs (same field name so backend stays the same) -->
+                                    <input type="file" id="dp_receipt_camera" name="dp_receipt[]" accept="image/*" capture="environment" style="display:none;" onchange="updateReceiptCounter()">
+                                    <input type="file" id="dp_receipt_gallery" name="dp_receipt[]" accept=".png,.jpg,.jpeg,image/*" style="display:none;" onchange="updateReceiptCounter()">
+                                    <!-- Keep original input for desktop fallback, but hidden to avoid a third prompt -->
+                                    <input type="file" id="dp_receipt_single" name="dp_receipt[]" accept=".png,.jpg,.jpeg,image/*" style="display:none;" onchange="updateReceiptCounter()">
+
                                     <div style="font-size: 0.75rem; color: var(--gray-500);">
                                         Each upload counts as one month of your DP payment plan
                                     </div>
@@ -2640,7 +2706,10 @@ if (isset($_GET['error'])) {
         fetch(`get_receipts.php?lead_id=${leadId}`)
             .then(response => response.json())
             .then(receipts => {
-                displayReceipts(receipts);
+                // Check if we're in edit mode (edit form is visible)
+                const editForm = document.getElementById('trackerForm');
+                const isEditMode = editForm && editForm.style.display !== 'none';
+                displayReceipts(receipts, isEditMode);
             })
             .catch(error => {
                 console.error('Error loading receipts:', error);
@@ -2828,7 +2897,7 @@ if (isset($_GET['error'])) {
         updateReceiptCounter();
     }
     
-    function displayReceipts(receipts) {
+    function displayReceipts(receipts, showDeleteButtons = false) {
         const editContainer = document.getElementById('uploaded_receipts_display');
         const viewContainer = document.getElementById('view_uploaded_receipts');
         
@@ -2841,14 +2910,23 @@ if (isset($_GET['error'])) {
             
             receipts.forEach((receipt, index) => {
                 const monthNumber = index + 1; // Each receipt represents a month
+                const deleteButton = `
+                    <button class="receipt-delete-btn" onclick="event.stopPropagation(); deleteReceipt(${receipt.id})" title="Delete Receipt">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
                 html += `
-                    <div class="receipt-item" onclick="openImageModal('${receipt.file_path}', '${receipt.original_name}')">
-                        <img src="${receipt.file_path}" alt="${receipt.original_name}" class="receipt-thumbnail" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zNSA0MEg2NVY2MEgzNVY0MFoiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2Zz4K'">
+                    <div class="receipt-item" data-receipt-id="${receipt.id}">
+                        <div class="receipt-image-container" onclick="openImageModal('${receipt.file_path}', '${receipt.original_name}')">
+                            <img src="${receipt.file_path}" alt="${receipt.original_name}" class="receipt-thumbnail" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zNSA0MEg2NVY2MEgzNVY0MFoiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2Zz4K'">
+                        </div>
                         <div class="receipt-info">
                             <div class="receipt-stage">Month ${monthNumber}</div>
                             <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.25rem;">${receipt.original_name}</div>
                             <div style="font-size: 0.6875rem; color: var(--gray-400);">${new Date(receipt.uploaded_at).toLocaleDateString()}</div>
                         </div>
+                        ${deleteButton}
                     </div>
                 `;
             });
@@ -2856,16 +2934,122 @@ if (isset($_GET['error'])) {
             html += '</div>';
         }
         
-        // Update both containers
+        // Update both containers with appropriate delete button visibility
         if (editContainer) editContainer.innerHTML = html;
-        if (viewContainer) viewContainer.innerHTML = html;
+        if (viewContainer) {
+            // Show delete buttons in view mode as well for easy cleanup
+            viewContainer.innerHTML = html;
+        }
         
         updateReceiptCounter();
     }
-
+    
     function updateDpStages(termsSelectId, currentStageSelectId) {
         // Update receipt counter when terms change
         updateReceiptCounter();
+    }
+    
+    // Function to delete a receipt
+    function deleteReceipt(receiptId) {
+        if (!confirm('Are you sure you want to delete this receipt? This action cannot be undone.')) {
+            return;
+        }
+        
+        // Show loading state
+        const deleteBtn = document.querySelector(`[data-receipt-id="${receiptId}"] .receipt-delete-btn`);
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            deleteBtn.disabled = true;
+        }
+        
+        // Send delete request
+        fetch('delete_receipt.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `receipt_id=${receiptId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the receipt item from the display
+                const receiptItem = document.querySelector(`[data-receipt-id="${receiptId}"]`);
+                if (receiptItem) {
+                    receiptItem.remove();
+                }
+                
+                // Reload receipts to update the display and counters
+                if (currentLeadData && currentLeadData.leadId) {
+                    loadUploadedReceipts(currentLeadData.leadId);
+                }
+                
+                // Show success message
+                showNotification('Receipt deleted successfully', 'success');
+            } else {
+                throw new Error(data.error || 'Failed to delete receipt');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting receipt:', error);
+            showNotification('Failed to delete receipt: ' + error.message, 'error');
+            
+            // Reset button state
+            if (deleteBtn) {
+                deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+                deleteBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Simple notification function
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 600;
+            z-index: 10000;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        
+        // Set background color based on type
+        switch (type) {
+            case 'success':
+                notification.style.backgroundColor = '#10b981';
+                break;
+            case 'error':
+                notification.style.backgroundColor = '#ef4444';
+                break;
+            default:
+                notification.style.backgroundColor = '#3b82f6';
+        }
+        
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
     }
 
     // Event listeners for edit form

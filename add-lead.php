@@ -1564,7 +1564,7 @@ debugLog("Page rendering started");
         .iti__country-list {
             z-index: 9999;
             max-height: 250px;
-            width: 400px;
+            width: 600px;
             box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             border: 1px solid #d1d5db;
         }

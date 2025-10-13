@@ -414,6 +414,22 @@ foreach ($projectModels as $model) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/css/intlTelInput.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.2.1/js/intlTelInput.min.js"></script>
     <style>
+        /* Enhanced styles matching add-lead.php design */
+        :root {
+            --container-padding: 25px;
+            --primary-color: #4f46e5;
+            --danger-color: #dc2626;
+            --warning-color: #f59e0b;
+            --success-color: #10b981;
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --container-padding: 15px;
+            }
+        }
+
+        /* Base styles */
         body {
             font-family: 'Inter', sans-serif;
             color: #1f2937;
@@ -449,7 +465,7 @@ foreach ($projectModels as $model) {
             left: 0;
             width: 2.5rem;
             height: 0.25rem;
-            background: linear-gradient(to right, #f59e0b, #d97706);
+            background: linear-gradient(to right, var(--primary-color), #8b5cf6);
             border-radius: 0.25rem;
         }
         
@@ -458,8 +474,8 @@ foreach ($projectModels as $model) {
             align-items: center;
             padding: 0.625rem 1rem;
             background-color: white;
-            color: #f59e0b;
-            border: 1px solid rgba(245, 158, 11, 0.2);
+            color: var(--primary-color);
+            border: 1px solid rgba(79, 70, 229, 0.2);
             border-radius: 0.5rem;
             font-size: 0.875rem;
             font-weight: 500;
@@ -468,13 +484,15 @@ foreach ($projectModels as $model) {
         }
         
         .btn-back:hover {
-            background-color: rgba(245, 158, 11, 0.05);
-            border-color: rgba(245, 158, 11, 0.3);
+            background-color: rgba(79, 70, 229, 0.05);
+            border-color: rgba(79, 70, 229, 0.3);
         }
         
         .btn-back i {
             margin-right: 0.5rem;
         }
+        
+        /* Form styles */
         
         .lead-form {
             background-color: white;
@@ -508,7 +526,7 @@ foreach ($projectModels as $model) {
             display: inline-block;
             width: 0.25rem;
             height: 1.25rem;
-            background: linear-gradient(to bottom, #f59e0b, #d97706);
+            background: linear-gradient(to bottom, var(--primary-color), #8b5cf6);
             margin-right: 0.75rem;
             border-radius: 0.125rem;
         }
@@ -550,7 +568,7 @@ foreach ($projectModels as $model) {
         
         .required-field label::after {
             content: ' *';
-            color: #ef4444;
+            color: var(--danger-color);
         }
         
         .form-group input,
@@ -573,9 +591,9 @@ foreach ($projectModels as $model) {
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
-            border-color: #f59e0b;
+            border-color: var(--primary-color);
             outline: 0;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
         
         .form-group select {
@@ -602,13 +620,13 @@ foreach ($projectModels as $model) {
         }
 
         .others-input input {
-            border-color: #f59e0b;
-            background-color: #fef3c7;
+            border-color: var(--primary-color);
+            background-color: #f8fafc;
         }
 
         .others-input label {
             font-size: 0.75rem;
-            color: #f59e0b;
+            color: var(--primary-color);
             font-weight: 600;
             margin-bottom: 0.25rem;
         }
@@ -635,14 +653,14 @@ foreach ($projectModels as $model) {
         }
         
         .btn-save {
-            background-color: #f59e0b;
+            background-color: var(--primary-color);
             color: white;
             border: none;
             margin-left: 0.75rem;
         }
         
         .btn-save:hover {
-            background-color: #d97706;
+            background-color: #4338ca;
         }
         
         .btn-cancel {
@@ -663,17 +681,20 @@ foreach ($projectModels as $model) {
             margin-bottom: 1.5rem;
             font-size: 0.875rem;
             font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
         }
         
         .success-message {
             background-color: rgba(16, 185, 129, 0.1);
-            color: #10b981;
+            color: var(--success-color);
             border: 1px solid rgba(16, 185, 129, 0.2);
         }
         
         .error-message {
             background-color: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
+            color: var(--danger-color);
             border: 1px solid rgba(239, 68, 68, 0.2);
         }
         
@@ -684,7 +705,7 @@ foreach ($projectModels as $model) {
         }
         
         .required-note span {
-            color: #ef4444;
+            color: var(--danger-color);
         }
         
         .optional-field {
@@ -756,9 +777,9 @@ foreach ($projectModels as $model) {
         }
         
         .iti__selected-flag:focus {
-            border-color: #f59e0b;
+            border-color: var(--primary-color);
             outline: 0;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
         
         .iti__flag {
@@ -786,9 +807,9 @@ foreach ($projectModels as $model) {
         }
         
         .iti input[type="tel"]:focus {
-            border-color: #f59e0b;
+            border-color: var(--primary-color);
             outline: 0;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
         
         /* Make sure the flag and input align properly */
@@ -820,9 +841,9 @@ foreach ($projectModels as $model) {
         }
         
         .autocomplete-input:focus {
-            border-color: #f59e0b;
+            border-color: var(--primary-color);
             outline: 0;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
         
         .autocomplete-dropdown {
@@ -863,8 +884,8 @@ foreach ($projectModels as $model) {
         }
         
         .autocomplete-item.selected {
-            background-color: #fef3c7;
-            color: #f59e0b;
+            background-color: var(--primary-light);
+            color: var(--primary-color);
             font-weight: 500;
         }
         
@@ -904,7 +925,7 @@ foreach ($projectModels as $model) {
         }
         
         .autocomplete-clear:focus {
-            outline: 2px solid #f59e0b;
+            outline: 2px solid var(--primary-color);
             outline-offset: 2px;
         }
         
@@ -915,7 +936,7 @@ foreach ($projectModels as $model) {
             border-bottom: 1px solid #f3f4f6;
             font-size: 0.875rem;
             background-color: #f8fafc;
-            color: #f59e0b;
+            color: var(--primary-color);
             font-weight: 500;
             display: flex;
             align-items: center;
@@ -924,11 +945,132 @@ foreach ($projectModels as $model) {
         
         .autocomplete-add-item:hover,
         .autocomplete-add-item.active {
-            background-color: #fef3c7;
+            background-color: #e0e7ff;
         }
         
         .autocomplete-add-item .fas {
             font-size: 0.75rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .edit-lead-page {
+                padding: var(--container-padding);
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .btn-back {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .lead-form {
+                border-radius: 0.75rem;
+            }
+            
+            .form-section {
+                padding: 20px;
+            }
+            
+            .form-row {
+                margin: 0 -10px 1.25rem;
+            }
+            
+            .form-group {
+                padding: 0 10px;
+                margin-bottom: 15px;
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .edit-lead-page {
+                padding: var(--container-padding);
+            }
+            
+            .page-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            .page-header h2::after {
+                width: 2rem;
+            }
+            
+            .form-section {
+                padding: 15px;
+            }
+            
+            .form-section h3 {
+                font-size: 1.1rem;
+                margin-bottom: 1.25rem;
+            }
+            
+            .form-group label {
+                font-size: 0.8rem;
+                margin-bottom: 0.375rem;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 0.625rem 0.875rem;
+                font-size: 0.8rem;
+                border-radius: 0.375rem;
+            }
+            
+            .form-group select {
+                padding-right: 2rem;
+                background-size: 0.875rem;
+            }
+            
+            .form-actions {
+                padding: 15px;
+                flex-direction: column-reverse;
+                gap: 10px;
+            }
+            
+            .btn-save,
+            .btn-cancel {
+                width: 100%;
+                padding: 0.625rem;
+                font-size: 0.8rem;
+            }
+            
+            .required-note {
+                font-size: 0.7rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .optional-field {
+                font-size: 0.7rem;
+            }
+            
+            .success-message,
+            .error-message {
+                padding: 0.75rem;
+                font-size: 0.8rem;
+                margin-bottom: 1rem;
+            }
+        }
+
+        @media (hover: none) {
+            .btn-save:hover,
+            .btn-cancel:hover,
+            .btn-back:hover {
+                transform: none;
+                box-shadow: none;
+            }
+            
+            .form-group input:focus,
+            .form-group select:focus,
+            .form-group textarea:focus {
+                box-shadow: none;
+            }
         }
     </style>
 </head>
@@ -942,12 +1084,20 @@ foreach ($projectModels as $model) {
             <div class="edit-lead-page">
                 <div class="page-header">
                     <h2>Edit Lead</h2>
-                    <a href="javascript:history.back()" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                    <a href="leads.php" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Leads</a>
                 </div>
+                
+                <?php if (isset($_SESSION['success_message'])): ?>
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i> 
+                    <span><?php echo htmlspecialchars($_SESSION['success_message']); unset($_SESSION['success_message']); ?></span>
+                </div>
+                <?php endif; ?>
                 
                 <?php if (isset($error)): ?>
                 <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
+                    <i class="fas fa-exclamation-circle"></i> 
+                    <span><?php echo htmlspecialchars($error); ?></span>
                 </div>
                 <?php endif; ?>
 
@@ -1005,6 +1155,7 @@ foreach ($projectModels as $model) {
                                     <div id="source-dropdown" class="autocomplete-dropdown"></div>
                                 </div>
                                 <input type="hidden" id="source_original" name="source_original" value="<?php echo htmlspecialchars($lead['source']); ?>">
+                            </div>
                         </div>
                         
                         <div class="form-row">
@@ -1097,11 +1248,16 @@ foreach ($projectModels as $model) {
                                 <label for="project_model">House Model</label>
                                 <select id="project_model" name="project_model" required onchange="toggleProjectModelOthers(this.value)">
                                     <option value="">Select House Model</option>
+                                    <?php if (!empty($lead['project_model'])): ?>
+                                        <option value="<?php echo htmlspecialchars($lead['project_model']); ?>" selected>
+                                            <?php echo htmlspecialchars($lead['project_model']); ?>
+                                        </option>
+                                    <?php endif; ?>
                                 </select>
                                 <div class="others-input" id="project-model-others">
                                     <label for="project_model_other">Specify House Model</label>
                                     <input type="text" id="project_model_other" name="project_model_other" 
-                                           value=""
+                                           value="<?php echo htmlspecialchars($isCustomProjectModel ? ($lead['project_model'] ?? '') : ''); ?>"
                                            placeholder="Enter house model name" maxlength="100">
                                 </div>
                             </div>
@@ -1109,7 +1265,7 @@ foreach ($projectModels as $model) {
                         
                         <div class="form-row">
                             <div class="form-group required-field">
-                                <label for="price">Total Contract Price (PHP)</label>
+                                <label for="price">Total Selling Price (PHP)</label>
                                 <input type="text" id="price" name="price" 
                                        value="<?php echo number_format($lead['price'], 2); ?>"
                                        placeholder="e.g. 1,000,000.00" required>
@@ -1126,7 +1282,7 @@ foreach ($projectModels as $model) {
                     </div>
                     
                     <div class="form-actions">
-                        <a href="javascript:history.back()" class="btn-cancel">Cancel</a>
+                        <a href="leads.php" class="btn-cancel">Cancel</a>
                         <button type="submit" class="btn-save" id="saveBtn">
                             <i class="fas fa-save"></i> Update Lead
                         </button>
@@ -1477,8 +1633,8 @@ foreach ($projectModels as $model) {
                         dropdown.classList.remove('show');
                         clearBtn.style.display = 'flex';
                         
-                        // Load house models for this project
-                        loadProjectModels(project.name);
+                        // Load house models for this project (do not preselect existing on user-initiated change)
+                        loadProjectModelsFromAPI(project.name, false);
                     });
                     
                     dropdown.appendChild(item);
@@ -1555,8 +1711,8 @@ foreach ($projectModels as $model) {
                             // If it's a project from the database
                             if (activeItem.hasAttribute('data-id')) {
                                 idInput.value = activeItem.getAttribute('data-id');
-                                // Load house models for this project
-                                loadProjectModels(value);
+                                // Load house models for this project (do not preselect existing on user-initiated change)
+                                loadProjectModelsFromAPI(value, false);
                             } else {
                                 // It's a custom project
                                 idInput.value = '';
@@ -1673,56 +1829,136 @@ foreach ($projectModels as $model) {
             }
         }
         
-        function loadProjectModels(developer) {
+        // Function to load project models from API based on selected project (developer)
+        function loadProjectModelsFromAPI(projectName, preselectExisting = true) {
             const projectModelSelect = document.getElementById('project_model');
-            if (!projectModelSelect) return;
-            
-            // Clear existing options
-            projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
-            
-            // Toggle developer others input
-            toggleDeveloperOthers(developer);
-            
-            if (developer && developer !== 'Others') {
-                const models = projectModelsData[developer] || [];
-                
-                // Check if current project model exists in the list
-                let isCustomModel = true;
-                
-                // Add model options
-                models.forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model;
-                    option.textContent = model;
-                    if (model === currentLead.project_model) {
-                        option.selected = true;
-                        isCustomModel = false;
-                    }
-                    projectModelSelect.appendChild(option);
-                });
-                
-                // Add "Others" option
-                const othersOption = document.createElement('option');
-                othersOption.value = 'Others';
-                othersOption.textContent = 'Others';
-                if (isCustomModel && currentLead.project_model) {
-                    othersOption.selected = true;
-                    toggleProjectModelOthers('Others');
-                    document.getElementById('project_model_other').value = currentLead.project_model;
-                }
-                projectModelSelect.appendChild(othersOption);
-                
-            } else if (developer === 'Others') {
-                // Add "Others" option for custom developer
-                const othersOption = document.createElement('option');
-                othersOption.value = 'Others';
-                othersOption.textContent = 'Others';
-                othersOption.selected = true;
-                projectModelSelect.appendChild(othersOption);
-                
-                toggleProjectModelOthers('Others');
-                document.getElementById('project_model_other').value = currentLead.project_model;
+            if (!projectModelSelect) {
+                console.error('Project model select element not found');
+                return;
             }
+
+            // Toggle developer others input
+            toggleDeveloperOthers(projectName);
+
+            // Show loading state
+            projectModelSelect.innerHTML = '<option value="">Loading models...</option>';
+            projectModelSelect.disabled = true;
+
+            if (!projectName || projectName.trim() === '') {
+                projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
+                projectModelSelect.disabled = false;
+                return;
+            }
+
+            // Make AJAX call to fetch house models
+            fetch('api/get_project_models.php?project=' + encodeURIComponent(projectName.trim()))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Reset options
+                    projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
+                    projectModelSelect.disabled = false;
+
+                    if (data.success && Array.isArray(data.models) && data.models.length > 0) {
+                        // Populate models from API
+                        data.models.forEach(model => {
+                            const option = document.createElement('option');
+                            // API returns model.name; keep using name as the select value/text
+                            option.value = model.name;
+                            option.textContent = model.name;
+                            projectModelSelect.appendChild(option);
+                        });
+                    } else if (data.success && !data.project_found) {
+                        const noModelsOption = document.createElement('option');
+                        noModelsOption.value = '';
+                        noModelsOption.textContent = 'No models available (New project)';
+                        noModelsOption.disabled = true;
+                        projectModelSelect.appendChild(noModelsOption);
+                    } else {
+                        const noModelsOption = document.createElement('option');
+                        noModelsOption.value = '';
+                        noModelsOption.textContent = 'No models available';
+                        noModelsOption.disabled = true;
+                        projectModelSelect.appendChild(noModelsOption);
+                    }
+
+                    // Always add "Others" option
+                    const othersOption = document.createElement('option');
+                    othersOption.value = 'Others';
+                    othersOption.textContent = 'Others';
+                    projectModelSelect.appendChild(othersOption);
+
+                    if (preselectExisting) {
+                        // Preselect the existing model from the current lead if available
+                        const existingModel = currentLead && currentLead.project_model ? String(currentLead.project_model).trim() : '';
+                        if (existingModel) {
+                            const norm = s => String(s || '').trim().toLowerCase();
+                            const options = Array.from(projectModelSelect.options);
+                            // First try strict normalized equality
+                            let match = options.find(opt => norm(opt.value) === norm(existingModel));
+                            if (!match) {
+                                // Try matching on textContent as well
+                                match = options.find(opt => norm(opt.textContent) === norm(existingModel));
+                            }
+                            if (match && match.value) {
+                                projectModelSelect.value = match.value;
+                                toggleProjectModelOthers(match.value);
+                            } else {
+                                // Not in list: inject a custom option that mirrors the saved value
+                                const customOption = document.createElement('option');
+                                customOption.value = existingModel;
+                                customOption.textContent = existingModel;
+                                customOption.setAttribute('data-custom', '1');
+                                projectModelSelect.insertBefore(customOption, projectModelSelect.firstChild.nextSibling);
+                                projectModelSelect.value = existingModel;
+                                toggleProjectModelOthers(existingModel);
+                            }
+                        }
+                    } else {
+                        // On project change by user, do not preselect anything and hide the Others input
+                        toggleProjectModelOthers('');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching project models:', error);
+                    // Reset to default state on error
+                    projectModelSelect.innerHTML = '<option value="">Select House Model</option>';
+                    projectModelSelect.disabled = false;
+
+                    // Add error option
+                    const errorOption = document.createElement('option');
+                    errorOption.value = '';
+                    errorOption.textContent = 'Error loading models';
+                    errorOption.disabled = true;
+                    projectModelSelect.appendChild(errorOption);
+
+                    // Always add "Others" option even on error
+                    const othersOption = document.createElement('option');
+                    othersOption.value = 'Others';
+                    othersOption.textContent = 'Others';
+                    projectModelSelect.appendChild(othersOption);
+
+                    // Even on error, show the existing model by injecting it as a selectable option
+                    const existingModel = currentLead && currentLead.project_model ? String(currentLead.project_model).trim() : '';
+                    if (existingModel) {
+                        const customOption = document.createElement('option');
+                        customOption.value = existingModel;
+                        customOption.textContent = existingModel;
+                        customOption.setAttribute('data-custom', '1');
+                        projectModelSelect.insertBefore(customOption, projectModelSelect.firstChild.nextSibling);
+                        projectModelSelect.value = existingModel;
+                        toggleProjectModelOthers(existingModel);
+                    }
+                });
+        }
+
+        // Legacy function kept for callers; delegate to API-based loader
+        function loadProjectModels(developer, preselectExisting = false) {
+            loadProjectModelsFromAPI(developer, preselectExisting);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1735,7 +1971,8 @@ foreach ($projectModels as $model) {
             // Initialize project models if developer is already selected
             const developerInput = document.getElementById('developer');
             if (developerInput && developerInput.value) {
-                loadProjectModels(developerInput.value);
+                // Initial page load: preselect existing model if available
+                loadProjectModelsFromAPI(developerInput.value, true);
             }
             
             // Price formatting
