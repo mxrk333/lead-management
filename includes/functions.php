@@ -906,6 +906,16 @@ function updateLead($leadId, $clientName, $phone, $email, $facebook, $linkedin,
                    $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks) {
     $conn = getDbConnection();
     
+    // Get the old status before updating
+    $old_status_stmt = $conn->prepare("SELECT status, user_id FROM leads WHERE id = ?");
+    $old_status_stmt->bind_param("i", $leadId);
+    $old_status_stmt->execute();
+    $old_status_result = $old_status_stmt->get_result();
+    $old_lead_data = $old_status_result->fetch_assoc();
+    $old_status = $old_lead_data['status'] ?? '';
+    $user_id = $old_lead_data['user_id'] ?? null;
+    $old_status_stmt->close();
+    
     $stmt = $conn->prepare("UPDATE leads SET client_name = ?, phone = ?, email = ?, 
                            facebook = ?, linkedin = ?, temperature = ?, status = ?, 
                            source = ?, lead_classification = ?, developer = ?, project_model = ?, price = ?, remarks = ? 
@@ -916,6 +926,12 @@ function updateLead($leadId, $clientName, $phone, $email, $facebook, $linkedin,
     $result = $stmt->execute();
     
     $stmt->close();
+    
+    // AUTOMATICALLY award raffle tickets if status changed
+    if ($result && $user_id && $old_status !== $status) {
+        awardRaffleTicketsForStatusChange($leadId, $user_id, $status, $old_status);
+    }
+    
     $conn->close();
     return $result;
 }
@@ -2171,9 +2187,25 @@ function awardRaffleTicketsForStatusChange($lead_id, $user_id, $new_status, $old
             return false;
         }
 
+        // Check if a ticket already exists for this lead and status to prevent duplicates
+        $stage_source = "Lead Status: " . $new_status;
+        $check_stmt = $conn->prepare("SELECT id FROM raffle_tickets 
+                                     WHERE lead_id = ? AND stage_source = ? 
+                                     LIMIT 1");
+        $check_stmt->bind_param("is", $lead_id, $stage_source);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        
+        if ($check_result->num_rows > 0) {
+            // Ticket already exists for this status change, skip creating duplicate
+            $check_stmt->close();
+            error_log("Raffle ticket already exists for Lead ID $lead_id, Status: $new_status - skipping duplicate");
+            return true;
+        }
+        $check_stmt->close();
+
         // Generate and insert raffle ticket
         $ticket_number = generateRaffleTicketNumber();
-        $stage_source = "Lead Status: " . $new_status;
         
         $insert_stmt = $conn->prepare("INSERT INTO raffle_tickets 
                                      (user_id, lead_id, ticket_number, full_name, phone_number, email_address, team_id, stage_source) 
@@ -2425,7 +2457,7 @@ function awardRaffleTicketsForSpotDP($lead_id, $user_id, $dp_terms) {
 }
 
 /**
- * Get raffle tickets with filtering options
+ * Get raffle tickets with filtering options - Gets data from leads table (current status)
  * 
  * @param array $filters Filter options
  * @param int $limit Limit results
@@ -2443,63 +2475,73 @@ function getRaffleTickets($filters = [], $limit = null, $offset = 0) {
         $params = [];
         $types = '';
 
-        // Build WHERE conditions based on filters
+        // Define raffle-eligible statuses
+        $raffle_stages = [
+            'Inquiry', 'Presentation Stage', 'Negotiation', 'Closed', 'Lost',
+            'Site Tour', 'Closed Deal', 'Requirement Stage', 'Downpayment Stage',
+            'Housing Loan Application', 'Loan Approval', 'Loan Takeout',
+            'House Inspection', 'House Turn Over'
+        ];
+        $raffle_stages_str = "'" . implode("','", $raffle_stages) . "'";
+        
+        // Base condition - only raffle-eligible statuses
+        $where_conditions[] = "l.status IN ($raffle_stages_str)";
+
+        // Build additional WHERE conditions based on filters
         if (!empty($filters['team_id'])) {
-            $where_conditions[] = "rt.team_id = ?";
+            $where_conditions[] = "u.team_id = ?";
             $params[] = $filters['team_id'];
             $types .= 'i';
         }
 
         if (!empty($filters['user_id'])) {
-            $where_conditions[] = "rt.user_id = ?";
+            $where_conditions[] = "l.user_id = ?";
             $params[] = $filters['user_id'];
             $types .= 'i';
         }
 
         if (!empty($filters['stage_source'])) {
-            $where_conditions[] = "rt.stage_source LIKE ?";
+            $where_conditions[] = "l.status LIKE ?";
             $params[] = '%' . $filters['stage_source'] . '%';
             $types .= 's';
         }
 
         if (!empty($filters['date_from'])) {
-            $where_conditions[] = "DATE(rt.created_at) >= ?";
+            $where_conditions[] = "DATE(l.updated_at) >= ?";
             $params[] = $filters['date_from'];
             $types .= 's';
         }
 
         if (!empty($filters['date_to'])) {
-            $where_conditions[] = "DATE(rt.created_at) <= ?";
+            $where_conditions[] = "DATE(l.updated_at) <= ?";
             $params[] = $filters['date_to'];
             $types .= 's';
         }
 
-        $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+        $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
 
-        // Build query - group by user and get ticket counts with original modification dates
-        $query = "SELECT rt.user_id, rt.full_name, u.phone as phone_number, u.email as email_address, rt.team_id,
+        // Simple query - get leads with raffle-eligible statuses, grouped by user
+        // Include team information for transparency
+        $query = "SELECT l.user_id, 
+                         u.name as full_name, 
+                         u.phone as phone_number, 
+                         u.email as email_address, 
+                         u.team_id,
+                         t.name as team_name,
+                         u.role as user_role,
                          COUNT(*) as ticket_count,
-                         GROUP_CONCAT(rt.ticket_number ORDER BY rt.created_at DESC) as ticket_numbers,
-                         GROUP_CONCAT(rt.stage_source ORDER BY rt.created_at DESC) as stage_sources,
-                         GROUP_CONCAT(rt.created_at ORDER BY rt.created_at DESC) as created_dates,
-                         GROUP_CONCAT(
-                             CASE 
-                                 WHEN rt.stage_source LIKE 'Lead Status:%' THEN l.updated_at
-                                 WHEN rt.stage_source LIKE 'DP Stage:%' THEN dt.updated_at
-                                 WHEN rt.stage_source LIKE 'Requirement:%' THEN dt.updated_at
-                                 WHEN rt.stage_source LIKE 'Spot DP:%' THEN dt.updated_at
-                                 ELSE rt.created_at
-                             END ORDER BY rt.created_at DESC
-                         ) as modification_dates,
-                         MIN(rt.created_at) as first_ticket_date,
-                         MAX(rt.created_at) as latest_ticket_date
-                 FROM raffle_tickets rt 
-                 LEFT JOIN users u ON rt.user_id = u.id
-                 LEFT JOIN leads l ON rt.lead_id = l.id 
-                 LEFT JOIN downpayment_tracker dt ON rt.lead_id = dt.lead_id
+                         GROUP_CONCAT(CONCAT('LMS', LPAD(l.id, 3, '0')) ORDER BY l.updated_at DESC) as ticket_numbers,
+                         GROUP_CONCAT(CONCAT('Lead Status: ', l.status) ORDER BY l.updated_at DESC) as stage_sources,
+                         GROUP_CONCAT(l.updated_at ORDER BY l.updated_at DESC) as created_dates,
+                         GROUP_CONCAT(l.updated_at ORDER BY l.updated_at DESC) as modification_dates,
+                         MIN(l.updated_at) as first_ticket_date,
+                         MAX(l.updated_at) as latest_ticket_date
+                 FROM leads l
+                 LEFT JOIN users u ON l.user_id = u.id
+                 LEFT JOIN teams t ON u.team_id = t.id
                  $where_clause 
-                 GROUP BY rt.user_id
-                 ORDER BY latest_ticket_date DESC";
+                 GROUP BY l.user_id
+                 ORDER BY t.name ASC, latest_ticket_date DESC";
 
         if ($limit) {
             $query .= " LIMIT ? OFFSET ?";
@@ -2522,14 +2564,16 @@ function getRaffleTickets($filters = [], $limit = null, $offset = 0) {
         $stmt->close();
 
         // Get total count for pagination
-        $count_query = "SELECT COUNT(*) as total FROM raffle_tickets rt $where_clause";
+        $count_query = "SELECT COUNT(DISTINCT l.user_id) as total 
+                       FROM leads l
+                       LEFT JOIN users u ON l.user_id = u.id
+                       $where_clause";
         $count_stmt = $conn->prepare($count_query);
         
         // Prepare count parameters (exclude limit/offset)
         $count_params = [];
         $count_types = '';
         if (!empty($params)) {
-            // Remove the last 2 parameters (limit and offset) if they exist
             $count_params = array_slice($params, 0, -2);
             $count_types = substr($types, 0, -2);
         }
@@ -2552,12 +2596,12 @@ function getRaffleTickets($filters = [], $limit = null, $offset = 0) {
 
     } catch (Exception $e) {
         error_log("Error getting raffle tickets: " . $e->getMessage());
-        return ['success' => false, 'message' => 'Failed to retrieve raffle tickets'];
+        return ['success' => false, 'message' => 'Failed to retrieve raffle tickets: ' . $e->getMessage()];
     }
 }
 
 /**
- * Get detailed raffle tickets for a specific user
+ * Get detailed raffle tickets for a specific user - Gets data from leads table
  * 
  * @param int $user_id User ID
  * @return array Detailed tickets data
@@ -2568,20 +2612,35 @@ function getUserRaffleTickets($user_id) {
         return ['success' => false, 'message' => 'Database connection failed'];
     }
 
-        try {
-            $query = "SELECT rt.*, l.client_name, l.status as lead_status, l.updated_at as lead_updated_at, dt.updated_at as dp_updated_at,
-                             CASE 
-                                 WHEN rt.stage_source LIKE 'Lead Status:%' THEN l.updated_at
-                                 WHEN rt.stage_source LIKE 'DP Stage:%' THEN dt.updated_at
-                                 WHEN rt.stage_source LIKE 'Requirement:%' THEN dt.updated_at
-                                 WHEN rt.stage_source LIKE 'Spot DP:%' THEN dt.updated_at
-                                 ELSE rt.created_at
-                             END as modification_date
-                     FROM raffle_tickets rt 
-                     LEFT JOIN leads l ON rt.lead_id = l.id 
-                     LEFT JOIN downpayment_tracker dt ON rt.lead_id = dt.lead_id
-                     WHERE rt.user_id = ?
-                     ORDER BY rt.created_at DESC";
+    try {
+        // Define raffle-eligible statuses
+        $raffle_stages = [
+            'Inquiry', 'Presentation Stage', 'Negotiation', 'Closed', 'Lost',
+            'Site Tour', 'Closed Deal', 'Requirement Stage', 'Downpayment Stage',
+            'Housing Loan Application', 'Loan Approval', 'Loan Takeout',
+            'House Inspection', 'House Turn Over'
+        ];
+        $raffle_stages_str = "'" . implode("','", $raffle_stages) . "'";
+
+        $query = "SELECT l.id,
+                         l.id as lead_id,
+                         l.user_id,
+                         CONCAT('LMS', LPAD(l.id, 3, '0')) as ticket_number,
+                         u.name as full_name,
+                         l.client_name,
+                         l.phone as phone_number,
+                         l.email as email_address,
+                         u.team_id,
+                         CONCAT('Lead Status: ', l.status) as stage_source,
+                         l.updated_at as created_at,
+                         l.updated_at as modification_date,
+                         l.status as lead_status,
+                         l.updated_at as lead_updated_at
+                  FROM leads l
+                  LEFT JOIN users u ON l.user_id = u.id
+                  WHERE l.user_id = ? 
+                    AND l.status IN ($raffle_stages_str)
+                  ORDER BY l.updated_at DESC";
         
         $stmt = $conn->prepare($query);
         $stmt->bind_param("i", $user_id);
@@ -2602,9 +2661,121 @@ function getUserRaffleTickets($user_id) {
 
     } catch (Exception $e) {
         error_log("Error getting user raffle tickets: " . $e->getMessage());
-        return ['success' => false, 'message' => 'Failed to retrieve user raffle tickets'];
+        return ['success' => false, 'message' => 'Failed to retrieve user raffle tickets: ' . $e->getMessage()];
     }
 }
+
+/**
+ * Get raffle tickets by set (A, B, or C) for the wheel spin
+ * 
+ * @param string $set The set to get tickets for (A, B, or C)
+ * @param array $filters Additional filters
+ * @return array Tickets data
+ */
+function getTicketsBySet($set, $filters = []) {
+    $conn = getDbConnection();
+    if (!$conn) {
+        return ['success' => false, 'message' => 'Database connection failed'];
+    }
+
+    try {
+        // Define ticket count thresholds for each set
+        $thresholds = [
+            'A' => 10,  // 10+ tickets
+            'B' => 20,  // 20+ tickets
+            'C' => 50   // 50+ tickets
+        ];
+
+        if (!isset($thresholds[$set])) {
+            return ['success' => false, 'message' => 'Invalid set specified'];
+        }
+
+        $threshold = $thresholds[$set];
+        $params = [];
+        $types = '';
+        $where_conditions = ["l.status IN ('Closed Deal', 'Closed', 'Loan Takeout', 'House Turn Over')"];
+
+        // Base query to get users with their ticket counts
+        $query = "SELECT 
+                    u.id as user_id,
+                    u.name,
+                    u.team_id,
+                    t.name as team_name,
+                    COUNT(DISTINCT l.id) as ticket_count
+                  FROM users u
+                  LEFT JOIN leads l ON u.id = l.user_id
+                  LEFT JOIN teams t ON u.team_id = t.id
+                  WHERE " . implode(' AND ', $where_conditions);
+
+        // Add team filter if specified
+        if (!empty($filters['team_id'])) {
+            $query .= " AND u.team_id = ?";
+            $params[] = $filters['team_id'];
+            $types .= 'i';
+        }
+
+        // Add user filter if specified
+        if (!empty($filters['user_id'])) {
+            $query .= " AND u.id = ?";
+            $params[] = $filters['user_id'];
+            $types .= 'i';
+        }
+
+               // Add date range filter if specified
+        if (!empty($filters['date_from'])) {
+            $query .= " AND DATE(l.updated_at) >= ?";
+            $params[] = $filters['date_from'];
+            $types .= 's';
+        }
+
+        if (!empty($filters['date_to'])) {
+            $query .= " AND DATE(l.updated_at) <= ?";
+            $params[] = $filters['date_to'];
+            $types .= 's';
+        }
+
+        // Group by user and apply ticket count threshold
+        $query .= " GROUP BY u.id, u.name, u.team_id, t.name
+                    HAVING ticket_count >= ?
+                    ORDER BY ticket_count DESC";
+        
+        $params[] = $threshold;
+        $types .= 'i';
+
+        $stmt = $conn->prepare($query);
+        
+        // Bind parameters if any
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $tickets = [];
+        while ($row = $result->fetch_assoc()) {
+            $tickets[] = [
+                'id' => $row['user_id'],
+                'name' => $row['name'],
+                'team_id' => $row['team_id'],
+                'team_name' => $row['team_name'],
+                'ticket_count' => (int)$row['ticket_count']
+            ];
+        }
+        $stmt->close();
+
+        return [
+            'success' => true,
+            'tickets' => $tickets,
+            'total' => count($tickets)
+        ];
+
+    } catch (Exception $e) {
+        error_log("Error getting tickets by set: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Failed to retrieve tickets: ' . $e->getMessage()];
+    }
+}
+
 
 // AJAX Handler - This is crucial for the dashboard to work
 if (isset($_POST['action'])) {

@@ -54,7 +54,7 @@ function canEditLead($lead, $current_user_id) {
 
 // isSuperUser is provided globally in includes/functions.php
 
-// Pagination settings
+// Pagination settings 
 $leads_per_page = 10;
 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $current_page = max(1, $current_page);
@@ -1344,7 +1344,24 @@ function getStatusBadgeClass($status) {
                                     value="<?php echo htmlspecialchars($search_term); ?>"
                                 >
                             </div>
-                            
+
+                                <div class="filter-group">
+                                    <label class="filter-label">Month</label>
+                                    <select name="month" class="filter-select" onchange="this.form.submit()">
+                                        <option value="all" <?= $month === 'all' ? 'selected' : ''; ?>>All Months</option>
+                                        <option value="1" <?= $month === '1' ? 'selected' : ''; ?>>January</option>
+                                        <option value="2" <?= $month === '2' ? 'selected' : ''; ?>>February</option>
+                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>March</option>
+                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>April</option>
+                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>May</option>
+                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>June</option>
+                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>July</option>
+                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>August</option>
+
+                                    </select>
+                                </div>
+
+
                             <div class="action-group">
                                 <button type="submit" class="search-button">
                                     <i class="fas fa-search"></i>
