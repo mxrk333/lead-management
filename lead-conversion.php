@@ -68,6 +68,20 @@ if (!in_array($status_filter, $valid_filters)) {
     $status_filter = 'all';
 }
 
+// Month and Year filtering
+$month_filter = isset($_GET['month']) ? $_GET['month'] : 'all';
+$year_filter = isset($_GET['year']) ? $_GET['year'] : 'all';
+
+// Validate month (1-12 or 'all')
+if ($month_filter !== 'all' && (!is_numeric($month_filter) || (int)$month_filter < 1 || (int)$month_filter > 12)) {
+    $month_filter = 'all';
+}
+// Validate year
+$current_year = (int)date('Y');
+if ($year_filter !== 'all' && (!is_numeric($year_filter) || (int)$year_filter < 2020 || (int)$year_filter > $current_year + 1)) {
+    $year_filter = 'all';
+}
+
 // ENHANCED: Define conversion statuses with proper categorization
 // Only House Turn Over is considered fully Closed Deal
 $closed_statuses = ['House Turn Over'];
@@ -93,6 +107,15 @@ switch ($status_filter) {
 
 $status_placeholders = str_repeat('?,', count($conversion_statuses) - 1) . '?';
 $whereClause = "WHERE l.status IN ($status_placeholders)";
+
+// Add month/year conditions to WHERE clause
+$month_condition = '';
+if ($month_filter !== 'all') {
+    $month_condition .= " AND MONTH(l.created_at) = " . (int)$month_filter;
+}
+if ($year_filter !== 'all') {
+    $month_condition .= " AND YEAR(l.created_at) = " . (int)$year_filter;
+}
 
 // Check if search is active
 $search_active = false;
@@ -136,6 +159,7 @@ $count_query = "
     FROM leads l
     LEFT JOIN users u ON l.user_id = u.id
     $whereClause
+    $month_condition
     $search_condition
 ";
 
@@ -213,6 +237,7 @@ $query = "
     LEFT JOIN teams t ON u.team_id = t.id
     LEFT JOIN downpayment_tracker dt ON l.id = dt.lead_id
     $whereClause
+    $month_condition
     $search_condition
     ORDER BY 
         CASE 
@@ -279,6 +304,7 @@ FROM leads l
 LEFT JOIN users u ON l.user_id = u.id
 LEFT JOIN downpayment_tracker dt ON l.id = dt.lead_id
 WHERE l.status IN ($all_status_placeholders)
+$month_condition
 ";
 
 // Apply role-based filtering to stats query
@@ -1345,29 +1371,41 @@ function getStatusBadgeClass($status) {
                                 >
                             </div>
 
-                                <div class="filter-group">
-                                    <label class="filter-label">Month</label>
-                                    <select name="month" class="filter-select" onchange="this.form.submit()">
-                                        <option value="all" <?= $month === 'all' ? 'selected' : ''; ?>>All Months</option>
-                                        <option value="1" <?= $month === '1' ? 'selected' : ''; ?>>January</option>
-                                        <option value="2" <?= $month === '2' ? 'selected' : ''; ?>>February</option>
-                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>March</option>
-                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>April</option>
-                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>May</option>
-                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>June</option>
-                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>July</option>
-                                        <option value="3" <?= $month === '3' ? 'selected' : ''; ?>>August</option>
+                            <div class="filter-group">
+                                <label class="filter-label">Month</label>
+                                <select name="month" class="filter-select">
+                                    <option value="all" <?php echo $month_filter === 'all' ? 'selected' : ''; ?>>All Months</option>
+                                    <option value="1" <?php echo $month_filter === '1' ? 'selected' : ''; ?>>January</option>
+                                    <option value="2" <?php echo $month_filter === '2' ? 'selected' : ''; ?>>February</option>
+                                    <option value="3" <?php echo $month_filter === '3' ? 'selected' : ''; ?>>March</option>
+                                    <option value="4" <?php echo $month_filter === '4' ? 'selected' : ''; ?>>April</option>
+                                    <option value="5" <?php echo $month_filter === '5' ? 'selected' : ''; ?>>May</option>
+                                    <option value="6" <?php echo $month_filter === '6' ? 'selected' : ''; ?>>June</option>
+                                    <option value="7" <?php echo $month_filter === '7' ? 'selected' : ''; ?>>July</option>
+                                    <option value="8" <?php echo $month_filter === '8' ? 'selected' : ''; ?>>August</option>
+                                    <option value="9" <?php echo $month_filter === '9' ? 'selected' : ''; ?>>September</option>
+                                    <option value="10" <?php echo $month_filter === '10' ? 'selected' : ''; ?>>October</option>
+                                    <option value="11" <?php echo $month_filter === '11' ? 'selected' : ''; ?>>November</option>
+                                    <option value="12" <?php echo $month_filter === '12' ? 'selected' : ''; ?>>December</option>
+                                </select>
+                            </div>
 
-                                    </select>
-                                </div>
-
+                            <div class="filter-group">
+                                <label class="filter-label">Year</label>
+                                <select name="year" class="filter-select">
+                                    <option value="all" <?php echo $year_filter === 'all' ? 'selected' : ''; ?>>All Years</option>
+                                    <?php for ($y = $current_year; $y >= 2020; $y--): ?>
+                                    <option value="<?php echo $y; ?>" <?php echo $year_filter === (string)$y ? 'selected' : ''; ?>><?php echo $y; ?></option>
+                                    <?php endfor; ?>
+                                </select>
+                            </div>
 
                             <div class="action-group">
                                 <button type="submit" class="search-button">
                                     <i class="fas fa-search"></i>
                                     Apply Filters
                                 </button>
-                                <?php if ($search_active || $status_filter !== 'all'): ?>
+                                <?php if ($search_active || $status_filter !== 'all' || $month_filter !== 'all' || $year_filter !== 'all'): ?>
                                 <a href="lead-conversion.php" class="search-reset" title="Clear all filters">
                                     <i class="fas fa-times"></i>
                                     Clear
@@ -1531,6 +1569,12 @@ function getStatusBadgeClass($status) {
                             <?php 
                             if ($search_active) {
                                 echo "No leads found matching your search criteria.";
+                            } elseif ($month_filter !== 'all' || $year_filter !== 'all') {
+                                $month_names = ['1'=>'January','2'=>'February','3'=>'March','4'=>'April','5'=>'May','6'=>'June','7'=>'July','8'=>'August','9'=>'September','10'=>'October','11'=>'November','12'=>'December'];
+                                $filter_desc = '';
+                                if ($month_filter !== 'all') $filter_desc .= $month_names[$month_filter] . ' ';
+                                if ($year_filter !== 'all') $filter_desc .= $year_filter;
+                                echo "No leads found for " . trim($filter_desc) . ".";
                             } elseif ($status_filter !== 'all') {
                                 echo "No leads found for the selected status filter.";
                             } else {

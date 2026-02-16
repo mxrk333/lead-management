@@ -4,7 +4,8 @@ if (!function_exists('isSuperUser')) {
         $superusers = [
             'markpatigayon.itadmin',
             'gabriellibacao.founder',
-            'romeocorberta.itdept'
+            'romeocorberta.itdept',
+            'charlenedellosa.opsman'
         ];
         return in_array($username, $superusers);
     }
