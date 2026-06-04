@@ -3,10 +3,12 @@
 $is_development = false;
 
 // Check if we're in a development environment
-if (isset($_SERVER['SERVER_NAME']) && 
-    ($_SERVER['SERVER_NAME'] == 'localhost' || 
-     strpos($_SERVER['SERVER_NAME'], '127.0.0.1') !== false ||
-     strpos($_SERVER['SERVER_NAME'], '.test') !== false)) {
+if (
+    isset($_SERVER['SERVER_NAME']) &&
+    ($_SERVER['SERVER_NAME'] == 'localhost' ||
+        strpos($_SERVER['SERVER_NAME'], '127.0.0.1') !== false ||
+        strpos($_SERVER['SERVER_NAME'], '.test') !== false)
+) {
     $is_development = true;
 }
 
@@ -34,7 +36,8 @@ ini_set('error_log', $error_log_path);
 
 // Database configuration
 // DreamHost detection using multiple methods
-function isDreamHost() {
+function isDreamHost()
+{
     // Method 1: Check HTTP_HOST
     if (isset($_SERVER['HTTP_HOST'])) {
         $possible_dreamhost_domains = ['dreamhosters.com', 'dreamhost.com', 'innersparcagents.com'];
@@ -59,20 +62,21 @@ function isDreamHost() {
 }
 
 // Get database connection
-function getDbConnection() {
+function getDbConnection()
+{
     try {
         // Determine environment
         $is_dreamhost = isDreamHost();
-        
+
         // Log connection attempt
         error_log("Attempting database connection. DreamHost environment: " . ($is_dreamhost ? 'true' : 'false'));
-        
+
         if ($is_dreamhost) {
             // DreamHost environment
-            $host = 'managementlead.innersparcagents.dreamhosters.com';
-            $username = 'managementlead';
+            $host = 'managementleaddb.innersparcagents.dreamhosters.com';
+            $username = 'managementleaddb';
             $password = 'innersparc123';
-            $database = 'managementlead';
+            $database = 'managementleaddb';
         } else {
             // Local development environment
             $host = 'localhost';
@@ -83,24 +87,24 @@ function getDbConnection() {
 
         // Create connection with error handling
         $conn = new mysqli($host, $username, $password, $database);
-        
+
         // Check connection
         if ($conn->connect_error) {
             throw new Exception("Connection failed: " . $conn->connect_error);
         }
-        
+
         // Set charset to utf8mb4 for proper Unicode support
         if (!$conn->set_charset("utf8mb4")) {
             error_log("Error setting charset to utf8mb4: " . $conn->error);
         }
-        
+
         // Log successful connection
         error_log("Database connection successful to {$host}/{$database}");
-        
+
         return $conn;
     } catch (Exception $e) {
         error_log("Database connection error: " . $e->getMessage());
-        
+
         // In production, don't expose error details
         if (!isDreamHost()) {
             throw $e; // Re-throw in development
@@ -112,7 +116,8 @@ function getDbConnection() {
 }
 
 // Function to check and reconnect if connection is lost
-function ensureConnection($conn) {
+function ensureConnection($conn)
+{
     if (!$conn->ping()) {
         error_log("Database connection lost. Attempting to reconnect...");
         $conn->close();
@@ -122,10 +127,11 @@ function ensureConnection($conn) {
 }
 
 // Function to safely execute queries with error handling
-function safeQuery($conn, $query, $params = [], $types = "") {
+function safeQuery($conn, $query, $params = [], $types = "")
+{
     try {
         $conn = ensureConnection($conn);
-        
+
         if (empty($params)) {
             // Simple query without parameters
             $result = $conn->query($query);
@@ -139,22 +145,22 @@ function safeQuery($conn, $query, $params = [], $types = "") {
             if ($stmt === false) {
                 throw new Exception("Prepare failed: " . $conn->error);
             }
-            
+
             if (!empty($types) && !empty($params)) {
                 $stmt->bind_param($types, ...$params);
             }
-            
+
             if (!$stmt->execute()) {
                 throw new Exception("Execute failed: " . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $stmt->close();
             return $result;
         }
     } catch (Exception $e) {
         error_log("Query error: " . $e->getMessage() . " - Query: " . $query);
-        
+
         if (!isDreamHost()) {
             throw $e; // Re-throw in development
         }
@@ -163,11 +169,12 @@ function safeQuery($conn, $query, $params = [], $types = "") {
 }
 
 // Initialize database tables if they don't exist
-function initializeDatabase() {
+function initializeDatabase()
+{
     $conn = null;
     try {
         $conn = getDbConnection();
-        
+
         // Check if projects table exists
         $result = $conn->query("SHOW TABLES LIKE 'projects'");
         if ($result->num_rows == 0) {
@@ -197,10 +204,10 @@ function initializeDatabase() {
                 FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE SET NULL,
                 FOREIGN KEY (province_id) REFERENCES provinces(id) ON DELETE SET NULL
             )");
-            
+
             error_log("Created projects table");
         }
-        
+
         // Check if provinces table exists
         $result = $conn->query("SHOW TABLES LIKE 'provinces'");
         if ($result->num_rows == 0) {
@@ -210,10 +217,10 @@ function initializeDatabase() {
                 name VARCHAR(100) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )");
-            
+
             error_log("Created provinces table");
         }
-        
+
         // Check if cities table exists
         $result = $conn->query("SHOW TABLES LIKE 'cities'");
         if ($result->num_rows == 0) {
@@ -225,10 +232,10 @@ function initializeDatabase() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (province_id) REFERENCES provinces(id) ON DELETE CASCADE
             )");
-            
+
             error_log("Created cities table");
         }
-        
+
         $conn->close();
     } catch (Exception $e) {
         error_log("Database initialization error: " . $e->getMessage());
