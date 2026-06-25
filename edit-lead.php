@@ -302,13 +302,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         if (empty($errors)) {
+            // Read extended demographics and AI fields
+            $city = isset($_POST['city']) ? trim($_POST['city']) : null;
+            $jobTitle = isset($_POST['job_title']) ? trim($_POST['job_title']) : null;
+            $relationshipStatus = isset($_POST['relationship_status']) ? trim($_POST['relationship_status']) : null;
+            $aiSummary = isset($_POST['ai_summary']) ? trim($_POST['ai_summary']) : null;
+            $leadQuality = isset($_POST['lead_quality']) && !empty($_POST['lead_quality']) ? trim($_POST['lead_quality']) : null;
+            $recommendedAction = isset($_POST['recommended_action']) ? trim($_POST['recommended_action']) : null;
+            $googleSheetRowId = isset($_POST['google_sheet_row_id']) ? trim($_POST['google_sheet_row_id']) : null;
+
             // ENHANCED: Check for status change and log it automatically
             $statusChanged = ($original_lead['status'] !== $status);
             
             // Update lead in database
             $result = updateLead(
                 $lead_id, $clientName, $phone, $email, $facebook, $linkedin, 
-                $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks
+                $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks,
+                $city, $jobTitle, $relationshipStatus, $aiSummary, $leadQuality, $recommendedAction, $googleSheetRowId
             );
             
             if ($result) {
@@ -332,7 +342,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'lead_classification' => [$original_lead['lead_classification'], $leadClassification],
                     'developer' => [$original_lead['developer'], $developer],
                     'project_model' => [$original_lead['project_model'], $projectModel],
-                    'price' => [$original_lead['price'], $price]
+                    'price' => [$original_lead['price'], $price],
+                    'city' => [$original_lead['city'] ?? '', $city],
+                    'job_title' => [$original_lead['job_title'] ?? '', $jobTitle],
+                    'relationship_status' => [$original_lead['relationship_status'] ?? '', $relationshipStatus],
+                    'lead_quality' => [$original_lead['lead_quality'] ?? '', $leadQuality],
+                    'ai_summary' => [$original_lead['ai_summary'] ?? '', $aiSummary],
+                    'recommended_action' => [$original_lead['recommended_action'] ?? '', $recommendedAction]
                 ];
                 
                 foreach ($fieldsToTrack as $fieldName => $values) {
@@ -1277,6 +1293,68 @@ foreach ($projectModels as $model) {
                                 <label for="remarks">Remarks <span class="optional-field">(Optional)</span></label>
                                 <textarea id="remarks" name="remarks" rows="4" maxlength="1000"
                                           placeholder="Add any additional notes or comments about this lead"><?php echo htmlspecialchars($lead['remarks']); ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3>AI Insights & Facebook Demographics</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="city">City / Location <span class="optional-field">(Optional)</span></label>
+                                <input type="text" id="city" name="city" 
+                                       value="<?php echo htmlspecialchars($lead['city'] ?? ''); ?>"
+                                       placeholder="e.g. Cavite" maxlength="255">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="job_title">Job Title / Occupation <span class="optional-field">(Optional)</span></label>
+                                <input type="text" id="job_title" name="job_title" 
+                                       value="<?php echo htmlspecialchars($lead['job_title'] ?? ''); ?>"
+                                       placeholder="e.g. Engineer" maxlength="255">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="relationship_status">Relationship Status <span class="optional-field">(Optional)</span></label>
+                                <input type="text" id="relationship_status" name="relationship_status" 
+                                       value="<?php echo htmlspecialchars($lead['relationship_status'] ?? ''); ?>"
+                                       placeholder="e.g. Married, Single" maxlength="100">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="lead_quality">AI Lead Quality <span class="optional-field">(Optional)</span></label>
+                                <select id="lead_quality" name="lead_quality">
+                                    <option value="" <?php echo empty($lead['lead_quality']) ? 'selected' : ''; ?>>Not Scored</option>
+                                    <option value="Low" <?php echo ($lead['lead_quality'] ?? '') === 'Low' ? 'selected' : ''; ?>>Low</option>
+                                    <option value="Medium" <?php echo ($lead['lead_quality'] ?? '') === 'Medium' ? 'selected' : ''; ?>>Medium</option>
+                                    <option value="High" <?php echo ($lead['lead_quality'] ?? '') === 'High' ? 'selected' : ''; ?>>High</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="ai_summary">AI Summary <span class="optional-field">(Optional)</span></label>
+                                <textarea id="ai_summary" name="ai_summary" rows="3" placeholder="AI-generated profile summary..."><?php echo htmlspecialchars($lead['ai_summary'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="recommended_action">AI Recommended Action <span class="optional-field">(Optional)</span></label>
+                                <textarea id="recommended_action" name="recommended_action" rows="3" placeholder="AI-generated recommended sales action..."><?php echo htmlspecialchars($lead['recommended_action'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="google_sheet_row_id">Google Sheet Row ID / Import Reference <span class="optional-field">(Optional)</span></label>
+                                <input type="text" id="google_sheet_row_id" name="google_sheet_row_id" 
+                                       value="<?php echo htmlspecialchars($lead['google_sheet_row_id'] ?? ''); ?>"
+                                       placeholder="e.g. sheet_row_12" maxlength="100">
                             </div>
                         </div>
                     </div>

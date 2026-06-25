@@ -1980,5 +1980,8 @@
             });
         </script>
         <script src="assets/js/script.js"></script>
+        
+        <!-- AI Chatbot Widget -->
+        <?php include 'includes/chatbot-widget.php'; ?>
     </body>
     </html>

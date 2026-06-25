@@ -887,12 +887,12 @@ function getLeadById($leadId, $userId, $userRole) {
     return false;
 }
 
-function addLead($user_id, $client_name, $phone, $email, $facebook, $linkedin, $temperature, $status, $source, $lead_classification, $developer, $project_model, $price, $remarks) {
+function addLead($user_id, $client_name, $phone, $email, $facebook, $linkedin, $temperature, $status, $source, $lead_classification, $developer, $project_model, $price, $remarks, $city = null, $job_title = null, $relationship_status = null, $ai_summary = null, $lead_quality = null, $recommended_action = null, $google_sheet_row_id = null) {
     $conn = getDbConnection();
     
-    $stmt = $conn->prepare("INSERT INTO leads (user_id, client_name, phone, email, facebook, linkedin, temperature, status, source, lead_classification, developer, project_model, price, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO leads (user_id, client_name, phone, email, facebook, linkedin, temperature, status, source, lead_classification, developer, project_model, price, remarks, city, job_title, relationship_status, ai_summary, lead_quality, recommended_action, google_sheet_row_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
-    $stmt->bind_param("isssssssssssds", $user_id, $client_name, $phone, $email, $facebook, $linkedin, $temperature, $status, $source, $lead_classification, $developer, $project_model, $price, $remarks);
+    $stmt->bind_param("isssssssssssdssssssss", $user_id, $client_name, $phone, $email, $facebook, $linkedin, $temperature, $status, $source, $lead_classification, $developer, $project_model, $price, $remarks, $city, $job_title, $relationship_status, $ai_summary, $lead_quality, $recommended_action, $google_sheet_row_id);
     
     $result = $stmt->execute();
     $insert_id = $conn->insert_id;
@@ -904,7 +904,7 @@ function addLead($user_id, $client_name, $phone, $email, $facebook, $linkedin, $
 }
 
 function updateLead($leadId, $clientName, $phone, $email, $facebook, $linkedin, 
-                   $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks) {
+                   $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks, $city = null, $job_title = null, $relationship_status = null, $ai_summary = null, $lead_quality = null, $recommended_action = null, $google_sheet_row_id = null) {
     $conn = getDbConnection();
     
     // Get the old status before updating
@@ -919,11 +919,13 @@ function updateLead($leadId, $clientName, $phone, $email, $facebook, $linkedin,
     
     $stmt = $conn->prepare("UPDATE leads SET client_name = ?, phone = ?, email = ?, 
                            facebook = ?, linkedin = ?, temperature = ?, status = ?, 
-                           source = ?, lead_classification = ?, developer = ?, project_model = ?, price = ?, remarks = ? 
+                           source = ?, lead_classification = ?, developer = ?, project_model = ?, price = ?, remarks = ?,
+                           city = ?, job_title = ?, relationship_status = ?, ai_summary = ?, lead_quality = ?, recommended_action = ?, google_sheet_row_id = ? 
                            WHERE id = ?");
 
-    $stmt->bind_param("sssssssssssdsi", $clientName, $phone, $email, $facebook, $linkedin,
-                     $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks, $leadId);
+    $stmt->bind_param("sssssssssssdsisssssssi", $clientName, $phone, $email, $facebook, $linkedin,
+                     $temperature, $status, $source, $leadClassification, $developer, $projectModel, $price, $remarks, 
+                     $city, $job_title, $relationship_status, $ai_summary, $lead_quality, $recommended_action, $google_sheet_row_id, $leadId);
     $result = $stmt->execute();
     
     $stmt->close();

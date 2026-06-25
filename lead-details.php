@@ -772,6 +772,50 @@ if (!$isSuperUser && !$isLeadOwner) {
                             <span class="status-value"><?php echo htmlspecialchars($lead['status']); ?></span>
                         </div>
                         
+                        <?php if (!empty($lead['ai_summary']) || !empty($lead['lead_quality'])): ?>
+                        <div class="lead-info-section ai-insights-section" style="background: linear-gradient(135deg, #f5f3ff 0%, #edd8fc 100%); padding: 1.25rem; border-radius: 0.5rem; border: 1px solid #c084fc; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(109, 40, 217, 0.1);">
+                            <h4 style="color: #6d28d9; border-bottom: 1px dashed #c084fc; font-weight: 700; margin-bottom: 0.75rem; margin-top: 0; padding-bottom: 0.5rem;"><i class="fas fa-magic"></i> Gemini AI Insights</h4>
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <?php if (!empty($lead['lead_quality'])): ?>
+                                <div>
+                                    <span class="info-label" style="color: #6d28d9; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 0.375rem;"><i class="fas fa-tachometer-alt"></i> AI Lead Quality:</span>
+                                    <span class="quality-badge quality-<?php echo strtolower($lead['lead_quality']); ?>" style="display: inline-block; font-weight: 700; font-size: 0.85rem; padding: 0.25rem 0.625rem; border-radius: 9999px; margin-top: 0.25rem;
+                                        <?php
+                                        if ($lead['lead_quality'] === 'High') {
+                                            echo 'background-color: #d1fae5; color: #065f46; border: 1px solid #10b981;';
+                                        } elseif ($lead['lead_quality'] === 'Medium') {
+                                            echo 'background-color: #fef3c7; color: #92400e; border: 1px solid #f59e0b;';
+                                        } else {
+                                            echo 'background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db;';
+                                        }
+                                        ?>
+                                    ">
+                                        <?php echo htmlspecialchars($lead['lead_quality']); ?> Quality
+                                    </span>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <?php if (!empty($lead['ai_summary'])): ?>
+                                <div>
+                                    <span class="info-label" style="color: #6d28d9; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 0.375rem;"><i class="fas fa-file-alt"></i> Summary:</span>
+                                    <p style="font-size: 0.875rem; color: #4c1d95; line-height: 1.5; margin: 0.25rem 0 0 0; font-style: italic;">
+                                        "<?php echo htmlspecialchars($lead['ai_summary']); ?>"
+                                    </p>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <?php if (!empty($lead['recommended_action'])): ?>
+                                <div>
+                                    <span class="info-label" style="color: #6d28d9; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 0.375rem;"><i class="fas fa-lightbulb"></i> Recommended Action:</span>
+                                    <p style="font-size: 0.875rem; color: #1e1b4b; line-height: 1.5; margin: 0.25rem 0 0 0; background: rgba(255, 255, 255, 0.7); padding: 0.5rem; border-radius: 0.375rem; border-left: 3px solid #8b5cf6;">
+                                        <?php echo htmlspecialchars($lead['recommended_action']); ?>
+                                    </p>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        
                         <div class="lead-info-section">
                             <h4>Contact Information</h4>
                             <div class="info-grid">
@@ -824,6 +868,41 @@ if (!$isSuperUser && !$isLeadOwner) {
                                 <?php endif; ?>
                             </div>
                         </div>
+                        
+                        <?php if (!empty($lead['city']) || !empty($lead['job_title']) || !empty($lead['relationship_status']) || !empty($lead['google_sheet_row_id'])): ?>
+                        <div class="lead-info-section">
+                            <h4>Facebook Form Demographics</h4>
+                            <div class="info-grid">
+                                <?php if (!empty($lead['city'])): ?>
+                                <div class="info-item">
+                                    <span class="info-label"><i class="fas fa-map-marker-alt"></i> City / Location:</span>
+                                    <span class="info-value"><?php echo htmlspecialchars($lead['city']); ?></span>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <?php if (!empty($lead['job_title'])): ?>
+                                <div class="info-item">
+                                    <span class="info-label"><i class="fas fa-briefcase"></i> Job Title / Occupation:</span>
+                                    <span class="info-value"><?php echo htmlspecialchars($lead['job_title']); ?></span>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <?php if (!empty($lead['relationship_status'])): ?>
+                                <div class="info-item">
+                                    <span class="info-label"><i class="fas fa-heart"></i> Relationship Status:</span>
+                                    <span class="info-value"><?php echo htmlspecialchars($lead['relationship_status']); ?></span>
+                                </div>
+                                <?php endif; ?>
+
+                                <?php if (!empty($lead['google_sheet_row_id'])): ?>
+                                <div class="info-item">
+                                    <span class="info-label"><i class="fas fa-database"></i> Import Reference:</span>
+                                    <span class="info-value"><code style="font-family: monospace; font-size: 0.8rem; background-color: var(--gray-100); padding: 0.1rem 0.3rem; border-radius: 0.25rem;"><?php echo htmlspecialchars($lead['google_sheet_row_id']); ?></code></span>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                         
                         <div class="lead-info-section">
                             <h4>Property Interest</h4>

@@ -130,6 +130,13 @@ if (!empty($user['profile_picture'])) {
                             </a>
                         </li>
                         
+                        <li class="nav-item">
+                            <a href="<?php echo $base_url; ?>ai-assistant.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'ai-assistant.php' ? 'active' : ''; ?>">
+                                <i class="fas fa-wand-magic-sparkles nav-icon"></i>
+                                <span class="nav-text">Campaign Optimizer</span>
+                            </a>
+                        </li>
+                        
                         <li class="nav-item has-submenu">
                             <button class="nav-link submenu-trigger <?php echo in_array(basename($_SERVER['PHP_SELF']), ['leads.php', 'add-lead.php', 'edit-lead.php', 'lead-details.php', 'lead-conversion.php']) ? 'active' : ''; ?>" data-submenu="leads">
                                 <i class="fas fa-users nav-icon"></i>

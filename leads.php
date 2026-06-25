@@ -403,6 +403,14 @@ if (isset($_POST['ajax']) && $_POST['ajax'] == '1') {
                                         echo '************';
                                     }
                                 }
+                                
+                                // Show AI quality badge if available
+                                if (!empty($lead['lead_quality'])) {
+                                    $q = htmlspecialchars($lead['lead_quality']);
+                                    $q_lower = strtolower($q);
+                                    $icon = $q === 'High' ? 'fa-bolt' : ($q === 'Medium' ? 'fa-star' : 'fa-info');
+                                    echo "<span class='badge-quality quality-{$q_lower}'><i class='fas {$icon}'></i> {$q}</span>";
+                                }
                             ?></td>
                             <td>
                                 <?php
@@ -1726,6 +1734,42 @@ $activeCardCount = $my_leads_filter_active ? count($filtered_all) : count($all_l
         #callModal .modal-body {
             padding: 1.5rem;
         }
+        /* AI Quality Badges */
+        .badge-quality {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+        
+        .badge-quality i {
+            font-size: 0.7rem;
+        }
+        
+        .quality-high {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .quality-medium {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+        
+        .quality-low {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
     </style>
 </head>
 <body>
@@ -1919,6 +1963,14 @@ $activeCardCount = $my_leads_filter_active ? count($filtered_all) : count($all_l
                                             } else {
                                                 echo '************';
                                             }
+                                        }
+
+                                        // Show AI quality badge if available
+                                        if (!empty($lead['lead_quality'])) {
+                                            $q = htmlspecialchars($lead['lead_quality']);
+                                            $q_lower = strtolower($q);
+                                            $icon = $q === 'High' ? 'fa-bolt' : ($q === 'Medium' ? 'fa-star' : 'fa-info');
+                                            echo "<span class='badge-quality quality-{$q_lower}'><i class='fas {$icon}'></i> {$q}</span>";
                                         }
                                     ?></td>
                                     <td>

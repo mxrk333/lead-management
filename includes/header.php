@@ -372,6 +372,10 @@ $unread_count = count(array_filter($notifications, function($n) {
                                 <i class="fas fa-question-circle"></i>
                                 <span>Help & Support</span>
                             </a>
+                            <a href="<?php echo $base_url; ?>ai-assistant.php" class="menu-item">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                                <span>Campaign Optimizer</span>
+                            </a>
                             <a href="#" class="menu-item" onclick="openReportModal(); return false;">
                                 <i class="fas fa-bug"></i>
                                 <span>Report a Problem</span>
