@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/switchboard-tracer.php';
+
 function getHelpDocuments() {
     return [
         [
@@ -195,7 +197,7 @@ function buildRagPrompt($question, $documents) {
 }
 
 function callGeminiModel($prompt) {
-    $apiKey = 'AQ.Ab8RN6Kw1CoGjGimjFzDeCqvdCfjNmSZjvPNmf2SULH6mBO8jQ';
+    $apiKey = getenv('GEMINI_API_KEY');
     $model = 'gemini-2.5-flash';
     $url = 'https://generativelanguage.googleapis.com/v1/models/' . $model . ':generateContent?key=' . $apiKey;
 
@@ -212,29 +214,44 @@ function callGeminiModel($prompt) {
     ];
 
     $headers = ['Content-Type: application/json'];
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 25);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
 
-    if ($curlError) {
-        return ['success' => false, 'error' => 'Connection error: ' . $curlError];
+    try {
+        return switchboard_traced([
+            'name' => 'chatbot.rag-response',
+            'model' => $model,
+            'inputs' => ['prompt' => $prompt],
+            'tags' => ['chatbot', 'gemini'],
+        ], function () use ($url, $headers, $postData) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError) {
+                throw new RuntimeException('Connection error: ' . $curlError);
+            }
+
+            $data = json_decode($response, true);
+            if ($httpCode !== 200 || !isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                $errorMessage = $data['error']['message'] ?? $data['message'] ?? 'Unknown API error';
+                throw new RuntimeException('API Error (HTTP ' . $httpCode . '): ' . $errorMessage);
+            }
+
+            return [
+                'outputs' => ['success' => true, 'text' => $data['candidates'][0]['content']['parts'][0]['text']],
+                'tokenUsage' => switchboard_gemini_token_usage($data),
+            ];
+        });
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => $e->getMessage()];
     }
-
-    $data = json_decode($response, true);
-    if ($httpCode === 200 && isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-        return ['success' => true, 'text' => $data['candidates'][0]['content']['parts'][0]['text']];
-    }
-
-    $errorMessage = $data['error']['message'] ?? $data['message'] ?? 'Unknown API error';
-    return ['success' => false, 'error' => 'API Error (HTTP ' . $httpCode . '): ' . $errorMessage];
 }
 
 function generateRagResponse($question, $connection, $user_id) {

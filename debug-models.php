@@ -1,7 +1,9 @@
 <?php
 // Debug script to list available models
 
-$apiKey = 'AQ.Ab8RN6Kw1CoGjGimjFzDeCqvdCfjNmSZjvPNmf2SULH6mBO8jQ';
+require_once __DIR__ . '/includes/env.php';
+
+$apiKey = getenv('GEMINI_API_KEY');
 
 // Try to list models
 $url = 'https://generativelanguage.googleapis.com/v1/models?key=' . $apiKey;

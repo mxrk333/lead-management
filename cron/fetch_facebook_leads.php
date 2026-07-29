@@ -13,6 +13,7 @@ if (php_sapi_name() !== 'cli') {
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/switchboard-tracer.php';
 
 // Configure defaults
 $assigned_user_id = 7; // Romeo Cerna Cobreta Jr. (admin)
@@ -259,8 +260,8 @@ echo "\n--- Facebook Leads Importer Finished ---\n";
  */
 function callGeminiLeadAnalysis($name, $city, $job, $relationship)
 {
-    // API Details (Reusing the key active in the LMS project)
-    $apiKey = 'AQ.Ab8RN6Kw1CoGjGimjFzDeCqvdCfjNmSZjvPNmf2SULH6mBO8jQ';
+    // API key comes from .env (see includes/switchboard-tracer.php's require of includes/env.php)
+    $apiKey = getenv('GEMINI_API_KEY');
     $model = 'gemini-2.5-flash';
     $url = 'https://generativelanguage.googleapis.com/v1/models/' . $model . ':generateContent?key=' . $apiKey;
 
@@ -300,28 +301,41 @@ Response format:
         ],
         'generationConfig' => [
             'temperature' => 0.2,
-            'maxOutputTokens' => 256
+            'maxOutputTokens' => 512
         ]
     ];
 
     $headers = ['Content-Type: application/json'];
 
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For local XAMPP compatibility
+    try {
+        return switchboard_traced([
+            'name' => 'facebook-leads.analyze-profile',
+            'model' => $model,
+            'inputs' => ['name' => $name, 'city' => $city, 'job' => $job, 'relationship' => $relationship],
+            'tags' => ['facebook-leads', 'gemini'],
+        ], function () use ($url, $headers, $postData) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For local XAMPP compatibility
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
-    if ($httpCode === 200) {
-        $data = json_decode($response, true);
-        if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+            if ($httpCode !== 200) {
+                throw new RuntimeException("Gemini request failed with HTTP {$httpCode}");
+            }
+
+            $data = json_decode($response, true);
+            if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                throw new RuntimeException('Invalid Gemini response format');
+            }
+
             $text = trim($data['candidates'][0]['content']['parts'][0]['text']);
 
             // Clean markdown code blocks if the model returned them
@@ -331,31 +345,36 @@ Response format:
             }
 
             $json = json_decode($text, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                return $json;
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new RuntimeException('Gemini returned malformed JSON: ' . json_last_error_msg());
+            }
+
+            return [
+                'outputs' => $json,
+                'tokenUsage' => switchboard_gemini_token_usage($data),
+            ];
+        });
+    } catch (Exception $e) {
+        // Fallback if the API call fails or the response is malformed — same
+        // rule-based classification as before tracing was added.
+        $quality = 'Medium';
+        $lowerJob = strtolower($job);
+        $highQualityJobs = ['engineer', 'nurse', 'doctor', 'manager', 'consultant', 'developer', 'ofw', 'director', 'accountant'];
+        foreach ($highQualityJobs as $hqJob) {
+            if (strpos($lowerJob, $hqJob) !== false) {
+                $quality = 'High';
+                break;
             }
         }
+
+        $summary = "$name from $city. Relationship: $relationship. Occupation: $job.";
+        $action = "Follow up with client to query budget and property preferences.";
+
+        return [
+            'quality' => $quality,
+            'summary' => $summary,
+            'action' => $action
+        ];
     }
-
-    // Fallback if API fails or response is malformed
-    // Apply basic rule-based classification
-    $quality = 'Medium';
-    $lowerJob = strtolower($job);
-    $highQualityJobs = ['engineer', 'nurse', 'doctor', 'manager', 'consultant', 'developer', 'ofw', 'director', 'accountant'];
-    foreach ($highQualityJobs as $hqJob) {
-        if (strpos($lowerJob, $hqJob) !== false) {
-            $quality = 'High';
-            break;
-        }
-    }
-
-    $summary = "$name from $city. Relationship: $relationship. Occupation: $job.";
-    $action = "Follow up with client to query budget and property preferences.";
-
-    return [
-        'quality' => $quality,
-        'summary' => $summary,
-        'action' => $action
-    ];
 }
 ?>
