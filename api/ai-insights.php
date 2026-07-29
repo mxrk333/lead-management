@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 session_start();
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/switchboard-tracer.php';
 
 $connection = getDbConnection();
 
@@ -71,8 +72,8 @@ $topAgentQuery = "SELECT u.name,
 $topAgentResult = mysqli_query($connection, $topAgentQuery);
 $topAgent = mysqli_fetch_assoc($topAgentResult);
 
-// Your Google AI Studio API key
-$apiKey = 'AQ.Ab8RN6Kw1CoGjGimjFzDeCqvdCfjNmSZjvPNmf2SULH6mBO8jQ';
+// Google AI Studio API key
+$apiKey = getenv('GEMINI_API_KEY');
 
 // First, try to get available models
 $listUrl = 'https://generativelanguage.googleapis.com/v1/models?key=' . $apiKey;
@@ -168,47 +169,79 @@ $postData = array(
     )
 );
 
-// Retry logic for handling 503 errors
+// Retry logic for handling 503 errors, wrapped so the call is traced as a
+// single Switchboard run regardless of how many attempts it takes.
 $maxRetries = 3;
 $retryDelay = 1;
-$response = null;
-$httpCode = 0;
-$lastError = '';
+$insightText = null;
 
-for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
-    if ($attempt > 0) {
-        sleep($retryDelay);
-        $retryDelay *= 2;
-    }
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+try {
+    $insightText = switchboard_traced([
+        'name' => 'ai-insights.generate-report',
+        'model' => $availableModel,
+        'inputs' => ['prompt' => $prompt],
+        'tags' => ['ai-insights', 'gemini'],
+    ], function () use ($url, $headers, $postData, $maxRetries, &$retryDelay) {
+        $response = null;
+        $httpCode = 0;
+        $curlError = '';
+        $lastError = '';
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+            if ($attempt > 0) {
+                sleep($retryDelay);
+                $retryDelay *= 2;
+            }
 
-    if ($curlError) {
-        $lastError = "Connection error: " . $curlError;
-        continue;
-    }
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 
-    if ($httpCode !== 503) {
-        break;
-    }
-    
-    $lastError = "Service temporarily unavailable (503)";
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError) {
+                $lastError = "Connection error: " . $curlError;
+                continue;
+            }
+
+            if ($httpCode !== 503) {
+                break;
+            }
+
+            $lastError = "Service temporarily unavailable (503)";
+        }
+
+        if ($curlError || $httpCode !== 200) {
+            throw new RuntimeException($lastError !== '' ? $lastError : "Gemini request failed with HTTP {$httpCode}");
+        }
+
+        $apiResponse = json_decode($response, true);
+        if (!isset($apiResponse['candidates'][0]['content']['parts'][0]['text'])) {
+            throw new InvalidArgumentException('Invalid API response format');
+        }
+
+        return [
+            'outputs' => $apiResponse['candidates'][0]['content']['parts'][0]['text'],
+            'tokenUsage' => switchboard_gemini_token_usage($apiResponse),
+        ];
+    });
+} catch (InvalidArgumentException $e) {
+    echo json_encode(['success' => false, 'error' => 'Invalid API response format']);
+    exit;
+} catch (RuntimeException $e) {
+    // Falls through to the rule-based fallback below — same behavior as before tracing was added.
 }
 
-if ($curlError || $httpCode !== 200) {
+if ($insightText === null) {
     // FALLBACK: Provide intelligent insights from database analysis instead of API
     $conversionRate = ($stats['total_leads'] > 0) ? round(($stats['total_closed'] / $stats['total_leads']) * 100, 1) : 0;
     
@@ -242,16 +275,6 @@ if ($curlError || $httpCode !== 200) {
     $insights .= "</ul>";
     
     echo json_encode(['success' => true, 'insights' => $insights]);
-    exit;
-}
-
-$apiResponse = json_decode($response, true);
-$insightText = '';
-
-if (isset($apiResponse['candidates'][0]['content']['parts'][0]['text'])) {
-    $insightText = $apiResponse['candidates'][0]['content']['parts'][0]['text'];
-} else {
-    echo json_encode(['success' => false, 'error' => 'Invalid API response format']);
     exit;
 }
 

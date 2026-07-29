@@ -13,6 +13,7 @@ if (php_sapi_name() !== 'cli') {
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/switchboard-tracer.php';
 
 // Configure defaults
 $assigned_user_id = 7; // Romeo Cerna Cobreta Jr. (admin)
@@ -227,7 +228,8 @@ echo "\n--- Facebook Messages Importer Finished ---\n";
  */
 function callGeminiMessageParser($senderName, $messageText)
 {
-    $apiKey = 'AQ.Ab8RN6Kw1CoGjGimjFzDeCqvdCfjNmSZjvPNmf2SULH6mBO8jQ';
+    // API key comes from .env (see includes/switchboard-tracer.php's require of includes/env.php)
+    $apiKey = getenv('GEMINI_API_KEY');
     $model = 'gemini-2.5-flash';
     $url = 'https://generativelanguage.googleapis.com/v1/models/' . $model . ':generateContent?key=' . $apiKey;
 
@@ -282,22 +284,35 @@ Response format:
 
     $headers = ['Content-Type: application/json'];
 
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    try {
+        return switchboard_traced([
+            'name' => 'facebook-messages.parse-message',
+            'model' => $model,
+            'inputs' => ['senderName' => $senderName, 'messageText' => $messageText],
+            'tags' => ['facebook-messages', 'gemini'],
+        ], function () use ($url, $headers, $postData) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
-    if ($httpCode === 200) {
-        $data = json_decode($response, true);
-        if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+            if ($httpCode !== 200) {
+                throw new RuntimeException("Gemini request failed with HTTP {$httpCode}");
+            }
+
+            $data = json_decode($response, true);
+            if (!isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                throw new RuntimeException('Invalid Gemini response format');
+            }
+
             $text = trim($data['candidates'][0]['content']['parts'][0]['text']);
 
             // Clean markdown code blocks
@@ -307,18 +322,23 @@ Response format:
             }
 
             $json = json_decode($text, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                return $json;
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new RuntimeException('Gemini returned malformed JSON: ' . json_last_error_msg());
             }
-        }
-    }
 
-    // Fallback if API fails
-    return [
-        'full_name' => $senderName,
-        'quality' => 'Medium',
-        'summary' => "Inquired via Facebook Page: " . substr($messageText, 0, 100),
-        'action' => 'Follow up with client to ask for contact details and requirements.'
-    ];
+            return [
+                'outputs' => $json,
+                'tokenUsage' => switchboard_gemini_token_usage($data),
+            ];
+        });
+    } catch (Exception $e) {
+        // Fallback if the API call fails — same behavior as before tracing was added.
+        return [
+            'full_name' => $senderName,
+            'quality' => 'Medium',
+            'summary' => "Inquired via Facebook Page: " . substr($messageText, 0, 100),
+            'action' => 'Follow up with client to ask for contact details and requirements.'
+        ];
+    }
 }
 ?>
